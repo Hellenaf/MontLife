@@ -25,6 +25,8 @@ import {
   Maximize2,
   Sun,
   Moon,
+  CheckSquare,
+  Trash2,
 } from "lucide-react";
 import {
   GeminiTriageResponse,
@@ -36,6 +38,7 @@ import {
   Priority,
   TaskCategory,
   ItemType,
+  ValidationStep,
 } from "@/types";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { format, parseISO } from "date-fns";
@@ -77,6 +80,9 @@ export function HeaderCommandBar({
   const [editCategory, setEditCategory] = useState<TaskCategory>("Suporte TI");
   const [editPriority, setEditPriority] = useState<Priority>("P3");
   const [editDueDate, setEditDueDate] = useState("");
+  const [editValidationSteps, setEditValidationSteps] = useState<ValidationStep[]>([]);
+  const [newHeaderStep, setNewHeaderStep] = useState("");
+  const [isAddingHeaderStep, setIsAddingHeaderStep] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
   const recognitionRef = useRef<any>(null);
@@ -153,7 +159,19 @@ export function HeaderCommandBar({
         setEditItemType(preferredType !== "auto" ? preferredType : triage.item_type || "task");
         setEditCategory(triage.category);
         setEditPriority(triage.priority);
-        setEditDueDate(data.calculated_due_date);
+        setEditDueDate(triage.extracted_due_date_iso || data.calculated_due_date);
+
+        if (triage.validation_steps?.length) {
+          setEditValidationSteps(
+            triage.validation_steps.map((text, idx) => ({
+              id: `step-${Date.now()}-${idx}`,
+              text,
+              completed: false,
+            }))
+          );
+        } else {
+          setEditValidationSteps([]);
+        }
       }
     } catch (err) {
       console.error("Triage failed:", err);
@@ -166,6 +184,25 @@ export function HeaderCommandBar({
     setEditPriority(newP);
     const newDate = calculateSlaDueDate(newP);
     setEditDueDate(newDate);
+  };
+
+  const handleRemoveHeaderStep = (id: string) => {
+    setEditValidationSteps((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const handleAddHeaderStep = () => {
+    const clean = newHeaderStep.trim();
+    if (!clean) return;
+    setEditValidationSteps((prev) => [
+      ...prev,
+      {
+        id: `step-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        text: clean,
+        completed: false,
+      },
+    ]);
+    setNewHeaderStep("");
+    setIsAddingHeaderStep(false);
   };
 
   const handleConfirmTask = async () => {
@@ -183,6 +220,7 @@ export function HeaderCommandBar({
         priority: editPriority,
         due_date: editDueDate || calculatedDueDate,
         tags: triageData.search_tags || [],
+        validation_steps: editValidationSteps,
         learning_resources: learningResources || {
           youtube_videos: [],
           search_queries: [],
@@ -476,6 +514,105 @@ export function HeaderCommandBar({
                 </div>
               </div>
 
+              {/* Validation Steps Suggested by AI */}
+              <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-900/40">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <CheckSquare className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                    <span className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
+                      Etapas de Validação & Finalização:
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {editValidationSteps.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setEditValidationSteps([])}
+                        className="text-[10px] text-slate-400 hover:text-rose-500 transition-colors"
+                      >
+                        Ignorar Etapas
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingHeaderStep(true)}
+                      className="flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                    >
+                      <Plus className="w-3 h-3" /> Inserir Etapa
+                    </button>
+                  </div>
+                </div>
+
+                {editValidationSteps.length > 0 ? (
+                  <div className="space-y-1.5 pt-1">
+                    {editValidationSteps.map((step, idx) => (
+                      <div
+                        key={step.id}
+                        className="flex items-center gap-2 p-1.5 px-2.5 rounded-xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 group"
+                      >
+                        <span className="text-[11px] font-mono font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
+                          {idx + 1}.
+                        </span>
+                        <input
+                          type="text"
+                          value={step.text}
+                          onChange={(e) =>
+                            setEditValidationSteps((prev) =>
+                              prev.map((s) => (s.id === step.id ? { ...s, text: e.target.value } : s))
+                            )
+                          }
+                          className="flex-1 text-xs bg-transparent text-slate-800 dark:text-slate-200 outline-none focus:text-indigo-600 dark:focus:text-indigo-400"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveHeaderStep(step.id)}
+                          className="p-1 rounded text-slate-300 hover:text-rose-500 transition-colors shrink-0"
+                          title="Remover etapa"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Nenhuma etapa registrada. Clique em "+ Inserir Etapa" para adicionar pontos de validação.
+                  </p>
+                )}
+
+                {isAddingHeaderStep && (
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <input
+                      type="text"
+                      placeholder="Descreva a nova etapa..."
+                      value={newHeaderStep}
+                      onChange={(e) => setNewHeaderStep(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && handleAddHeaderStep()}
+                      className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-[#141520] border border-indigo-300 dark:border-indigo-700 text-slate-900 dark:text-white outline-none"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddHeaderStep}
+                      className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
+                    >
+                      Adicionar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAddingHeaderStep(false);
+                        setNewHeaderStep("");
+                      }}
+                      className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                )}
+              </div>
+
               {/* Controls: Account, Category, Priority, SLA */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <div>
@@ -577,16 +714,22 @@ export function HeaderCommandBar({
                 {/* Due Date */}
                 <div>
                   <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                    Prazo Calculado (Último Prazo):
+                    Prazo / Limite da Demanda:
                   </label>
-                  <div className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-700 dark:text-slate-200">
-                    <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                    <span className="truncate">
-                      {editDueDate
-                        ? format(parseISO(editDueDate), "dd/MM 'às' HH:mm", { locale: ptBR })
-                        : "Hoje"}
-                    </span>
-                  </div>
+                  <input
+                    type="datetime-local"
+                    value={
+                      editDueDate
+                        ? format(parseISO(editDueDate), "yyyy-MM-dd'T'HH:mm")
+                        : ""
+                    }
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        setEditDueDate(new Date(e.target.value).toISOString());
+                      }
+                    }}
+                    className="w-full h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                  />
                 </div>
               </div>
             </div>

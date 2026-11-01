@@ -1,15 +1,25 @@
 import { NextRequest } from "next/server";
 
+const PRODUCTION_URL = "https://montlife-tasks--montlife-8317b.us-central1.hosted.app";
+
 export function getAppBaseUrl(req?: NextRequest): string {
-  // 1. If explicit environment variable is set
+  // If request is from localhost in development, respect localhost
+  if (req) {
+    const host = req.headers.get("host") || "";
+    if (host.includes("localhost") || host.includes("127.0.0.1")) {
+      return `http://${host}`;
+    }
+  }
+
+  // 1. Explicit env var if valid
   if (process.env.NEXT_PUBLIC_APP_URL) {
     const pubUrl = process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
-    if (!pubUrl.includes("0.0.0.0") && !pubUrl.includes(":8080")) {
+    if (!pubUrl.includes("0.0.0.0") && !pubUrl.includes(":8080") && !pubUrl.includes("127.0.0.1")) {
       return pubUrl;
     }
   }
 
-  // 2. If GOOGLE_REDIRECT_URI is set, extract its origin (e.g. https://montlife-tasks--montlife-8317b.us-central1.hosted.app)
+  // 2. Explicit GOOGLE_REDIRECT_URI origin if valid
   if (process.env.GOOGLE_REDIRECT_URI) {
     try {
       const redirectOrigin = new URL(process.env.GOOGLE_REDIRECT_URI).origin;
@@ -26,7 +36,7 @@ export function getAppBaseUrl(req?: NextRequest): string {
     }
   }
 
-  // 3. Check x-forwarded-host from reverse proxy
+  // 3. Check reverse proxy headers if valid domain
   if (req) {
     const forwardedHost = req.headers.get("x-forwarded-host");
     const forwardedProto = req.headers.get("x-forwarded-proto") || "https";
@@ -39,7 +49,6 @@ export function getAppBaseUrl(req?: NextRequest): string {
       return `${forwardedProto}://${forwardedHost}`;
     }
 
-    // 4. Check standard host header
     const host = req.headers.get("host");
     if (
       host &&
@@ -47,11 +56,10 @@ export function getAppBaseUrl(req?: NextRequest): string {
       !host.includes("127.0.0.1") &&
       !host.includes(":8080")
     ) {
-      const proto = host.includes("localhost") ? "http" : "https";
-      return `${proto}://${host}`;
+      return `https://${host}`;
     }
   }
 
-  // 5. Production fallback
-  return "https://montlife-tasks--montlife-8317b.us-central1.hosted.app";
+  // 4. Default Production Canonical Domain
+  return PRODUCTION_URL;
 }

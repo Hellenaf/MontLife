@@ -34,6 +34,12 @@ export interface LearningResources {
   search_queries: string[];
 }
 
+export interface ValidationStep {
+  id: string;
+  text: string;
+  completed: boolean;
+}
+
 export interface TaskAttachment {
   id: string;
   name: string;
@@ -70,6 +76,7 @@ export interface Task {
   met_original_sla: boolean | null;
   attachments?: TaskAttachment[];
   resolution_attachments?: TaskAttachment[];
+  validation_steps?: ValidationStep[];
 }
 
 export interface ConnectedAccount {
@@ -93,6 +100,7 @@ export interface GeminiTriageResponse {
   extracted_due_date_iso: string | null;
   search_tags: string[];
   learning_queries: string[];
+  validation_steps?: string[];
 }
 
 export interface SimilarResolution {

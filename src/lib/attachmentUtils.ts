@@ -88,3 +88,4 @@ function compressImageFile(file: File, maxDimension = 1400, quality = 0.82): Pro
     reader.readAsDataURL(file);
   });
 }
+

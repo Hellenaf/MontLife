@@ -34,8 +34,9 @@ import {
   Image as ImageIcon,
   Loader2,
 } from "lucide-react";
-import { Task, TaskAttachment, TaskStatus, ItemType, AccountType } from "@/types";
+import { Task, TaskAttachment, ValidationStep, TaskStatus, ItemType, AccountType, Priority } from "@/types";
 import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
+import { calculateSlaDueDate } from "@/lib/sla";
 import {
   getTaskScheduleDate,
   isTaskScheduledForDay,
@@ -128,6 +129,10 @@ export function CentralQuadrant({
   const [previewImageAttachment, setPreviewImageAttachment] = useState<TaskAttachment | null>(null);
   const [isUploadingDetailFile, setIsUploadingDetailFile] = useState(false);
   const detailFileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Validation steps states in Details view
+  const [newDetailStepText, setNewDetailStepText] = useState("");
+  const [isAddingDetailStep, setIsAddingDetailStep] = useState(false);
 
   // Live timer for Google Calendar current-time red line
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -253,6 +258,49 @@ export function CentralQuadrant({
       const updated = (selectedTask.resolution_attachments || []).filter((a) => a.id !== attachmentId);
       await onUpdateTaskFields(selectedTask.id, { resolution_attachments: updated });
     }
+  };
+
+  // Toggle validation step
+  const handleToggleTaskValidationStep = async (stepId: string) => {
+    if (!selectedTask || !onUpdateTaskFields) return;
+    const currentSteps = selectedTask.validation_steps || [];
+    const updated = currentSteps.map((s) =>
+      s.id === stepId ? { ...s, completed: !s.completed } : s
+    );
+    await onUpdateTaskFields(selectedTask.id, { validation_steps: updated });
+  };
+
+  // Add validation step in details
+  const handleAddDetailValidationStep = async () => {
+    const clean = newDetailStepText.trim();
+    if (!selectedTask || !clean || !onUpdateTaskFields) return;
+    const newStep: ValidationStep = {
+      id: `step-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+      text: clean,
+      completed: false,
+    };
+    const updated = [...(selectedTask.validation_steps || []), newStep];
+    await onUpdateTaskFields(selectedTask.id, { validation_steps: updated });
+    setNewDetailStepText("");
+    setIsAddingDetailStep(false);
+  };
+
+  // Remove validation step in details
+  const handleRemoveDetailValidationStep = async (stepId: string) => {
+    if (!selectedTask || !onUpdateTaskFields) return;
+    const currentSteps = selectedTask.validation_steps || [];
+    const updated = currentSteps.filter((s) => s.id !== stepId);
+    await onUpdateTaskFields(selectedTask.id, { validation_steps: updated });
+  };
+
+  // Change priority level directly in details
+  const handleChangeDetailPriority = async (newPriority: Priority) => {
+    if (!selectedTask || !onUpdateTaskFields) return;
+    const newDueDate = calculateSlaDueDate(newPriority);
+    await onUpdateTaskFields(selectedTask.id, {
+      priority: newPriority,
+      current_due_date: newDueDate,
+    });
   };
 
   // Helper: check if task is all-day (no specific hour or spans full day)
@@ -1220,6 +1268,153 @@ export function CentralQuadrant({
                   </div>
                 </div>
 
+                {/* Validation Steps Checklist Card */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                        <CheckSquare className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                            Pontos de Validação & Etapas de Conclusão
+                          </h3>
+                          {selectedTask.validation_steps && selectedTask.validation_steps.length > 0 && (
+                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
+                              {selectedTask.validation_steps.filter((s) => s.completed).length} de {selectedTask.validation_steps.length} concluídas
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Checklist sugerido pela IA ou personalizado para orientar a finalização da demanda.
+                        </p>
+                      </div>
+                    </div>
+
+                    {!isAddingDetailStep && (
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingDetailStep(true)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Adicionar Etapa</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Progress bar if steps exist */}
+                  {selectedTask.validation_steps && selectedTask.validation_steps.length > 0 && (
+                    <div className="w-full bg-slate-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="bg-indigo-600 h-1.5 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${Math.round(
+                            (selectedTask.validation_steps.filter((s) => s.completed).length /
+                              selectedTask.validation_steps.length) *
+                              100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  {/* Step List */}
+                  {(!selectedTask.validation_steps || selectedTask.validation_steps.length === 0) && !isAddingDetailStep ? (
+                    <div
+                      onClick={() => setIsAddingDetailStep(true)}
+                      className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#0c0d13]/50 text-center cursor-pointer hover:bg-slate-100/60 dark:hover:bg-zinc-800/40 transition-colors"
+                    >
+                      <CheckSquare className="w-6 h-6 mx-auto mb-1 text-slate-300 dark:text-zinc-600" />
+                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                        Nenhuma etapa de validação cadastrada.
+                      </p>
+                      <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
+                        Clique aqui para inserir o primeiro ponto de validação
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      {selectedTask.validation_steps?.map((step, idx) => (
+                        <div
+                          key={step.id || `step-${idx}`}
+                          className={`flex items-start justify-between gap-2.5 p-2.5 rounded-xl border transition-all ${
+                            step.completed
+                              ? "bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/60 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-200"
+                              : "bg-slate-50/70 dark:bg-[#0f1017] border-slate-200/80 dark:border-zinc-800 text-slate-800 dark:text-slate-200"
+                          }`}
+                        >
+                          <button
+                            type="button"
+                            onClick={() => handleToggleTaskValidationStep(step.id)}
+                            className="mt-0.5 shrink-0 text-slate-400 hover:text-indigo-600 transition-colors"
+                          >
+                            {step.completed ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                            ) : (
+                              <Square className="w-4 h-4 text-slate-400 dark:text-zinc-500" />
+                            )}
+                          </button>
+
+                          <span
+                            onClick={() => handleToggleTaskValidationStep(step.id)}
+                            className={`flex-1 text-xs cursor-pointer select-none leading-relaxed ${
+                              step.completed
+                                ? "line-through text-slate-400 dark:text-slate-500 font-normal"
+                                : "font-medium"
+                            }`}
+                          >
+                            {step.text}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveDetailValidationStep(step.id)}
+                            className="p-1 text-slate-400 hover:text-rose-500 transition-colors rounded-md"
+                            title="Remover etapa"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Add Step input */}
+                  {isAddingDetailStep && (
+                    <div className="flex items-center gap-2 p-2 rounded-xl border border-indigo-300 dark:border-indigo-700 bg-indigo-50/30 dark:bg-indigo-950/20 animate-in fade-in">
+                      <input
+                        type="text"
+                        placeholder="Ex: Verificar conciliação bancária do extrato..."
+                        value={newDetailStepText}
+                        onChange={(e) => setNewDetailStepText(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleAddDetailValidationStep()}
+                        className="flex-1 px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddDetailValidationStep}
+                        className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-500 transition-colors flex items-center gap-1"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>Salvar</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAddingDetailStep(false);
+                          setNewDetailStepText("");
+                        }}
+                        className="px-2.5 py-1.5 rounded-lg bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-300 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 {/* Attachments Card (Criação & Solução) */}
                 <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-3 shadow-sm">
                   <div className="flex items-center justify-between">
@@ -1449,6 +1644,46 @@ export function CentralQuadrant({
                         Adiar / Estender Prazo
                       </button>
                     )}
+                  </div>
+
+                  {/* Priority Level Switcher (P1, P2, P3, P4) */}
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-1">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Alterar Nível de Prioridade & Prazo (SLA):
+                      </span>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Clique para alterar o nível da demanda
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[
+                        { p: "P1" as Priority, label: "P1 - Crítico", desc: "4h", color: "border-rose-500 text-rose-600 bg-rose-50/80 dark:bg-rose-950/40" },
+                        { p: "P2" as Priority, label: "P2 - Alto", desc: "24h", color: "border-orange-500 text-orange-600 bg-orange-50/80 dark:bg-orange-950/40" },
+                        { p: "P3" as Priority, label: "P3 - Normal", desc: "48h", color: "border-amber-500 text-amber-600 bg-amber-50/80 dark:bg-amber-950/40" },
+                        { p: "P4" as Priority, label: "P4 - Baixo", desc: "72h+", color: "border-purple-500 text-purple-600 bg-purple-50/80 dark:bg-purple-950/40" },
+                      ].map((item) => {
+                        const isSelected = selectedTask.priority === item.p;
+                        return (
+                          <button
+                            key={item.p}
+                            type="button"
+                            onClick={() => handleChangeDetailPriority(item.p)}
+                            className={`p-2 rounded-lg border text-left transition-all ${
+                              isSelected
+                                ? `${item.color} font-bold ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-[#141520] shadow-xs`
+                                : "border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800/60 text-slate-600 dark:text-slate-400"
+                            }`}
+                          >
+                            <div className="text-xs font-semibold flex items-center justify-between">
+                              <span>{item.label}</span>
+                              <span className="text-[10px] font-bold opacity-80">{item.desc}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

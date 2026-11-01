@@ -4,24 +4,41 @@ import { GeminiTriageResponse, TaskCategory, Priority, AccountType, ItemType } f
 const SYSTEM_PROMPT = `Você é o assistente inteligente de organização, triagem e produtividade autônoma do MontLife.
 O MontLife é uma plataforma universal de produtividade projetada para qualquer usuário e equipe (profissionais de TI, gestores, analistas, engenheiros, educadores, profissionais liberais e uso pessoal).
 
-Sua função é analisar a demanda ou anotação enviada e estruturá-la com alto nível de autonomia e inteligência:
-1. Contexto ('account_type'):
+Sua função é analisar a demanda, e-mail, áudio transcrito ou anotação enviada e estruturá-la com alto nível de autonomia e inteligência:
+1. Título Claro & Acionável ('refined_title'):
+   - Crie um título conciso, profissional e orientado à ação para a demanda.
+2. Descrição Estruturada ('structured_description'):
+   - Resuma o contexto do chamado/solicitação, detalhando escopo, informações recebidas e especificações técnicas.
+3. Pontos de Validação & Etapas de Finalização ('validation_steps'):
+   - Sugira uma lista sequencial de 3 a 6 etapas práticas de execução e pontos de validação que o responsável deve seguir passo a passo para testar e finalizar a demanda com segurança.
+   - Exemplos:
+     - "1. Identificar logs de erro no servidor de banco de dados"
+     - "2. Ajustar parametrização no módulo de integração"
+     - "3. Realizar teste em ambiente de homologação"
+     - "4. Confirmar validação e funcionamento com o usuário solicitante"
+4. Identificação Precisa de Prazo ('extracted_due_date_iso'):
+   - Analise profundamente o texto para identificar se o usuário mencionou qualquer prazo explícito ou implícito (ex: 'até sexta às 17h', 'amanhã cedo', 'dia 15/11', 'preciso para daqui a 2 horas', 'reunião hoje às 14h', 'prazo até fim do mês').
+   - Calcule e converta precisamente para uma data/hora no formato ISO 8601 (YYYY-MM-DDTHH:mm:00Z) com base na data atual informada.
+   - Se o texto NÃO contiver menção de data/prazo, retorne null.
+5. Contexto ('account_type'):
    - 'work': Demandas profissionais, corporativas, acadêmicas, relatórios, contratos, sistemas, TI, reuniões de trabalho.
    - 'personal': Vida pessoal, finanças pessoais, saúde, estudos, compras, casa, família e compromissos cotidianos.
-2. Tipo de Registro ('item_type'):
-   - 'task': Tarefa ou entrega prática que exige ação ou resolução técnica com passos claros.
+6. Tipo de Registro ('item_type'):
+   - 'task': Demanda que exige execução prática e etapas de validação.
    - 'activity': Reunião, compromisso, aula, consulta ou evento com horário agendado.
    - 'reminder': Lembrete rápido, aviso pontual ou memorando.
-3. Categoria Dinâmica ('category'):
+7. Categoria Dinâmica ('category'):
    - Crie ou selecione com autonomia a categoria mais precisa, elegante e profissional para o assunto.
    - Exemplos: 'BI & Analytics', 'Sistemas ERP', 'Gestão & Contratos', 'Finanças & Tesouraria', 'Engenharia de Software', 'Infraestrutura & Redes', 'Comunicação & Mensagens', 'Gestão Educacional', 'Projetos', 'Jurídico', 'Operações', 'Estudos & Capacitação', 'Saúde & Bem-estar', 'Vida Pessoal', etc.
-   - O campo é livre e dinâmico: adapte à realidade do usuário.
-4. Prioridade ('priority'):
-   - 'P1' (Urgente / Crítica - SLA 4h), 'P2' (Alta - SLA 24h), 'P3' (Média / Padrão - SLA 3 dias), 'P4' (Baixa / Planejamento - SLA 7 dias).
-5. Tags Técnicas & Tópicos ('search_tags'):
-   - Extraia de 2 a 5 tags objetivas e contextuais (ferramentas, tecnologias, áreas, departamentos ou palavras-chave).
-6. Recursos de Estudo no YouTube ('learning_queries'):
-   - Gere 2 queries de busca específicas e objetivas para encontrar tutoriais ou documentações em vídeo no YouTube que facilitem a execução dessa tarefa.`;
+8. Prioridade & Nível de SLA ('priority'):
+   - 'P1' (Urgente / Crítica - SLA 4h): Problemas que travam a operação, paradas de sistema, ordens de diretoria ou prazos imediatos.
+   - 'P2' (Alta - SLA 24h): Demandas importantes com prazo para o mesmo dia ou dia seguinte.
+   - 'P3' (Média / Padrão - SLA 48h): Demandas rotineiras e operacionais normais.
+   - 'P4' (Baixa / Planejamento - SLA 72h+): Sugestões, ideias, estudos ou melhorias sem urgência.
+9. Tags Técnicas & Tópicos ('search_tags'):
+   - Extraia de 2 a 5 tags objetivas e contextuais (ferramentas, tecnologias, departamentos).
+10. Recursos de Estudo no YouTube ('learning_queries'):
+   - Gere 2 queries de busca objetivas para encontrar tutoriais ou documentações em vídeo no YouTube.`;
 
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
@@ -32,7 +49,12 @@ const RESPONSE_SCHEMA = {
     },
     structured_description: {
       type: Type.STRING,
-      description: "Passos sugeridos, checklist ou contexto organizado da tarefa.",
+      description: "Contexto organizado e resumo da solicitação.",
+    },
+    validation_steps: {
+      type: Type.ARRAY,
+      items: { type: Type.STRING },
+      description: "Lista de 3 a 6 etapas e pontos de validação práticos para finalizar a demanda com sucesso.",
     },
     account_type: {
       type: Type.STRING,
@@ -72,6 +94,7 @@ const RESPONSE_SCHEMA = {
   required: [
     "refined_title",
     "structured_description",
+    "validation_steps",
     "account_type",
     "item_type",
     "category",
@@ -338,14 +361,94 @@ export function classifyTaskHeuristic(
 }
 
 /**
+ * Intelligent heuristic to extract deadline from Portuguese text
+ */
+export function extractDeadlinesHeuristic(text: string): string | null {
+  const lower = text.toLowerCase();
+  const now = new Date();
+
+  // "em X horas" ou "daqui a X horas"
+  const inHoursMatch = lower.match(/(?:em|daqui\s+a)\s+(\d+)\s+hora/);
+  if (inHoursMatch) {
+    const hours = parseInt(inHoursMatch[1], 10);
+    const target = new Date(now.getTime() + hours * 3600 * 1000);
+    return target.toISOString();
+  }
+
+  // "hoje às HH(:mm)?"
+  const hojeMatch = lower.match(/hoje\s+(?:às|as)?\s*(\d{1,2})(?::(\d{2}))?/);
+  if (hojeMatch) {
+    const h = parseInt(hojeMatch[1], 10);
+    const m = hojeMatch[2] ? parseInt(hojeMatch[2], 10) : 0;
+    const target = new Date(now);
+    target.setHours(h, m, 0, 0);
+    return target.toISOString();
+  }
+
+  // "amanhã"
+  if (lower.includes("amanhã") || lower.includes("amanha")) {
+    const target = new Date(now);
+    target.setDate(target.getDate() + 1);
+    const timeMatch = lower.match(/amanh[ãa]\s+(?:às|as)?\s*(\d{1,2})(?::(\d{2}))?/);
+    if (timeMatch) {
+      const h = parseInt(timeMatch[1], 10);
+      const m = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
+      target.setHours(h, m, 0, 0);
+    } else {
+      target.setHours(18, 0, 0, 0);
+    }
+    return target.toISOString();
+  }
+
+  // Dias da semana: "até sexta", "para quinta"
+  const weekdays = [
+    { name: "domingo", day: 0 },
+    { name: "segunda", day: 1 },
+    { name: "terça", day: 2 },
+    { name: "quarta", day: 3 },
+    { name: "quinta", day: 4 },
+    { name: "sexta", day: 5 },
+    { name: "sábado", day: 6 },
+  ];
+
+  for (const wd of weekdays) {
+    if (lower.includes(wd.name)) {
+      const target = new Date(now);
+      const currentDay = target.getDay();
+      let diff = wd.day - currentDay;
+      if (diff <= 0) diff += 7;
+      target.setDate(target.getDate() + diff);
+      target.setHours(18, 0, 0, 0);
+      return target.toISOString();
+    }
+  }
+
+  // "dia DD/MM" ou "até DD/MM"
+  const dateMatch = lower.match(/(?:dia|até|ate)\s+(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+  if (dateMatch) {
+    const day = parseInt(dateMatch[1], 10);
+    const month = parseInt(dateMatch[2], 10) - 1;
+    const year = dateMatch[3] ? parseInt(dateMatch[3], 10) : now.getFullYear();
+    const target = new Date(year, month, day, 18, 0, 0);
+    return target.toISOString();
+  }
+
+  return null;
+}
+
+/**
  * Intelligent fallback triage for manual user input.
  */
 function fallbackTriage(rawInput: string): GeminiTriageResponse {
   const heuristic = classifyTaskHeuristic(rawInput);
+  const detectedDueDate = extractDeadlinesHeuristic(rawInput);
 
   let title = rawInput.trim();
   if (title.length > 0) {
     title = title.charAt(0).toUpperCase() + title.slice(1);
+    if (title.includes("\n")) {
+      title = title.split("\n")[0].trim().slice(0, 80);
+    }
   } else {
     title =
       heuristic.item_type === "reminder"
@@ -355,14 +458,22 @@ function fallbackTriage(rawInput: string): GeminiTriageResponse {
         : "Nova Tarefa";
   }
 
+  const defaultValidationSteps: string[] = [
+    `1. Analisar requisitos e escopo de: ${title.slice(0, 45)}`,
+    "2. Executar as ações e configurações necessárias",
+    "3. Realizar testes de homologação e validação técnica",
+    "4. Confirmar conclusão e entrega com o solicitante",
+  ];
+
   return {
     refined_title: title,
-    structured_description: `Contexto operacional registrado: ${rawInput}\n\nChecklist sugerido:\n- [ ] Avaliar escopo da demanda\n- [ ] Executar etapas necessárias\n- [ ] Registrar conclusão no MontLife`,
+    structured_description: rawInput.trim(),
+    validation_steps: defaultValidationSteps,
     account_type: heuristic.account_type,
     item_type: heuristic.item_type,
     category: heuristic.category,
     priority: heuristic.priority,
-    extracted_due_date_iso: null,
+    extracted_due_date_iso: detectedDueDate,
     search_tags: heuristic.tags,
     learning_queries: heuristic.learning_queries,
   };
@@ -383,10 +494,17 @@ export async function triageInputWithGemini(
   }
 
   try {
+    const now = new Date();
+    const promptWithContext = `Data e hora atual de referência: ${now.toISOString()} (${now.toLocaleDateString("pt-BR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} às ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}).
+
+Analise o texto a seguir, crie um título profissional, estruture a descrição, extraia o prazo exato se mencionado (ou null se nenhum prazo foi informado), e gere etapas de validação para a finalização da demanda:
+
+"${rawInput}"`;
+
     const ai = new GoogleGenAI({ apiKey: key });
     const response = await ai.models.generateContent({
       model: "gemini-3.8-flash",
-      contents: rawInput,
+      contents: promptWithContext,
       config: {
         systemInstruction: SYSTEM_PROMPT,
         responseMimeType: "application/json",
@@ -407,6 +525,14 @@ export async function triageInputWithGemini(
     if (!parsed.category) {
       parsed.category = fallbackTriage(rawInput).category;
     }
+    if (!parsed.validation_steps || parsed.validation_steps.length === 0) {
+      parsed.validation_steps = fallbackTriage(rawInput).validation_steps;
+    }
+    // If Gemini didn't find a deadline but regex did, use heuristic fallback
+    if (!parsed.extracted_due_date_iso) {
+      parsed.extracted_due_date_iso = extractDeadlinesHeuristic(rawInput);
+    }
+
     return parsed;
   } catch (error) {
     console.warn("Gemini API call failed, using autonomous heuristic classifier:", error);

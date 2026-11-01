@@ -19,6 +19,9 @@ import {
   Paperclip,
   Trash2,
   Image as ImageIcon,
+  CheckSquare,
+  Square,
+  Plus,
 } from "lucide-react";
 import {
   ItemType,
@@ -27,6 +30,7 @@ import {
   TaskCategory,
   Task,
   TaskAttachment,
+  ValidationStep,
   GeminiTriageResponse,
 } from "@/types";
 import { calculateSlaDueDate } from "@/lib/sla";
@@ -76,6 +80,11 @@ export function NewTaskModal({
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Validation Steps (Checklist suggested by AI or custom)
+  const [validationSteps, setValidationSteps] = useState<ValidationStep[]>([]);
+  const [newStepText, setNewStepText] = useState("");
+  const [isAddingStep, setIsAddingStep] = useState(false);
+
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<GeminiTriageResponse | null>(null);
@@ -104,8 +113,46 @@ export function NewTaskModal({
       setAiSuggestions(null);
       setTagsInput("");
       setAttachments([]);
+      setValidationSteps([]);
+      setNewStepText("");
+      setIsAddingStep(false);
     }
   }, [isOpen, initialText, initialType]);
+
+  const handleAddValidationStep = () => {
+    const clean = newStepText.trim();
+    if (!clean) return;
+    setValidationSteps((prev) => [
+      ...prev,
+      {
+        id: `step-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        text: clean,
+        completed: false,
+      },
+    ]);
+    setNewStepText("");
+    setIsAddingStep(false);
+  };
+
+  const handleRemoveValidationStep = (id: string) => {
+    setValidationSteps((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const handleUpdateValidationStepText = (id: string, text: string) => {
+    setValidationSteps((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, text } : s))
+    );
+  };
+
+  const handleToggleValidationStep = (id: string) => {
+    setValidationSteps((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, completed: !s.completed } : s))
+    );
+  };
+
+  const handleClearValidationSteps = () => {
+    setValidationSteps([]);
+  };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -162,8 +209,22 @@ export function NewTaskModal({
         const triage: GeminiTriageResponse = data.triage;
         setAiSuggestions(triage);
 
-        if (!title.trim() || title === textToAnalyze.substring(0, 80)) {
+        if (triage.refined_title) {
           setTitle(triage.refined_title);
+        }
+
+        if (triage.structured_description) {
+          setDescription(triage.structured_description);
+        }
+
+        if (triage.validation_steps?.length) {
+          setValidationSteps(
+            triage.validation_steps.map((stepText, idx) => ({
+              id: `step-${Date.now()}-${idx}`,
+              text: stepText,
+              completed: false,
+            }))
+          );
         }
 
         if (triage.item_type) {
@@ -186,11 +247,12 @@ export function NewTaskModal({
           setTagsInput(triage.search_tags.join(", "));
         }
 
-        if (data.calculated_due_date) {
+        const targetDueDate = triage.extracted_due_date_iso || data.calculated_due_date;
+        if (targetDueDate) {
           try {
-            setDueDate(format(new Date(data.calculated_due_date), "yyyy-MM-dd'T'HH:mm"));
+            setDueDate(format(new Date(targetDueDate), "yyyy-MM-dd'T'HH:mm"));
           } catch {
-            setDueDate(data.calculated_due_date.substring(0, 16));
+            setDueDate(targetDueDate.substring(0, 16));
           }
         }
       }
@@ -226,6 +288,7 @@ export function NewTaskModal({
         due_date: finalDueDateIso,
         tags: parsedTags,
         attachments,
+        validation_steps: validationSteps,
         learning_resources: {
           youtube_videos: [],
           search_queries: [],
@@ -389,6 +452,102 @@ export function NewTaskModal({
               placeholder="Cole aqui o e-mail completo, mensagem encaminhada, orientações recebidas ou anotações detalhadas..."
               className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 leading-relaxed resize-none font-sans"
             />
+          </div>
+
+          {/* Pontos de Validação & Etapas Sugeridas pela IA */}
+          <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-900/40">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <CheckSquare className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <label className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider block">
+                  Pontos de Validação & Etapas de Conclusão:
+                </label>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {validationSteps.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearValidationSteps}
+                    className="text-[10px] text-slate-400 hover:text-rose-500 transition-colors"
+                    title="Remover todas as sugestões da IA"
+                  >
+                    Ignorar Sugestões
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setIsAddingStep(true)}
+                  className="flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                >
+                  <Plus className="w-3 h-3" /> Inserir Etapa
+                </button>
+              </div>
+            </div>
+
+            {validationSteps.length === 0 ? (
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Clique em <strong className="text-indigo-600 dark:text-indigo-400">"Sugerir Metadados com IA"</strong> acima para gerar automaticamente as etapas de execução, ou adicione etapas manuais para guiar a finalização.
+              </p>
+            ) : (
+              <div className="space-y-1.5 pt-1">
+                {validationSteps.map((step, idx) => (
+                  <div
+                    key={step.id}
+                    className="flex items-center gap-2 p-1.5 px-2.5 rounded-xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 group"
+                  >
+                    <span className="text-[11px] font-mono font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
+                      {idx + 1}.
+                    </span>
+                    <input
+                      type="text"
+                      value={step.text}
+                      onChange={(e) => handleUpdateValidationStepText(step.id, e.target.value)}
+                      className="flex-1 text-xs bg-transparent text-slate-800 dark:text-slate-200 outline-none focus:text-indigo-600 dark:focus:text-indigo-400"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveValidationStep(step.id)}
+                      className="p-1 rounded text-slate-300 hover:text-rose-500 transition-colors shrink-0"
+                      title="Excluir esta etapa"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {isAddingStep && (
+              <div className="flex items-center gap-1.5 pt-1">
+                <input
+                  type="text"
+                  placeholder="Descreva a nova etapa de validação..."
+                  value={newStepText}
+                  onChange={(e) => setNewStepText(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleAddValidationStep()}
+                  className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-[#141520] border border-indigo-300 dark:border-indigo-700 text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  onClick={handleAddValidationStep}
+                  className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
+                >
+                  Adicionar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingStep(false);
+                    setNewStepText("");
+                  }}
+                  className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                >
+                  Cancelar
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Contexto & Categoria */}

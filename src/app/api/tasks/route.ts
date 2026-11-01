@@ -87,6 +87,7 @@ export async function POST(req: NextRequest) {
       met_original_sla: null,
       attachments: body.attachments || [],
       resolution_attachments: body.resolution_attachments || [],
+      validation_steps: body.validation_steps || [],
     };
 
     // Sync with Google Tasks if configured
