@@ -97,7 +97,11 @@ export function LeftTasksQuadrant({
     setIsCategorizing(true);
     setStatusMessage("IA analisando e organizando demandas...");
     try {
-      const res = await fetch("/api/tasks/ai-categorize", { method: "POST" });
+      const res = await fetch("/api/tasks/ai-categorize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
       const data = await res.json();
       if (data.success) {
         setStatusMessage(data.message || "Tarefas organizadas com IA!");
@@ -118,7 +122,11 @@ export function LeftTasksQuadrant({
     setIsSyncing(true);
     setStatusMessage("Sincronizando tarefas (2024 até hoje)...");
     try {
-      const res = await fetch("/api/google/sync", { method: "POST" });
+      const res = await fetch("/api/google/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
       const data = await res.json();
       if (data.success) {
         setStatusMessage(`Sincronizado! +${data.imported_count || 0} novas tarefas.`);

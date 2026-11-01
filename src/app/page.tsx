@@ -94,7 +94,11 @@ export default function MontOpsDashboard() {
         );
         window.history.replaceState({}, document.title, window.location.pathname);
         loadAccounts().then(() => loadTasks());
-        fetch("/api/google/sync", { method: "POST" })
+        fetch("/api/google/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        })
           .then((r) => r.json())
           .then(() => {
             loadTasks();
