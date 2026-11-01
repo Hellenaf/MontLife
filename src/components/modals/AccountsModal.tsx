@@ -10,6 +10,8 @@ import {
   ShieldCheck,
   CheckCircle,
   AlertCircle,
+  LogOut,
+  Trash2,
 } from "lucide-react";
 import { ConnectedAccount } from "@/types";
 import { format, parseISO } from "date-fns";
@@ -20,6 +22,7 @@ interface AccountsModalProps {
   onClose: () => void;
   accounts: ConnectedAccount[];
   onRefreshAccounts: () => Promise<void>;
+  onPurgeSeedTasks?: () => Promise<void>;
 }
 
 export function AccountsModal({
@@ -27,9 +30,11 @@ export function AccountsModal({
   onClose,
   accounts,
   onRefreshAccounts,
+  onPurgeSeedTasks,
 }: AccountsModalProps) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+  const [isPurging, setIsPurging] = useState(false);
 
   if (!isOpen) return null;
 
@@ -43,10 +48,12 @@ export function AccountsModal({
       const res = await fetch("/api/google/sync", { method: "POST" });
       const data = await res.json();
       if (data.success) {
-        setSyncFeedback(`Sincronizado com sucesso! ${data.imported_count || 0} novas tarefas importadas.`);
+        setSyncFeedback(
+          `Sincronizado com sucesso! ${data.imported_count || 0} tarefas do Google Tasks importadas.`
+        );
         await onRefreshAccounts();
       } else {
-        setSyncFeedback("Erro ao sincronizar. Verifique credenciais do Google.");
+        setSyncFeedback("Erro ao sincronizar. Verifique se a conta está conectada.");
       }
     } catch (err) {
       console.error(err);
@@ -56,54 +63,76 @@ export function AccountsModal({
     }
   };
 
-  const handleToggleSimulation = async (type: "work" | "personal", currentStatus: boolean) => {
+  const handleDisconnect = async (type: "work" | "personal") => {
+    if (!confirm(`Deseja realmente desconectar a conta ${type === "work" ? "de Trabalho" : "Pessoal"}?`)) {
+      return;
+    }
+
     try {
       await fetch("/api/accounts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id: type,
-          email: type === "work" ? "institucional@escola.edu.br" : "pessoal.mont@gmail.com",
-          is_connected: !currentStatus,
-          last_sync_at: new Date().toISOString(),
+          email: "",
+          is_connected: false,
+          access_token: null,
+          refresh_token: null,
+          last_sync_at: null,
         }),
       });
       await onRefreshAccounts();
+      setSyncFeedback(`Conta ${type === "work" ? "de Trabalho" : "Pessoal"} desconectada.`);
+    } catch (err) {
+      console.error("Disconnect error:", err);
+    }
+  };
+
+  const handlePurge = async () => {
+    if (!confirm("Deseja remover as tarefas de exemplo/teste da base?")) return;
+    setIsPurging(true);
+    try {
+      if (onPurgeSeedTasks) {
+        await onPurgeSeedTasks();
+      }
+      setSyncFeedback("Tarefas de exemplo removidas com sucesso.");
     } catch (err) {
       console.error(err);
+    } finally {
+      setIsPurging(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl rounded-2xl bg-[#1A1829] border border-[#2E2B44] shadow-2xl overflow-hidden glow-lavender">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+      <div className="relative w-full max-w-xl rounded-2xl bg-[#151324] border border-[#2E2B44] shadow-2xl overflow-hidden glow-lavender">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[#2E2B44] bg-[#141221]">
+        <div className="flex items-center justify-between p-5 border-b border-[#242038] bg-[#0E0C18]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#7B61FF]/10 text-[#9D8DF1] border border-[#7B61FF]/20">
+            <div className="p-2 rounded-xl bg-[#7B61FF]/15 text-[#9D8DF1] border border-[#7B61FF]/30">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-[#EAE9FC]">
-                Contas Google Conectadas (Multi-Account)
+              <h3 className="text-base font-bold text-[#EAE9FC]">
+                Vincular Contas Google & Google Tasks
               </h3>
               <p className="text-xs text-[#9490AC]">
-                Sincronização bidirecional com Google Tasks API v1 & Calendar
+                Sincronize tarefas, atividades e calendários reais via Google OAuth 2.0
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg text-[#9490AC] hover:text-white hover:bg-[#2E2B44] transition-colors"
+            className="p-1.5 rounded-lg text-[#9490AC] hover:text-white hover:bg-[#242038] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-4">
           {/* Work Account */}
-          <div className="p-4 rounded-xl bg-[#0F0E17] border border-[#2E2B44] space-y-3">
+          <div className="p-4 rounded-xl bg-[#090810] border border-[#242038] space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
@@ -111,63 +140,74 @@ export function AccountsModal({
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-[#EAE9FC] uppercase tracking-wide">
-                    Conta de Trabalho (Google Workspace)
+                    Conta de Trabalho (Google Workspace / Escola)
                   </h4>
                   <p className="text-xs text-[#9490AC]">
-                    {workAccount?.email || "institucional@escola.edu.br"}
+                    {workAccount?.is_connected && workAccount.email
+                      ? workAccount.email
+                      : "Nenhuma conta vinculada"}
                   </p>
                 </div>
               </div>
+
               <span
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 ${
                   workAccount?.is_connected
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                    : "bg-zinc-800 text-zinc-400 border border-zinc-700"
                 }`}
               >
                 {workAccount?.is_connected ? (
                   <>
-                    <CheckCircle className="w-3 h-3" /> Conectada
+                    <CheckCircle className="w-3 h-3 text-emerald-400" /> Conectada
                   </>
                 ) : (
                   <>
-                    <AlertCircle className="w-3 h-3" /> Desconectada
+                    <AlertCircle className="w-3 h-3" /> Não conectada
                   </>
                 )}
               </span>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-[#9490AC] pt-2 border-t border-[#2E2B44]/60">
+            <div className="flex items-center justify-between text-xs text-[#9490AC] pt-2 border-t border-[#242038]">
               <span>
-                Última sincronização:{" "}
-                {workAccount?.last_sync_at
-                  ? format(parseISO(workAccount.last_sync_at), "dd/MM HH:mm", {
+                {workAccount?.is_connected && workAccount?.last_sync_at
+                  ? `Último sync: ${format(parseISO(workAccount.last_sync_at), "dd/MM HH:mm", {
                       locale: ptBR,
-                    })
-                  : "Nunca"}
+                    })}`
+                  : "Pronto para vincular"}
               </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() =>
-                    handleToggleSimulation("work", !!workAccount?.is_connected)
-                  }
-                  className="text-[11px] text-[#9D8DF1] hover:underline"
-                >
-                  {workAccount?.is_connected ? "Alternar Demo" : "Conectar Demo"}
-                </button>
+
+              {workAccount?.is_connected ? (
+                <div className="flex items-center gap-2">
+                  <a
+                    href="/api/google/auth?type=work"
+                    className="px-3 py-1 rounded-lg bg-[#242038] hover:bg-[#2F2A47] text-[#EAE9FC] text-xs font-medium transition-colors"
+                  >
+                    Reconectar
+                  </a>
+                  <button
+                    onClick={() => handleDisconnect("work")}
+                    className="p-1 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    title="Desconectar conta"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
                 <a
                   href="/api/google/auth?type=work"
-                  className="flex items-center gap-1 px-3 py-1 rounded-lg bg-[#2E2B44] hover:bg-[#3B3857] text-[#EAE9FC] text-xs transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 transition-all active:scale-95"
                 >
-                  <ExternalLink className="w-3 h-3" />
-                  OAuth 2.0
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Fazer Login com Google
                 </a>
-              </div>
+              )}
             </div>
           </div>
 
           {/* Personal Account */}
-          <div className="p-4 rounded-xl bg-[#0F0E17] border border-[#2E2B44] space-y-3">
+          <div className="p-4 rounded-xl bg-[#090810] border border-[#242038] space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
@@ -175,85 +215,100 @@ export function AccountsModal({
                 </div>
                 <div>
                   <h4 className="text-xs font-semibold text-[#EAE9FC] uppercase tracking-wide">
-                    Conta Pessoal (Google Account)
+                    Conta Pessoal (Google / Gmail)
                   </h4>
                   <p className="text-xs text-[#9490AC]">
-                    {personalAccount?.email || "pessoal.mont@gmail.com"}
+                    {personalAccount?.is_connected && personalAccount.email
+                      ? personalAccount.email
+                      : "Nenhuma conta vinculada"}
                   </p>
                 </div>
               </div>
+
               <span
-                className={`px-2.5 py-1 rounded-full text-[11px] font-medium flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 ${
                   personalAccount?.is_connected
-                    ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                    : "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                    : "bg-zinc-800 text-zinc-400 border border-zinc-700"
                 }`}
               >
                 {personalAccount?.is_connected ? (
                   <>
-                    <CheckCircle className="w-3 h-3" /> Conectada
+                    <CheckCircle className="w-3 h-3 text-emerald-400" /> Conectada
                   </>
                 ) : (
                   <>
-                    <AlertCircle className="w-3 h-3" /> Desconectada
+                    <AlertCircle className="w-3 h-3" /> Não conectada
                   </>
                 )}
               </span>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-[#9490AC] pt-2 border-t border-[#2E2B44]/60">
+            <div className="flex items-center justify-between text-xs text-[#9490AC] pt-2 border-t border-[#242038]">
               <span>
-                Última sincronização:{" "}
-                {personalAccount?.last_sync_at
-                  ? format(parseISO(personalAccount.last_sync_at), "dd/MM HH:mm", {
+                {personalAccount?.is_connected && personalAccount?.last_sync_at
+                  ? `Último sync: ${format(parseISO(personalAccount.last_sync_at), "dd/MM HH:mm", {
                       locale: ptBR,
-                    })
-                  : "Nunca"}
+                    })}`
+                  : "Pronto para vincular"}
               </span>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() =>
-                    handleToggleSimulation(
-                      "personal",
-                      !!personalAccount?.is_connected
-                    )
-                  }
-                  className="text-[11px] text-[#9D8DF1] hover:underline"
-                >
-                  {personalAccount?.is_connected
-                    ? "Alternar Demo"
-                    : "Conectar Demo"}
-                </button>
+
+              {personalAccount?.is_connected ? (
+                <div className="flex items-center gap-2">
+                  <a
+                    href="/api/google/auth?type=personal"
+                    className="px-3 py-1 rounded-lg bg-[#242038] hover:bg-[#2F2A47] text-[#EAE9FC] text-xs font-medium transition-colors"
+                  >
+                    Reconectar
+                  </a>
+                  <button
+                    onClick={() => handleDisconnect("personal")}
+                    className="p-1 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    title="Desconectar conta"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
                 <a
                   href="/api/google/auth?type=personal"
-                  className="flex items-center gap-1 px-3 py-1 rounded-lg bg-[#2E2B44] hover:bg-[#3B3857] text-[#EAE9FC] text-xs transition-colors"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-md shadow-purple-600/30 transition-all active:scale-95"
                 >
-                  <ExternalLink className="w-3 h-3" />
-                  OAuth 2.0
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Fazer Login com Google
                 </a>
-              </div>
+              )}
             </div>
           </div>
 
           {syncFeedback && (
-            <div className="p-3 rounded-xl bg-[#7B61FF]/10 border border-[#7B61FF]/20 text-xs text-[#9D8DF1] flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 rounded-xl bg-[#7B61FF]/10 border border-[#7B61FF]/30 text-xs text-[#9D8DF1] flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 shrink-0 text-emerald-400" />
               <span>{syncFeedback}</span>
             </div>
           )}
 
-          {/* Sync CTA */}
-          <div className="flex items-center justify-between pt-2">
-            <span className="text-xs text-[#9490AC]">
-              Sincroniza status: [▶️] Em Progresso, [⏳] Aguardando, [✅] Concluído
-            </span>
+          {/* Sync CTA & Clean Tasks */}
+          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[#242038]">
+            {onPurgeSeedTasks && (
+              <button
+                type="button"
+                onClick={handlePurge}
+                disabled={isPurging}
+                className="flex items-center gap-1 text-[11px] text-[#9490AC] hover:text-rose-400 transition-colors"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>{isPurging ? "Removendo..." : "Limpar tarefas de exemplo"}</span>
+              </button>
+            )}
+
             <button
               onClick={handleSyncNow}
-              disabled={isSyncing}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-white font-medium text-xs shadow-lg shadow-[#7B61FF]/20 transition-all active:scale-95 disabled:opacity-50"
+              disabled={isSyncing || (!workAccount?.is_connected && !personalAccount?.is_connected)}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-white font-semibold text-xs shadow-lg shadow-[#7B61FF]/25 transition-all active:scale-95 disabled:opacity-40 ml-auto"
             >
-              <RefreshCw className={`w-4 h-4 ${isSyncing ? "animate-spin" : ""}`} />
-              {isSyncing ? "Sincronizando..." : "Sincronizar Bidirecional"}
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+              {isSyncing ? "Sincronizando..." : "Sincronizar Google Tasks"}
             </button>
           </div>
         </div>
@@ -261,4 +316,3 @@ export function AccountsModal({
     </div>
   );
 }
-

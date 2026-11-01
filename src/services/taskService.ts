@@ -154,17 +154,17 @@ const INITIAL_SEED_TASKS: Task[] = [
 const INITIAL_SEED_ACCOUNTS: ConnectedAccount[] = [
   {
     id: "work",
-    email: "institucional@escola.edu.br",
-    default_tasklist_id: "tl-work-default",
-    last_sync_at: new Date().toISOString(),
-    is_connected: true,
+    email: "",
+    default_tasklist_id: "@default",
+    last_sync_at: null,
+    is_connected: false,
   },
   {
     id: "personal",
-    email: "pessoal.mont@gmail.com",
-    default_tasklist_id: "tl-personal-default",
-    last_sync_at: new Date().toISOString(),
-    is_connected: true,
+    email: "",
+    default_tasklist_id: "@default",
+    last_sync_at: null,
+    is_connected: false,
   },
 ];
 
@@ -336,19 +336,29 @@ export async function extendTaskDeadline(
 
 export async function getConnectedAccounts(): Promise<ConnectedAccount[]> {
   const db = getFirestoreDb();
-  if (!db) return memoryAccounts;
+  if (!db) {
+    return memoryAccounts.map((acc) => ({
+      ...acc,
+      is_connected: Boolean(acc.access_token || acc.refresh_token),
+    }));
+  }
 
   try {
     const snapshot = await db.collection("connected_accounts").get();
     if (snapshot.empty) {
-      const batch = db.batch();
-      for (const acc of memoryAccounts) {
-        batch.set(db.collection("connected_accounts").doc(acc.id), acc);
-      }
-      await batch.commit();
-      return memoryAccounts;
+      return [
+        { id: "work", email: "", default_tasklist_id: "@default", last_sync_at: null, is_connected: false },
+        { id: "personal", email: "", default_tasklist_id: "@default", last_sync_at: null, is_connected: false },
+      ];
     }
-    return snapshot.docs.map((doc) => doc.data() as ConnectedAccount);
+    return snapshot.docs.map((doc) => {
+      const data = doc.data() as ConnectedAccount;
+      const isActuallyConnected = Boolean(data.access_token || data.refresh_token);
+      return {
+        ...data,
+        is_connected: isActuallyConnected,
+      };
+    });
   } catch (err) {
     console.warn("Firestore read accounts failed:", err);
     return memoryAccounts;

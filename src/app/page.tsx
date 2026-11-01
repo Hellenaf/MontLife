@@ -11,6 +11,7 @@ import { AnnualReportModal } from "@/components/modals/AnnualReportModal";
 import { AccountsModal } from "@/components/modals/AccountsModal";
 import { NewTaskModal } from "@/components/modals/NewTaskModal";
 import { Task, ConnectedAccount, TaskStatus, ItemType } from "@/types";
+import { ExternalLink } from "lucide-react";
 
 export default function MontOpsDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -32,6 +33,7 @@ export default function MontOpsDashboard() {
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [newTaskInitialText, setNewTaskInitialText] = useState("");
+  const [oauthFeedback, setOauthFeedback] = useState<string | null>(null);
 
   // Fetch initial data ONCE on mount
   const loadTasks = useCallback(async () => {
@@ -63,6 +65,38 @@ export default function MontOpsDashboard() {
     loadTasks();
     loadAccounts();
   }, [loadTasks, loadAccounts]);
+
+  // Listen to OAuth redirect query params
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("oauth_success")) {
+        const type = params.get("oauth_success");
+        setOauthFeedback(
+          `Conta ${type === "work" ? "de Trabalho" : "Pessoal"} vinculada com sucesso! Importando suas tarefas reais do Google Tasks...`
+        );
+        window.history.replaceState({}, document.title, window.location.pathname);
+        loadAccounts().then(() => loadTasks());
+        fetch("/api/google/sync", { method: "POST" })
+          .then((r) => r.json())
+          .then(() => {
+            loadTasks();
+            loadAccounts();
+          });
+      } else if (params.get("oauth_error")) {
+        setOauthFeedback("Erro na autenticação com o Google. Tente novamente.");
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, [loadAccounts, loadTasks]);
+
+  const handlePurgeSeedTasks = async () => {
+    const seedTasks = tasks.filter((t) => t.id.startsWith("seed-task-"));
+    for (const t of seedTasks) {
+      await fetch(`/api/tasks/${t.id}`, { method: "DELETE" });
+    }
+    await loadTasks();
+  };
 
   // Handlers
   const handleTaskCreated = (newTask: Task) => {
@@ -168,6 +202,8 @@ export default function MontOpsDashboard() {
     }
   };
 
+  const hasConnectedAccount = accounts.some((a) => a.is_connected);
+
   return (
     <div className="w-screen h-screen overflow-hidden flex flex-col bg-[#090810]">
       {/* 1. Header Fixo & Barra de Comando IA */}
@@ -183,49 +219,85 @@ export default function MontOpsDashboard() {
       />
 
       {/* 2. Fixed-Grid: 3 Colunas Abaixo do Header (Tela Cheia, Scroll Interno Independente) */}
-      <div className="flex-1 flex overflow-hidden pt-16">
-        {/* Quadrante Esquerdo: Gestão de Tarefas, Atividades e Lembretes */}
-        <LeftTasksQuadrant
-          tasks={tasks}
-          selectedTaskId={selectedTask?.id || null}
-          onSelectTask={(task) => setSelectedTaskId(task.id)}
-          onUpdateStatus={handleUpdateStatus}
-          onRequestResolution={(task) => {
-            setTaskForResolution(task);
-            setIsResolutionModalOpen(true);
-          }}
-          onRequestExtendDeadline={(task) => {
-            setTaskForExtend(task);
-            setIsExtendModalOpen(true);
-          }}
-          onDeleteTask={handleDeleteTask}
-          onRequestNewTask={() => {
-            setNewTaskInitialText("");
-            setIsNewTaskModalOpen(true);
-          }}
-        />
+      <div className="flex-1 flex flex-col overflow-hidden pt-16">
+        {/* Banner if no account is connected */}
+        {!hasConnectedAccount && accounts.length > 0 && (
+          <div className="bg-gradient-to-r from-indigo-950 via-[#131122] to-purple-950 border-b border-indigo-500/30 px-4 py-2 flex items-center justify-between text-xs shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
+              <p className="text-[#EAE9FC]">
+                <strong>Nenhuma conta vinculada.</strong> Conecte sua conta do Google para sincronizar suas tarefas reais do Google Tasks.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href="/api/google/auth?type=work"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-[11px] shadow-sm transition-all"
+              >
+                <ExternalLink className="w-3 h-3" />
+                Vincular Google Tasks
+              </a>
+            </div>
+          </div>
+        )}
 
-        {/* Quadrante Central: Detalhes, Seletor de Tipo, Agenda & Estudo */}
-        <CentralQuadrant
-          selectedTask={selectedTask}
-          allTasks={tasks}
-          onRequestResolution={(task) => {
-            setTaskForResolution(task);
-            setIsResolutionModalOpen(true);
-          }}
-          onRequestExtendDeadline={(task) => {
-            setTaskForExtend(task);
-            setIsExtendModalOpen(true);
-          }}
-          onUpdateStatus={handleUpdateStatus}
-          onUpdateItemType={handleUpdateItemType}
-        />
+        {/* OAuth Feedback Toast Banner */}
+        {oauthFeedback && (
+          <div className="bg-emerald-950/90 border-b border-emerald-500/40 px-4 py-2 flex items-center justify-between text-xs text-emerald-200 shrink-0">
+            <span>{oauthFeedback}</span>
+            <button
+              onClick={() => setOauthFeedback(null)}
+              className="text-emerald-400 hover:text-white px-2 py-0.5 rounded text-xs"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
-        {/* Quadrante Direito: KPIs em Tempo Real */}
-        <RightKpiQuadrant
-          tasks={tasks}
-          onOpenReportModal={() => setIsReportModalOpen(true)}
-        />
+        <div className="flex-1 flex overflow-hidden">
+          {/* Quadrante Esquerdo: Gestão de Tarefas, Atividades e Lembretes */}
+          <LeftTasksQuadrant
+            tasks={tasks}
+            selectedTaskId={selectedTask?.id || null}
+            onSelectTask={(task) => setSelectedTaskId(task.id)}
+            onUpdateStatus={handleUpdateStatus}
+            onRequestResolution={(task) => {
+              setTaskForResolution(task);
+              setIsResolutionModalOpen(true);
+            }}
+            onRequestExtendDeadline={(task) => {
+              setTaskForExtend(task);
+              setIsExtendModalOpen(true);
+            }}
+            onDeleteTask={handleDeleteTask}
+            onRequestNewTask={() => {
+              setNewTaskInitialText("");
+              setIsNewTaskModalOpen(true);
+            }}
+          />
+
+          {/* Quadrante Central: Detalhes, Seletor de Tipo, Agenda & Estudo */}
+          <CentralQuadrant
+            selectedTask={selectedTask}
+            allTasks={tasks}
+            onRequestResolution={(task) => {
+              setTaskForResolution(task);
+              setIsResolutionModalOpen(true);
+            }}
+            onRequestExtendDeadline={(task) => {
+              setTaskForExtend(task);
+              setIsExtendModalOpen(true);
+            }}
+            onUpdateStatus={handleUpdateStatus}
+            onUpdateItemType={handleUpdateItemType}
+          />
+
+          {/* Quadrante Direito: KPIs em Tempo Real */}
+          <RightKpiQuadrant
+            tasks={tasks}
+            onOpenReportModal={() => setIsReportModalOpen(true)}
+          />
+        </div>
       </div>
 
       {/* Modais do Sistema */}
@@ -260,6 +332,7 @@ export default function MontOpsDashboard() {
         onClose={() => setIsAccountsModalOpen(false)}
         accounts={accounts}
         onRefreshAccounts={loadAccounts}
+        onPurgeSeedTasks={handlePurgeSeedTasks}
       />
 
       <NewTaskModal

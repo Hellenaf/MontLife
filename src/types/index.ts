@@ -74,7 +74,7 @@ export interface ConnectedAccount {
   refresh_token?: string;
   expiry_date?: number;
   default_tasklist_id?: string;
-  last_sync_at: string;
+  last_sync_at: string | null;
   is_connected: boolean;
 }
 

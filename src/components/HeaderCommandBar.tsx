@@ -319,7 +319,11 @@ export function HeaderCommandBar({
         {/* Connected Accounts Status */}
         <button
           onClick={onOpenAccountsModal}
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#090810] border border-[#242038] hover:border-[#7B61FF]/50 text-xs text-[#9490AC] transition-all"
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs transition-all ${
+            workAcc?.is_connected || personalAcc?.is_connected
+              ? "bg-[#090810] border-[#242038] text-[#9490AC] hover:border-[#7B61FF]/50"
+              : "bg-indigo-600/15 border-indigo-500/40 text-indigo-300 hover:bg-indigo-600/25 shadow-sm shadow-indigo-600/20"
+          }`}
           title="Gerenciar Contas Google Conectadas"
         >
           <div className="flex items-center gap-1.5">
@@ -339,6 +343,11 @@ export function HeaderCommandBar({
             />
             <User className="w-3.5 h-3.5 text-purple-400" />
           </div>
+          {!(workAcc?.is_connected || personalAcc?.is_connected) && (
+            <span className="text-[11px] font-semibold text-indigo-300 hidden md:inline ml-1">
+              Vincular Google
+            </span>
+          )}
         </button>
 
         {/* Annual Report CTA */}
