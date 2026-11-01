@@ -194,15 +194,6 @@ export function CentralQuadrant({
                     {selectedTask.title}
                   </h1>
 
-                  {/* Raw input reference */}
-                  <div className="p-2.5 rounded-xl bg-[#090810] border border-[#242038] text-xs text-[#9490AC] flex items-start gap-2">
-                    <Sparkles className="w-3.5 h-3.5 text-[#9D8DF1] shrink-0 mt-0.5" />
-                    <div>
-                      <span className="font-semibold text-[#EAE9FC]">Comando Original: </span>
-                      <span className="italic">&quot;{selectedTask.raw_input}&quot;</span>
-                    </div>
-                  </div>
-
                   {/* Description */}
                   <div className="space-y-1.5">
                     <h3 className="text-xs font-semibold text-[#9490AC] uppercase tracking-wide">

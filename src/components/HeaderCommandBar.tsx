@@ -21,6 +21,8 @@ import {
   ListTodo,
   Activity,
   Bell,
+  PlusCircle,
+  Maximize2,
 } from "lucide-react";
 import {
   GeminiTriageResponse,
@@ -42,6 +44,7 @@ interface HeaderCommandBarProps {
   onTaskCreated: (task: Task) => void;
   onOpenAccountsModal: () => void;
   onOpenReportModal: () => void;
+  onOpenNewTaskModal?: (initialText?: string) => void;
 }
 
 export function HeaderCommandBar({
@@ -49,6 +52,7 @@ export function HeaderCommandBar({
   onTaskCreated,
   onOpenAccountsModal,
   onOpenReportModal,
+  onOpenNewTaskModal,
 }: HeaderCommandBarProps) {
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -236,22 +240,33 @@ export function HeaderCommandBar({
         </div>
       </div>
 
-      {/* Center Natural Language Command Bar */}
-      <div className="flex-1 max-w-2xl mx-3 sm:mx-6">
+      {/* Center Natural Language Command Bar + Nova Demanda */}
+      <div className="flex-1 max-w-2xl mx-3 sm:mx-6 flex items-center gap-2">
         <form
           onSubmit={handleRunTriage}
-          className="relative flex items-center w-full"
+          className="relative flex items-center flex-1"
         >
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Digite ou fale uma anotação (ex: reunião pedagógica amanhã às 14h, pagar fatura, consertar RM)..."
-            className="w-full h-10 pl-4 pr-24 rounded-xl bg-[#090810] border border-[#242038] text-xs text-[#EAE9FC] placeholder-[#9490AC]/50 focus:outline-none focus:border-[#7B61FF] focus:ring-1 focus:ring-[#7B61FF] transition-all"
+            placeholder="Digite ou fale uma anotação rápida (ex: reunião amanhã às 14h, pagar fatura, consertar RM)..."
+            className="w-full h-10 pl-4 pr-32 rounded-xl bg-[#090810] border border-[#242038] text-xs text-[#EAE9FC] placeholder-[#9490AC]/50 focus:outline-none focus:border-[#7B61FF] focus:ring-1 focus:ring-[#7B61FF] transition-all"
             disabled={isProcessing}
           />
 
           <div className="absolute right-1.5 flex items-center gap-1">
+            {onOpenNewTaskModal && (
+              <button
+                type="button"
+                onClick={() => onOpenNewTaskModal(input)}
+                title="Expandir para modo detalhado (para textos longos / mensagens repassadas)"
+                className="p-1.5 rounded-lg text-[#9490AC] hover:text-[#9D8DF1] hover:bg-[#1E1B2E] transition-colors"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+
             <button
               type="button"
               onClick={toggleVoiceInput}
@@ -285,6 +300,18 @@ export function HeaderCommandBar({
             </button>
           </div>
         </form>
+
+        {onOpenNewTaskModal && (
+          <button
+            type="button"
+            onClick={() => onOpenNewTaskModal("")}
+            className="flex items-center gap-1.5 px-3 py-2 h-10 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-white text-xs font-semibold shadow-md shadow-[#7B61FF]/20 transition-all shrink-0 active:scale-95"
+            title="Adicionar demanda detalhada, tarefa ou atividade"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span className="hidden sm:inline">Nova Demanda</span>
+          </button>
+        )}
       </div>
 
       {/* Right Account Badges & Navigation */}

@@ -21,6 +21,7 @@ import {
   ListTodo,
   Activity,
   Bell,
+  Plus,
 } from "lucide-react";
 import { Task, TaskStatus, Priority, AccountType, ItemType } from "@/types";
 import { isTaskOverdue } from "@/lib/sla";
@@ -40,6 +41,7 @@ interface LeftTasksQuadrantProps {
   onRequestResolution: (task: Task) => void;
   onRequestExtendDeadline: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
+  onRequestNewTask?: () => void;
 }
 
 export function LeftTasksQuadrant({
@@ -50,6 +52,7 @@ export function LeftTasksQuadrant({
   onRequestResolution,
   onRequestExtendDeadline,
   onDeleteTask,
+  onRequestNewTask,
 }: LeftTasksQuadrantProps) {
   const [accountFilter, setAccountFilter] = useState<"all" | AccountType>("all");
   const [itemTypeFilter, setItemTypeFilter] = useState<"ALL" | ItemType>("ALL");
@@ -197,16 +200,28 @@ export function LeftTasksQuadrant({
           </button>
         </div>
 
-        {/* Search Bar */}
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#9490AC]" />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Buscar por título, categoria ou tag..."
-            className="w-full h-8 pl-8 pr-3 rounded-lg bg-[#090810] border border-[#242038] text-xs text-[#EAE9FC] placeholder-[#9490AC]/50 focus:outline-none focus:border-[#7B61FF]"
-          />
+        {/* Search Bar + Quick Add Button */}
+        <div className="flex items-center gap-1.5">
+          <div className="relative flex-1">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#9490AC]" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Buscar por título, categoria ou tag..."
+              className="w-full h-8 pl-8 pr-3 rounded-lg bg-[#090810] border border-[#242038] text-xs text-[#EAE9FC] placeholder-[#9490AC]/50 focus:outline-none focus:border-[#7B61FF]"
+            />
+          </div>
+          {onRequestNewTask && (
+            <button
+              type="button"
+              onClick={onRequestNewTask}
+              title="Nova Demanda Elaborada (Texto Completo)"
+              className="w-8 h-8 rounded-lg bg-[#7B61FF]/20 hover:bg-[#7B61FF]/30 text-[#9D8DF1] border border-[#7B61FF]/40 flex items-center justify-center shrink-0 transition-all active:scale-95"
+            >
+              <Plus className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         {/* Item Type Selector Filter */}

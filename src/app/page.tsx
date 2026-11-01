@@ -9,6 +9,7 @@ import { ResolutionModal } from "@/components/modals/ResolutionModal";
 import { ExtendDeadlineModal } from "@/components/modals/ExtendDeadlineModal";
 import { AnnualReportModal } from "@/components/modals/AnnualReportModal";
 import { AccountsModal } from "@/components/modals/AccountsModal";
+import { NewTaskModal } from "@/components/modals/NewTaskModal";
 import { Task, ConnectedAccount, TaskStatus, ItemType } from "@/types";
 
 export default function MontOpsDashboard() {
@@ -25,6 +26,8 @@ export default function MontOpsDashboard() {
 
   const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
+  const [newTaskInitialText, setNewTaskInitialText] = useState("");
 
   // Fetch initial data
   const loadTasks = useCallback(async () => {
@@ -180,6 +183,10 @@ export default function MontOpsDashboard() {
         onTaskCreated={handleTaskCreated}
         onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
         onOpenReportModal={() => setIsReportModalOpen(true)}
+        onOpenNewTaskModal={(prefill) => {
+          setNewTaskInitialText(prefill || "");
+          setIsNewTaskModalOpen(true);
+        }}
       />
 
       {/* 2. Fixed-Grid: 3 Colunas Abaixo do Header (Tela Cheia, Scroll Interno Independente) */}
@@ -199,6 +206,10 @@ export default function MontOpsDashboard() {
             setIsExtendModalOpen(true);
           }}
           onDeleteTask={handleDeleteTask}
+          onRequestNewTask={() => {
+            setNewTaskInitialText("");
+            setIsNewTaskModalOpen(true);
+          }}
         />
 
         {/* Quadrante Central: Detalhes, Seletor de Tipo, Agenda & Estudo */}
@@ -256,6 +267,16 @@ export default function MontOpsDashboard() {
         onClose={() => setIsAccountsModalOpen(false)}
         accounts={accounts}
         onRefreshAccounts={loadAccounts}
+      />
+
+      <NewTaskModal
+        isOpen={isNewTaskModalOpen}
+        onClose={() => setIsNewTaskModalOpen(false)}
+        onTaskCreated={(task) => {
+          handleTaskCreated(task);
+          setIsNewTaskModalOpen(false);
+        }}
+        initialText={newTaskInitialText}
       />
     </div>
   );
