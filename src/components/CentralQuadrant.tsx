@@ -27,8 +27,15 @@ import {
   MapPin,
   CheckSquare,
   Square,
+  Paperclip,
+  Download,
+  Eye,
+  Trash2,
+  Image as ImageIcon,
+  Loader2,
 } from "lucide-react";
-import { Task, TaskStatus, ItemType, AccountType } from "@/types";
+import { Task, TaskAttachment, TaskStatus, ItemType, AccountType } from "@/types";
+import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
 import {
   getTaskScheduleDate,
   isTaskScheduledForDay,
@@ -117,6 +124,11 @@ export function CentralQuadrant({
   const [calendarSourceFilter, setCalendarSourceFilter] = useState<"all" | "work" | "personal" | "agenda" | "samsung">("all");
   const [previewTask, setPreviewTask] = useState<Task | null>(null);
 
+  // Attachment states (lightbox preview and detail upload)
+  const [previewImageAttachment, setPreviewImageAttachment] = useState<TaskAttachment | null>(null);
+  const [isUploadingDetailFile, setIsUploadingDetailFile] = useState(false);
+  const detailFileInputRef = React.useRef<HTMLInputElement>(null);
+
   // Live timer for Google Calendar current-time red line
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
@@ -201,6 +213,45 @@ export function CentralQuadrant({
     const updatedTags = currentTags.filter((t) => t !== tagToRemove);
     if (onUpdateTaskFields) {
       await onUpdateTaskFields(selectedTask.id, { tags: updatedTags });
+    }
+  };
+
+  // Upload attachment directly from Details view
+  const handleUploadDetailAttachment = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0 || !selectedTask) return;
+
+    setIsUploadingDetailFile(true);
+    try {
+      const newAttachments: TaskAttachment[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const att = await processFileToAttachment(file, "creation");
+        newAttachments.push(att);
+      }
+      const updatedAttachments = [...(selectedTask.attachments || []), ...newAttachments];
+      if (onUpdateTaskFields) {
+        await onUpdateTaskFields(selectedTask.id, { attachments: updatedAttachments });
+      }
+    } catch (err) {
+      console.error("Erro ao anexar arquivo nos detalhes:", err);
+    } finally {
+      setIsUploadingDetailFile(false);
+      if (detailFileInputRef.current) {
+        detailFileInputRef.current.value = "";
+      }
+    }
+  };
+
+  // Remove attachment from task in Details view
+  const handleRemoveDetailAttachment = async (attachmentId: string, stage: "creation" | "resolution") => {
+    if (!selectedTask || !onUpdateTaskFields) return;
+    if (stage === "creation") {
+      const updated = (selectedTask.attachments || []).filter((a) => a.id !== attachmentId);
+      await onUpdateTaskFields(selectedTask.id, { attachments: updated });
+    } else {
+      const updated = (selectedTask.resolution_attachments || []).filter((a) => a.id !== attachmentId);
+      await onUpdateTaskFields(selectedTask.id, { resolution_attachments: updated });
     }
   };
 
@@ -1169,6 +1220,220 @@ export function CentralQuadrant({
                   </div>
                 </div>
 
+                {/* Attachments Card (Criação & Solução) */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-3 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                        <Paperclip className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-900 dark:text-white">
+                          Arquivos & Anexos da Demanda
+                        </h3>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Prints, documentos, comprovantes de abertura e evidências de solução.
+                        </p>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => detailFileInputRef.current?.click()}
+                      disabled={isUploadingDetailFile}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-colors"
+                    >
+                      {isUploadingDetailFile ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />
+                          <span>Anexando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Adicionar Arquivo</span>
+                        </>
+                      )}
+                    </button>
+                    <input
+                      ref={detailFileInputRef}
+                      type="file"
+                      multiple
+                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                      onChange={handleUploadDetailAttachment}
+                      className="hidden"
+                    />
+                  </div>
+
+                  {/* List of attachments */}
+                  {((selectedTask.attachments?.length || 0) + (selectedTask.resolution_attachments?.length || 0)) === 0 ? (
+                    <div
+                      onClick={() => detailFileInputRef.current?.click()}
+                      className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#0c0d13]/50 text-center cursor-pointer hover:bg-slate-100/60 dark:hover:bg-zinc-800/40 transition-colors"
+                    >
+                      <Paperclip className="w-4 h-4 mx-auto text-slate-400 mb-1" />
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        Nenhum arquivo anexado a esta demanda.
+                      </p>
+                      <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium">
+                        Clique aqui para enviar prints de erro, documentos ou comprovantes.
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                      {/* Creation attachments */}
+                      {selectedTask.attachments?.map((att) => {
+                        const isImg = att.type.startsWith("image/");
+                        return (
+                          <div
+                            key={att.id}
+                            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200/80 dark:border-zinc-800 group hover:border-slate-300 dark:hover:border-zinc-700 transition-colors"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {isImg ? (
+                                <div
+                                  onClick={() => setPreviewImageAttachment(att)}
+                                  className="w-10 h-10 rounded-lg overflow-hidden bg-slate-200 dark:bg-zinc-800 shrink-0 cursor-pointer border border-slate-200 dark:border-zinc-700 hover:opacity-85 transition-opacity"
+                                >
+                                  <img
+                                    src={att.url}
+                                    alt={att.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                                  <FileText className="w-5 h-5" />
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
+                                    Criação
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">
+                                    {formatFileSize(att.size)}
+                                  </span>
+                                </div>
+                                <p
+                                  title={att.name}
+                                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5"
+                                >
+                                  {att.name}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 ml-2">
+                              {isImg && (
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewImageAttachment(att)}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
+                                  title="Visualizar Imagem"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <a
+                                href={att.url}
+                                download={att.name}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
+                                title="Baixar Arquivo"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDetailAttachment(att.id, "creation")}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
+                                title="Remover Anexo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {/* Resolution attachments */}
+                      {selectedTask.resolution_attachments?.map((att) => {
+                        const isImg = att.type.startsWith("image/");
+                        return (
+                          <div
+                            key={att.id}
+                            className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900/40 group hover:border-emerald-300 dark:hover:border-emerald-800 transition-colors"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              {isImg ? (
+                                <div
+                                  onClick={() => setPreviewImageAttachment(att)}
+                                  className="w-10 h-10 rounded-lg overflow-hidden bg-emerald-100 dark:bg-emerald-950 shrink-0 cursor-pointer border border-emerald-300 dark:border-emerald-800 hover:opacity-85 transition-opacity"
+                                >
+                                  <img
+                                    src={att.url}
+                                    alt={att.name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                                  <FileText className="w-5 h-5" />
+                                </div>
+                              )}
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
+                                    Solução
+                                  </span>
+                                  <span className="text-[10px] text-slate-400">
+                                    {formatFileSize(att.size)}
+                                  </span>
+                                </div>
+                                <p
+                                  title={att.name}
+                                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5"
+                                >
+                                  {att.name}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-1 shrink-0 ml-2">
+                              {isImg && (
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewImageAttachment(att)}
+                                  className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
+                                  title="Visualizar Comprovante"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              <a
+                                href={att.url}
+                                download={att.name}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
+                                title="Baixar Comprovante"
+                              >
+                                <Download className="w-3.5 h-3.5" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveDetailAttachment(att.id, "resolution")}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
+                                title="Remover Anexo"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 {/* Deadlines & SLA Card */}
                 <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
                   <div className="flex items-center justify-between">
@@ -1236,8 +1501,52 @@ export function CentralQuadrant({
                   </div>
 
                   {selectedTask.resolution_notes ? (
-                    <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 text-xs text-slate-800 dark:text-slate-200 leading-relaxed">
-                      {selectedTask.resolution_notes}
+                    <div className="space-y-2">
+                      <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                        {selectedTask.resolution_notes}
+                      </div>
+
+                      {selectedTask.resolution_attachments && selectedTask.resolution_attachments.length > 0 && (
+                        <div className="pt-1">
+                          <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 block mb-1.5 flex items-center gap-1">
+                            <Paperclip className="w-3 h-3" />
+                            Comprovantes da Solução ({selectedTask.resolution_attachments.length}):
+                          </span>
+                          <div className="flex flex-wrap gap-2">
+                            {selectedTask.resolution_attachments.map((att) => {
+                              const isImg = att.type.startsWith("image/");
+                              return (
+                                <div
+                                  key={att.id}
+                                  className="flex items-center gap-2 p-1.5 pr-2.5 rounded-lg bg-emerald-100/60 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-xs"
+                                >
+                                  {isImg ? (
+                                    <img
+                                      src={att.url}
+                                      alt={att.name}
+                                      onClick={() => setPreviewImageAttachment(att)}
+                                      className="w-6 h-6 rounded object-cover cursor-pointer hover:opacity-80 shrink-0"
+                                    />
+                                  ) : (
+                                    <FileText className="w-4 h-4 text-emerald-700 dark:text-emerald-300 shrink-0" />
+                                  )}
+                                  <span className="text-[11px] font-medium text-emerald-900 dark:text-emerald-100 max-w-[140px] truncate">
+                                    {att.name}
+                                  </span>
+                                  <a
+                                    href={att.url}
+                                    download={att.name}
+                                    className="text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 transition-colors shrink-0"
+                                    title="Baixar comprovante"
+                                  >
+                                    <Download className="w-3 h-3" />
+                                  </a>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <p className="text-xs text-slate-400 dark:text-slate-500 italic">
@@ -1420,6 +1729,52 @@ export function CentralQuadrant({
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Attachment Lightbox Modal */}
+      {previewImageAttachment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[#141520] border border-zinc-800 shadow-2xl overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 bg-[#101118] shrink-0">
+              <div className="flex items-center gap-2 min-w-0 pr-4">
+                <ImageIcon className="w-4 h-4 text-indigo-400 shrink-0" />
+                <span className="text-xs font-semibold text-white truncate">
+                  {previewImageAttachment.name}
+                </span>
+                <span className="text-[10px] text-zinc-400 shrink-0">
+                  ({formatFileSize(previewImageAttachment.size)})
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href={previewImageAttachment.url}
+                  download={previewImageAttachment.name}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" /> Baixar
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setPreviewImageAttachment(null)}
+                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Image viewer body */}
+            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/40">
+              <img
+                src={previewImageAttachment.url}
+                alt={previewImageAttachment.name}
+                className="max-w-full max-h-[78vh] rounded-lg object-contain shadow-lg"
+              />
             </div>
           </div>
         </div>

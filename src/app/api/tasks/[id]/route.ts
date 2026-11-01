@@ -44,7 +44,8 @@ export async function PATCH(
         id,
         body.status,
         body.resolution_notes,
-        body.cancel_reason
+        body.cancel_reason,
+        body.resolution_attachments
       );
     } else if (action === "extend_deadline") {
       updatedTask = await extendTaskDeadline(

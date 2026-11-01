@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   X,
   ListTodo,
@@ -16,6 +16,9 @@ import {
   Clock,
   Layers,
   FileText,
+  Paperclip,
+  Trash2,
+  Image as ImageIcon,
 } from "lucide-react";
 import {
   ItemType,
@@ -23,10 +26,12 @@ import {
   Priority,
   TaskCategory,
   Task,
+  TaskAttachment,
   GeminiTriageResponse,
 } from "@/types";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { format } from "date-fns";
+import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
 
 interface NewTaskModalProps {
   isOpen: boolean;
@@ -67,6 +72,9 @@ export function NewTaskModal({
   const [priority, setPriority] = useState<Priority>("P3");
   const [dueDate, setDueDate] = useState<string>("");
   const [tagsInput, setTagsInput] = useState<string>("");
+  const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -95,8 +103,36 @@ export function NewTaskModal({
       setDescription("");
       setAiSuggestions(null);
       setTagsInput("");
+      setAttachments([]);
     }
   }, [isOpen, initialText, initialType]);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsProcessingFile(true);
+    try {
+      const newAttachments: TaskAttachment[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const att = await processFileToAttachment(file, "creation");
+        newAttachments.push(att);
+      }
+      setAttachments((prev) => [...prev, ...newAttachments]);
+    } catch (err) {
+      console.error("Erro ao processar anexo:", err);
+    } finally {
+      setIsProcessingFile(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleRemoveAttachment = (id: string) => {
+    setAttachments((prev) => prev.filter((a) => a.id !== id));
+  };
 
   if (!isOpen) return null;
 
@@ -189,6 +225,7 @@ export function NewTaskModal({
         priority,
         due_date: finalDueDateIso,
         tags: parsedTags,
+        attachments,
         learning_resources: {
           youtube_videos: [],
           search_queries: [],
@@ -477,6 +514,92 @@ export function NewTaskModal({
                 className="w-full h-8 pl-9 pr-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
               />
             </div>
+          </div>
+
+          {/* Anexos e Arquivos */}
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block flex items-center gap-1.5">
+                <Paperclip className="w-3.5 h-3.5 text-slate-500" />
+                4. Anexar Arquivos / Evidências (Opcional):
+              </label>
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isProcessingFile}
+                className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+              >
+                {isProcessingFile ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                    Processando...
+                  </>
+                ) : (
+                  <>+ Anexar Arquivo</>
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+            </div>
+
+            {attachments.length === 0 ? (
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="p-3 rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#0c0d13]/50 text-center cursor-pointer hover:bg-slate-100/60 dark:hover:bg-zinc-800/40 transition-colors"
+              >
+                <div className="flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                  <Paperclip className="w-3.5 h-3.5" />
+                  <span>Clique aqui para anexar print de erro, documento ou PDF</span>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-1.5">
+                {attachments.map((att) => {
+                  const isImg = att.type.startsWith("image/");
+                  return (
+                    <div
+                      key={att.id}
+                      className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800"
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        {isImg ? (
+                          <img
+                            src={att.url}
+                            alt={att.name}
+                            className="w-7 h-7 rounded-lg object-cover border border-slate-200 dark:border-zinc-700 shrink-0"
+                          />
+                        ) : (
+                          <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                            <FileText className="w-3.5 h-3.5" />
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                            {att.name}
+                          </p>
+                          <span className="text-[10px] text-slate-400">
+                            {formatFileSize(att.size)}
+                          </span>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAttachment(att.id)}
+                        className="p-1 rounded-lg text-slate-400 hover:text-rose-500 transition-colors shrink-0"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </form>
 

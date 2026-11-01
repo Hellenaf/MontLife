@@ -11,7 +11,7 @@ import { AnnualReportModal } from "@/components/modals/AnnualReportModal";
 import { AccountsModal } from "@/components/modals/AccountsModal";
 import { NewTaskModal } from "@/components/modals/NewTaskModal";
 import { ClassifyAccountModal } from "@/components/modals/ClassifyAccountModal";
-import { Task, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
+import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
 import { ExternalLink } from "lucide-react";
 
 export default function MontOpsDashboard() {
@@ -160,7 +160,8 @@ export default function MontOpsDashboard() {
     taskId: string,
     newStatus: TaskStatus,
     resolutionNotes?: string,
-    cancelReason?: string
+    cancelReason?: string,
+    resolutionAttachments?: TaskAttachment[]
   ) => {
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
@@ -171,6 +172,7 @@ export default function MontOpsDashboard() {
           status: newStatus,
           resolution_notes: resolutionNotes,
           cancel_reason: cancelReason,
+          resolution_attachments: resolutionAttachments,
         }),
       });
       const data = await res.json();
@@ -220,9 +222,18 @@ export default function MontOpsDashboard() {
     }
   };
 
-  const handleConfirmResolution = async (resolutionNotes: string) => {
+  const handleConfirmResolution = async (
+    resolutionNotes: string,
+    resolutionAttachments?: TaskAttachment[]
+  ) => {
     if (!taskForResolution) return;
-    await handleUpdateStatus(taskForResolution.id, "COMPLETED", resolutionNotes);
+    await handleUpdateStatus(
+      taskForResolution.id,
+      "COMPLETED",
+      resolutionNotes,
+      undefined,
+      resolutionAttachments
+    );
     setTaskForResolution(null);
   };
 

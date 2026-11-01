@@ -146,7 +146,8 @@ export async function updateTaskStatus(
   taskId: string,
   newStatus: TaskStatus,
   resolutionNotes?: string | null,
-  cancelReason?: string | null
+  cancelReason?: string | null,
+  resolutionAttachments?: import("@/types").TaskAttachment[]
 ): Promise<Task | null> {
   const tasks = await getTasksFromDb();
   const task = tasks.find((t) => t.id === taskId);
@@ -160,6 +161,12 @@ export async function updateTaskStatus(
   } else if (newStatus === "COMPLETED") {
     task.completed_at = nowIso;
     task.resolution_notes = resolutionNotes || task.resolution_notes || "Demanda concluída com sucesso.";
+    if (resolutionAttachments && resolutionAttachments.length > 0) {
+      task.resolution_attachments = [
+        ...(task.resolution_attachments || []),
+        ...resolutionAttachments,
+      ];
+    }
     task.met_original_sla = checkMetOriginalSla(task.original_due_date, task.completed_at);
   } else if (newStatus === "CANCELED") {
     task.cancel_reason = cancelReason || "Cancelada pelo usuário.";

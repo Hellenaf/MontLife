@@ -34,6 +34,16 @@ export interface LearningResources {
   search_queries: string[];
 }
 
+export interface TaskAttachment {
+  id: string;
+  name: string;
+  size: number;
+  type: string;
+  url: string; // Base64 data URL or external URL
+  created_at: string;
+  stage: "creation" | "resolution";
+}
+
 export interface Task {
   id: string;
   raw_input: string;
@@ -58,6 +68,8 @@ export interface Task {
   google_calendar_event_id: string | null;
   learning_resources: LearningResources;
   met_original_sla: boolean | null;
+  attachments?: TaskAttachment[];
+  resolution_attachments?: TaskAttachment[];
 }
 
 export interface ConnectedAccount {
