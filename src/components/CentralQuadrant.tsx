@@ -96,7 +96,14 @@ export function CentralQuadrant({
   onSelectTask,
   onOpenNewTaskModal,
 }: CentralQuadrantProps) {
-  const [activeTab, setActiveTab] = useState<"details" | "timeline" | "study">("timeline");
+  const [activeTab, setActiveTab] = useState<"details" | "timeline" | "study">("details");
+
+  // Automatically open Details tab whenever a task is selected or clicked
+  useEffect(() => {
+    if (selectedTask?.id) {
+      setActiveTab("details");
+    }
+  }, [selectedTask?.id]);
 
   // Category and Tag Editing States
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -261,18 +268,6 @@ export function CentralQuadrant({
       <div className="h-12 border-b border-slate-200 dark:border-zinc-800/80 px-6 flex items-center justify-between shrink-0 bg-white dark:bg-[#101118]">
         <div className="flex items-center gap-1.5">
           <button
-            onClick={() => setActiveTab("timeline")}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              activeTab === "timeline"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800"
-            }`}
-          >
-            <CalendarIcon className="w-3.5 h-3.5" />
-            Google Agenda & Tarefas
-          </button>
-
-          <button
             onClick={() => setActiveTab("details")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "details"
@@ -282,6 +277,18 @@ export function CentralQuadrant({
           >
             <FileText className="w-3.5 h-3.5" />
             Detalhes da Demanda
+          </button>
+
+          <button
+            onClick={() => setActiveTab("timeline")}
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              activeTab === "timeline"
+                ? "bg-blue-600 text-white shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800"
+            }`}
+          >
+            <CalendarIcon className="w-3.5 h-3.5" />
+            Google Agenda & Tarefas
           </button>
 
           <button
@@ -1327,7 +1334,14 @@ export function CentralQuadrant({
                   >
                     {getGoogleCalendarColor(previewTask).sourceName}
                   </span>
-                  <h3 className="text-base font-bold text-slate-900 dark:text-white leading-snug">
+                  <h3
+                    onClick={() => {
+                      onSelectTask?.(previewTask);
+                      setActiveTab("details");
+                      setPreviewTask(null);
+                    }}
+                    className="text-base font-bold text-slate-900 dark:text-white leading-snug cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                  >
                     {previewTask.title}
                   </h3>
                 </div>
@@ -1344,7 +1358,7 @@ export function CentralQuadrant({
               <div className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-300">
                 <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>
-                  {format(parseISO(previewTask.current_due_date), "EEEE, d 'de' MMMM 'às' HH:mm", {
+                  {format(parseISO(getTaskScheduleDate(previewTask)), "EEEE, d 'de' MMMM 'às' HH:mm", {
                     locale: ptBR,
                   })}
                 </span>

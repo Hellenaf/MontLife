@@ -72,3 +72,4 @@ export function isTaskAllDay(task: Task): boolean {
     return true;
   }
 }
+
