@@ -10,7 +10,8 @@ import { ExtendDeadlineModal } from "@/components/modals/ExtendDeadlineModal";
 import { AnnualReportModal } from "@/components/modals/AnnualReportModal";
 import { AccountsModal } from "@/components/modals/AccountsModal";
 import { NewTaskModal } from "@/components/modals/NewTaskModal";
-import { Task, ConnectedAccount, TaskStatus, ItemType } from "@/types";
+import { ClassifyAccountModal } from "@/components/modals/ClassifyAccountModal";
+import { Task, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
 import { ExternalLink } from "lucide-react";
 
 export default function MontOpsDashboard() {
@@ -32,6 +33,9 @@ export default function MontOpsDashboard() {
   const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
+  const [isClassifyModalOpen, setIsClassifyModalOpen] = useState(false);
+  const [classifyEmail, setClassifyEmail] = useState("");
+  const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [newTaskInitialText, setNewTaskInitialText] = useState("");
   const [oauthFeedback, setOauthFeedback] = useState<string | null>(null);
 
@@ -58,6 +62,8 @@ export default function MontOpsDashboard() {
       }
     } catch (err) {
       console.error("Failed to load accounts:", err);
+    } finally {
+      setAccountsLoaded(true);
     }
   }, []);
 
@@ -66,10 +72,21 @@ export default function MontOpsDashboard() {
     loadAccounts();
   }, [loadTasks, loadAccounts]);
 
-  // Listen to OAuth redirect query params
+  // Listen to OAuth redirect query params & prompt classification
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
+
+      // 1. Post-OAuth Classification Prompt
+      if (params.get("prompt_classify") === "true") {
+        const email = params.get("email") || "";
+        setClassifyEmail(email);
+        setIsClassifyModalOpen(true);
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+      }
+
+      // 2. Direct OAuth Success
       if (params.get("oauth_success")) {
         const type = params.get("oauth_success");
         setOauthFeedback(
@@ -89,6 +106,30 @@ export default function MontOpsDashboard() {
       }
     }
   }, [loadAccounts, loadTasks]);
+
+  // Redirect to /login if user is unauthenticated and not in guest/classify mode
+  useEffect(() => {
+    if (typeof window !== "undefined" && accountsLoaded) {
+      const params = new URLSearchParams(window.location.search);
+      const isGuest = params.get("guest") === "true";
+      const isPrompting = params.get("prompt_classify") === "true" || isClassifyModalOpen;
+      const isOAuth = params.get("oauth_success") || params.get("oauth_error");
+      const hasConnected = accounts.some((a) => a.is_connected);
+
+      if (!hasConnected && !isGuest && !isPrompting && !isOAuth) {
+        window.location.href = "/login";
+      }
+    }
+  }, [accountsLoaded, accounts, isClassifyModalOpen]);
+
+  const handleClassified = async (type: AccountType, importedCount: number) => {
+    setIsClassifyModalOpen(false);
+    setOauthFeedback(
+      `Conta ${type === "work" ? "de Trabalho" : "Pessoal"} configurada com sucesso! ${importedCount} tarefas reais do Google Tasks importadas.`
+    );
+    await loadAccounts();
+    await loadTasks();
+  };
 
   const handlePurgeSeedTasks = async () => {
     const seedTasks = tasks.filter((t) => t.id.startsWith("seed-task-"));
@@ -231,11 +272,11 @@ export default function MontOpsDashboard() {
             </div>
             <div className="flex items-center gap-2 shrink-0">
               <a
-                href="/api/google/auth?type=work"
+                href="/login"
                 className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-[11px] shadow-sm transition-all"
               >
                 <ExternalLink className="w-3 h-3" />
-                Vincular Google Tasks
+                Fazer Login com Google
               </a>
             </div>
           </div>
@@ -343,6 +384,13 @@ export default function MontOpsDashboard() {
           setIsNewTaskModalOpen(false);
         }}
         initialText={newTaskInitialText}
+      />
+
+      <ClassifyAccountModal
+        isOpen={isClassifyModalOpen}
+        email={classifyEmail}
+        onClassified={handleClassified}
+        onClose={() => setIsClassifyModalOpen(false)}
       />
     </div>
   );

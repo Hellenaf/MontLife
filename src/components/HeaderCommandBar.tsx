@@ -228,10 +228,10 @@ export function HeaderCommandBar({
         <div>
           <div className="flex items-center gap-2">
             <span className="font-black text-sm tracking-widest text-[#EAE9FC]">
-              MONT OPS
+              MONTLIFE
             </span>
             <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#7B61FF]/15 text-[#9D8DF1] border border-[#7B61FF]/30">
-              3.8 AI
+              Tasks
             </span>
           </div>
           <p className="text-[10px] text-[#9490AC] hidden sm:block">

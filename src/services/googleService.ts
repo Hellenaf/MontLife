@@ -10,7 +10,7 @@ export function getOAuth2Client() {
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
 
-export function getAuthUrl(accountType: AccountType) {
+export function getAuthUrl(accountType: string = "ask") {
   const oauth2Client = getOAuth2Client();
   const scopes = [
     "https://www.googleapis.com/auth/tasks",

@@ -12,6 +12,8 @@ import {
   AlertCircle,
   LogOut,
   Trash2,
+  Sparkles,
+  PlusCircle,
 } from "lucide-react";
 import { ConnectedAccount } from "@/types";
 import { format, parseISO } from "date-fns";
@@ -41,6 +43,9 @@ export function AccountsModal({
   const workAccount = accounts.find((a) => a.id === "work");
   const personalAccount = accounts.find((a) => a.id === "personal");
 
+  const hasAnyAccount = Boolean(workAccount?.is_connected || personalAccount?.is_connected);
+  const hasBothAccounts = Boolean(workAccount?.is_connected && personalAccount?.is_connected);
+
   const handleSyncNow = async () => {
     setIsSyncing(true);
     setSyncFeedback(null);
@@ -64,7 +69,8 @@ export function AccountsModal({
   };
 
   const handleDisconnect = async (type: "work" | "personal") => {
-    if (!confirm(`Deseja realmente desconectar a conta ${type === "work" ? "de Trabalho" : "Pessoal"}?`)) {
+    const label = type === "work" ? "de Trabalho" : "Pessoal";
+    if (!confirm(`Deseja realmente desconectar a conta ${label}?`)) {
       return;
     }
 
@@ -82,7 +88,7 @@ export function AccountsModal({
         }),
       });
       await onRefreshAccounts();
-      setSyncFeedback(`Conta ${type === "work" ? "de Trabalho" : "Pessoal"} desconectada.`);
+      setSyncFeedback(`Conta ${label} desconectada com sucesso.`);
     } catch (err) {
       console.error("Disconnect error:", err);
     }
@@ -114,10 +120,10 @@ export function AccountsModal({
             </div>
             <div>
               <h3 className="text-base font-bold text-[#EAE9FC]">
-                Vincular Contas Google & Google Tasks
+                Contas Google & Sincronização
               </h3>
               <p className="text-xs text-[#9490AC]">
-                Sincronize tarefas, atividades e calendários reais via Google OAuth 2.0
+                Gerencie suas contas vinculadas e sincronize tarefas reais do Google Tasks.
               </p>
             </div>
           </div>
@@ -129,9 +135,29 @@ export function AccountsModal({
           </button>
         </div>
 
+        {/* Info Banner: Optional Second Account */}
+        <div className="px-6 pt-4">
+          <div className="p-3 rounded-xl bg-[#090810] border border-[#242038] text-xs text-[#9490AC] flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-[#9D8DF1] shrink-0" />
+            <span>
+              {hasBothAccounts ? (
+                <strong className="text-emerald-400">Suas duas contas estão sincronizadas!</strong>
+              ) : hasAnyAccount ? (
+                <>
+                  Você já tem uma conta conectada. Vincular uma <strong>segunda conta é opcional</strong> e serve para separar chamados de trabalho e afazeres pessoais.
+                </>
+              ) : (
+                <>
+                  Conecte sua conta do Google para importar automaticamente suas tarefas do Google Tasks.
+                </>
+              )}
+            </span>
+          </div>
+        </div>
+
         {/* Content */}
         <div className="p-6 space-y-4">
-          {/* Work Account */}
+          {/* Work Account Card */}
           <div className="p-4 rounded-xl bg-[#090810] border border-[#242038] space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -139,13 +165,20 @@ export function AccountsModal({
                   <Briefcase className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-[#EAE9FC] uppercase tracking-wide">
-                    Conta de Trabalho (Google Workspace / Escola)
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-semibold text-[#EAE9FC] uppercase tracking-wide">
+                      Conta de Trabalho
+                    </h4>
+                    {!workAccount?.is_connected && personalAccount?.is_connected && (
+                      <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400">
+                        Opcional
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-[#9490AC]">
                     {workAccount?.is_connected && workAccount.email
                       ? workAccount.email
-                      : "Nenhuma conta vinculada"}
+                      : "Google Workspace / Escola (Nenhuma conta conectada)"}
                   </p>
                 </div>
               </div>
@@ -175,7 +208,7 @@ export function AccountsModal({
                   ? `Último sync: ${format(parseISO(workAccount.last_sync_at), "dd/MM HH:mm", {
                       locale: ptBR,
                     })}`
-                  : "Pronto para vincular"}
+                  : "Sincronização de tarefas desativada"}
               </span>
 
               {workAccount?.is_connected ? (
@@ -188,8 +221,8 @@ export function AccountsModal({
                   </a>
                   <button
                     onClick={() => handleDisconnect("work")}
-                    className="p-1 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
-                    title="Desconectar conta"
+                    className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    title="Desconectar conta de trabalho"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </button>
@@ -197,16 +230,16 @@ export function AccountsModal({
               ) : (
                 <a
                   href="/api/google/auth?type=work"
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 transition-all active:scale-95"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 transition-all active:scale-95"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Fazer Login com Google
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  Vincular Trabalho
                 </a>
               )}
             </div>
           </div>
 
-          {/* Personal Account */}
+          {/* Personal Account Card */}
           <div className="p-4 rounded-xl bg-[#090810] border border-[#242038] space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -214,13 +247,20 @@ export function AccountsModal({
                   <User className="w-4 h-4" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-[#EAE9FC] uppercase tracking-wide">
-                    Conta Pessoal (Google / Gmail)
-                  </h4>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-semibold text-[#EAE9FC] uppercase tracking-wide">
+                      Conta Pessoal
+                    </h4>
+                    {!personalAccount?.is_connected && workAccount?.is_connected && (
+                      <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400">
+                        Opcional
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs text-[#9490AC]">
                     {personalAccount?.is_connected && personalAccount.email
                       ? personalAccount.email
-                      : "Nenhuma conta vinculada"}
+                      : "Gmail Pessoal (Nenhuma conta conectada)"}
                   </p>
                 </div>
               </div>
@@ -250,7 +290,7 @@ export function AccountsModal({
                   ? `Último sync: ${format(parseISO(personalAccount.last_sync_at), "dd/MM HH:mm", {
                       locale: ptBR,
                     })}`
-                  : "Pronto para vincular"}
+                  : "Sincronização de tarefas desativada"}
               </span>
 
               {personalAccount?.is_connected ? (
@@ -263,8 +303,8 @@ export function AccountsModal({
                   </a>
                   <button
                     onClick={() => handleDisconnect("personal")}
-                    className="p-1 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
-                    title="Desconectar conta"
+                    className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    title="Desconectar conta pessoal"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </button>
@@ -272,10 +312,10 @@ export function AccountsModal({
               ) : (
                 <a
                   href="/api/google/auth?type=personal"
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-md shadow-purple-600/30 transition-all active:scale-95"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-md shadow-purple-600/30 transition-all active:scale-95"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  Fazer Login com Google
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  Vincular Pessoal
                 </a>
               )}
             </div>
@@ -304,7 +344,7 @@ export function AccountsModal({
 
             <button
               onClick={handleSyncNow}
-              disabled={isSyncing || (!workAccount?.is_connected && !personalAccount?.is_connected)}
+              disabled={isSyncing || !hasAnyAccount}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-white font-semibold text-xs shadow-lg shadow-[#7B61FF]/25 transition-all active:scale-95 disabled:opacity-40 ml-auto"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />

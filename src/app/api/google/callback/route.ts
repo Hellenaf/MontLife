@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOAuth2Client } from "@/services/googleService";
+import { savePendingAuth } from "@/lib/pendingAuth";
 import { saveConnectedAccount, getTasksFromDb, saveTaskToDb, deleteTaskFromDb } from "@/services/taskService";
 import { AccountType, Task } from "@/types";
 import { stripGoogleTaskPrefix } from "@/lib/sla";
@@ -8,7 +9,7 @@ import { google } from "googleapis";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
-  const state = (searchParams.get("state") as AccountType) || "work";
+  const state = searchParams.get("state") || "ask";
 
   if (!code) {
     return NextResponse.redirect(new URL("/?oauth_error=no_code", req.url));
@@ -22,11 +23,27 @@ export async function GET(req: NextRequest) {
     // Retrieve user email
     const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
     const userInfo = await oauth2.userinfo.get();
-    const email = userInfo.data.email || `${state}@google.com`;
+    const email = userInfo.data.email || `${state}@gmail.com`;
 
-    // Save tokens in database
+    // 1. If state is "ask", store pending and redirect to classify modal
+    if (state === "ask") {
+      await savePendingAuth({
+        email,
+        access_token: tokens.access_token || null,
+        refresh_token: tokens.refresh_token || null,
+        expiry_date: tokens.expiry_date || null,
+        updated_at: new Date().toISOString(),
+      });
+
+      return NextResponse.redirect(
+        new URL(`/?prompt_classify=true&email=${encodeURIComponent(email)}`, req.url)
+      );
+    }
+
+    // 2. Otherwise (explicitly "work" or "personal" from second account link)
+    const accountType: AccountType = state === "personal" ? "personal" : "work";
     await saveConnectedAccount({
-      id: state,
+      id: accountType,
       email,
       access_token: tokens.access_token || undefined,
       refresh_token: tokens.refresh_token || undefined,
@@ -36,7 +53,7 @@ export async function GET(req: NextRequest) {
       is_connected: true,
     });
 
-    // Auto-sync real Google Tasks immediately
+    // Auto-sync real Google Tasks
     try {
       const tasksApi = google.tasks({ version: "v1", auth: oauth2Client });
       const res = await tasksApi.tasks.list({
@@ -48,7 +65,7 @@ export async function GET(req: NextRequest) {
       const items = res.data.items || [];
       const currentTasks = await getTasksFromDb();
 
-      // Clean up seed tasks now that user has linked their real account
+      // Clean up seed tasks
       for (const t of currentTasks) {
         if (t.id.startsWith("seed-task-")) {
           await deleteTaskFromDb(t.id);
@@ -63,9 +80,9 @@ export async function GET(req: NextRequest) {
           raw_input: cleanTitle,
           title: cleanTitle,
           description: item.notes || "",
-          account_type: state,
+          account_type: accountType,
           item_type: "task",
-          category: state === "work" ? "Suporte TI" : "Finanças & Pessoal",
+          category: accountType === "work" ? "Suporte TI" : "Finanças & Pessoal",
           tags: ["google-tasks"],
           priority: "P3",
           status: item.status === "completed" ? "COMPLETED" : "TODO",
@@ -92,10 +109,9 @@ export async function GET(req: NextRequest) {
       console.warn("Initial sync after OAuth callback failed:", syncErr);
     }
 
-    return NextResponse.redirect(new URL(`/?oauth_success=${state}`, req.url));
+    return NextResponse.redirect(new URL(`/?oauth_success=${accountType}`, req.url));
   } catch (err) {
     console.error("OAuth callback error:", err);
     return NextResponse.redirect(new URL("/?oauth_error=token_exchange_failed", req.url));
   }
 }
-
