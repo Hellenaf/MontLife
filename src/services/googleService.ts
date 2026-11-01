@@ -60,18 +60,18 @@ export async function fetchYouTubeResources(queries: string[]): Promise<Learning
         }
       }
     } catch (err) {
-      console.warn("YouTube API call failed or quota exceeded. Using curated fallback:", err);
+      console.warn("YouTube API call failed or quota exceeded:", err);
     }
   }
 
-  // Fallback if no API key or no results returned
+  // Curated fallbacks if needed
   if (videos.length === 0) {
     for (const q of queries.slice(0, 2)) {
       videos.push({
-        title: `Guia & Melhores Práticas: ${q}`,
+        title: `Guia & Documentação: ${q}`,
         url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`,
         thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=80",
-        channel: "Mont Ops Wiki Curada",
+        channel: "MontLife — Base de Conhecimento",
       });
     }
   }
@@ -83,15 +83,14 @@ export async function fetchYouTubeResources(queries: string[]): Promise<Learning
 }
 
 /**
- * Syncs a Mont Ops task to Google Tasks
+ * Syncs a MontLife task to Google Tasks
  */
 export async function syncTaskToGoogle(
   task: Task,
   tokens?: { access_token?: string; refresh_token?: string }
 ): Promise<string | null> {
   if (!tokens?.refresh_token && !tokens?.access_token) {
-    // Return simulated Google Task ID for UI testing
-    return task.google_task_id || `gt-sim-${Date.now()}`;
+    return task.google_task_id || null;
   }
 
   try {
@@ -100,7 +99,7 @@ export async function syncTaskToGoogle(
     const tasksApi = google.tasks({ version: "v1", auth: oauth2Client });
 
     const titleWithPrefix = formatGoogleTaskTitle(task.title, task.status);
-    const notes = `${task.description}\n\n[Mont Ops | ${task.category} | Prioridade: ${task.priority}]`;
+    const notes = `${task.description}\n\n[MontLife | ${task.category} | Prioridade: ${task.priority}]`;
 
     if (task.status === "CANCELED") {
       if (task.google_task_id) {
@@ -141,4 +140,3 @@ export async function syncTaskToGoogle(
     return task.google_task_id;
   }
 }
-

@@ -3,12 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --background: #0F0E17;
-  --foreground: #EAE9FC;
-  --primary: #9D8DF1;
-  --secondary: #7B61FF;
-  --border: #2E2B44;
-  --surface: #1A1829;
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  --surface: #ffffff;
+  --surface-hover: #f1f5f9;
+  --border: #e2e8f0;
+  --muted: #64748b;
+  --primary: #4f46e5;
+}
+
+.dark {
+  --background: #0b0c10;
+  --foreground: #f1f5f9;
+  --surface: #12131a;
+  --surface-hover: #191b26;
+  --border: #1e202e;
+  --muted: #94a3b8;
+  --primary: #6366f1;
 }
 
 body {
@@ -21,51 +32,27 @@ body {
   user-select: none;
 }
 
-/* Custom Scrollbar for inner quadrant scrolling */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(15, 14, 23, 0.4);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2E2B44;
+  background: rgba(148, 163, 184, 0.25);
   border-radius: 9999px;
 }
 
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.15);
+}
+
 ::-webkit-scrollbar-thumb:hover {
-  background: #9D8DF1;
-}
-
-/* Glow effects */
-.glow-lavender {
-  box-shadow: 0 0 25px -5px rgba(157, 141, 241, 0.25);
-}
-
-.glow-violet {
-  box-shadow: 0 0 25px -5px rgba(123, 97, 255, 0.3);
-}
-
-/* Glassmorphism surfaces */
-.glass-panel {
-  background: rgba(26, 24, 41, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid #2E2B44;
-}
-
-.glass-input {
-  background: rgba(15, 14, 23, 0.7);
-  backdrop-filter: blur(12px);
-  border: 1px solid #2E2B44;
-}
-
-.glass-input:focus {
-  border-color: #9D8DF1;
-  box-shadow: 0 0 15px rgba(157, 141, 241, 0.3);
+  background: rgba(99, 102, 241, 0.5);
 }
 
 /* Print Styles for Executive & Activity Report */
@@ -108,4 +95,3 @@ body {
     color: #4b5563 !important;
   }
 }
-

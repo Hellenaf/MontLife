@@ -25,7 +25,6 @@ export function ExtendDeadlineModal({
 
   if (!isOpen || !task) return null;
 
-  // Format existing date for display
   let currentDueFormatted = task.current_due_date;
   try {
     currentDueFormatted = format(
@@ -67,56 +66,56 @@ export function ExtendDeadlineModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg rounded-2xl bg-[#1A1829] border border-[#2E2B44] shadow-2xl overflow-hidden glow-lavender">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[#2E2B44] bg-[#141221]">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#101118]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <Clock className="w-6 h-6" />
+            <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+              <Clock className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-[#EAE9FC]">
-                Estender Prazo de SLA
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Adiar / Estender Prazo
               </h3>
-              <p className="text-xs text-[#9490AC]">
-                O prazo original é preservado para a métrica de assertividade anual
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                O prazo original é preservado para auditoria e histórico de SLA.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg text-[#9490AC] hover:text-white hover:bg-[#2E2B44] transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="p-3.5 rounded-xl bg-[#0F0E17] border border-[#2E2B44] space-y-2">
-            <h4 className="text-sm font-medium text-[#EAE9FC] line-clamp-1">
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-2">
+            <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-100 line-clamp-1">
               {task.title}
             </h4>
-            <div className="flex items-center justify-between text-xs text-[#9490AC] pt-1 border-t border-[#2E2B44]/60">
-              <span>Prazo Original (SLA {task.priority}):</span>
-              <span className="font-semibold text-[#EAE9FC]">{originalDueFormatted}</span>
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200 dark:border-zinc-800">
+              <span>Prazo Original:</span>
+              <span className="font-semibold text-slate-800 dark:text-slate-200">{originalDueFormatted}</span>
             </div>
-            <div className="flex items-center justify-between text-xs text-[#9490AC]">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>Prazo Atual:</span>
-              <span className="font-semibold text-amber-300">{currentDueFormatted}</span>
+              <span className="font-semibold text-amber-600 dark:text-amber-400">{currentDueFormatted}</span>
             </div>
-            <div className="flex items-center justify-between text-xs text-[#9490AC]">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>Extensões anteriores:</span>
-              <span className="px-2 py-0.5 rounded-full bg-[#2E2B44] text-[#EAE9FC] text-[11px]">
+              <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium">
                 {task.extension_count || 0} vez(es)
               </span>
             </div>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#EAE9FC] flex items-center gap-1.5">
-              <Calendar className="w-4 h-4 text-[#9D8DF1]" />
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-indigo-500" />
               Novo Prazo de Conclusão:
             </label>
             <input
@@ -124,12 +123,12 @@ export function ExtendDeadlineModal({
               required
               value={newDueDate}
               onChange={(e) => setNewDueDate(e.target.value)}
-              className="w-full px-4 py-2.5 text-sm rounded-xl bg-[#0F0E17] border border-[#2E2B44] text-[#EAE9FC] focus:outline-none focus:border-[#9D8DF1] focus:ring-1 focus:ring-[#9D8DF1] transition-all"
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[#EAE9FC]">
+            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
               Motivo do Adiamento:
             </label>
             <textarea
@@ -137,30 +136,30 @@ export function ExtendDeadlineModal({
               required
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Ex: Aguardando liberação do fornecedor da TOTVS / Dependência de validação da coordenação..."
-              className="w-full px-4 py-2.5 text-sm rounded-xl bg-[#0F0E17] border border-[#2E2B44] text-[#EAE9FC] placeholder-[#9490AC]/60 focus:outline-none focus:border-[#9D8DF1] focus:ring-1 focus:ring-[#9D8DF1] transition-all resize-none"
+              placeholder="Ex: Aguardando retorno do fornecedor ou validação da diretoria..."
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none font-sans"
             />
           </div>
 
-          <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2.5 text-xs text-amber-200">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+          <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
+            <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
             <span>
-              A nova data será refletida imediatamente no Google Tasks e Google Calendar, preservando o histórico de extensões no Cloud Firestore.
+              A nova data será sincronizada com o Google Tasks, preservando o histórico de adiamentos.
             </span>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#2E2B44]">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-[#9490AC] hover:text-[#EAE9FC] transition-colors"
+              className="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isSubmitting || !newDueDate}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:brightness-110 text-white font-medium text-xs shadow-lg shadow-amber-600/30 transition-all active:scale-95 disabled:opacity-50"
+              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50"
             >
               <Clock className="w-4 h-4" />
               {isSubmitting ? "Atualizando..." : "Confirmar Nova Data"}
@@ -171,4 +170,3 @@ export function ExtendDeadlineModal({
     </div>
   );
 }
-

@@ -1,7 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GeminiTriageResponse, TaskCategory, Priority, AccountType, ItemType } from "@/types";
 
-const SYSTEM_PROMPT = `Você é o agente operacional do sistema Mont Ops. Sua função é receber uma anotação rápida da usuária e transformá-la em um registro claro, profissional e estruturado.
+const SYSTEM_PROMPT = `Você é o agente operacional do sistema MontLife. Sua função é receber uma anotação rápida da usuária e transformá-la em um registro claro, profissional e estruturado.
 1. Classifique se o registro pertence ao contexto 'work' (TI escolar, TOTVS RM, Google Workspace, suporte a professores/alunos/pais, scripts, infraestrutura) ou 'personal' (vida pessoal, catequese, estudos de idiomas, música, finanças, casa).
 2. Classifique o tipo de registro ('item_type'):
    - 'task': Tarefa operacional ou técnica que exige execução, entrega ou resolução técnica com passos claros.
@@ -232,7 +232,7 @@ function fallbackTriage(rawInput: string): GeminiTriageResponse {
 
   return {
     refined_title: title,
-    structured_description: `Contexto operacional estruturado: ${rawInput}\n\nRecomendações e checklist:\n- [ ] Diagnosticar impacto imediato\n- [ ] Executar validação de integridade\n- [ ] Registrar resolução na Wiki técnica Mont Ops`,
+    structured_description: `Contexto operacional estruturado: ${rawInput}\n\nRecomendações e checklist:\n- [ ] Diagnosticar impacto imediato\n- [ ] Executar validação de integridade\n- [ ] Registrar resolução na base do MontLife`,
     account_type: accountType,
     item_type: itemType,
     category,
@@ -321,7 +321,7 @@ ${
     : "* Todas as demandas do período foram finalizadas satisfatoriamente sem pendências críticas."
 }
 
-*Relatório gerado via Mont Ops para comprovação e prestação de contas executiva.*`;
+*Relatório gerado via MontLife para comprovação e prestação de contas executiva.*`;
 
   const key = apiKey || process.env.GEMINI_API_KEY;
   if (!key || key === "sua_chave_da_gemini_api") {

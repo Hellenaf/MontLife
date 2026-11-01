@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Briefcase, User, Sparkles, Loader2, CheckCircle2, ShieldCheck } from "lucide-react";
+import { Briefcase, User, Sparkles, Loader2, CheckCircle2 } from "lucide-react";
 import { AccountType } from "@/types";
 
 interface ClassifyAccountModalProps {
@@ -48,82 +48,79 @@ export function ClassifyAccountModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-lg rounded-3xl bg-[#131122] border border-[#2E2B44] shadow-2xl p-6 sm:p-8 space-y-6 text-center glow-lavender">
-        {/* Glow behind modal */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-32 bg-[#7B61FF]/15 rounded-full blur-2xl pointer-events-none" />
-
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl p-6 sm:p-8 space-y-6 text-center transition-all">
         {/* Header */}
-        <div className="flex flex-col items-center space-y-3 relative">
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#7B61FF] to-[#9D8DF1] flex items-center justify-center font-black text-2xl text-white shadow-xl shadow-[#7B61FF]/30">
+        <div className="flex flex-col items-center space-y-3">
+          <div className="w-12 h-12 rounded-2xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center font-black text-xl text-white shadow-sm">
             M
           </div>
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-2">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Login Google Realizado</span>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-xs font-semibold mb-2">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Login Google Concluído</span>
             </div>
-            <h2 className="text-xl sm:text-2xl font-black text-[#EAE9FC]">
-              Bem-vinda ao MontLife!
+            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+              Bem-vinda ao MontLife
             </h2>
-            <p className="text-xs text-[#9490AC] mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Conectada como:{" "}
-              <strong className="text-[#EAE9FC] font-semibold">{email || "sua conta Google"}</strong>
+              <strong className="text-slate-800 dark:text-slate-200 font-semibold">{email || "sua conta Google"}</strong>
             </p>
           </div>
         </div>
 
         {/* Question prompt */}
-        <div className="space-y-1 relative">
-          <h3 className="text-sm font-bold text-[#EAE9FC]">
+        <div className="space-y-1">
+          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
             Como você deseja classificar esta conta?
           </h3>
-          <p className="text-xs text-[#9490AC]">
-            Essa será a sua conta principal de sincronização de tarefas.
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Essa será a sua conta principal para sincronizar suas demandas do Google Tasks.
           </p>
         </div>
 
         {/* Error Feedback */}
         {errorMsg && (
-          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs text-left">
+          <div className="p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 text-rose-700 dark:text-rose-300 text-xs text-left">
             {errorMsg}
           </div>
         )}
 
         {/* Option Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-left relative">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left">
           {/* Card 1: Trabalho */}
           <button
             type="button"
             onClick={() => handleSelectType("work")}
             disabled={loadingType !== null}
-            className={`p-4 rounded-2xl border transition-all text-left flex flex-col justify-between group relative overflow-hidden ${
+            className={`p-4 rounded-2xl border transition-all text-left flex flex-col justify-between group relative ${
               loadingType === "work"
-                ? "bg-indigo-950/60 border-indigo-500 ring-2 ring-indigo-500/40"
-                : "bg-[#090810] hover:bg-[#18152B] border-[#242038] hover:border-indigo-500/60"
+                ? "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-600 ring-2 ring-indigo-500/20"
+                : "bg-slate-50/60 dark:bg-[#0c0d13] hover:bg-slate-100 dark:hover:bg-[#181926] border-slate-200 dark:border-zinc-800 hover:border-indigo-400"
             }`}
           >
             <div className="space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-105 transition-transform">
-                <Briefcase className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                <Briefcase className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-[#EAE9FC] group-hover:text-white flex items-center gap-1.5">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                   Conta de Trabalho
                 </h4>
-                <span className="text-[10px] font-medium text-indigo-400">
+                <span className="text-[10px] font-medium text-blue-600 dark:text-blue-400">
                   Google Workspace / Escola
                 </span>
               </div>
-              <p className="text-[11px] text-[#9490AC] leading-relaxed">
-                Chamados de TI, TOTVS RM, laboratórios de informática, suporte e rotinas operacionais.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Chamados de TI, TOTVS RM, laboratórios, suporte ao usuário e rotinas operacionais.
               </p>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[#242038] flex items-center justify-between text-[11px] font-semibold text-indigo-300">
+            <div className="mt-4 pt-3 border-t border-slate-200 dark:border-zinc-800 flex items-center justify-between text-[11px] font-semibold text-blue-600 dark:text-blue-400">
               <span>{loadingType === "work" ? "Configurando..." : "Escolher Trabalho"}</span>
               {loadingType === "work" ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-400" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-600" />
               ) : (
                 <span className="text-xs group-hover:translate-x-0.5 transition-transform">→</span>
               )}
@@ -135,33 +132,33 @@ export function ClassifyAccountModal({
             type="button"
             onClick={() => handleSelectType("personal")}
             disabled={loadingType !== null}
-            className={`p-4 rounded-2xl border transition-all text-left flex flex-col justify-between group relative overflow-hidden ${
+            className={`p-4 rounded-2xl border transition-all text-left flex flex-col justify-between group relative ${
               loadingType === "personal"
-                ? "bg-purple-950/60 border-purple-500 ring-2 ring-purple-500/40"
-                : "bg-[#090810] hover:bg-[#18152B] border-[#242038] hover:border-purple-500/60"
+                ? "bg-purple-50 dark:bg-purple-950/40 border-purple-600 ring-2 ring-purple-500/20"
+                : "bg-slate-50/60 dark:bg-[#0c0d13] hover:bg-slate-100 dark:hover:bg-[#181926] border-slate-200 dark:border-zinc-800 hover:border-purple-400"
             }`}
           >
             <div className="space-y-2">
-              <div className="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform">
-                <User className="w-5 h-5" />
+              <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/50 border border-purple-200 dark:border-purple-800 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                <User className="w-4 h-4" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-[#EAE9FC] group-hover:text-white flex items-center gap-1.5">
+                <h4 className="text-sm font-bold text-slate-900 dark:text-white">
                   Conta Pessoal
                 </h4>
-                <span className="text-[10px] font-medium text-purple-400">
+                <span className="text-[10px] font-medium text-purple-600 dark:text-purple-400">
                   Gmail Pessoal
                 </span>
               </div>
-              <p className="text-[11px] text-[#9490AC] leading-relaxed">
-                Finanças, contas a pagar, catequese, rotina de casa, idiomas e metas particulares.
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+                Finanças, contas a pagar, catequese, rotina de casa, estudos e metas particulares.
               </p>
             </div>
 
-            <div className="mt-4 pt-3 border-t border-[#242038] flex items-center justify-between text-[11px] font-semibold text-purple-300">
+            <div className="mt-4 pt-3 border-t border-slate-200 dark:border-zinc-800 flex items-center justify-between text-[11px] font-semibold text-purple-600 dark:text-purple-400">
               <span>{loadingType === "personal" ? "Configurando..." : "Escolher Pessoal"}</span>
               {loadingType === "personal" ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-400" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-purple-600" />
               ) : (
                 <span className="text-xs group-hover:translate-x-0.5 transition-transform">→</span>
               )}
@@ -170,14 +167,13 @@ export function ClassifyAccountModal({
         </div>
 
         {/* Footer info about optional second account */}
-        <div className="p-3 rounded-2xl bg-[#090810] border border-[#242038] text-xs text-[#9490AC] flex items-center gap-2 text-left">
-          <Sparkles className="w-4 h-4 text-[#9D8DF1] shrink-0" />
+        <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2 text-left">
+          <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
           <span>
-            <strong>Segunda conta opcional:</strong> Você poderá vincular a outra conta a qualquer momento de dentro do painel se desejar separar trabalho e rotina pessoal.
+            <strong>Segunda conta opcional:</strong> Você poderá vincular a outra conta a qualquer momento de dentro do painel para separar o trabalho da vida pessoal.
           </span>
         </div>
       </div>
     </div>
   );
 }
-

@@ -11,11 +11,8 @@ import {
   Briefcase,
   User,
   AlertCircle,
-  MoreVertical,
-  XCircle,
   Tag,
   Check,
-  RotateCcw,
   Calendar,
   Trash2,
   ListTodo,
@@ -87,43 +84,46 @@ export function LeftTasksQuadrant({
     return true;
   });
 
-  // Google Tasks Style: Split into Active tasks and Completed tasks
+  // Split into Active tasks and Completed tasks
   const activeTasks = filteredTasks.filter((t) => t.status !== "COMPLETED");
   const completedTasks = filteredTasks.filter((t) => t.status === "COMPLETED");
 
   const getPriorityStyle = (p: Priority) => {
     switch (p) {
       case "P1":
-        return "bg-rose-500/10 text-rose-400 border-rose-500/30";
+        return "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-500/10 dark:text-rose-400 dark:border-rose-500/30";
       case "P2":
-        return "bg-amber-500/10 text-amber-400 border-amber-500/30";
+        return "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/30";
       case "P3":
-        return "bg-yellow-500/10 text-yellow-400 border-yellow-500/30";
+        return "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/30";
       case "P4":
       default:
-        return "bg-purple-500/10 text-purple-400 border-purple-500/30";
+        return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700";
     }
   };
 
-  const getItemTypeBadge = (itemType?: ItemType) => {
-    switch (itemType) {
-      case "reminder":
-        return (
-          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/25">
-            <Bell className="w-2.5 h-2.5" /> Lembrete
-          </span>
-        );
+  const getItemTypeBadge = (type?: ItemType) => {
+    switch (type) {
       case "activity":
         return (
-          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/25">
-            <Activity className="w-2.5 h-2.5" /> Atividade
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20 flex items-center gap-1">
+            <Activity className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
+            Atividade
+          </span>
+        );
+      case "reminder":
+        return (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:border-amber-500/20 flex items-center gap-1">
+            <Bell className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
+            Lembrete
           </span>
         );
       case "task":
       default:
         return (
-          <span className="flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/25">
-            <ListTodo className="w-2.5 h-2.5" /> Tarefa
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20 flex items-center gap-1">
+            <ListTodo className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+            Tarefa
           </span>
         );
     }
@@ -133,35 +133,33 @@ export function LeftTasksQuadrant({
     switch (status) {
       case "IN_PROGRESS":
         return (
-          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
+          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/30">
             Executando
           </span>
         );
       case "WAITING":
         return (
-          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-            Em Espera
+          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30">
+            Aguardando
           </span>
         );
       case "COMPLETED":
         return (
-          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30 flex items-center gap-1">
             <Check className="w-2.5 h-2.5" />
             Concluída
           </span>
         );
       case "CANCELED":
         return (
-          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
             Cancelada
           </span>
         );
       case "TODO":
       default:
         return (
-          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-medium bg-[#242038] text-[#9490AC] border border-[#2E2B44]">
+          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
             Pendente
           </span>
         );
@@ -186,12 +184,12 @@ export function LeftTasksQuadrant({
       <div
         key={task.id}
         onClick={() => onSelectTask(task)}
-        className={`group relative p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer ${
+        className={`group relative p-3 rounded-2xl border transition-all cursor-pointer ${
           isSelected
-            ? "bg-[#181628] border-[#7B61FF] shadow-lg shadow-[#7B61FF]/10 glow-lavender"
+            ? "bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-500 dark:border-indigo-500/70 shadow-sm ring-1 ring-indigo-500/20"
             : isCompleted
-            ? "bg-[#0C0B14] border-[#1E1C2E] hover:border-[#2E2B44] opacity-75 hover:opacity-100"
-            : "bg-[#12101F] border-[#242038] hover:border-[#383353] hover:bg-[#151326]"
+            ? "bg-slate-50/70 dark:bg-[#111218] border-slate-200/80 dark:border-zinc-800/80 opacity-70 hover:opacity-100"
+            : "bg-white dark:bg-[#141520] border-slate-200 dark:border-zinc-800/90 hover:border-slate-300 dark:hover:border-zinc-700 shadow-sm"
         }`}
       >
         <div className="flex items-start gap-2.5">
@@ -209,33 +207,33 @@ export function LeftTasksQuadrant({
             title={isCompleted ? "Reabrir tarefa" : "Concluir tarefa"}
             className={`mt-0.5 w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all ${
               isCompleted
-                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-500/30"
-                : "border-2 border-[#3E3A5A] hover:border-emerald-400 hover:bg-emerald-500/10 text-transparent hover:text-emerald-400"
+                ? "bg-emerald-500 text-white shadow-sm"
+                : "border-2 border-slate-300 dark:border-zinc-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-transparent hover:text-emerald-500"
             }`}
           >
-            <Check className="w-3 h-3 transition-transform" />
+            <Check className="w-3 h-3" />
           </button>
 
           {/* Main Task Content */}
           <div className="flex-1 min-w-0">
             {/* Top Badges */}
-            <div className="flex items-center justify-between gap-1.5 mb-1">
+            <div className="flex items-center justify-between gap-1.5 mb-1.5">
               <div className="flex items-center gap-1 flex-wrap">
                 {getItemTypeBadge(task.item_type)}
 
                 {task.account_type === "work" ? (
-                  <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-500/10 text-indigo-300">
-                    <Briefcase className="w-2.5 h-2.5" /> Trab.
+                  <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                    <Briefcase className="w-2.5 h-2.5" /> Trabalho
                   </span>
                 ) : (
-                  <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-300">
-                    <User className="w-2.5 h-2.5" /> Pess.
+                  <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300">
+                    <User className="w-2.5 h-2.5" /> Pessoal
                   </span>
                 )}
               </div>
 
               <span
-                className={`px-1.5 py-0.2 rounded text-[10px] font-bold border ${getPriorityStyle(
+                className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${getPriorityStyle(
                   task.priority
                 )}`}
               >
@@ -245,27 +243,29 @@ export function LeftTasksQuadrant({
 
             {/* Title */}
             <h4
-              className={`text-xs font-medium leading-snug line-clamp-2 ${
+              className={`text-xs font-semibold leading-snug line-clamp-2 ${
                 isCompleted
-                  ? "line-through text-[#9490AC]"
+                  ? "line-through text-slate-400 dark:text-slate-500"
                   : task.status === "CANCELED"
-                  ? "line-through text-rose-400/70"
-                  : "text-[#EAE9FC]"
+                  ? "line-through text-rose-500 dark:text-rose-400"
+                  : "text-slate-800 dark:text-slate-100"
               }`}
             >
               {task.title}
             </h4>
 
             {/* Bottom Meta & Due Date */}
-            <div className="flex items-center justify-between gap-2 mt-2 pt-1 border-t border-[#242038]/50">
-              <div className="flex items-center gap-1.5 text-[10px] text-[#9490AC]">
-                <span className="truncate max-w-[90px]">{task.category}</span>
+            <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-slate-100 dark:border-zinc-800/80">
+              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
+                <span className="truncate max-w-[95px]">{task.category}</span>
                 {getStatusBadge(task.status)}
               </div>
 
               <div
                 className={`flex items-center gap-1 text-[10px] font-medium ${
-                  overdue ? "text-rose-400 font-bold" : "text-[#9490AC]"
+                  overdue
+                    ? "text-rose-600 dark:text-rose-400 font-bold"
+                    : "text-slate-500 dark:text-slate-400"
                 }`}
               >
                 <Clock className="w-3 h-3 shrink-0" />
@@ -277,14 +277,14 @@ export function LeftTasksQuadrant({
 
         {/* Action Toolbar */}
         <div
-          className="flex items-center justify-end gap-1 mt-2 pt-1.5 border-t border-[#242038]/40"
+          className="flex items-center justify-end gap-1 mt-2 pt-1.5 border-t border-slate-100 dark:border-zinc-800/80"
           onClick={(e) => e.stopPropagation()}
         >
           {task.status !== "IN_PROGRESS" && task.status !== "COMPLETED" && (
             <button
               onClick={() => onUpdateStatus(task.id, "IN_PROGRESS")}
               title="Iniciar Execução"
-              className="px-2 py-0.5 rounded-md bg-[#090810] text-[#9D8DF1] hover:bg-[#7B61FF] hover:text-white transition-colors border border-[#242038] text-[10px] flex items-center gap-1"
+              className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white transition-colors border border-slate-200 dark:border-zinc-700 text-[10px] flex items-center gap-1"
             >
               <Play className="w-3 h-3" /> Iniciar
             </button>
@@ -294,7 +294,7 @@ export function LeftTasksQuadrant({
             <button
               onClick={() => onUpdateStatus(task.id, "WAITING")}
               title="Pausar / Aguardando"
-              className="px-2 py-0.5 rounded-md bg-[#090810] text-amber-400 hover:bg-amber-600 hover:text-white transition-colors border border-[#242038] text-[10px] flex items-center gap-1"
+              className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-amber-600 dark:text-amber-400 hover:bg-amber-600 hover:text-white transition-colors border border-slate-200 dark:border-zinc-700 text-[10px] flex items-center gap-1"
             >
               <Pause className="w-3 h-3" /> Pausar
             </button>
@@ -303,17 +303,17 @@ export function LeftTasksQuadrant({
           <button
             onClick={() => onRequestExtendDeadline(task)}
             title="Adiar prazo"
-            className="p-1 rounded-md text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#242038] transition-colors"
+            className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <Calendar className="w-3 h-3" />
+            <Calendar className="w-3.5 h-3.5" />
           </button>
 
           <button
             onClick={() => onDeleteTask(task.id)}
             title="Excluir"
-            className="p-1 rounded-md text-[#9490AC] hover:text-rose-400 hover:bg-[#242038] transition-colors"
+            className="p-1 rounded-md text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <Trash2 className="w-3 h-3" />
+            <Trash2 className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -321,17 +321,17 @@ export function LeftTasksQuadrant({
   };
 
   return (
-    <aside className="w-[340px] xl:w-[380px] h-full flex flex-col border-r border-[#242038] bg-[#0E0C18] shrink-0 overflow-hidden">
+    <aside className="w-[340px] xl:w-[380px] h-full flex flex-col border-r border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
       {/* Top Filter & Search Bar */}
-      <div className="p-3.5 border-b border-[#242038] bg-[#12101F] space-y-2.5 shrink-0">
+      <div className="p-3.5 border-b border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-[#101118] space-y-2.5 shrink-0">
         {/* Context Selector: Todas, Trabalho, Pessoal */}
-        <div className="grid grid-cols-3 gap-1 bg-[#090810] p-1 rounded-xl border border-[#242038]">
+        <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-[#161722] p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
           <button
             onClick={() => setAccountFilter("all")}
             className={`py-1 text-xs font-semibold rounded-lg transition-all ${
               accountFilter === "all"
-                ? "bg-[#242038] text-white shadow-sm"
-                : "text-[#9490AC] hover:text-[#EAE9FC]"
+                ? "bg-white dark:bg-[#202230] text-slate-900 dark:text-white shadow-sm"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             Todas
@@ -341,7 +341,7 @@ export function LeftTasksQuadrant({
             className={`py-1 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${
               accountFilter === "work"
                 ? "bg-indigo-600 text-white shadow-sm"
-                : "text-[#9490AC] hover:text-[#EAE9FC]"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <Briefcase className="w-3 h-3" /> Trabalho
@@ -351,7 +351,7 @@ export function LeftTasksQuadrant({
             className={`py-1 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${
               accountFilter === "personal"
                 ? "bg-purple-600 text-white shadow-sm"
-                : "text-[#9490AC] hover:text-[#EAE9FC]"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <User className="w-3 h-3" /> Pessoal
@@ -361,21 +361,21 @@ export function LeftTasksQuadrant({
         {/* Search Bar + Quick Add Button */}
         <div className="flex items-center gap-1.5">
           <div className="relative flex-1">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#9490AC]" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar por título, categoria ou tag..."
-              className="w-full h-8 pl-8 pr-3 rounded-lg bg-[#090810] border border-[#242038] text-xs text-[#EAE9FC] placeholder-[#9490AC]/50 focus:outline-none focus:border-[#7B61FF]"
+              placeholder="Buscar demandas ou tags..."
+              className="w-full h-8 pl-8 pr-3 rounded-lg bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
             />
           </div>
           {onRequestNewTask && (
             <button
               type="button"
               onClick={onRequestNewTask}
-              title="Nova Demanda Elaborada (Texto Completo)"
-              className="w-8 h-8 rounded-lg bg-[#7B61FF]/20 hover:bg-[#7B61FF]/30 text-[#9D8DF1] border border-[#7B61FF]/40 flex items-center justify-center shrink-0 transition-all active:scale-95"
+              title="Nova Demanda Detalhada"
+              className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center shrink-0 transition-all active:scale-95"
             >
               <Plus className="w-4 h-4" />
             </button>
@@ -388,8 +388,8 @@ export function LeftTasksQuadrant({
             onClick={() => setItemTypeFilter("ALL")}
             className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap transition-colors ${
               itemTypeFilter === "ALL"
-                ? "bg-[#7B61FF] text-white"
-                : "bg-[#090810] text-[#9490AC] hover:text-[#EAE9FC]"
+                ? "bg-indigo-600 text-white"
+                : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             Todos
@@ -398,8 +398,8 @@ export function LeftTasksQuadrant({
             onClick={() => setItemTypeFilter("task")}
             className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${
               itemTypeFilter === "task"
-                ? "bg-indigo-600 text-white"
-                : "bg-[#090810] text-[#9490AC] hover:text-[#EAE9FC]"
+                ? "bg-blue-600 text-white"
+                : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <ListTodo className="w-3 h-3" /> Tarefas
@@ -409,7 +409,7 @@ export function LeftTasksQuadrant({
             className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${
               itemTypeFilter === "activity"
                 ? "bg-purple-600 text-white"
-                : "bg-[#090810] text-[#9490AC] hover:text-[#EAE9FC]"
+                : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <Activity className="w-3 h-3" /> Atividades
@@ -419,104 +419,68 @@ export function LeftTasksQuadrant({
             className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${
               itemTypeFilter === "reminder"
                 ? "bg-amber-600 text-white"
-                : "bg-[#090810] text-[#9490AC] hover:text-[#EAE9FC]"
+                : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
             <Bell className="w-3 h-3" /> Lembretes
           </button>
-        </div>
-
-        {/* Status & Priority Filter Pills */}
-        <div className="flex items-center justify-between gap-1 overflow-x-auto text-[10px]">
-          <div className="flex items-center gap-1">
-            {(["ALL", "TODO", "IN_PROGRESS", "WAITING", "COMPLETED"] as (
-              | "ALL"
-              | TaskStatus
-            )[]).map((st) => (
-              <button
-                key={st}
-                onClick={() => setStatusFilter(st)}
-                className={`px-1.5 py-0.5 rounded font-medium whitespace-nowrap transition-colors ${
-                  statusFilter === st
-                    ? "bg-[#9D8DF1] text-black font-bold"
-                    : "bg-[#090810] text-[#9490AC] hover:text-[#EAE9FC]"
-                }`}
-              >
-                {st === "ALL"
-                  ? "Status: Todos"
-                  : st === "TODO"
-                  ? "Pendente"
-                  : st === "IN_PROGRESS"
-                  ? "Executando"
-                  : st === "WAITING"
-                  ? "Espera"
-                  : "Concluído"}
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-0.5 shrink-0 pl-1 border-l border-[#242038]">
-            {(["ALL", "P1", "P2", "P3", "P4"] as ("ALL" | Priority)[]).map((p) => (
-              <button
-                key={p}
-                onClick={() => setPriorityFilter(p)}
-                className={`px-1 py-0.5 rounded text-[10px] font-bold ${
-                  priorityFilter === p
-                    ? "bg-[#242038] text-[#EAE9FC]"
-                    : "text-[#9490AC]/70 hover:text-[#EAE9FC]"
-                }`}
-              >
-                {p}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
       {/* Task List (Google Tasks Style) */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {filteredTasks.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-[#9490AC]">
-            <Filter className="w-8 h-8 mb-2 opacity-30 text-[#9D8DF1]" />
-            <p className="text-xs font-medium">Nenhum item encontrado</p>
-            <p className="text-[11px] opacity-60">
-              Crie uma tarefa, atividade ou lembrete na barra superior com auxílio da IA.
+          <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500">
+            <Filter className="w-8 h-8 mb-2 opacity-30 text-indigo-500" />
+            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              Nenhuma demanda cadastrada
             </p>
+            <p className="text-[11px] mt-1 max-w-[240px] leading-relaxed">
+              Suas tarefas sincronizadas do Google Tasks ou criadas manualmente aparecerão aqui.
+            </p>
+            {onRequestNewTask && (
+              <button
+                type="button"
+                onClick={onRequestNewTask}
+                className="mt-3 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium shadow-sm transition-all"
+              >
+                + Criar Nova Demanda
+              </button>
+            )}
           </div>
         ) : statusFilter === "COMPLETED" ? (
-          // When filtering exclusively by completed tasks, display them directly
           completedTasks.map((task) => renderTaskCard(task, true))
         ) : (
           <>
-            {/* 1. Active Tasks (Visible on top) */}
+            {/* Active Tasks */}
             {activeTasks.length === 0 && completedTasks.length > 0 ? (
-              <div className="p-4 rounded-xl bg-[#12101F] border border-[#242038] text-center text-xs text-[#9490AC]">
-                🎉 Todas as tarefas ativas foram concluídas!
+              <div className="p-4 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 text-center text-xs text-slate-600 dark:text-slate-400 shadow-sm">
+                🎉 Todas as tarefas ativas estão concluídas!
               </div>
             ) : (
               activeTasks.map((task) => renderTaskCard(task, false))
             )}
 
-            {/* 2. Collapsible Completed Tasks Section (Google Tasks Style) */}
+            {/* Collapsible Completed Tasks Section */}
             {completedTasks.length > 0 && (
-              <div className="pt-3 border-t border-[#242038]/80 mt-3">
+              <div className="pt-3 border-t border-slate-200 dark:border-zinc-800/80 mt-3">
                 <button
                   type="button"
                   onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[#12101F] border border-[#242038] hover:border-[#383353] text-xs font-semibold text-[#9490AC] hover:text-[#EAE9FC] transition-all"
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
                 >
                   <div className="flex items-center gap-2">
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-[#7B61FF] transition-transform duration-200 ${
+                      className={`w-3.5 h-3.5 text-indigo-500 transition-transform duration-200 ${
                         isCompletedExpanded ? "" : "-rotate-90"
                       }`}
                     />
                     <span>Concluídas</span>
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#242038] text-[#9D8DF1]">
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400">
                       {completedTasks.length}
                     </span>
                   </div>
-                  <span className="text-[10px] font-normal text-[#9490AC]">
+                  <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">
                     {isCompletedExpanded ? "Ocultar" : "Mostrar"}
                   </span>
                 </button>

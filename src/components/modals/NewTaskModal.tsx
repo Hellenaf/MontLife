@@ -67,11 +67,9 @@ export function NewTaskModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<GeminiTriageResponse | null>(null);
 
-  // Sync initial text when modal opens
   useEffect(() => {
     if (isOpen) {
       if (initialText) {
-        // If initial text is multi-line or long, place in description
         if (initialText.includes("\n") || initialText.length > 60) {
           setDescription(initialText);
           const firstLine = initialText.split("\n")[0].trim().substring(0, 80);
@@ -82,14 +80,12 @@ export function NewTaskModal({
       }
       setItemType(initialType);
       const defaultDate = calculateSlaDueDate("P3");
-      // Format for datetime-local input (YYYY-MM-DDTHH:mm)
       try {
         setDueDate(format(new Date(defaultDate), "yyyy-MM-dd'T'HH:mm"));
       } catch {
         setDueDate(defaultDate.substring(0, 16));
       }
     } else {
-      // Reset when closed
       setTitle("");
       setDescription("");
       setAiSuggestions(null);
@@ -125,12 +121,10 @@ export function NewTaskModal({
         const triage: GeminiTriageResponse = data.triage;
         setAiSuggestions(triage);
 
-        // Preenche o título se estiver vazio ou genérico
         if (!title.trim() || title === textToAnalyze.substring(0, 80)) {
           setTitle(triage.refined_title);
         }
 
-        // Sugere o tipo caso ainda não tenha sido alterado manualmente
         if (triage.item_type) {
           setItemType(triage.item_type);
         }
@@ -215,54 +209,54 @@ export function NewTaskModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
-      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-2xl bg-[#131122] border border-[#2E2B44] shadow-2xl overflow-hidden glow-lavender">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[#242038] bg-[#0E0C18] shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#101118] shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#7B61FF] to-[#9D8DF1] flex items-center justify-center text-white shadow-md shadow-[#7B61FF]/30">
-              <FileText className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white shadow-sm">
+              <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-[#EAE9FC]">
-                Nova Demanda / Registro
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                Nova Demanda Detalhada
               </h2>
-              <p className="text-xs text-[#9490AC]">
-                Insira textos elaborados, encaminhamentos ou notas diretas.
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Insira textos elaborados, encaminhamentos ou especificações técnicas.
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#242038] transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Form Body - Scrollable */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 space-y-4">
-          {/* Seletor de Tipo (Tarefa, Atividade, Lembrete) */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+          {/* Seletor de Tipo */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#9490AC] uppercase tracking-wider block">
-              1. O que você está inserindo?
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+              1. Classificação do Registro:
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setItemType("task")}
-                className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1 ${
+                className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
                   itemType === "task"
-                    ? "bg-indigo-600/20 border-indigo-500 text-white shadow-md shadow-indigo-600/20"
-                    : "bg-[#090810] border-[#242038] text-[#9490AC] hover:border-[#383353] hover:text-[#EAE9FC]"
+                    ? "bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/20"
+                    : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-zinc-700"
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm text-indigo-300">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-blue-700 dark:text-blue-300">
                   <ListTodo className="w-4 h-4" />
-                  📌 Tarefa
+                  Tarefa
                 </div>
-                <span className="text-[11px] text-[#9490AC] leading-tight">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
                   Demanda com SLA, prazo e execução.
                 </span>
               </button>
@@ -270,35 +264,35 @@ export function NewTaskModal({
               <button
                 type="button"
                 onClick={() => setItemType("activity")}
-                className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1 ${
+                className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
                   itemType === "activity"
-                    ? "bg-purple-600/20 border-purple-500 text-white shadow-md shadow-purple-600/20"
-                    : "bg-[#090810] border-[#242038] text-[#9490AC] hover:border-[#383353] hover:text-[#EAE9FC]"
+                    ? "bg-purple-50 dark:bg-purple-950/40 border-purple-500 ring-1 ring-purple-500/20"
+                    : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-zinc-700"
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm text-purple-300">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-purple-700 dark:text-purple-300">
                   <Activity className="w-4 h-4" />
-                  ⚡ Atividade
+                  Atividade
                 </div>
-                <span className="text-[11px] text-[#9490AC] leading-tight">
-                  Ação prática, atendimento ou rotina diária.
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Ação prática, atendimento ou rotina.
                 </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setItemType("reminder")}
-                className={`p-3 rounded-xl border text-left transition-all flex flex-col gap-1 ${
+                className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
                   itemType === "reminder"
-                    ? "bg-amber-600/20 border-amber-500 text-white shadow-md shadow-amber-600/20"
-                    : "bg-[#090810] border-[#242038] text-[#9490AC] hover:border-[#383353] hover:text-[#EAE9FC]"
+                    ? "bg-amber-50 dark:bg-amber-950/40 border-amber-500 ring-1 ring-amber-500/20"
+                    : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-zinc-700"
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-bold text-xs sm:text-sm text-amber-300">
+                <div className="flex items-center gap-1.5 font-bold text-xs text-amber-700 dark:text-amber-300">
                   <Bell className="w-4 h-4" />
-                  🔔 Lembrete
+                  Lembrete
                 </div>
-                <span className="text-[11px] text-[#9490AC] leading-tight">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
                   Aviso pontual ou data de alerta.
                 </span>
               </button>
@@ -307,30 +301,30 @@ export function NewTaskModal({
 
           {/* Título */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#9490AC] uppercase tracking-wider block">
-              2. Título / Resumo da Demanda:
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+              2. Título / Assunto:
             </label>
             <input
               type="text"
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Ajuste de relatórios no TOTVS RM / Reunião com a coordenação..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-[#090810] border border-[#242038] text-sm text-[#EAE9FC] placeholder-[#9490AC]/50 focus:outline-none focus:border-[#7B61FF] transition-all"
+              placeholder="Ex: Ajuste de relatórios no TOTVS RM / Reunião de equipe..."
+              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
             />
           </div>
 
-          {/* Descrição Detalhada / Mensagem Repassada */}
+          {/* Descrição Detalhada */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-[#9490AC] uppercase tracking-wider block">
-                3. Detalhes / Texto Elaborado da Demanda:
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                3. Detalhes / Conteúdo da Mensagem:
               </label>
               <button
                 type="button"
                 onClick={handleAnalyzeWithAI}
                 disabled={isAnalyzingAI || (!title.trim() && !description.trim())}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-[#7B61FF]/15 hover:bg-[#7B61FF]/25 text-[#9D8DF1] border border-[#7B61FF]/30 transition-all disabled:opacity-40"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-all disabled:opacity-40"
                 title="A IA analisa o texto colado para sugerir título, categoria, prioridade e tags sem apagar seu texto"
               >
                 {isAnalyzingAI ? (
@@ -350,26 +344,25 @@ export function NewTaskModal({
               rows={5}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Cole aqui o e-mail completo, mensagem repassada do WhatsApp, instruções detalhadas, etapas a seguir ou notas operacionais..."
-              className="w-full p-3.5 rounded-xl bg-[#090810] border border-[#242038] text-xs text-[#EAE9FC] placeholder-[#9490AC]/50 focus:outline-none focus:border-[#7B61FF] leading-relaxed resize-y font-sans"
+              placeholder="Cole aqui o e-mail completo, mensagem encaminhada, orientações recebidas ou anotações detalhadas..."
+              className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 leading-relaxed resize-y font-sans"
             />
           </div>
 
           {/* Contexto & Categoria */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Contexto: Trabalho ou Pessoal */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#9490AC] block">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
                 Contexto:
               </label>
-              <div className="grid grid-cols-2 gap-1.5 bg-[#090810] p-1 rounded-xl border border-[#242038]">
+              <div className="grid grid-cols-2 gap-1.5 bg-slate-100 dark:bg-[#0c0d13] p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setAccountType("work")}
                   className={`py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                     accountType === "work"
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "text-[#9490AC] hover:text-[#EAE9FC]"
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   <Briefcase className="w-3.5 h-3.5" /> Trabalho
@@ -380,7 +373,7 @@ export function NewTaskModal({
                   className={`py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
                     accountType === "personal"
                       ? "bg-purple-600 text-white shadow-sm"
-                      : "text-[#9490AC] hover:text-[#EAE9FC]"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   <User className="w-3.5 h-3.5" /> Pessoal
@@ -388,15 +381,14 @@ export function NewTaskModal({
               </div>
             </div>
 
-            {/* Categoria */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#9490AC] block">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
                 Categoria:
               </label>
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value as TaskCategory)}
-                className="w-full h-10 px-3 text-xs rounded-xl bg-[#090810] border border-[#242038] text-[#EAE9FC] focus:outline-none focus:border-[#7B61FF]"
+                className="w-full h-10 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
               >
                 {CATEGORIES.map((cat) => (
                   <option key={cat} value={cat}>
@@ -409,9 +401,8 @@ export function NewTaskModal({
 
           {/* Prioridade & Prazo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {/* Prioridade */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#9490AC] block">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
                 Prioridade & SLA:
               </label>
               <div className="grid grid-cols-4 gap-1.5">
@@ -424,14 +415,14 @@ export function NewTaskModal({
                       : p === "P3"
                       ? "P3 (48h)"
                       : "P4 (72h)";
-                  const color =
+                  const activeColor =
                     p === "P1"
-                      ? "text-rose-400 border-rose-500/40"
+                      ? "bg-rose-500 text-white"
                       : p === "P2"
-                      ? "text-amber-400 border-amber-500/40"
+                      ? "bg-amber-500 text-white"
                       : p === "P3"
-                      ? "text-yellow-400 border-yellow-500/40"
-                      : "text-purple-400 border-purple-500/40";
+                      ? "bg-indigo-600 text-white"
+                      : "bg-slate-600 text-white";
 
                   return (
                     <button
@@ -440,8 +431,8 @@ export function NewTaskModal({
                       onClick={() => handlePriorityChange(p)}
                       className={`py-2 text-[11px] font-bold rounded-xl border transition-all text-center ${
                         priority === p
-                          ? `bg-[#242038] ${color} shadow-sm`
-                          : "bg-[#090810] border-[#242038] text-[#9490AC] hover:border-[#383353]"
+                          ? `${activeColor} shadow-sm border-transparent`
+                          : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400"
                       }`}
                     >
                       {label}
@@ -451,46 +442,43 @@ export function NewTaskModal({
               </div>
             </div>
 
-            {/* Prazo */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#9490AC] block">
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
                 Prazo / Data Limite:
               </label>
-              <div className="relative">
-                <input
-                  type="datetime-local"
-                  value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full h-10 px-3 text-xs rounded-xl bg-[#090810] border border-[#242038] text-[#EAE9FC] focus:outline-none focus:border-[#7B61FF]"
-                />
-              </div>
+              <input
+                type="datetime-local"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                className="w-full h-10 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+              />
             </div>
           </div>
 
           {/* Tags */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-[#9490AC] block">
+            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
               Tags (separadas por vírgula):
             </label>
             <div className="relative">
-              <Tag className="w-3.5 h-3.5 text-[#9490AC] absolute left-3 top-3" />
+              <Tag className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
               <input
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
-                placeholder="suporte, totvs, pedagógico, redes"
-                className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-[#090810] border border-[#242038] text-[#EAE9FC] placeholder-[#9490AC]/50 focus:outline-none focus:border-[#7B61FF]"
+                placeholder="suporte, totvs, professores, laboratório"
+                className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
               />
             </div>
           </div>
         </form>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-t border-[#242038] bg-[#0E0C18] shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#101118] shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-[#9490AC] hover:text-[#EAE9FC] transition-colors"
+            className="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
           >
             Cancelar
           </button>
@@ -499,7 +487,7 @@ export function NewTaskModal({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting || !title.trim()}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-white font-semibold text-xs shadow-lg shadow-[#7B61FF]/30 transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50"
           >
             {isSubmitting ? (
               <>
@@ -525,4 +513,3 @@ export function NewTaskModal({
     </div>
   );
 }
-

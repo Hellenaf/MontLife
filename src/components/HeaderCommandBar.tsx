@@ -21,8 +21,10 @@ import {
   ListTodo,
   Activity,
   Bell,
-  PlusCircle,
+  Plus,
   Maximize2,
+  Sun,
+  Moon,
 } from "lucide-react";
 import {
   GeminiTriageResponse,
@@ -38,6 +40,7 @@ import {
 import { calculateSlaDueDate } from "@/lib/sla";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useTheme } from "@/context/ThemeContext";
 
 interface HeaderCommandBarProps {
   accounts: ConnectedAccount[];
@@ -54,6 +57,7 @@ export function HeaderCommandBar({
   onOpenReportModal,
   onOpenNewTaskModal,
 }: HeaderCommandBarProps) {
+  const { theme, toggleTheme } = useTheme();
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -131,12 +135,12 @@ export function HeaderCommandBar({
       const res = await fetch("/api/triage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ raw_input: input.trim() }),
+        body: JSON.stringify({ raw_input: input }),
       });
-      const data = await res.json();
 
-      if (data.success) {
-        const triage = data.triage as GeminiTriageResponse;
+      const data = await res.json();
+      if (data.success && data.triage) {
+        const triage: GeminiTriageResponse = data.triage;
         setTriageData(triage);
         setSimilarResolutions(data.similar_resolutions || []);
         setLearningResources(data.learning_resources || null);
@@ -146,7 +150,6 @@ export function HeaderCommandBar({
         setEditTitle(triage.refined_title);
         setEditDescription(triage.structured_description);
         setEditAccountType(triage.account_type);
-        // Use preferred type if explicitly chosen, otherwise AI suggestion
         setEditItemType(preferredType !== "auto" ? preferredType : triage.item_type || "task");
         setEditCategory(triage.category);
         setEditPriority(triage.priority);
@@ -195,7 +198,6 @@ export function HeaderCommandBar({
       const data = await res.json();
       if (data.success && data.task) {
         onTaskCreated(data.task);
-        // Reset triage card & input
         setTriageData(null);
         setSimilarResolutions([]);
         setLearningResources(null);
@@ -219,39 +221,36 @@ export function HeaderCommandBar({
   const personalAcc = accounts.find((a) => a.id === "personal");
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 h-16 bg-[#110F1C]/95 backdrop-blur-md border-b border-[#242038] px-4 sm:px-6 flex items-center justify-between shadow-lg shadow-black/20">
+    <header className="fixed top-0 left-0 right-0 z-30 h-16 bg-white/95 dark:bg-[#101118]/95 backdrop-blur-md border-b border-slate-200 dark:border-zinc-800/80 px-4 sm:px-6 flex items-center justify-between shadow-sm transition-colors duration-200">
       {/* Brand & Identity */}
       <div className="flex items-center gap-3 shrink-0">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#7B61FF] to-[#9D8DF1] flex items-center justify-center font-bold text-white shadow-md shadow-[#7B61FF]/25">
+        <div className="w-8 h-8 rounded-xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center font-black text-sm text-white shadow-sm">
           M
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-black text-sm tracking-widest text-[#EAE9FC]">
-              MONTLIFE
+            <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">
+              MontLife
             </span>
-            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#7B61FF]/15 text-[#9D8DF1] border border-[#7B61FF]/30">
+            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">
               Tasks
             </span>
           </div>
-          <p className="text-[10px] text-[#9490AC] hidden sm:block">
-            Gestão & Inteligência Operacional
+          <p className="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:block">
+            Central de Demandas & Rotinas
           </p>
         </div>
       </div>
 
-      {/* Center Natural Language Command Bar + Nova Demanda */}
+      {/* Center Command Bar + Nova Demanda */}
       <div className="flex-1 max-w-2xl mx-3 sm:mx-6 flex items-center gap-2">
-        <form
-          onSubmit={handleRunTriage}
-          className="relative flex items-center flex-1"
-        >
+        <form onSubmit={handleRunTriage} className="relative flex items-center flex-1">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Digite ou fale uma anotação rápida (ex: reunião amanhã às 14h, pagar fatura, consertar RM)..."
-            className="w-full h-10 pl-4 pr-32 rounded-xl bg-[#090810] border border-[#242038] text-xs text-[#EAE9FC] placeholder-[#9490AC]/50 focus:outline-none focus:border-[#7B61FF] focus:ring-1 focus:ring-[#7B61FF] transition-all"
+            placeholder="Criar demanda rápida ou pesquisar (ex: atualizar TOTVS, comprar materiais)..."
+            className="w-full h-10 pl-4 pr-32 rounded-xl bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
             disabled={isProcessing}
           />
 
@@ -260,8 +259,8 @@ export function HeaderCommandBar({
               <button
                 type="button"
                 onClick={() => onOpenNewTaskModal(input)}
-                title="Expandir para modo detalhado (para textos longos / mensagens repassadas)"
-                className="p-1.5 rounded-lg text-[#9490AC] hover:text-[#9D8DF1] hover:bg-[#1E1B2E] transition-colors"
+                title="Expandir formulário detalhado (textos longos / mensagens recebidas)"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-800 transition-colors"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>
@@ -273,12 +272,12 @@ export function HeaderCommandBar({
               title={isListening ? "Parar gravação" : "Falar comando por voz"}
               className={`p-1.5 rounded-lg transition-colors ${
                 isListening
-                  ? "bg-rose-500/20 text-rose-400 animate-pulse"
-                  : "text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#1E1B2E]"
+                  ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 animate-pulse"
+                  : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-800"
               }`}
             >
               {isListening ? (
-                <MicOff className="w-3.5 h-3.5 text-rose-400" />
+                <MicOff className="w-3.5 h-3.5 text-rose-500" />
               ) : (
                 <Mic className="w-3.5 h-3.5" />
               )}
@@ -287,14 +286,14 @@ export function HeaderCommandBar({
             <button
               type="submit"
               disabled={isProcessing || !input.trim()}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#7B61FF] hover:bg-[#6C50FF] text-white text-xs font-semibold shadow-md shadow-[#7B61FF]/20 transition-all disabled:opacity-40 disabled:hover:bg-[#7B61FF]"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-40"
             >
               {isProcessing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
                 <>
                   <Sparkles className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">IA</span>
+                  <span className="hidden md:inline">Criar</span>
                 </>
               )}
             </button>
@@ -305,214 +304,189 @@ export function HeaderCommandBar({
           <button
             type="button"
             onClick={() => onOpenNewTaskModal("")}
-            className="flex items-center gap-1.5 px-3 py-2 h-10 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-white text-xs font-semibold shadow-md shadow-[#7B61FF]/20 transition-all shrink-0 active:scale-95"
-            title="Adicionar demanda detalhada, tarefa ou atividade"
+            className="flex items-center gap-1.5 px-3.5 py-2 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-all shrink-0 active:scale-95"
+            title="Adicionar demanda detalhada"
           >
-            <PlusCircle className="w-4 h-4" />
+            <Plus className="w-4 h-4" />
             <span className="hidden sm:inline">Nova Demanda</span>
           </button>
         )}
       </div>
 
-      {/* Right Account Badges & Navigation */}
+      {/* Right Navigation & Tools */}
       <div className="flex items-center gap-2 shrink-0">
         {/* Connected Accounts Status */}
         <button
           onClick={onOpenAccountsModal}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs transition-all ${
             workAcc?.is_connected || personalAcc?.is_connected
-              ? "bg-[#090810] border-[#242038] text-[#9490AC] hover:border-[#7B61FF]/50"
-              : "bg-indigo-600/15 border-indigo-500/40 text-indigo-300 hover:bg-indigo-600/25 shadow-sm shadow-indigo-600/20"
+              ? "bg-slate-50 dark:bg-[#161722] border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-zinc-700"
+              : "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/60"
           }`}
-          title="Gerenciar Contas Google Conectadas"
+          title="Gerenciar Contas Google"
         >
           <div className="flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full ${
-                workAcc?.is_connected ? "bg-emerald-400" : "bg-zinc-600"
+                workAcc?.is_connected ? "bg-emerald-500" : "bg-slate-300 dark:bg-zinc-600"
               }`}
             />
-            <Briefcase className="w-3.5 h-3.5 text-indigo-400" />
+            <Briefcase className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
           </div>
-          <span className="text-[#242038]">|</span>
+          <span className="text-slate-300 dark:text-zinc-700">|</span>
           <div className="flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full ${
-                personalAcc?.is_connected ? "bg-emerald-400" : "bg-zinc-600"
+                personalAcc?.is_connected ? "bg-emerald-500" : "bg-slate-300 dark:bg-zinc-600"
               }`}
             />
-            <User className="w-3.5 h-3.5 text-purple-400" />
+            <User className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
           </div>
           {!(workAcc?.is_connected || personalAcc?.is_connected) && (
-            <span className="text-[11px] font-semibold text-indigo-300 hidden md:inline ml-1">
+            <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 hidden md:inline ml-1">
               Vincular Google
             </span>
           )}
         </button>
 
-        {/* Annual Report CTA */}
+        {/* Annual Report Button */}
         <button
           onClick={onOpenReportModal}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#242038] hover:bg-[#2F2A47] text-[#EAE9FC] text-xs font-medium transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#161722] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-800/80 text-xs font-medium transition-all shadow-sm"
+          title="Relatório Executivo & SLA"
         >
-          <Award className="w-3.5 h-3.5 text-[#9D8DF1]" />
+          <Award className="w-3.5 h-3.5 text-indigo-500" />
           <span className="hidden lg:inline">Relatório</span>
+        </button>
+
+        {/* Theme Switcher Toggle (Light / Dark) */}
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label="Alternar modo claro e escuro"
+          className="p-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#161722] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm active:scale-95"
+          title={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
+        >
+          {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
         </button>
       </div>
 
-      {/* Floating / Embedded AI Confirmation Card */}
+      {/* Floating Confirmation Card */}
       {triageData && (
         <div className="fixed top-18 left-1/2 -translate-x-1/2 w-full max-w-3xl z-40 animate-in fade-in slide-in-from-top-4 duration-200">
-          <div className="m-4 p-5 rounded-2xl bg-[#141221] border border-[#7B61FF]/40 shadow-2xl backdrop-blur-xl glow-lavender space-y-4">
+          <div className="m-4 p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl space-y-4">
             {/* Header of confirmation */}
-            <div className="flex items-center justify-between border-b border-[#242038] pb-3">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-[#7B61FF]/20 text-[#9D8DF1]">
+                <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-[#EAE9FC]">
-                    Triagem Inteligente — Revisão & Decisão de Tipo
+                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                    Confirmar Nova Demanda
                   </h3>
-                  <p className="text-[11px] text-[#9490AC]">
-                    A IA analisou sua anotação. Você pode alterar o tipo, prazo ou conta antes de salvar.
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Verifique os dados estruturados e ajuste o prazo ou tipo antes de salvar.
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleDiscardTriage}
-                className="text-[#9490AC] hover:text-white p-1 rounded-lg hover:bg-[#242038]"
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* SELETOR INTERATIVO: TAREFA, ATIVIDADE OU LEMBRETE (SOLICITADO) */}
-            <div className="p-3 rounded-xl bg-[#090810] border border-[#242038] flex flex-wrap items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#EAE9FC]">
-                <span>Classificação do Registro:</span>
-                <span className="text-[11px] text-[#9D8DF1] font-normal">
-                  (Sugerido pela IA:{" "}
-                  <strong>
-                    {triageData.item_type === "reminder"
-                      ? "Lembrete"
-                      : triageData.item_type === "activity"
-                      ? "Atividade"
-                      : "Tarefa"}
-                  </strong>
-                  )
-                </span>
+            {/* Classification selector */}
+            <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+              <div className="text-xs font-medium text-slate-700 dark:text-slate-300">
+                Classificação:
               </div>
 
-              <div className="flex items-center gap-1 bg-[#141221] p-1 rounded-xl border border-[#242038]">
+              <div className="flex items-center gap-1 bg-white dark:bg-[#161722] p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => setEditItemType("task")}
-                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
                     editItemType === "task"
-                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
-                      : "text-[#9490AC] hover:text-[#EAE9FC]"
+                      ? "bg-indigo-600 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   <ListTodo className="w-3.5 h-3.5" />
-                  📌 Tarefa
+                  Tarefa
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setEditItemType("activity")}
-                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
                     editItemType === "activity"
-                      ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
-                      : "text-[#9490AC] hover:text-[#EAE9FC]"
+                      ? "bg-purple-600 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   <Activity className="w-3.5 h-3.5" />
-                  ⚡ Atividade
+                  Atividade
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setEditItemType("reminder")}
-                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
                     editItemType === "reminder"
-                      ? "bg-amber-600 text-white shadow-md shadow-amber-600/30"
-                      : "text-[#9490AC] hover:text-[#EAE9FC]"
+                      ? "bg-amber-600 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
                   <Bell className="w-3.5 h-3.5" />
-                  🔔 Lembrete
+                  Lembrete
                 </button>
               </div>
             </div>
 
-            {/* Knowledge Base Alert: Past resolution match */}
-            {similarResolutions.length > 0 && (
-              <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs text-amber-200 space-y-1.5">
-                <div className="flex items-center gap-2 font-semibold text-amber-300">
-                  <Lightbulb className="w-4 h-4 text-amber-400 shrink-0" />
-                  <span>
-                    💡 Você já resolveu algo parecido em{" "}
-                    {format(
-                      parseISO(similarResolutions[0].completed_at),
-                      "dd/MM/yyyy",
-                      { locale: ptBR }
-                    )}
-                    :
-                  </span>
-                </div>
-                <p className="italic text-amber-100/90 pl-6 text-[11px]">
-                  &quot;{similarResolutions[0].resolution_notes}&quot;
-                </p>
-                <div className="pl-6 text-[10px] text-amber-400/80 flex items-center gap-1">
-                  <BookOpen className="w-3.5 h-3.5" />
-                  Tags coincidentes: {similarResolutions[0].matched_tags.join(", ")}
-                </div>
-              </div>
-            )}
-
             {/* Title & Description Fields */}
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] font-medium text-[#9490AC] block mb-1">
-                  Título Refinado:
+                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                  Título:
                 </label>
                 <input
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-[#090810] border border-[#242038] text-[#EAE9FC] focus:outline-none focus:border-[#7B61FF]"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-medium text-[#9490AC] block mb-1">
-                  Descrição & Detalhes:
+                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                  Descrição & Notas:
                 </label>
                 <textarea
                   rows={2}
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-[#090810] border border-[#242038] text-[#EAE9FC] focus:outline-none focus:border-[#7B61FF] resize-none"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 resize-none"
                 />
               </div>
             </div>
 
             {/* Controls: Account, Category, Priority, SLA */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-              {/* Account toggle */}
               <div>
-                <label className="text-[11px] font-medium text-[#9490AC] block mb-1">
-                  Contexto:
+                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
+                  Conta:
                 </label>
-                <div className="flex rounded-lg bg-[#090810] border border-[#242038] p-0.5">
+                <div className="flex rounded-lg bg-slate-100 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 p-0.5">
                   <button
                     type="button"
                     onClick={() => setEditAccountType("work")}
                     className={`flex-1 py-1 text-[11px] rounded font-medium flex items-center justify-center gap-1 transition-colors ${
                       editAccountType === "work"
-                        ? "bg-indigo-600 text-white"
-                        : "text-[#9490AC] hover:text-[#EAE9FC]"
+                        ? "bg-indigo-600 text-white shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     <Briefcase className="w-3 h-3" /> Trabalho
@@ -522,8 +496,8 @@ export function HeaderCommandBar({
                     onClick={() => setEditAccountType("personal")}
                     className={`flex-1 py-1 text-[11px] rounded font-medium flex items-center justify-center gap-1 transition-colors ${
                       editAccountType === "personal"
-                        ? "bg-purple-600 text-white"
-                        : "text-[#9490AC] hover:text-[#EAE9FC]"
+                        ? "bg-purple-600 text-white shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     <User className="w-3 h-3" /> Pessoal
@@ -533,19 +507,19 @@ export function HeaderCommandBar({
 
               {/* Priority */}
               <div>
-                <label className="text-[11px] font-medium text-[#9490AC] block mb-1">
+                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
                   Prioridade:
                 </label>
                 <div className="flex gap-1">
                   {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
-                    const color =
+                    const activeColor =
                       p === "P1"
-                        ? "text-rose-400 border-rose-500/40"
+                        ? "bg-rose-500 text-white"
                         : p === "P2"
-                        ? "text-amber-400 border-amber-500/40"
+                        ? "bg-amber-500 text-white"
                         : p === "P3"
-                        ? "text-yellow-400 border-yellow-500/40"
-                        : "text-purple-400 border-purple-500/40";
+                        ? "bg-indigo-600 text-white"
+                        : "bg-slate-600 text-white";
                     return (
                       <button
                         key={p}
@@ -553,8 +527,8 @@ export function HeaderCommandBar({
                         onClick={() => handlePriorityChange(p)}
                         className={`flex-1 py-1 text-[11px] rounded-lg font-bold border transition-colors ${
                           editPriority === p
-                            ? `bg-[#242038] ${color}`
-                            : "bg-[#090810] border-[#242038] text-[#9490AC]"
+                            ? activeColor
+                            : "bg-slate-100 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400"
                         }`}
                       >
                         {p}
@@ -566,13 +540,13 @@ export function HeaderCommandBar({
 
               {/* Category */}
               <div>
-                <label className="text-[11px] font-medium text-[#9490AC] block mb-1">
+                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
                   Categoria:
                 </label>
                 <select
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value as TaskCategory)}
-                  className="w-full h-8 px-2 text-[11px] rounded-lg bg-[#090810] border border-[#242038] text-[#EAE9FC] focus:outline-none focus:border-[#7B61FF]"
+                  className="w-full h-8 px-2 text-[11px] rounded-lg bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                 >
                   <option value="TOTVS RM">TOTVS RM</option>
                   <option value="Google Workspace">Google Workspace</option>
@@ -587,16 +561,14 @@ export function HeaderCommandBar({
 
               {/* Due Date */}
               <div>
-                <label className="text-[11px] font-medium text-[#9490AC] block mb-1">
+                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
                   Prazo Calculado (SLA):
                 </label>
-                <div className="flex items-center gap-1 h-8 px-2 rounded-lg bg-[#090810] border border-[#242038] text-[11px] text-[#EAE9FC]">
-                  <Clock className="w-3.5 h-3.5 text-[#9D8DF1] shrink-0" />
+                <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-[11px] text-slate-700 dark:text-slate-200">
+                  <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                   <span className="truncate">
                     {editDueDate
-                      ? format(parseISO(editDueDate), "dd/MM 'às' HH:mm", {
-                          locale: ptBR,
-                        })
+                      ? format(parseISO(editDueDate), "dd/MM 'às' HH:mm", { locale: ptBR })
                       : "Hoje"}
                   </span>
                 </div>
@@ -604,11 +576,11 @@ export function HeaderCommandBar({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#242038]">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
               <button
                 type="button"
                 onClick={handleDiscardTriage}
-                className="px-4 py-2 text-xs font-medium text-[#9490AC] hover:text-[#EAE9FC] transition-colors"
+                className="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
               >
                 Descartar
               </button>
@@ -616,7 +588,7 @@ export function HeaderCommandBar({
                 type="button"
                 onClick={handleConfirmTask}
                 disabled={isCreating || !editTitle.trim()}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-white font-medium text-xs shadow-lg shadow-[#7B61FF]/30 transition-all active:scale-95 disabled:opacity-50"
+                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50"
               >
                 {isCreating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

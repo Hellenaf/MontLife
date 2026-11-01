@@ -55,7 +55,7 @@ export function getGoogleTaskPrefix(status: TaskStatus): string {
 }
 
 /**
- * Strips known Mont Ops prefixes from Google Tasks title
+ * Strips known MontLife prefixes from Google Tasks title
  */
 export function stripGoogleTaskPrefix(title: string): string {
   return title.replace(/^\[(▶️|⏳|✅)\]\s*/, "");

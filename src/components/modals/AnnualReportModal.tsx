@@ -250,7 +250,7 @@ ${completed
   )
   .join("\n\n")}
 
-Relatório gerado via Mont Ops.`;
+Relatório gerado via MontLife.`;
 
     navigator.clipboard.writeText(summaryText);
     setCopiedFeedback(true);
@@ -289,7 +289,7 @@ Relatório gerado via Mont Ops.`;
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
         id="printable-report"
-        className="relative w-full max-w-5xl max-h-[92vh] rounded-2xl bg-[#141221] border border-[#2E2B44] shadow-2xl flex flex-col overflow-hidden glow-violet print:border-none print:shadow-none print:bg-white"
+        className="relative w-full max-w-5xl max-h-[92vh] rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col overflow-hidden print:border-none print:shadow-none print:bg-white"
       >
         {/* Top Action Bar (Hidden when printing) */}
         <div className="no-print flex items-center justify-between p-4 sm:p-5 border-b border-[#2E2B44] bg-[#0F0E17] shrink-0">
@@ -525,7 +525,7 @@ Relatório gerado via Mont Ops.`;
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-black uppercase tracking-wider">
-                MONT OPS — RELATÓRIO OPERACIONAL DE ATIVIDADES
+                MONTLIFE — RELATÓRIO OPERACIONAL DE ATIVIDADES
               </h1>
               <p className="text-sm text-gray-700 font-semibold mt-1">
                 Prestação de Contas, Auditoria de SLA & Metrificação de Entregas

@@ -6,12 +6,10 @@ import {
   Briefcase,
   User,
   RefreshCw,
-  ExternalLink,
   ShieldCheck,
   CheckCircle,
   AlertCircle,
   LogOut,
-  Trash2,
   Sparkles,
   PlusCircle,
 } from "lucide-react";
@@ -24,7 +22,6 @@ interface AccountsModalProps {
   onClose: () => void;
   accounts: ConnectedAccount[];
   onRefreshAccounts: () => Promise<void>;
-  onPurgeSeedTasks?: () => Promise<void>;
 }
 
 export function AccountsModal({
@@ -32,11 +29,9 @@ export function AccountsModal({
   onClose,
   accounts,
   onRefreshAccounts,
-  onPurgeSeedTasks,
 }: AccountsModalProps) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
-  const [isPurging, setIsPurging] = useState(false);
 
   if (!isOpen) return null;
 
@@ -94,61 +89,46 @@ export function AccountsModal({
     }
   };
 
-  const handlePurge = async () => {
-    if (!confirm("Deseja remover as tarefas de exemplo/teste da base?")) return;
-    setIsPurging(true);
-    try {
-      if (onPurgeSeedTasks) {
-        await onPurgeSeedTasks();
-      }
-      setSyncFeedback("Tarefas de exemplo removidas com sucesso.");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsPurging(false);
-    }
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
-      <div className="relative w-full max-w-xl rounded-2xl bg-[#151324] border border-[#2E2B44] shadow-2xl overflow-hidden glow-lavender">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-[#242038] bg-[#0E0C18]">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#101118]">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-[#7B61FF]/15 text-[#9D8DF1] border border-[#7B61FF]/30">
-              <ShieldCheck className="w-6 h-6" />
+            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-[#EAE9FC]">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                 Contas Google & Sincronização
               </h3>
-              <p className="text-xs text-[#9490AC]">
-                Gerencie suas contas vinculadas e sincronize tarefas reais do Google Tasks.
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Gerencie suas contas e sincronize suas tarefas reais do Google Tasks.
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#9490AC] hover:text-white hover:bg-[#242038] transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Info Banner: Optional Second Account */}
         <div className="px-6 pt-4">
-          <div className="p-3 rounded-xl bg-[#090810] border border-[#242038] text-xs text-[#9490AC] flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-[#9D8DF1] shrink-0" />
+          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2.5">
+            <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
             <span>
               {hasBothAccounts ? (
-                <strong className="text-emerald-400">Suas duas contas estão sincronizadas!</strong>
+                <strong className="text-emerald-600 dark:text-emerald-400">Suas duas contas estão conectadas!</strong>
               ) : hasAnyAccount ? (
                 <>
-                  Você já tem uma conta conectada. Vincular uma <strong>segunda conta é opcional</strong> e serve para separar chamados de trabalho e afazeres pessoais.
+                  Você já tem uma conta vinculada. A <strong>segunda conta é opcional</strong> e serve para separar chamados de trabalho e rotina pessoal.
                 </>
               ) : (
                 <>
-                  Conecte sua conta do Google para importar automaticamente suas tarefas do Google Tasks.
+                  Conecte sua conta Google para sincronizar suas tarefas reais.
                 </>
               )}
             </span>
@@ -158,27 +138,27 @@ export function AccountsModal({
         {/* Content */}
         <div className="p-6 space-y-4">
           {/* Work Account Card */}
-          <div className="p-4 rounded-xl bg-[#090810] border border-[#242038] space-y-3">
+          <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
                   <Briefcase className="w-4 h-4" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-semibold text-[#EAE9FC] uppercase tracking-wide">
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
                       Conta de Trabalho
                     </h4>
                     {!workAccount?.is_connected && personalAccount?.is_connected && (
-                      <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
                         Opcional
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[#9490AC]">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[220px]">
                     {workAccount?.is_connected && workAccount.email
                       ? workAccount.email
-                      : "Google Workspace / Escola (Nenhuma conta conectada)"}
+                      : "Google Workspace / Escola (Não conectada)"}
                   </p>
                 </div>
               </div>
@@ -186,42 +166,42 @@ export function AccountsModal({
               <span
                 className={`px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 ${
                   workAccount?.is_connected
-                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                    : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30"
+                    : "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
                 }`}
               >
                 {workAccount?.is_connected ? (
                   <>
-                    <CheckCircle className="w-3 h-3 text-emerald-400" /> Conectada
+                    <CheckCircle className="w-3 h-3 text-emerald-500" /> Conectada
                   </>
                 ) : (
                   <>
-                    <AlertCircle className="w-3 h-3" /> Não conectada
+                    <AlertCircle className="w-3 h-3" /> Inativa
                   </>
                 )}
               </span>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-[#9490AC] pt-2 border-t border-[#242038]">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/80 dark:border-zinc-800/80">
               <span>
                 {workAccount?.is_connected && workAccount?.last_sync_at
                   ? `Último sync: ${format(parseISO(workAccount.last_sync_at), "dd/MM HH:mm", {
                       locale: ptBR,
                     })}`
-                  : "Sincronização de tarefas desativada"}
+                  : "Sincronização inativa"}
               </span>
 
               {workAccount?.is_connected ? (
                 <div className="flex items-center gap-2">
                   <a
                     href="/api/google/auth?type=work"
-                    className="px-3 py-1 rounded-lg bg-[#242038] hover:bg-[#2F2A47] text-[#EAE9FC] text-xs font-medium transition-colors"
+                    className="px-3 py-1 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-medium hover:bg-slate-50 transition-colors"
                   >
                     Reconectar
                   </a>
                   <button
                     onClick={() => handleDisconnect("work")}
-                    className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
                     title="Desconectar conta de trabalho"
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -230,7 +210,7 @@ export function AccountsModal({
               ) : (
                 <a
                   href="/api/google/auth?type=work"
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/30 transition-all active:scale-95"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
                   Vincular Trabalho
@@ -240,27 +220,27 @@ export function AccountsModal({
           </div>
 
           {/* Personal Account Card */}
-          <div className="p-4 rounded-xl bg-[#090810] border border-[#242038] space-y-3">
+          <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-lg bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
                   <User className="w-4 h-4" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-semibold text-[#EAE9FC] uppercase tracking-wide">
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
                       Conta Pessoal
                     </h4>
                     {!personalAccount?.is_connected && workAccount?.is_connected && (
-                      <span className="px-1.5 py-0.2 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
                         Opcional
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-[#9490AC]">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[220px]">
                     {personalAccount?.is_connected && personalAccount.email
                       ? personalAccount.email
-                      : "Gmail Pessoal (Nenhuma conta conectada)"}
+                      : "Gmail Pessoal (Não conectada)"}
                   </p>
                 </div>
               </div>
@@ -268,42 +248,42 @@ export function AccountsModal({
               <span
                 className={`px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 ${
                   personalAccount?.is_connected
-                    ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                    : "bg-zinc-800 text-zinc-400 border border-zinc-700"
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30"
+                    : "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
                 }`}
               >
                 {personalAccount?.is_connected ? (
                   <>
-                    <CheckCircle className="w-3 h-3 text-emerald-400" /> Conectada
+                    <CheckCircle className="w-3 h-3 text-emerald-500" /> Conectada
                   </>
                 ) : (
                   <>
-                    <AlertCircle className="w-3 h-3" /> Não conectada
+                    <AlertCircle className="w-3 h-3" /> Inativa
                   </>
                 )}
               </span>
             </div>
 
-            <div className="flex items-center justify-between text-xs text-[#9490AC] pt-2 border-t border-[#242038]">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/80 dark:border-zinc-800/80">
               <span>
                 {personalAccount?.is_connected && personalAccount?.last_sync_at
                   ? `Último sync: ${format(parseISO(personalAccount.last_sync_at), "dd/MM HH:mm", {
                       locale: ptBR,
                     })}`
-                  : "Sincronização de tarefas desativada"}
+                  : "Sincronização inativa"}
               </span>
 
               {personalAccount?.is_connected ? (
                 <div className="flex items-center gap-2">
                   <a
                     href="/api/google/auth?type=personal"
-                    className="px-3 py-1 rounded-lg bg-[#242038] hover:bg-[#2F2A47] text-[#EAE9FC] text-xs font-medium transition-colors"
+                    className="px-3 py-1 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-medium hover:bg-slate-50 transition-colors"
                   >
                     Reconectar
                   </a>
                   <button
                     onClick={() => handleDisconnect("personal")}
-                    className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
+                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
                     title="Desconectar conta pessoal"
                   >
                     <LogOut className="w-3.5 h-3.5" />
@@ -312,7 +292,7 @@ export function AccountsModal({
               ) : (
                 <a
                   href="/api/google/auth?type=personal"
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-md shadow-purple-600/30 transition-all active:scale-95"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
                   Vincular Pessoal
@@ -322,30 +302,18 @@ export function AccountsModal({
           </div>
 
           {syncFeedback && (
-            <div className="p-3 rounded-xl bg-[#7B61FF]/10 border border-[#7B61FF]/30 text-xs text-[#9D8DF1] flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 shrink-0 text-emerald-400" />
+            <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
               <span>{syncFeedback}</span>
             </div>
           )}
 
-          {/* Sync CTA & Clean Tasks */}
-          <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-[#242038]">
-            {onPurgeSeedTasks && (
-              <button
-                type="button"
-                onClick={handlePurge}
-                disabled={isPurging}
-                className="flex items-center gap-1 text-[11px] text-[#9490AC] hover:text-rose-400 transition-colors"
-              >
-                <Trash2 className="w-3 h-3" />
-                <span>{isPurging ? "Removendo..." : "Limpar tarefas de exemplo"}</span>
-              </button>
-            )}
-
+          {/* Sync CTA */}
+          <div className="flex items-center justify-end pt-3 border-t border-slate-100 dark:border-zinc-800">
             <button
               onClick={handleSyncNow}
               disabled={isSyncing || !hasAnyAccount}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-white font-semibold text-xs shadow-lg shadow-[#7B61FF]/25 transition-all active:scale-95 disabled:opacity-40 ml-auto"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-40"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
               {isSyncing ? "Sincronizando..." : "Sincronizar Google Tasks"}

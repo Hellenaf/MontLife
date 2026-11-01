@@ -131,14 +131,6 @@ export default function MontOpsDashboard() {
     await loadTasks();
   };
 
-  const handlePurgeSeedTasks = async () => {
-    const seedTasks = tasks.filter((t) => t.id.startsWith("seed-task-"));
-    for (const t of seedTasks) {
-      await fetch(`/api/tasks/${t.id}`, { method: "DELETE" });
-    }
-    await loadTasks();
-  };
-
   // Handlers
   const handleTaskCreated = (newTask: Task) => {
     setTasks((prev) => [newTask, ...prev]);
@@ -246,7 +238,7 @@ export default function MontOpsDashboard() {
   const hasConnectedAccount = accounts.some((a) => a.is_connected);
 
   return (
-    <div className="w-screen h-screen overflow-hidden flex flex-col bg-[#090810]">
+    <div className="w-screen h-screen overflow-hidden flex flex-col bg-slate-50 dark:bg-[#090A0F] text-slate-800 dark:text-slate-100 transition-colors duration-200">
       {/* 1. Header Fixo & Barra de Comando IA */}
       <HeaderCommandBar
         accounts={accounts}
@@ -262,11 +254,11 @@ export default function MontOpsDashboard() {
       {/* 2. Fixed-Grid: 3 Colunas Abaixo do Header (Tela Cheia, Scroll Interno Independente) */}
       <div className="flex-1 flex flex-col overflow-hidden pt-16">
         {/* Banner if no account is connected */}
-        {!hasConnectedAccount && accounts.length > 0 && (
-          <div className="bg-gradient-to-r from-indigo-950 via-[#131122] to-purple-950 border-b border-indigo-500/30 px-4 py-2 flex items-center justify-between text-xs shrink-0">
+        {!hasConnectedAccount && accountsLoaded && accounts.length > 0 && (
+          <div className="bg-indigo-50 dark:bg-indigo-950/60 border-b border-indigo-200 dark:border-indigo-800 px-4 py-2 flex items-center justify-between text-xs text-indigo-900 dark:text-indigo-200 shrink-0">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-              <p className="text-[#EAE9FC]">
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+              <p>
                 <strong>Nenhuma conta vinculada.</strong> Conecte sua conta do Google para sincronizar suas tarefas reais do Google Tasks.
               </p>
             </div>
@@ -284,11 +276,11 @@ export default function MontOpsDashboard() {
 
         {/* OAuth Feedback Toast Banner */}
         {oauthFeedback && (
-          <div className="bg-emerald-950/90 border-b border-emerald-500/40 px-4 py-2 flex items-center justify-between text-xs text-emerald-200 shrink-0">
+          <div className="bg-emerald-50 dark:bg-emerald-950/80 border-b border-emerald-200 dark:border-emerald-800 px-4 py-2 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-200 shrink-0">
             <span>{oauthFeedback}</span>
             <button
               onClick={() => setOauthFeedback(null)}
-              className="text-emerald-400 hover:text-white px-2 py-0.5 rounded text-xs"
+              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-white px-2 py-0.5 rounded text-xs"
             >
               ✕
             </button>
@@ -373,7 +365,6 @@ export default function MontOpsDashboard() {
         onClose={() => setIsAccountsModalOpen(false)}
         accounts={accounts}
         onRefreshAccounts={loadAccounts}
-        onPurgeSeedTasks={handlePurgeSeedTasks}
       />
 
       <NewTaskModal
