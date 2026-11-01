@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPendingAuth, clearPendingAuth } from "@/lib/pendingAuth";
 import { saveConnectedAccount, getTasksFromDb, saveTaskToDb, deleteTaskFromDb } from "@/services/taskService";
-import { fetchAllGoogleTasksFromAccount, fetchYouTubeResources } from "@/services/googleService";
+import {
+  fetchAllGoogleTasksFromAccount,
+  fetchAllGoogleCalendarEvents,
+  fetchYouTubeResources,
+} from "@/services/googleService";
 import { categorizeTaskWithAI } from "@/services/geminiService";
 import { AccountType, Task } from "@/types";
 import { stripGoogleTaskPrefix } from "@/lib/sla";
@@ -97,6 +101,54 @@ export async function POST(req: NextRequest) {
             await saveTaskToDb(newTask);
             importedCount++;
           }
+        }
+
+        // 3. Sincronizar eventos da Google Agenda (Compromissos)
+        try {
+          const calEvents = await fetchAllGoogleCalendarEvents({
+            access_token: access_token || undefined,
+            refresh_token: refresh_token || undefined,
+          });
+
+          for (const ev of calEvents) {
+            const existingEv = currentTasks.find(
+              (t) => t.google_calendar_event_id === ev.id || t.id === `gcal-${ev.id}`
+            );
+
+            if (!existingEv) {
+              const isPast = new Date(ev.start).getTime() < Date.now();
+              const newCalTask: Task = {
+                id: `gcal-${ev.id}`,
+                raw_input: ev.summary,
+                title: ev.summary,
+                description: ev.description || (ev.location ? `Local: ${ev.location}` : ""),
+                account_type: type,
+                item_type: "activity",
+                category: "Agenda & Compromissos",
+                tags: ["google-agenda", "evento", type === "personal" ? "pessoal" : "trabalho"],
+                priority: "P3",
+                status: isPast ? "COMPLETED" : "TODO",
+                created_at: new Date().toISOString(),
+                started_at: null,
+                completed_at: isPast ? ev.start : null,
+                original_due_date: ev.start,
+                current_due_date: ev.start,
+                extension_count: 0,
+                deadline_extensions: [],
+                resolution_notes: null,
+                cancel_reason: null,
+                google_task_id: null,
+                google_calendar_event_id: ev.id,
+                learning_resources: { youtube_videos: [], search_queries: [] },
+                met_original_sla: isPast ? true : null,
+              };
+
+              await saveTaskToDb(newCalTask);
+              importedCount++;
+            }
+          }
+        } catch (calErr) {
+          console.warn("Auto-sync calendar in classify failed:", calErr);
         }
       } catch (syncErr) {
         console.warn("Auto-sync tasks in classify failed:", syncErr);

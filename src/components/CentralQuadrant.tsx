@@ -21,9 +21,31 @@ import {
   Check,
   X,
   Plus,
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
+  CalendarRange,
 } from "lucide-react";
-import { Task, TaskStatus, ItemType } from "@/types";
-import { format, parseISO, isToday, getHours } from "date-fns";
+import { Task, TaskStatus, ItemType, AccountType } from "@/types";
+import {
+  format,
+  parseISO,
+  isToday,
+  getHours,
+  startOfWeek,
+  endOfWeek,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  addDays,
+  subDays,
+  addWeeks,
+  subWeeks,
+  addMonths,
+  subMonths,
+  isSameDay,
+  isSameMonth,
+} from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface CentralQuadrantProps {
@@ -34,6 +56,7 @@ interface CentralQuadrantProps {
   onUpdateStatus: (taskId: string, status: TaskStatus) => void;
   onUpdateItemType?: (taskId: string, itemType: ItemType) => void;
   onUpdateTaskFields?: (taskId: string, fields: Partial<Task>) => Promise<void> | void;
+  onSelectTask?: (task: Task) => void;
 }
 
 const CATEGORY_SUGGESTIONS = [
@@ -50,6 +73,7 @@ const CATEGORY_SUGGESTIONS = [
   "Saúde & Bem-estar",
   "Vida Pessoal & Casa",
   "Suporte & Demandas",
+  "Agenda & Compromissos",
 ];
 
 export function CentralQuadrant({
@@ -60,6 +84,7 @@ export function CentralQuadrant({
   onUpdateStatus,
   onUpdateItemType,
   onUpdateTaskFields,
+  onSelectTask,
 }: CentralQuadrantProps) {
   const [activeTab, setActiveTab] = useState<"details" | "timeline" | "study">("details");
 
@@ -69,16 +94,48 @@ export function CentralQuadrant({
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [newTagInput, setNewTagInput] = useState("");
 
-  // Timeline events for today (tasks due today or active)
-  const todayTasks = allTasks.filter((t) => {
-    try {
-      return isToday(parseISO(t.current_due_date)) || t.status === "IN_PROGRESS";
-    } catch {
-      return false;
-    }
+  // Calendar States (Dia | Semana | Mês)
+  const [calendarViewMode, setCalendarViewMode] = useState<"day" | "week" | "month">("week");
+  const [calendarDate, setCalendarDate] = useState<Date>(new Date());
+  const [calendarAccountFilter, setCalendarAccountFilter] = useState<"all" | AccountType>("all");
+
+  // Filter tasks for calendar based on account filter
+  const calendarTasks = allTasks.filter((t) => {
+    if (calendarAccountFilter === "all") return true;
+    return t.account_type === calendarAccountFilter;
   });
 
-  const hoursArray = Array.from({ length: 13 }, (_, i) => i + 8); // 08:00 to 20:00
+  // Hours array for Day view (07:00 to 22:00)
+  const dayHours = Array.from({ length: 16 }, (_, i) => i + 7);
+
+  // Week calculation
+  const weekStart = startOfWeek(calendarDate, { weekStartsOn: 0 }); // Sunday
+  const weekEnd = endOfWeek(calendarDate, { weekStartsOn: 0 }); // Saturday
+  const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  // Month calculation
+  const monthStart = startOfMonth(calendarDate);
+  const monthEnd = endOfMonth(calendarDate);
+  const monthGridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+  const monthGridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  const monthGridDays = eachDayOfInterval({ start: monthGridStart, end: monthGridEnd });
+
+  // Calendar Navigation
+  const handlePrev = () => {
+    if (calendarViewMode === "day") setCalendarDate((d) => subDays(d, 1));
+    else if (calendarViewMode === "week") setCalendarDate((d) => subWeeks(d, 1));
+    else setCalendarDate((d) => subMonths(d, 1));
+  };
+
+  const handleNext = () => {
+    if (calendarViewMode === "day") setCalendarDate((d) => addDays(d, 1));
+    else if (calendarViewMode === "week") setCalendarDate((d) => addWeeks(d, 1));
+    else setCalendarDate((d) => addMonths(d, 1));
+  };
+
+  const handleToday = () => {
+    setCalendarDate(new Date());
+  };
 
   // Category change handler
   const handleSaveCategory = async () => {
@@ -115,6 +172,17 @@ export function CentralQuadrant({
     }
   };
 
+  // Helper to get tasks for a specific day
+  const getTasksForDay = (day: Date) => {
+    return calendarTasks.filter((t) => {
+      try {
+        return isSameDay(parseISO(t.current_due_date), day);
+      } catch {
+        return false;
+      }
+    });
+  };
+
   return (
     <main className="flex-1 h-full flex flex-col bg-slate-100/50 dark:bg-[#0c0d13] overflow-hidden transition-colors duration-200">
       {/* Top Tab Bar */}
@@ -141,7 +209,7 @@ export function CentralQuadrant({
             }`}
           >
             <CalendarIcon className="w-3.5 h-3.5" />
-            Agenda do Dia
+            Agenda & Calendário
           </button>
 
           <button
@@ -513,75 +581,368 @@ export function CentralQuadrant({
           </div>
         )}
 
-        {/* TAB 2: TIMELINE */}
+        {/* TAB 2: CALENDAR & TIMELINE (DIA | SEMANA | MÊS) */}
         {activeTab === "timeline" && (
-          <div className="max-w-4xl mx-auto space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Agenda do Dia (Trabalho + Pessoal)
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Visualização integrada de eventos e compromissos sincronizados com o Google Tasks
-                </p>
-              </div>
-              <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-950/50 border border-indigo-200 dark:border-indigo-800">
-                Hoje: {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
-              </span>
-            </div>
-
-            {/* Hourly schedule */}
-            <div className="space-y-2">
-              {hoursArray.map((hour) => {
-                const hourFormatted = `${hour.toString().padStart(2, "0")}:00`;
-                const tasksInHour = todayTasks.filter((t) => {
-                  try {
-                    return getHours(parseISO(t.current_due_date)) === hour;
-                  } catch {
-                    return false;
-                  }
-                });
-
-                return (
-                  <div
-                    key={hour}
-                    className="flex gap-4 p-2.5 rounded-xl border border-slate-200/80 dark:border-zinc-800/80 bg-white dark:bg-[#141520] hover:bg-slate-50 dark:hover:bg-[#181926] transition-colors shadow-sm"
-                  >
-                    <span className="w-14 text-xs font-mono font-semibold text-slate-400 dark:text-slate-500 pt-1">
-                      {hourFormatted}
-                    </span>
-
-                    <div className="flex-1 space-y-1.5">
-                      {tasksInHour.length === 0 ? (
-                        <div className="h-6 flex items-center text-[11px] text-slate-400 dark:text-slate-600 italic">
-                          Sem atividades agendadas
-                        </div>
-                      ) : (
-                        tasksInHour.map((task) => (
-                          <div
-                            key={task.id}
-                            className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 text-xs flex items-center justify-between"
-                          >
-                            <span className="font-semibold text-slate-900 dark:text-white truncate max-w-md">
-                              {task.title}
-                            </span>
-                            <span
-                              className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
-                                task.account_type === "work"
-                                  ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800"
-                                  : "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800"
-                              }`}
-                            >
-                              {task.account_type === "work" ? "Trabalho" : "Pessoal"}
-                            </span>
-                          </div>
-                        ))
-                      )}
-                    </div>
+          <div className="max-w-5xl mx-auto space-y-4">
+            {/* Header with Navigation and View Modes */}
+            <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-3">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                {/* Left: View title + Prev/Next buttons */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center bg-slate-100 dark:bg-[#1a1b26] p-0.5 rounded-xl border border-slate-200 dark:border-zinc-800">
+                    <button
+                      type="button"
+                      onClick={handlePrev}
+                      className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#202230] text-slate-600 dark:text-slate-300 transition-all"
+                      title="Anterior"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleToday}
+                      className="px-2.5 py-1 text-xs font-semibold hover:bg-white dark:hover:bg-[#202230] text-slate-700 dark:text-slate-200 rounded-lg transition-all"
+                    >
+                      Hoje
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleNext}
+                      className="p-1.5 rounded-lg hover:bg-white dark:hover:bg-[#202230] text-slate-600 dark:text-slate-300 transition-all"
+                      title="Próximo"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
                   </div>
-                );
-              })}
+
+                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white capitalize">
+                    {calendarViewMode === "day" &&
+                      format(calendarDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                    {calendarViewMode === "week" &&
+                      `Semana de ${format(weekStart, "dd/MM")} a ${format(weekEnd, "dd/MM/yyyy")}`}
+                    {calendarViewMode === "month" &&
+                      format(calendarDate, "MMMM 'de' yyyy", { locale: ptBR })}
+                  </h3>
+                </div>
+
+                {/* Right: Switcher (Dia | Semana | Mês) + Context Filter */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Context selector: Todas | Trabalho | Pessoal */}
+                  <div className="flex items-center bg-slate-100 dark:bg-[#1a1b26] p-1 rounded-xl border border-slate-200 dark:border-zinc-800 text-[11px]">
+                    <button
+                      type="button"
+                      onClick={() => setCalendarAccountFilter("all")}
+                      className={`px-2 py-0.5 rounded-lg font-semibold transition-all ${
+                        calendarAccountFilter === "all"
+                          ? "bg-white dark:bg-[#202230] text-slate-900 dark:text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      Todas
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCalendarAccountFilter("work")}
+                      className={`px-2 py-0.5 rounded-lg font-semibold transition-all flex items-center gap-1 ${
+                        calendarAccountFilter === "work"
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <Briefcase className="w-2.5 h-2.5" /> Trabalho
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCalendarAccountFilter("personal")}
+                      className={`px-2 py-0.5 rounded-lg font-semibold transition-all flex items-center gap-1 ${
+                        calendarAccountFilter === "personal"
+                          ? "bg-purple-600 text-white shadow-sm"
+                          : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <User className="w-2.5 h-2.5" /> Pessoal
+                    </button>
+                  </div>
+
+                  {/* Mode switcher */}
+                  <div className="flex items-center bg-slate-100 dark:bg-[#1a1b26] p-1 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setCalendarViewMode("day")}
+                      className={`px-3 py-1 rounded-lg font-semibold transition-all ${
+                        calendarViewMode === "day"
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      Dia
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCalendarViewMode("week")}
+                      className={`px-3 py-1 rounded-lg font-semibold transition-all ${
+                        calendarViewMode === "week"
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      Semana
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCalendarViewMode("month")}
+                      className={`px-3 py-1 rounded-lg font-semibold transition-all ${
+                        calendarViewMode === "month"
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      Mês
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Tarefas, compromissos e eventos sincronizados com o Google Agenda e Google Tasks.
+              </p>
             </div>
+
+            {/* 1. DAY VIEW */}
+            {calendarViewMode === "day" && (
+              <div className="space-y-2 animate-in fade-in">
+                {dayHours.map((hour) => {
+                  const hourFormatted = `${hour.toString().padStart(2, "0")}:00`;
+                  const dayTasks = getTasksForDay(calendarDate);
+                  const tasksInHour = dayTasks.filter((t) => {
+                    try {
+                      return getHours(parseISO(t.current_due_date)) === hour;
+                    } catch {
+                      return false;
+                    }
+                  });
+
+                  return (
+                    <div
+                      key={hour}
+                      className="flex gap-4 p-3 rounded-xl border border-slate-200/80 dark:border-zinc-800/80 bg-white dark:bg-[#141520] hover:bg-slate-50 dark:hover:bg-[#181926] transition-colors shadow-sm"
+                    >
+                      <span className="w-14 text-xs font-mono font-semibold text-slate-400 dark:text-slate-500 pt-1 shrink-0">
+                        {hourFormatted}
+                      </span>
+
+                      <div className="flex-1 space-y-1.5">
+                        {tasksInHour.length === 0 ? (
+                          <div className="h-6 flex items-center text-[11px] text-slate-400 dark:text-slate-600 italic">
+                            Sem compromissos
+                          </div>
+                        ) : (
+                          tasksInHour.map((task) => (
+                            <div
+                              key={task.id}
+                              onClick={() => onSelectTask?.(task)}
+                              className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 text-xs flex items-center justify-between cursor-pointer hover:border-indigo-500 transition-all shadow-sm"
+                            >
+                              <div className="flex items-center gap-2 min-w-0">
+                                {task.item_type === "activity" ? (
+                                  <Activity className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                                ) : task.item_type === "reminder" ? (
+                                  <Bell className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                ) : (
+                                  <ListTodo className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                )}
+                                <span className="font-semibold text-slate-900 dark:text-white truncate">
+                                  {task.title}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="text-[10px] text-slate-400 font-mono">
+                                  {task.category}
+                                </span>
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                                    task.account_type === "work"
+                                      ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800"
+                                      : "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800"
+                                  }`}
+                                >
+                                  {task.account_type === "work" ? "Trabalho" : "Pessoal"}
+                                </span>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 2. WEEK VIEW */}
+            {calendarViewMode === "week" && (
+              <div className="grid grid-cols-1 md:grid-cols-7 gap-3 animate-in fade-in">
+                {weekDays.map((day) => {
+                  const tasksForThisDay = getTasksForDay(day);
+                  const isDayToday = isToday(day);
+
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={`rounded-2xl border p-3 flex flex-col space-y-2.5 transition-all min-h-[300px] ${
+                        isDayToday
+                          ? "bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-500 dark:border-indigo-500/70 shadow-sm"
+                          : "bg-white dark:bg-[#141520] border-slate-200 dark:border-zinc-800 shadow-sm"
+                      }`}
+                    >
+                      {/* Day Column Header */}
+                      <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-zinc-800/80">
+                        <div>
+                          <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase block">
+                            {format(day, "EEE", { locale: ptBR })}
+                          </span>
+                          <span
+                            className={`text-sm font-black ${
+                              isDayToday
+                                ? "text-indigo-600 dark:text-indigo-400"
+                                : "text-slate-900 dark:text-white"
+                            }`}
+                          >
+                            {format(day, "dd/MM")}
+                          </span>
+                        </div>
+
+                        {tasksForThisDay.length > 0 && (
+                          <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-[#1a1b26] text-slate-700 dark:text-slate-300 text-[10px] font-bold flex items-center justify-center">
+                            {tasksForThisDay.length}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Day Tasks Cards */}
+                      <div className="flex-1 space-y-2 overflow-y-auto max-h-[460px] no-scrollbar">
+                        {tasksForThisDay.length === 0 ? (
+                          <div className="h-20 flex items-center justify-center text-[11px] text-slate-400 dark:text-slate-600 italic">
+                            Livre
+                          </div>
+                        ) : (
+                          tasksForThisDay.map((task) => (
+                            <div
+                              key={task.id}
+                              onClick={() => onSelectTask?.(task)}
+                              className="p-2 rounded-xl bg-slate-50 dark:bg-[#1a1b26] border border-slate-200 dark:border-zinc-800 hover:border-indigo-500 transition-all cursor-pointer shadow-sm space-y-1"
+                            >
+                              <div className="flex items-center justify-between text-[10px]">
+                                <span className="font-mono text-slate-400">
+                                  {format(parseISO(task.current_due_date), "HH:mm")}
+                                </span>
+                                <span
+                                  className={`w-2 h-2 rounded-full ${
+                                    task.account_type === "work" ? "bg-blue-500" : "bg-purple-500"
+                                  }`}
+                                  title={task.account_type === "work" ? "Trabalho" : "Pessoal"}
+                                />
+                              </div>
+
+                              <h5 className="text-[11px] font-semibold text-slate-900 dark:text-white line-clamp-2 leading-tight">
+                                {task.title}
+                              </h5>
+
+                              <span className="text-[9px] text-slate-500 dark:text-slate-400 block truncate">
+                                {task.category}
+                              </span>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* 3. MONTH VIEW */}
+            {calendarViewMode === "month" && (
+              <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#141520] p-4 shadow-sm space-y-2 animate-in fade-in">
+                {/* Month Day-of-week header */}
+                <div className="grid grid-cols-7 gap-1 text-center font-bold text-xs text-slate-500 dark:text-slate-400 pb-2 border-b border-slate-100 dark:border-zinc-800">
+                  <span>Dom</span>
+                  <span>Seg</span>
+                  <span>Ter</span>
+                  <span>Qua</span>
+                  <span>Qui</span>
+                  <span>Sex</span>
+                  <span>Sáb</span>
+                </div>
+
+                {/* Month Grid */}
+                <div className="grid grid-cols-7 gap-1.5">
+                  {monthGridDays.map((day) => {
+                    const tasksForDay = getTasksForDay(day);
+                    const isDayInCurrentMonth = isSameMonth(day, calendarDate);
+                    const isDayToday = isToday(day);
+
+                    return (
+                      <div
+                        key={day.toISOString()}
+                        onClick={() => {
+                          setCalendarDate(day);
+                          setCalendarViewMode("day");
+                        }}
+                        className={`min-h-[90px] p-1.5 rounded-xl border flex flex-col justify-between transition-all cursor-pointer hover:border-indigo-400 dark:hover:border-indigo-500 ${
+                          !isDayInCurrentMonth
+                            ? "opacity-30 bg-slate-50/50 dark:bg-zinc-900/30 border-slate-100 dark:border-zinc-900"
+                            : isDayToday
+                            ? "bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-500/70 dark:border-indigo-500/50"
+                            : "bg-slate-50/60 dark:bg-[#181926] border-slate-200/80 dark:border-zinc-800/80"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                              isDayToday
+                                ? "bg-indigo-600 text-white shadow-sm"
+                                : "text-slate-700 dark:text-slate-300"
+                            }`}
+                          >
+                            {format(day, "d")}
+                          </span>
+
+                          {tasksForDay.length > 0 && (
+                            <span className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400">
+                              {tasksForDay.length}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Preview badges */}
+                        <div className="space-y-1 mt-1 overflow-hidden">
+                          {tasksForDay.slice(0, 2).map((t) => (
+                            <div
+                              key={t.id}
+                              className={`truncate px-1.5 py-0.5 rounded text-[9px] font-medium leading-none ${
+                                t.account_type === "work"
+                                  ? "bg-blue-100 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300"
+                                  : "bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300"
+                              }`}
+                              title={t.title}
+                            >
+                              {t.title}
+                            </div>
+                          ))}
+                          {tasksForDay.length > 2 && (
+                            <span className="text-[9px] text-slate-400 font-medium pl-1 block">
+                              +{tasksForDay.length - 2} mais
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

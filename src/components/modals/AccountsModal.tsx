@@ -12,6 +12,9 @@ import {
   LogOut,
   Sparkles,
   PlusCircle,
+  Smartphone,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { ConnectedAccount } from "@/types";
 import { format, parseISO } from "date-fns";
@@ -31,29 +34,38 @@ export function AccountsModal({
   onRefreshAccounts,
 }: AccountsModalProps) {
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncingSamsung, setIsSyncingSamsung] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+  const [showSamsungGuide, setShowSamsungGuide] = useState(false);
 
   if (!isOpen) return null;
 
   const workAccount = accounts.find((a) => a.id === "work");
   const personalAccount = accounts.find((a) => a.id === "personal");
+  const samsungAccount = accounts.find((a) => a.id === "samsung" || a.id === "microsoft");
 
-  const hasAnyAccount = Boolean(workAccount?.is_connected || personalAccount?.is_connected);
+  const hasAnyAccount = Boolean(
+    workAccount?.is_connected || personalAccount?.is_connected || samsungAccount?.is_connected
+  );
   const hasBothAccounts = Boolean(workAccount?.is_connected && personalAccount?.is_connected);
 
   const handleSyncNow = async () => {
     setIsSyncing(true);
     setSyncFeedback(null);
     try {
-      const res = await fetch("/api/google/sync", { method: "POST" });
+      const res = await fetch("/api/google/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
       const data = await res.json();
       if (data.success) {
         setSyncFeedback(
-          `Sincronizado com sucesso! ${data.imported_count || 0} tarefas do Google Tasks importadas.`
+          `Google Tasks & Agenda sincronizados! ${data.imported_count || 0} itens importados.`
         );
         await onRefreshAccounts();
       } else {
-        setSyncFeedback("Erro ao sincronizar. Verifique se a conta está conectada.");
+        setSyncFeedback("Erro ao sincronizar. Verifique se a conta Google está conectada.");
       }
     } catch (err) {
       console.error(err);
@@ -63,8 +75,37 @@ export function AccountsModal({
     }
   };
 
-  const handleDisconnect = async (type: "work" | "personal") => {
-    const label = type === "work" ? "de Trabalho" : "Pessoal";
+  const handleSyncSamsung = async () => {
+    setIsSyncingSamsung(true);
+    setSyncFeedback(null);
+    try {
+      const res = await fetch("/api/microsoft/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSyncFeedback(
+          `Lembretes Samsung sincronizados! ${data.imported_count || 0} itens importados.`
+        );
+        await onRefreshAccounts();
+      } else {
+        setSyncFeedback(data.error || "Erro ao sincronizar Samsung Reminder.");
+      }
+    } catch (err) {
+      console.error(err);
+      setSyncFeedback("Falha de conexão com a API do Samsung Reminder.");
+    } finally {
+      setIsSyncingSamsung(false);
+    }
+  };
+
+  const handleDisconnect = async (type: string) => {
+    let label = "Pessoal";
+    if (type === "work") label = "de Trabalho";
+    if (type === "samsung" || type === "microsoft") label = "Samsung Reminder";
+
     if (!confirm(`Deseja realmente desconectar a conta ${label}?`)) {
       return;
     }
@@ -91,19 +132,19 @@ export function AccountsModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
+      <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#101118]">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#101118] shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Contas Google & Sincronização
+                Contas Conectadas & Sincronização
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Gerencie suas contas e sincronize suas tarefas reais do Google Tasks.
+                Google Tasks, Google Agenda e Samsung Reminder.
               </p>
             </div>
           </div>
@@ -115,28 +156,28 @@ export function AccountsModal({
           </button>
         </div>
 
-        {/* Info Banner: Optional Second Account */}
-        <div className="px-6 pt-4">
+        {/* Info Banner */}
+        <div className="px-6 pt-4 shrink-0">
           <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2.5">
             <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
             <span>
               {hasBothAccounts ? (
-                <strong className="text-emerald-600 dark:text-emerald-400">Suas duas contas estão conectadas!</strong>
+                <strong className="text-emerald-600 dark:text-emerald-400">
+                  Suas contas de trabalho e pessoal estão conectadas!
+                </strong>
               ) : hasAnyAccount ? (
                 <>
-                  Você já tem uma conta vinculada. A <strong>segunda conta é opcional</strong> e serve para separar chamados de trabalho e rotina pessoal.
+                  Você já possui uma conta ativa. Adicionar uma segunda conta ou o Samsung Reminder é <strong>opcional</strong>.
                 </>
               ) : (
-                <>
-                  Conecte sua conta Google para sincronizar suas tarefas reais.
-                </>
+                <>Conecte suas contas para sincronizar tarefas e compromissos reais.</>
               )}
             </span>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-4">
+        {/* Scrollable Content */}
+        <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
           {/* Work Account Card */}
           <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-3">
             <div className="flex items-center justify-between">
@@ -147,7 +188,7 @@ export function AccountsModal({
                 <div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                      Conta de Trabalho
+                      Conta de Trabalho (Google)
                     </h4>
                     {!workAccount?.is_connected && personalAccount?.is_connected && (
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
@@ -229,7 +270,7 @@ export function AccountsModal({
                 <div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                      Conta Pessoal
+                      Conta Pessoal (Google)
                     </h4>
                     {!personalAccount?.is_connected && workAccount?.is_connected && (
                       <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
@@ -301,6 +342,121 @@ export function AccountsModal({
             </div>
           </div>
 
+          {/* Samsung Reminder Card */}
+          <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800">
+                  <Smartphone className="w-4 h-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
+                      Samsung Reminder (Galaxy)
+                    </h4>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
+                      via Microsoft To Do
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[220px]">
+                    {samsungAccount?.is_connected && samsungAccount.email
+                      ? samsungAccount.email
+                      : "Lembretes do smartphone Samsung Galaxy"}
+                  </p>
+                </div>
+              </div>
+
+              <span
+                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 ${
+                  samsungAccount?.is_connected
+                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30"
+                    : "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
+                }`}
+              >
+                {samsungAccount?.is_connected ? (
+                  <>
+                    <CheckCircle className="w-3 h-3 text-emerald-500" /> Conectado
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-3 h-3" /> Inativo
+                  </>
+                )}
+              </span>
+            </div>
+
+            {/* Step-by-step instructions accordion */}
+            <div className="rounded-xl bg-white dark:bg-zinc-900/60 border border-slate-200/80 dark:border-zinc-800 p-2.5 text-xs text-slate-600 dark:text-slate-400">
+              <button
+                type="button"
+                onClick={() => setShowSamsungGuide((prev) => !prev)}
+                className="w-full flex items-center justify-between text-[11px] font-semibold text-sky-700 dark:text-sky-400"
+              >
+                <span>Como sincronizar os lembretes do seu Galaxy</span>
+                {showSamsungGuide ? (
+                  <ChevronUp className="w-3.5 h-3.5" />
+                ) : (
+                  <ChevronDown className="w-3.5 h-3.5" />
+                )}
+              </button>
+
+              {showSamsungGuide && (
+                <div className="mt-2 space-y-1.5 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-zinc-800/80 pt-2">
+                  <p>
+                    1. No seu celular Samsung, abra o app <strong>Lembretes</strong> (Samsung Reminder).
+                  </p>
+                  <p>
+                    2. Toque no ícone de opções (3 pontinhos ou menu) &gt; ⚙️ <strong>Configurações</strong>.
+                  </p>
+                  <p>
+                    3. Ative a opção <strong>Sincronizar com o Microsoft To Do</strong> e faça login com a sua conta Microsoft.
+                  </p>
+                  <p>
+                    4. Clique no botão abaixo para vincular sua conta Microsoft ao MontLife e trazer todos os seus lembretes automaticamente.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/80 dark:border-zinc-800/80">
+              <span>
+                {samsungAccount?.is_connected && samsungAccount?.last_sync_at
+                  ? `Último sync: ${format(parseISO(samsungAccount.last_sync_at), "dd/MM HH:mm", {
+                      locale: ptBR,
+                    })}`
+                  : "Aguardando vínculo"}
+              </span>
+
+              {samsungAccount?.is_connected ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handleSyncSamsung}
+                    disabled={isSyncingSamsung}
+                    className="px-3 py-1 rounded-lg border border-sky-200 dark:border-sky-800 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 text-xs font-medium hover:bg-sky-100 transition-colors flex items-center gap-1"
+                  >
+                    <RefreshCw className={`w-3 h-3 ${isSyncingSamsung ? "animate-spin" : ""}`} />
+                    Sincronizar
+                  </button>
+                  <button
+                    onClick={() => handleDisconnect("samsung")}
+                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+                    title="Desconectar Samsung Reminder"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <a
+                  href="/api/microsoft/auth"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95"
+                >
+                  <PlusCircle className="w-3.5 h-3.5" />
+                  Vincular Samsung
+                </a>
+              )}
+            </div>
+          </div>
+
           {syncFeedback && (
             <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
               <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
@@ -312,11 +468,11 @@ export function AccountsModal({
           <div className="flex items-center justify-end pt-3 border-t border-slate-100 dark:border-zinc-800">
             <button
               onClick={handleSyncNow}
-              disabled={isSyncing || !hasAnyAccount}
+              disabled={isSyncing || (!workAccount?.is_connected && !personalAccount?.is_connected)}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-40"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-              {isSyncing ? "Sincronizando..." : "Sincronizar Google Tasks"}
+              {isSyncing ? "Sincronizando..." : "Sincronizar Google Tasks & Agenda"}
             </button>
           </div>
         </div>

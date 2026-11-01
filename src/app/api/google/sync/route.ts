@@ -1,8 +1,12 @@
 import { NextResponse } from "next/server";
 import { getConnectedAccounts, getTasksFromDb, saveTaskToDb, saveConnectedAccount } from "@/services/taskService";
-import { fetchAllGoogleTasksFromAccount, fetchYouTubeResources } from "@/services/googleService";
+import {
+  fetchAllGoogleTasksFromAccount,
+  fetchAllGoogleCalendarEvents,
+  fetchYouTubeResources,
+} from "@/services/googleService";
 import { categorizeTaskWithAI } from "@/services/geminiService";
-import { Task } from "@/types";
+import { Task, AccountType } from "@/types";
 import { stripGoogleTaskPrefix } from "@/lib/sla";
 
 export async function POST() {
@@ -13,7 +17,8 @@ export async function POST() {
     let updatedCount = 0;
 
     for (const acc of accounts) {
-      if (acc.is_connected && (acc.refresh_token || acc.access_token)) {
+      if (acc.is_connected && (acc.refresh_token || acc.access_token) && (acc.id === "work" || acc.id === "personal")) {
+        const accountType: AccountType = acc.id;
         try {
           // Fetch ALL tasks across ALL tasklists with full pagination (from 2024 to today)
           const items = await fetchAllGoogleTasksFromAccount({
@@ -29,7 +34,7 @@ export async function POST() {
 
             if (!existing) {
               // Categorize autonomously with AI
-              const aiData = await categorizeTaskWithAI(cleanTitle, item.notes, acc.id);
+              const aiData = await categorizeTaskWithAI(cleanTitle, item.notes, accountType);
               const yt = await fetchYouTubeResources(aiData.learning_queries);
 
               const isCompleted = item.status === "completed";
@@ -41,7 +46,7 @@ export async function POST() {
                 raw_input: cleanTitle,
                 title: cleanTitle,
                 description: item.notes || "",
-                account_type: acc.id,
+                account_type: accountType,
                 item_type: aiData.item_type || "task",
                 category: aiData.category,
                 tags: aiData.tags.length > 0 ? aiData.tags : [item.taskListName || "Google Tasks"],
@@ -75,7 +80,7 @@ export async function POST() {
               let hasChanged = false;
 
               if (isGeneric) {
-                const aiData = await categorizeTaskWithAI(cleanTitle, item.notes || existing.description, acc.id);
+                const aiData = await categorizeTaskWithAI(cleanTitle, item.notes || existing.description, accountType);
                 existing.category = aiData.category;
                 existing.tags = aiData.tags;
                 if (!existing.learning_resources?.youtube_videos?.length) {
@@ -101,6 +106,54 @@ export async function POST() {
                 updatedCount++;
               }
             }
+          }
+
+          // 2. Sincronizar Google Agenda (Calendar Events)
+          try {
+            const calEvents = await fetchAllGoogleCalendarEvents({
+              access_token: acc.access_token,
+              refresh_token: acc.refresh_token,
+            });
+
+            for (const ev of calEvents) {
+              const existingEv = tasks.find(
+                (t) => t.google_calendar_event_id === ev.id || t.id === `gcal-${ev.id}`
+              );
+
+              if (!existingEv) {
+                const isPast = new Date(ev.start).getTime() < Date.now();
+                const newCalTask: Task = {
+                  id: `gcal-${ev.id}`,
+                  raw_input: ev.summary,
+                  title: ev.summary,
+                  description: ev.description || (ev.location ? `Local: ${ev.location}` : ""),
+                  account_type: accountType,
+                  item_type: "activity",
+                  category: "Agenda & Compromissos",
+                  tags: ["google-agenda", "evento", accountType === "personal" ? "pessoal" : "trabalho"],
+                  priority: "P3",
+                  status: isPast ? "COMPLETED" : "TODO",
+                  created_at: new Date().toISOString(),
+                  started_at: null,
+                  completed_at: isPast ? ev.start : null,
+                  original_due_date: ev.start,
+                  current_due_date: ev.start,
+                  extension_count: 0,
+                  deadline_extensions: [],
+                  resolution_notes: null,
+                  cancel_reason: null,
+                  google_task_id: null,
+                  google_calendar_event_id: ev.id,
+                  learning_resources: { youtube_videos: [], search_queries: [] },
+                  met_original_sla: isPast ? true : null,
+                };
+
+                await saveTaskToDb(newCalTask);
+                importedCount++;
+              }
+            }
+          } catch (calErr) {
+            console.warn(`Calendar sync failed for account ${acc.id}:`, calErr);
           }
         } catch (syncErr) {
           console.warn(`Sync failed for account ${acc.id}:`, syncErr);

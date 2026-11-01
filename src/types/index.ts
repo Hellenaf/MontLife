@@ -1,4 +1,5 @@
 export type AccountType = "work" | "personal";
+export type ConnectedAccountId = AccountType | "microsoft" | "samsung";
 
 export type ItemType = "task" | "activity" | "reminder";
 
@@ -60,7 +61,7 @@ export interface Task {
 }
 
 export interface ConnectedAccount {
-  id: AccountType;
+  id: ConnectedAccountId;
   email: string;
   access_token?: string;
   refresh_token?: string;

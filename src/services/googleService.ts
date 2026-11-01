@@ -122,6 +122,75 @@ export async function fetchAllGoogleTasksFromAccount(tokens: {
   return allItems;
 }
 
+export interface RawGoogleCalendarEvent {
+  id: string;
+  summary: string;
+  description?: string;
+  start: string; // ISO string
+  end?: string;
+  status: string;
+  htmlLink?: string;
+  location?: string;
+}
+
+/**
+ * Fetches Google Calendar events from the user's primary calendar.
+ */
+export async function fetchAllGoogleCalendarEvents(tokens: {
+  access_token?: string;
+  refresh_token?: string;
+}): Promise<RawGoogleCalendarEvent[]> {
+  if (!tokens?.refresh_token && !tokens?.access_token) {
+    return [];
+  }
+
+  try {
+    const oauth2Client = getOAuth2Client();
+    oauth2Client.setCredentials(tokens);
+    const calendarApi = google.calendar({ version: "v3", auth: oauth2Client });
+
+    // Window: 2 months in the past to 6 months in the future
+    const past = new Date();
+    past.setMonth(past.getMonth() - 2);
+    const future = new Date();
+    future.setMonth(future.getMonth() + 6);
+
+    const res = await calendarApi.events.list({
+      calendarId: "primary",
+      timeMin: past.toISOString(),
+      timeMax: future.toISOString(),
+      singleEvents: true,
+      orderBy: "startTime",
+      maxResults: 250,
+    });
+
+    const items = res.data.items || [];
+    const events: RawGoogleCalendarEvent[] = [];
+
+    for (const item of items) {
+      if (!item.id || !item.summary) continue;
+      const start = item.start?.dateTime || item.start?.date;
+      if (!start) continue;
+
+      events.push({
+        id: item.id,
+        summary: item.summary,
+        description: item.description || "",
+        start,
+        end: (item.end?.dateTime || item.end?.date) ?? undefined,
+        status: item.status || "confirmed",
+        htmlLink: item.htmlLink || undefined,
+        location: item.location || undefined,
+      });
+    }
+
+    return events;
+  } catch (err) {
+    console.warn("Failed to fetch Google Calendar events:", err);
+    return [];
+  }
+}
+
 /**
  * Searches YouTube Data API v3 for relevant tutorials and study resources.
  */

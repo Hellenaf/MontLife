@@ -9,5 +9,13 @@ runConfig:
   memoryMiB: 512
 
 env:
+  - variable: GEMINI_API_KEY
+    secret: GEMINI_API_KEY
+  - variable: GOOGLE_CLIENT_ID
+    secret: GOOGLE_CLIENT_ID
+  - variable: GOOGLE_CLIENT_SECRET
+    secret: GOOGLE_CLIENT_SECRET
+  - variable: GOOGLE_REDIRECT_URI
+    secret: GOOGLE_REDIRECT_URI
   - variable: YOUTUBE_API_KEY
     secret: YOUTUBE_API_KEY
