@@ -4,15 +4,17 @@ import { savePendingAuth } from "@/lib/pendingAuth";
 import { saveConnectedAccount, getTasksFromDb, saveTaskToDb, deleteTaskFromDb } from "@/services/taskService";
 import { AccountType, Task } from "@/types";
 import { stripGoogleTaskPrefix } from "@/lib/sla";
+import { getAppBaseUrl } from "@/lib/urlUtils";
 import { google } from "googleapis";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state") || "ask";
+  const baseUrl = getAppBaseUrl(req);
 
   if (!code) {
-    return NextResponse.redirect(new URL("/?oauth_error=no_code", req.url));
+    return NextResponse.redirect(`${baseUrl}/?oauth_error=no_code`);
   }
 
   try {
@@ -36,7 +38,7 @@ export async function GET(req: NextRequest) {
       });
 
       return NextResponse.redirect(
-        new URL(`/?prompt_classify=true&email=${encodeURIComponent(email)}`, req.url)
+        `${baseUrl}/?prompt_classify=true&email=${encodeURIComponent(email)}`
       );
     }
 
@@ -65,7 +67,7 @@ export async function GET(req: NextRequest) {
       const items = res.data.items || [];
       const currentTasks = await getTasksFromDb();
 
-      // Clean up seed tasks
+      // Clean up legacy seed tasks
       for (const t of currentTasks) {
         if (t.id.startsWith("seed-task-")) {
           await deleteTaskFromDb(t.id);
@@ -109,9 +111,9 @@ export async function GET(req: NextRequest) {
       console.warn("Initial sync after OAuth callback failed:", syncErr);
     }
 
-    return NextResponse.redirect(new URL(`/?oauth_success=${accountType}`, req.url));
+    return NextResponse.redirect(`${baseUrl}/?oauth_success=${accountType}`);
   } catch (err) {
     console.error("OAuth callback error:", err);
-    return NextResponse.redirect(new URL("/?oauth_error=token_exchange_failed", req.url));
+    return NextResponse.redirect(`${baseUrl}/?oauth_error=token_exchange_failed`);
   }
 }
