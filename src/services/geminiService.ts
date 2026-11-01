@@ -213,7 +213,7 @@ export async function triageInputWithGemini(
     const ai = new GoogleGenAI({ apiKey: key });
     // Use gemini-2.5-flash as specified in the PRD
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       contents: rawInput,
       config: {
         systemInstruction: SYSTEM_PROMPT,
@@ -309,7 +309,7 @@ Estruture a resposta em Markdown claro e elegante com:
 4. Demandas em Andamento e Próximos Passos`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
+      model: "gemini-3.8-flash",
       contents: prompt,
       config: {
         temperature: 0.3,
