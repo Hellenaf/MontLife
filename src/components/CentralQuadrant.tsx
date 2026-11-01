@@ -17,6 +17,10 @@ import {
   ListTodo,
   Activity,
   Bell,
+  Edit2,
+  Check,
+  X,
+  Plus,
 } from "lucide-react";
 import { Task, TaskStatus, ItemType } from "@/types";
 import { format, parseISO, isToday, getHours } from "date-fns";
@@ -29,7 +33,24 @@ interface CentralQuadrantProps {
   onRequestExtendDeadline: (task: Task) => void;
   onUpdateStatus: (taskId: string, status: TaskStatus) => void;
   onUpdateItemType?: (taskId: string, itemType: ItemType) => void;
+  onUpdateTaskFields?: (taskId: string, fields: Partial<Task>) => Promise<void> | void;
 }
+
+const CATEGORY_SUGGESTIONS = [
+  "BI & Analytics",
+  "Sistemas ERP",
+  "Gestão & Contratos",
+  "Comunicação & Mensagens",
+  "Finanças & Tesouraria",
+  "Infraestrutura & Redes",
+  "Engenharia & Automações",
+  "Gestão Educacional",
+  "Eventos & Vendas",
+  "Estudos & Capacitação",
+  "Saúde & Bem-estar",
+  "Vida Pessoal & Casa",
+  "Suporte & Demandas",
+];
 
 export function CentralQuadrant({
   selectedTask,
@@ -38,8 +59,15 @@ export function CentralQuadrant({
   onRequestExtendDeadline,
   onUpdateStatus,
   onUpdateItemType,
+  onUpdateTaskFields,
 }: CentralQuadrantProps) {
   const [activeTab, setActiveTab] = useState<"details" | "timeline" | "study">("details");
+
+  // Category and Tag Editing States
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
+  const [tempCategory, setTempCategory] = useState("");
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [newTagInput, setNewTagInput] = useState("");
 
   // Timeline events for today (tasks due today or active)
   const todayTasks = allTasks.filter((t) => {
@@ -51,6 +79,41 @@ export function CentralQuadrant({
   });
 
   const hoursArray = Array.from({ length: 13 }, (_, i) => i + 8); // 08:00 to 20:00
+
+  // Category change handler
+  const handleSaveCategory = async () => {
+    const clean = tempCategory.trim();
+    if (!clean || !selectedTask) return;
+    if (onUpdateTaskFields) {
+      await onUpdateTaskFields(selectedTask.id, { category: clean });
+    }
+    setIsEditingCategory(false);
+  };
+
+  // Tag add handler
+  const handleAddTag = async () => {
+    const clean = newTagInput.trim().replace(/^#/, "");
+    if (!clean || !selectedTask) return;
+    const currentTags = selectedTask.tags || [];
+    if (!currentTags.includes(clean)) {
+      const updatedTags = [...currentTags, clean];
+      if (onUpdateTaskFields) {
+        await onUpdateTaskFields(selectedTask.id, { tags: updatedTags });
+      }
+    }
+    setNewTagInput("");
+    setIsAddingTag(false);
+  };
+
+  // Tag remove handler
+  const handleRemoveTag = async (tagToRemove: string) => {
+    if (!selectedTask) return;
+    const currentTags = selectedTask.tags || [];
+    const updatedTags = currentTags.filter((t) => t !== tagToRemove);
+    if (onUpdateTaskFields) {
+      await onUpdateTaskFields(selectedTask.id, { tags: updatedTags });
+    }
+  };
 
   return (
     <main className="flex-1 h-full flex flex-col bg-slate-100/50 dark:bg-[#0c0d13] overflow-hidden transition-colors duration-200">
@@ -126,7 +189,7 @@ export function CentralQuadrant({
               <div className="max-w-4xl mx-auto space-y-4">
                 {/* Header card of selected item */}
                 <div className="p-6 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  {/* Top Bar with Context + Type Switcher + Priority */}
+                  {/* Top Bar with Context + Category Editor + Type Switcher */}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                     <div className="flex items-center gap-2 flex-wrap">
                       {selectedTask.account_type === "work" ? (
@@ -139,9 +202,58 @@ export function CentralQuadrant({
                         </span>
                       )}
 
-                      <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-[#1f2130] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-zinc-700">
-                        {selectedTask.category}
-                      </span>
+                      {/* Interactive Editable Category */}
+                      {isEditingCategory ? (
+                        <div className="flex items-center gap-1 animate-in fade-in">
+                          <input
+                            list="central-category-datalist"
+                            type="text"
+                            value={tempCategory}
+                            onChange={(e) => setTempCategory(e.target.value)}
+                            placeholder="Nome da categoria..."
+                            className="h-7 px-2.5 text-xs rounded-lg bg-white dark:bg-[#1f2130] border border-indigo-500 text-slate-900 dark:text-white focus:outline-none"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSaveCategory();
+                              if (e.key === "Escape") setIsEditingCategory(false);
+                            }}
+                          />
+                          <datalist id="central-category-datalist">
+                            {CATEGORY_SUGGESTIONS.map((cat) => (
+                              <option key={cat} value={cat} />
+                            ))}
+                          </datalist>
+                          <button
+                            type="button"
+                            onClick={handleSaveCategory}
+                            className="p-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+                            title="Salvar Categoria"
+                          >
+                            <Check className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingCategory(false)}
+                            className="p-1.5 rounded-lg hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                            title="Cancelar"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setTempCategory(selectedTask.category);
+                            setIsEditingCategory(true);
+                          }}
+                          className="group flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-[#1f2130] text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-zinc-700 hover:border-indigo-400 dark:hover:border-indigo-500 transition-all cursor-pointer"
+                          title="Clique para editar a categoria"
+                        >
+                          <span>{selectedTask.category}</span>
+                          <Edit2 className="w-3 h-3 opacity-40 group-hover:opacity-100 text-indigo-500 transition-opacity" />
+                        </button>
+                      )}
                     </div>
 
                     {/* Interactive Item Type Switcher */}
@@ -201,20 +313,86 @@ export function CentralQuadrant({
                     </div>
                   </div>
 
-                  {/* Tags */}
-                  {selectedTask.tags?.length > 0 && (
-                    <div className="flex items-center gap-1.5 flex-wrap pt-1">
-                      <Tag className="w-3.5 h-3.5 text-slate-400" />
-                      {selectedTask.tags.map((tag) => (
+                  {/* Interactive Tags Section */}
+                  <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800/80">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600 dark:text-slate-400">
+                        <Tag className="w-3.5 h-3.5 text-indigo-500" />
+                        <span>Tags da Demanda:</span>
+                      </div>
+                      {!isAddingTag && (
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingTag(true)}
+                          className="flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-500 transition-colors"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> Adicionar Tag
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      {selectedTask.tags?.map((tag) => (
                         <span
                           key={tag}
-                          className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-[10px] font-medium text-slate-700 dark:text-slate-300"
+                          className="group inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-[#1a1b26] border border-slate-200 dark:border-zinc-800 text-xs font-medium text-slate-800 dark:text-slate-200 shadow-sm"
                         >
-                          #{tag}
+                          <span>#{tag}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveTag(tag)}
+                            title={`Remover tag #${tag}`}
+                            className="p-0.5 rounded-md text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
                         </span>
                       ))}
+
+                      {isAddingTag && (
+                        <div className="flex items-center gap-1 animate-in fade-in">
+                          <input
+                            type="text"
+                            value={newTagInput}
+                            onChange={(e) => setNewTagInput(e.target.value)}
+                            placeholder="Nova tag..."
+                            className="h-7 px-2 text-xs rounded-lg bg-white dark:bg-[#12131a] border border-indigo-500 text-slate-900 dark:text-white focus:outline-none w-28 sm:w-36"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleAddTag();
+                              if (e.key === "Escape") {
+                                setIsAddingTag(false);
+                                setNewTagInput("");
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddTag}
+                            className="h-7 px-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-colors"
+                          >
+                            Adicionar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsAddingTag(false);
+                              setNewTagInput("");
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+
+                      {(!selectedTask.tags || selectedTask.tags.length === 0) && !isAddingTag && (
+                        <span className="text-[11px] text-slate-400 italic">
+                          Nenhuma tag atribuída. Clique em &quot;Adicionar Tag&quot; para definir tags personalizadas.
+                        </span>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* SLA & Deadlines Card */}
@@ -259,7 +437,7 @@ export function CentralQuadrant({
                       <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
                         Prazo Atual {selectedTask.extension_count > 0 ? `(${selectedTask.extension_count}x estendido)` : ""}
                       </span>
-                      <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
+                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                         {format(parseISO(selectedTask.current_due_date), "dd/MM/yyyy HH:mm", {
                           locale: ptBR,
                         })}
@@ -267,11 +445,12 @@ export function CentralQuadrant({
                     </div>
                   </div>
 
-                  {/* Extension history */}
+                  {/* Extension history if any */}
                   {selectedTask.deadline_extensions?.length > 0 && (
-                    <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
-                      <span className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                        <History className="w-3.5 h-3.5" /> Histórico de Adiamentos Justificados:
+                    <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
+                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <History className="w-3.5 h-3.5 text-amber-500" />
+                        Histórico de Adiamentos:
                       </span>
                       <div className="space-y-1.5">
                         {selectedTask.deadline_extensions.map((ext, idx) => (
@@ -320,13 +499,13 @@ export function CentralQuadrant({
                   </div>
 
                   {selectedTask.resolution_notes ? (
-                    <div className="p-4 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 text-xs text-emerald-900 dark:text-emerald-200 leading-relaxed font-sans">
+                    <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 text-xs text-slate-800 dark:text-slate-200 leading-relaxed">
                       {selectedTask.resolution_notes}
                     </div>
                   ) : (
-                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-500 dark:text-slate-400 italic text-center">
-                      Nenhuma nota de resolução registrada ainda. Conclua a tarefa para salvar a solução no histórico.
-                    </div>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 italic">
+                      Nenhuma anotação de resolução registrada até o momento.
+                    </p>
                   )}
                 </div>
               </div>
@@ -381,15 +560,19 @@ export function CentralQuadrant({
                         tasksInHour.map((task) => (
                           <div
                             key={task.id}
-                            className={`p-2 rounded-lg border text-xs flex items-center justify-between ${
-                              task.account_type === "work"
-                                ? "bg-blue-50 border-blue-200 text-blue-900 dark:bg-blue-950/30 dark:border-blue-500/40 dark:text-blue-200"
-                                : "bg-purple-50 border-purple-200 text-purple-900 dark:bg-purple-950/30 dark:border-purple-500/40 dark:text-purple-200"
-                            }`}
+                            className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 text-xs flex items-center justify-between"
                           >
-                            <span className="font-semibold">{task.title}</span>
-                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/5 dark:bg-black/40">
-                              {task.category}
+                            <span className="font-semibold text-slate-900 dark:text-white truncate max-w-md">
+                              {task.title}
+                            </span>
+                            <span
+                              className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${
+                                task.account_type === "work"
+                                  ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-800"
+                                  : "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800"
+                              }`}
+                            >
+                              {task.account_type === "work" ? "Trabalho" : "Pessoal"}
                             </span>
                           </div>
                         ))

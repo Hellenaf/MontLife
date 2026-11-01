@@ -187,6 +187,24 @@ export default function MontOpsDashboard() {
     }
   };
 
+  const handleUpdateTaskFields = async (taskId: string, fields: Partial<Task>) => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(fields),
+      });
+      const data = await res.json();
+      if (data.success && data.task) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? data.task : t))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to update task fields:", err);
+    }
+  };
+
   const handleConfirmResolution = async (resolutionNotes: string) => {
     if (!taskForResolution) return;
     await handleUpdateStatus(taskForResolution.id, "COMPLETED", resolutionNotes);
@@ -328,6 +346,7 @@ export default function MontOpsDashboard() {
             }}
             onUpdateStatus={handleUpdateStatus}
             onUpdateItemType={handleUpdateItemType}
+            onUpdateTaskFields={handleUpdateTaskFields}
           />
 
           {/* Quadrante Direito: KPIs em Tempo Real */}
