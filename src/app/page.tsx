@@ -363,6 +363,7 @@ export default function MontOpsDashboard() {
             onUpdateItemType={handleUpdateItemType}
             onUpdateTaskFields={handleUpdateTaskFields}
             onSelectTask={(task) => setSelectedTaskId(task.id)}
+            onOpenNewTaskModal={() => setIsNewTaskModalOpen(true)}
           />
 
           {/* Quadrante Direito: KPIs em Tempo Real */}

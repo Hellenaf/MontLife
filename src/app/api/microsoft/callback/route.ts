@@ -73,3 +73,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(`${baseUrl}/?microsoft_error=unknown`);
   }
 }
+
