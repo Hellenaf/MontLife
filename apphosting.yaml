@@ -9,6 +9,8 @@ runConfig:
   memoryMiB: 512
 
 env:
+  - variable: NEXT_PUBLIC_APP_URL
+    value: "https://montlife-tasks--montlife-8317b.us-central1.hosted.app"
   - variable: GEMINI_API_KEY
     secret: GEMINI_API_KEY
   - variable: GOOGLE_CLIENT_ID

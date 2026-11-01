@@ -214,19 +214,19 @@ export function NewTaskModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#101118] shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white shadow-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
+        {/* Header - Fixed */}
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white shadow-sm shrink-0">
               <FileText className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                 Nova Demanda Detalhada
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 Insira textos elaborados, encaminhamentos ou especificações técnicas.
               </p>
             </div>
@@ -240,73 +240,73 @@ export function NewTaskModal({
           </button>
         </div>
 
-        {/* Form Body - Scrollable */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-4">
+        {/* Form Body - Scrollable with min-h-0 to avoid viewport overflow */}
+        <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-3.5 custom-scrollbar">
           {/* Seletor de Tipo */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
               1. Classificação do Registro:
             </label>
             <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setItemType("task")}
-                className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
+                className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-0.5 ${
                   itemType === "task"
                     ? "bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/20"
                     : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-zinc-700"
                 }`}
               >
                 <div className="flex items-center gap-1.5 font-bold text-xs text-blue-700 dark:text-blue-300">
-                  <ListTodo className="w-4 h-4" />
+                  <ListTodo className="w-3.5 h-3.5 shrink-0" />
                   Tarefa
                 </div>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Demanda com SLA, prazo e execução.
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Demanda com SLA e prazo.
                 </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setItemType("activity")}
-                className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
+                className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-0.5 ${
                   itemType === "activity"
                     ? "bg-purple-50 dark:bg-purple-950/40 border-purple-500 ring-1 ring-purple-500/20"
                     : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-zinc-700"
                 }`}
               >
                 <div className="flex items-center gap-1.5 font-bold text-xs text-purple-700 dark:text-purple-300">
-                  <Activity className="w-4 h-4" />
+                  <Activity className="w-3.5 h-3.5 shrink-0" />
                   Atividade
                 </div>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Ação prática, atendimento ou rotina.
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Ação prática ou rotina.
                 </span>
               </button>
 
               <button
                 type="button"
                 onClick={() => setItemType("reminder")}
-                className={`p-3 rounded-2xl border text-left transition-all flex flex-col gap-1 ${
+                className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-0.5 ${
                   itemType === "reminder"
                     ? "bg-amber-50 dark:bg-amber-950/40 border-amber-500 ring-1 ring-amber-500/20"
                     : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-zinc-700"
                 }`}
               >
                 <div className="flex items-center gap-1.5 font-bold text-xs text-amber-700 dark:text-amber-300">
-                  <Bell className="w-4 h-4" />
+                  <Bell className="w-3.5 h-3.5 shrink-0" />
                   Lembrete
                 </div>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Aviso pontual ou data de alerta.
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Aviso pontual ou alerta.
                 </span>
               </button>
             </div>
           </div>
 
           {/* Título */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
               2. Título / Assunto:
             </label>
             <input
@@ -315,49 +315,49 @@ export function NewTaskModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Ajuste de relatórios no TOTVS RM / Reunião de equipe..."
-              className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
             />
           </div>
 
           {/* Descrição Detalhada */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
                 3. Detalhes / Conteúdo da Mensagem:
               </label>
               <button
                 type="button"
                 onClick={handleAnalyzeWithAI}
                 disabled={isAnalyzingAI || (!title.trim() && !description.trim())}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-all disabled:opacity-40"
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-all disabled:opacity-40"
                 title="A IA analisa o texto colado para sugerir título, categoria, prioridade e tags sem apagar seu texto"
               >
                 {isAnalyzingAI ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-3 h-3 animate-spin" />
                     <span>Analisando...</span>
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-3.5 h-3.5" />
+                    <Sparkles className="w-3 h-3" />
                     <span>Sugerir Metadados com IA</span>
                   </>
                 )}
               </button>
             </div>
             <textarea
-              rows={5}
+              rows={3}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Cole aqui o e-mail completo, mensagem encaminhada, orientações recebidas ou anotações detalhadas..."
-              className="w-full p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 leading-relaxed resize-y font-sans"
+              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 leading-relaxed resize-none font-sans"
             />
           </div>
 
           {/* Contexto & Categoria */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
                 Contexto:
               </label>
               <div className="grid grid-cols-2 gap-1.5 bg-slate-100 dark:bg-[#0c0d13] p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
@@ -386,9 +386,9 @@ export function NewTaskModal({
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
-                Categoria (gerenciada por IA ou personalizada):
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
+                Categoria (livre ou IA):
               </label>
               <input
                 list="categories-list"
@@ -396,7 +396,7 @@ export function NewTaskModal({
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="Ex: BI & Analytics, Finanças, ERP..."
-                className="w-full h-10 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                className="w-full h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
               />
               <datalist id="categories-list">
                 {DEFAULT_CATEGORIES.map((cat) => (
@@ -408,8 +408,8 @@ export function NewTaskModal({
 
           {/* Prioridade & Prazo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
                 Prioridade & SLA:
               </label>
               <div className="grid grid-cols-4 gap-1.5">
@@ -436,7 +436,7 @@ export function NewTaskModal({
                       key={p}
                       type="button"
                       onClick={() => handlePriorityChange(p)}
-                      className={`py-2 text-[11px] font-bold rounded-xl border transition-all text-center ${
+                      className={`py-1.5 text-[11px] font-bold rounded-xl border transition-all text-center ${
                         priority === p
                           ? `${activeColor} shadow-sm border-transparent`
                           : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400"
@@ -449,39 +449,39 @@ export function NewTaskModal({
               </div>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
-                Prazo / Data Limite:
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
+                Prazo / Data Limite (Último Prazo):
               </label>
               <input
                 type="datetime-local"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full h-10 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                className="w-full h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
               />
             </div>
           </div>
 
           {/* Tags */}
-          <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
               Tags (separadas por vírgula):
             </label>
             <div className="relative">
-              <Tag className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+              <Tag className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
                 placeholder="suporte, totvs, professores, laboratório"
-                className="w-full h-9 pl-9 pr-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                className="w-full h-8 pl-9 pr-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
               />
             </div>
           </div>
         </form>
 
-        {/* Footer Actions */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#101118] shrink-0">
+        {/* Footer Actions - Always visible */}
+        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
           <button
             type="button"
             onClick={onClose}
@@ -494,7 +494,7 @@ export function NewTaskModal({
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting || !title.trim()}
-            className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50"
           >
             {isSubmitting ? (
               <>

@@ -371,18 +371,18 @@ export function HeaderCommandBar({
         </button>
       </div>
 
-      {/* Floating Confirmation Card */}
+      {/* Floating Confirmation Modal with Backdrop */}
       {triageData && (
-        <div className="fixed top-18 left-1/2 -translate-x-1/2 w-full max-w-3xl z-40 animate-in fade-in slide-in-from-top-4 duration-200">
-          <div className="m-4 p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl space-y-4">
-            {/* Header of confirmation */}
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
+            {/* Header of confirmation - Fixed */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                     Confirmar Nova Demanda
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
@@ -391,6 +391,7 @@ export function HeaderCommandBar({
                 </div>
               </div>
               <button
+                type="button"
                 onClick={handleDiscardTriage}
                 className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
               >
@@ -398,194 +399,200 @@ export function HeaderCommandBar({
               </button>
             </div>
 
-            {/* Classification selector */}
-            <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
-              <div className="text-xs font-medium text-slate-700 dark:text-slate-300">
-                Classificação:
-              </div>
+            {/* Scrollable Body */}
+            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-3.5 custom-scrollbar">
+              {/* Classification selector */}
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Classificação:
+                </div>
 
-              <div className="flex items-center gap-1 bg-white dark:bg-[#161722] p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
-                <button
-                  type="button"
-                  onClick={() => setEditItemType("task")}
-                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                    editItemType === "task"
-                      ? "bg-indigo-600 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  <ListTodo className="w-3.5 h-3.5" />
-                  Tarefa
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setEditItemType("activity")}
-                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                    editItemType === "activity"
-                      ? "bg-purple-600 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  <Activity className="w-3.5 h-3.5" />
-                  Atividade
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setEditItemType("reminder")}
-                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
-                    editItemType === "reminder"
-                      ? "bg-amber-600 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  <Bell className="w-3.5 h-3.5" />
-                  Lembrete
-                </button>
-              </div>
-            </div>
-
-            {/* Title & Description Fields */}
-            <div className="space-y-3">
-              <div>
-                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
-                  Título:
-                </label>
-                <input
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
-                />
-              </div>
-
-              <div>
-                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
-                  Descrição & Notas:
-                </label>
-                <textarea
-                  rows={2}
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 resize-none"
-                />
-              </div>
-            </div>
-
-            {/* Controls: Account, Category, Priority, SLA */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-              <div>
-                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
-                  Conta:
-                </label>
-                <div className="flex rounded-lg bg-slate-100 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 p-0.5">
+                <div className="flex items-center gap-1 bg-white dark:bg-[#161722] p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
                   <button
                     type="button"
-                    onClick={() => setEditAccountType("work")}
-                    className={`flex-1 py-1 text-[11px] rounded font-medium flex items-center justify-center gap-1 transition-colors ${
-                      editAccountType === "work"
+                    onClick={() => setEditItemType("task")}
+                    className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+                      editItemType === "task"
                         ? "bg-indigo-600 text-white shadow-sm"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    <Briefcase className="w-3 h-3" /> Trabalho
+                    <ListTodo className="w-3.5 h-3.5" />
+                    Tarefa
                   </button>
+
                   <button
                     type="button"
-                    onClick={() => setEditAccountType("personal")}
-                    className={`flex-1 py-1 text-[11px] rounded font-medium flex items-center justify-center gap-1 transition-colors ${
-                      editAccountType === "personal"
+                    onClick={() => setEditItemType("activity")}
+                    className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+                      editItemType === "activity"
                         ? "bg-purple-600 text-white shadow-sm"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    <User className="w-3 h-3" /> Pessoal
+                    <Activity className="w-3.5 h-3.5" />
+                    Atividade
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setEditItemType("reminder")}
+                    className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
+                      editItemType === "reminder"
+                        ? "bg-amber-600 text-white shadow-sm"
+                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    }`}
+                  >
+                    <Bell className="w-3.5 h-3.5" />
+                    Lembrete
                   </button>
                 </div>
               </div>
 
-              {/* Priority */}
-              <div>
-                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
-                  Prioridade:
-                </label>
-                <div className="flex gap-1">
-                  {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
-                    const activeColor =
-                      p === "P1"
-                        ? "bg-rose-500 text-white"
-                        : p === "P2"
-                        ? "bg-amber-500 text-white"
-                        : p === "P3"
-                        ? "bg-indigo-600 text-white"
-                        : "bg-slate-600 text-white";
-                    return (
-                      <button
-                        key={p}
-                        type="button"
-                        onClick={() => handlePriorityChange(p)}
-                        className={`flex-1 py-1 text-[11px] rounded-lg font-bold border transition-colors ${
-                          editPriority === p
-                            ? activeColor
-                            : "bg-slate-100 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400"
-                        }`}
-                      >
-                        {p}
-                      </button>
-                    );
-                  })}
+              {/* Title & Description Fields */}
+              <div className="space-y-3">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                    Título:
+                  </label>
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                    Descrição & Notas:
+                  </label>
+                  <textarea
+                    rows={2}
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 resize-none font-sans"
+                  />
                 </div>
               </div>
 
-              {/* Category */}
-              <div>
-                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
-                  Categoria:
-                </label>
-                <input
-                  list="header-categories-list"
-                  type="text"
-                  value={editCategory}
-                  onChange={(e) => setEditCategory(e.target.value)}
-                  placeholder="Categoria da demanda..."
-                  className="w-full h-8 px-2 text-[11px] rounded-lg bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
-                />
-                <datalist id="header-categories-list">
-                  <option value="BI & Analytics" />
-                  <option value="Sistemas ERP" />
-                  <option value="Gestão & Contratos" />
-                  <option value="Comunicação & Mensagens" />
-                  <option value="Finanças & Tesouraria" />
-                  <option value="Infraestrutura & Redes" />
-                  <option value="Engenharia & Automações" />
-                  <option value="Gestão Educacional" />
-                  <option value="Eventos & Vendas" />
-                  <option value="Estudos & Capacitação" />
-                  <option value="Saúde & Bem-estar" />
-                  <option value="Vida Pessoal & Casa" />
-                  <option value="Suporte & Demandas" />
-                </datalist>
+              {/* Controls: Account, Category, Priority, SLA */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                    Conta:
+                  </label>
+                  <div className="flex rounded-lg bg-slate-100 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setEditAccountType("work")}
+                      className={`flex-1 py-1.5 text-xs rounded-md font-medium flex items-center justify-center gap-1.5 transition-colors ${
+                        editAccountType === "work"
+                          ? "bg-indigo-600 text-white shadow-sm"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <Briefcase className="w-3.5 h-3.5" /> Trabalho
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditAccountType("personal")}
+                      className={`flex-1 py-1.5 text-xs rounded-md font-medium flex items-center justify-center gap-1.5 transition-colors ${
+                        editAccountType === "personal"
+                          ? "bg-purple-600 text-white shadow-sm"
+                          : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <User className="w-3.5 h-3.5" /> Pessoal
+                    </button>
+                  </div>
+                </div>
+
+                {/* Category */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                    Categoria:
+                  </label>
+                  <input
+                    list="header-categories-list"
+                    type="text"
+                    value={editCategory}
+                    onChange={(e) => setEditCategory(e.target.value)}
+                    placeholder="Categoria da demanda..."
+                    className="w-full h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                  />
+                  <datalist id="header-categories-list">
+                    <option value="BI & Analytics" />
+                    <option value="Sistemas ERP" />
+                    <option value="Gestão & Contratos" />
+                    <option value="Comunicação & Mensagens" />
+                    <option value="Finanças & Tesouraria" />
+                    <option value="Infraestrutura & Redes" />
+                    <option value="Engenharia & Automações" />
+                    <option value="Gestão Educacional" />
+                    <option value="Eventos & Vendas" />
+                    <option value="Estudos & Capacitação" />
+                    <option value="Saúde & Bem-estar" />
+                    <option value="Vida Pessoal & Casa" />
+                    <option value="Suporte & Demandas" />
+                  </datalist>
+                </div>
               </div>
 
-              {/* Due Date */}
-              <div>
-                <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
-                  Prazo Calculado (SLA):
-                </label>
-                <div className="flex items-center gap-1.5 h-8 px-2.5 rounded-lg bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-[11px] text-slate-700 dark:text-slate-200">
-                  <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                  <span className="truncate">
-                    {editDueDate
-                      ? format(parseISO(editDueDate), "dd/MM 'às' HH:mm", { locale: ptBR })
-                      : "Hoje"}
-                  </span>
+              {/* Priority & Due Date */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                {/* Priority */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                    Prioridade:
+                  </label>
+                  <div className="flex gap-1">
+                    {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
+                      const activeColor =
+                        p === "P1"
+                          ? "bg-rose-500 text-white"
+                          : p === "P2"
+                          ? "bg-amber-500 text-white"
+                          : p === "P3"
+                          ? "bg-indigo-600 text-white"
+                          : "bg-slate-600 text-white";
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => handlePriorityChange(p)}
+                          className={`flex-1 py-1.5 text-xs rounded-xl font-bold border transition-colors ${
+                            editPriority === p
+                              ? activeColor
+                              : "bg-slate-100 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Due Date */}
+                <div>
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                    Prazo Calculado (Último Prazo):
+                  </label>
+                  <div className="flex items-center gap-1.5 h-9 px-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-700 dark:text-slate-200">
+                    <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span className="truncate">
+                      {editDueDate
+                        ? format(parseISO(editDueDate), "dd/MM 'às' HH:mm", { locale: ptBR })
+                        : "Hoje"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+            {/* Actions - Always visible */}
+            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
               <button
                 type="button"
                 onClick={handleDiscardTriage}

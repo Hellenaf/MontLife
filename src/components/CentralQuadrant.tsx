@@ -30,6 +30,11 @@ import {
 } from "lucide-react";
 import { Task, TaskStatus, ItemType, AccountType } from "@/types";
 import {
+  getTaskScheduleDate,
+  isTaskScheduledForDay,
+  isTaskAllDay as checkTaskIsAllDay,
+} from "@/lib/taskSchedule";
+import {
   format,
   parseISO,
   isToday,
@@ -194,26 +199,12 @@ export function CentralQuadrant({
 
   // Helper: check if task is all-day (no specific hour or spans full day)
   const isAllDayTask = (task: Task): boolean => {
-    try {
-      const raw = task.current_due_date;
-      if (!raw) return true;
-      if (!raw.includes("T")) return true;
-      const date = parseISO(raw);
-      return getHours(date) === 0 && getMinutes(date) === 0;
-    } catch {
-      return true;
-    }
+    return checkTaskIsAllDay(task);
   };
 
-  // Helper: get tasks for a specific day
+  // Helper: get tasks for a specific day (using Último Prazo or Created At for undated)
   const getTasksForDay = (day: Date) => {
-    return calendarTasks.filter((t) => {
-      try {
-        return isSameDay(parseISO(t.current_due_date), day);
-      } catch {
-        return false;
-      }
-    });
+    return calendarTasks.filter((t) => isTaskScheduledForDay(t, day));
   };
 
   // Helper: Google Calendar authentic color tokens
@@ -717,7 +708,8 @@ export function CentralQuadrant({
                           {/* Timed Event Blocks */}
                           {timedTasks.map((t) => {
                             const colors = getGoogleCalendarColor(t);
-                            const date = parseISO(t.current_due_date);
+                            const scheduleDate = getTaskScheduleDate(t);
+                            const date = parseISO(scheduleDate);
                             const h = getHours(date);
                             const m = getMinutes(date);
                             if (h < START_HOUR || h > END_HOUR) return null;
@@ -819,7 +811,7 @@ export function CentralQuadrant({
                     const tasksInHour = dayTasks.filter((t) => {
                       if (isAllDayTask(t)) return false;
                       try {
-                        return getHours(parseISO(t.current_due_date)) === hour;
+                        return getHours(parseISO(getTaskScheduleDate(t))) === hour;
                       } catch {
                         return false;
                       }
@@ -930,7 +922,7 @@ export function CentralQuadrant({
                             const isAllDay = isAllDayTask(task);
                             const timeText = isAllDay
                               ? "Dia inteiro"
-                              : format(parseISO(task.current_due_date), "HH:mm");
+                              : format(parseISO(getTaskScheduleDate(task)), "HH:mm");
 
                             return (
                               <div

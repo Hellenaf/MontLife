@@ -3,7 +3,10 @@ import { NextRequest } from "next/server";
 export function getAppBaseUrl(req?: NextRequest): string {
   // 1. If explicit environment variable is set
   if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+    const pubUrl = process.env.NEXT_PUBLIC_APP_URL.replace(/\/$/, "");
+    if (!pubUrl.includes("0.0.0.0") && !pubUrl.includes(":8080")) {
+      return pubUrl;
+    }
   }
 
   // 2. If GOOGLE_REDIRECT_URI is set, extract its origin (e.g. https://montlife-tasks--montlife-8317b.us-central1.hosted.app)
