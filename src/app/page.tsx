@@ -14,8 +14,12 @@ import { Task, ConnectedAccount, TaskStatus, ItemType } from "@/types";
 
 export default function MontOpsDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
+
+  // Dynamically derive selected task from tasks array
+  const selectedTask =
+    tasks.find((t) => t.id === selectedTaskId) || (tasks.length > 0 ? tasks[0] : null);
 
   // Modals state
   const [isResolutionModalOpen, setIsResolutionModalOpen] = useState(false);
@@ -29,24 +33,19 @@ export default function MontOpsDashboard() {
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [newTaskInitialText, setNewTaskInitialText] = useState("");
 
-  // Fetch initial data
+  // Fetch initial data ONCE on mount
   const loadTasks = useCallback(async () => {
     try {
       const res = await fetch("/api/tasks");
       const data = await res.json();
       if (data.success && Array.isArray(data.tasks)) {
         setTasks(data.tasks);
-        if (!selectedTask && data.tasks.length > 0) {
-          setSelectedTask(data.tasks[0]);
-        } else if (selectedTask) {
-          const updatedSelected = data.tasks.find((t: Task) => t.id === selectedTask.id);
-          if (updatedSelected) setSelectedTask(updatedSelected);
-        }
+        setSelectedTaskId((prev) => prev || (data.tasks.length > 0 ? data.tasks[0].id : null));
       }
     } catch (err) {
       console.error("Failed to load tasks:", err);
     }
-  }, [selectedTask]);
+  }, []);
 
   const loadAccounts = useCallback(async () => {
     try {
@@ -68,7 +67,7 @@ export default function MontOpsDashboard() {
   // Handlers
   const handleTaskCreated = (newTask: Task) => {
     setTasks((prev) => [newTask, ...prev]);
-    setSelectedTask(newTask);
+    setSelectedTaskId(newTask.id);
   };
 
   const handleUpdateStatus = async (
@@ -93,9 +92,6 @@ export default function MontOpsDashboard() {
         setTasks((prev) =>
           prev.map((t) => (t.id === taskId ? data.task : t))
         );
-        if (selectedTask?.id === taskId) {
-          setSelectedTask(data.task);
-        }
       }
     } catch (err) {
       console.error("Failed to update status:", err);
@@ -114,9 +110,6 @@ export default function MontOpsDashboard() {
         setTasks((prev) =>
           prev.map((t) => (t.id === taskId ? data.task : t))
         );
-        if (selectedTask?.id === taskId) {
-          setSelectedTask(data.task);
-        }
       }
     } catch (err) {
       console.error("Failed to update item type:", err);
@@ -149,9 +142,6 @@ export default function MontOpsDashboard() {
         setTasks((prev) =>
           prev.map((t) => (t.id === taskForExtend.id ? data.task : t))
         );
-        if (selectedTask?.id === taskForExtend.id) {
-          setSelectedTask(data.task);
-        }
       }
     } catch (err) {
       console.error("Failed to extend deadline:", err);
@@ -165,10 +155,13 @@ export default function MontOpsDashboard() {
       const res = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
       const data = await res.json();
       if (data.success) {
-        setTasks((prev) => prev.filter((t) => t.id !== taskId));
-        if (selectedTask?.id === taskId) {
-          setSelectedTask(tasks.find((t) => t.id !== taskId) || null);
-        }
+        setTasks((prev) => {
+          const remaining = prev.filter((t) => t.id !== taskId);
+          if (selectedTaskId === taskId) {
+            setSelectedTaskId(remaining.length > 0 ? remaining[0].id : null);
+          }
+          return remaining;
+        });
       }
     } catch (err) {
       console.error("Failed to delete task:", err);
@@ -195,7 +188,7 @@ export default function MontOpsDashboard() {
         <LeftTasksQuadrant
           tasks={tasks}
           selectedTaskId={selectedTask?.id || null}
-          onSelectTask={(task) => setSelectedTask(task)}
+          onSelectTask={(task) => setSelectedTaskId(task.id)}
           onUpdateStatus={handleUpdateStatus}
           onRequestResolution={(task) => {
             setTaskForResolution(task);

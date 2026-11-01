@@ -128,7 +128,7 @@ export function CentralQuadrant({
                 </p>
               </div>
             ) : (
-              <div className="max-w-3xl space-y-5">
+              <div className="max-w-4xl mx-auto space-y-5">
                 {/* Header card of selected item */}
                 <div className="p-5 rounded-2xl bg-[#131122] border border-[#242038] space-y-4">
                   {/* Top Bar with Context + Type Switcher + Priority */}
@@ -339,7 +339,7 @@ export function CentralQuadrant({
 
         {/* TAB 2: TIMELINE DO DIA */}
         {activeTab === "timeline" && (
-          <div className="max-w-3xl space-y-4">
+          <div className="max-w-4xl mx-auto space-y-4">
             <div className="flex items-center justify-between p-4 rounded-xl bg-[#131122] border border-[#242038]">
               <div>
                 <h3 className="text-sm font-semibold text-[#EAE9FC]">
@@ -407,7 +407,7 @@ export function CentralQuadrant({
 
         {/* TAB 3: ESTUDO & YOUTUBE */}
         {activeTab === "study" && (
-          <div className="max-w-3xl space-y-5">
+          <div className="max-w-4xl mx-auto space-y-5">
             <div className="p-4 rounded-xl bg-[#131122] border border-[#242038]">
               <h3 className="text-sm font-semibold text-[#EAE9FC] flex items-center gap-2">
                 <Youtube className="w-4 h-4 text-rose-500" />

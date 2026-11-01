@@ -22,6 +22,7 @@ import {
   Activity,
   Bell,
   Plus,
+  ChevronDown,
 } from "lucide-react";
 import { Task, TaskStatus, Priority, AccountType, ItemType } from "@/types";
 import { isTaskOverdue } from "@/lib/sla";
@@ -59,6 +60,7 @@ export function LeftTasksQuadrant({
   const [statusFilter, setStatusFilter] = useState<"ALL" | TaskStatus>("ALL");
   const [priorityFilter, setPriorityFilter] = useState<"ALL" | Priority>("ALL");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
 
   // Filter tasks
   const filteredTasks = tasks.filter((task) => {
@@ -84,6 +86,10 @@ export function LeftTasksQuadrant({
     }
     return true;
   });
+
+  // Google Tasks Style: Split into Active tasks and Completed tasks
+  const activeTasks = filteredTasks.filter((t) => t.status !== "COMPLETED");
+  const completedTasks = filteredTasks.filter((t) => t.status === "COMPLETED");
 
   const getPriorityStyle = (p: Priority) => {
     switch (p) {
@@ -127,39 +133,191 @@ export function LeftTasksQuadrant({
     switch (status) {
       case "IN_PROGRESS":
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1">
+          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-blue-500/15 text-blue-400 border border-blue-500/30 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" />
-            Em Execução
+            Executando
           </span>
         );
       case "WAITING":
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
+          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
             Em Espera
           </span>
         );
       case "COMPLETED":
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-            <Check className="w-3 h-3" />
+          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
+            <Check className="w-2.5 h-2.5" />
             Concluída
           </span>
         );
       case "CANCELED":
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
             Cancelada
           </span>
         );
       case "TODO":
       default:
         return (
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-[#242038] text-[#9490AC] border border-[#2E2B44]">
+          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-medium bg-[#242038] text-[#9490AC] border border-[#2E2B44]">
             Pendente
           </span>
         );
     }
+  };
+
+  const renderTaskCard = (task: Task, isCompletedCard: boolean = false) => {
+    const isSelected = selectedTaskId === task.id;
+    const isCompleted = task.status === "COMPLETED";
+    const overdue = !isCompleted && isTaskOverdue(task.current_due_date, task.status);
+
+    let dueFormatted = "";
+    try {
+      dueFormatted = format(parseISO(task.current_due_date), "dd/MM HH:mm", {
+        locale: ptBR,
+      });
+    } catch {
+      dueFormatted = "Data indefinida";
+    }
+
+    return (
+      <div
+        key={task.id}
+        onClick={() => onSelectTask(task)}
+        className={`group relative p-2.5 sm:p-3 rounded-xl border transition-all cursor-pointer ${
+          isSelected
+            ? "bg-[#181628] border-[#7B61FF] shadow-lg shadow-[#7B61FF]/10 glow-lavender"
+            : isCompleted
+            ? "bg-[#0C0B14] border-[#1E1C2E] hover:border-[#2E2B44] opacity-75 hover:opacity-100"
+            : "bg-[#12101F] border-[#242038] hover:border-[#383353] hover:bg-[#151326]"
+        }`}
+      >
+        <div className="flex items-start gap-2.5">
+          {/* Circular Google Tasks-style checkbox */}
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (isCompleted) {
+                onUpdateStatus(task.id, "TODO");
+              } else {
+                onRequestResolution(task);
+              }
+            }}
+            title={isCompleted ? "Reabrir tarefa" : "Concluir tarefa"}
+            className={`mt-0.5 w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all ${
+              isCompleted
+                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/50 hover:bg-emerald-500/30"
+                : "border-2 border-[#3E3A5A] hover:border-emerald-400 hover:bg-emerald-500/10 text-transparent hover:text-emerald-400"
+            }`}
+          >
+            <Check className="w-3 h-3 transition-transform" />
+          </button>
+
+          {/* Main Task Content */}
+          <div className="flex-1 min-w-0">
+            {/* Top Badges */}
+            <div className="flex items-center justify-between gap-1.5 mb-1">
+              <div className="flex items-center gap-1 flex-wrap">
+                {getItemTypeBadge(task.item_type)}
+
+                {task.account_type === "work" ? (
+                  <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-500/10 text-indigo-300">
+                    <Briefcase className="w-2.5 h-2.5" /> Trab.
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-300">
+                    <User className="w-2.5 h-2.5" /> Pess.
+                  </span>
+                )}
+              </div>
+
+              <span
+                className={`px-1.5 py-0.2 rounded text-[10px] font-bold border ${getPriorityStyle(
+                  task.priority
+                )}`}
+              >
+                {task.priority}
+              </span>
+            </div>
+
+            {/* Title */}
+            <h4
+              className={`text-xs font-medium leading-snug line-clamp-2 ${
+                isCompleted
+                  ? "line-through text-[#9490AC]"
+                  : task.status === "CANCELED"
+                  ? "line-through text-rose-400/70"
+                  : "text-[#EAE9FC]"
+              }`}
+            >
+              {task.title}
+            </h4>
+
+            {/* Bottom Meta & Due Date */}
+            <div className="flex items-center justify-between gap-2 mt-2 pt-1 border-t border-[#242038]/50">
+              <div className="flex items-center gap-1.5 text-[10px] text-[#9490AC]">
+                <span className="truncate max-w-[90px]">{task.category}</span>
+                {getStatusBadge(task.status)}
+              </div>
+
+              <div
+                className={`flex items-center gap-1 text-[10px] font-medium ${
+                  overdue ? "text-rose-400 font-bold" : "text-[#9490AC]"
+                }`}
+              >
+                <Clock className="w-3 h-3 shrink-0" />
+                <span>{dueFormatted}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Toolbar */}
+        <div
+          className="flex items-center justify-end gap-1 mt-2 pt-1.5 border-t border-[#242038]/40"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {task.status !== "IN_PROGRESS" && task.status !== "COMPLETED" && (
+            <button
+              onClick={() => onUpdateStatus(task.id, "IN_PROGRESS")}
+              title="Iniciar Execução"
+              className="px-2 py-0.5 rounded-md bg-[#090810] text-[#9D8DF1] hover:bg-[#7B61FF] hover:text-white transition-colors border border-[#242038] text-[10px] flex items-center gap-1"
+            >
+              <Play className="w-3 h-3" /> Iniciar
+            </button>
+          )}
+
+          {task.status === "IN_PROGRESS" && (
+            <button
+              onClick={() => onUpdateStatus(task.id, "WAITING")}
+              title="Pausar / Aguardando"
+              className="px-2 py-0.5 rounded-md bg-[#090810] text-amber-400 hover:bg-amber-600 hover:text-white transition-colors border border-[#242038] text-[10px] flex items-center gap-1"
+            >
+              <Pause className="w-3 h-3" /> Pausar
+            </button>
+          )}
+
+          <button
+            onClick={() => onRequestExtendDeadline(task)}
+            title="Adiar prazo"
+            className="p-1 rounded-md text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#242038] transition-colors"
+          >
+            <Calendar className="w-3 h-3" />
+          </button>
+
+          <button
+            onClick={() => onDeleteTask(task.id)}
+            title="Excluir"
+            className="p-1 rounded-md text-[#9490AC] hover:text-rose-400 hover:bg-[#242038] transition-colors"
+          >
+            <Trash2 className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -315,7 +473,7 @@ export function LeftTasksQuadrant({
         </div>
       </div>
 
-      {/* Task List (Clean, Uncluttered Cards) */}
+      {/* Task List (Google Tasks Style) */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2">
         {filteredTasks.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-[#9490AC]">
@@ -325,152 +483,52 @@ export function LeftTasksQuadrant({
               Crie uma tarefa, atividade ou lembrete na barra superior com auxílio da IA.
             </p>
           </div>
+        ) : statusFilter === "COMPLETED" ? (
+          // When filtering exclusively by completed tasks, display them directly
+          completedTasks.map((task) => renderTaskCard(task, true))
         ) : (
-          filteredTasks.map((task) => {
-            const isSelected = selectedTaskId === task.id;
-            const overdue = isTaskOverdue(task.current_due_date, task.status);
+          <>
+            {/* 1. Active Tasks (Visible on top) */}
+            {activeTasks.length === 0 && completedTasks.length > 0 ? (
+              <div className="p-4 rounded-xl bg-[#12101F] border border-[#242038] text-center text-xs text-[#9490AC]">
+                🎉 Todas as tarefas ativas foram concluídas!
+              </div>
+            ) : (
+              activeTasks.map((task) => renderTaskCard(task, false))
+            )}
 
-            let dueFormatted = "";
-            try {
-              dueFormatted = format(parseISO(task.current_due_date), "dd/MM HH:mm", {
-                locale: ptBR,
-              });
-            } catch {
-              dueFormatted = "Data indefinida";
-            }
-
-            return (
-              <div
-                key={task.id}
-                onClick={() => onSelectTask(task)}
-                className={`group relative p-3 rounded-xl border transition-all cursor-pointer ${
-                  isSelected
-                    ? "bg-[#1A1829] border-[#7B61FF] shadow-lg shadow-[#7B61FF]/10 glow-lavender"
-                    : "bg-[#12101F] border-[#242038] hover:border-[#383353] hover:bg-[#161426]"
-                }`}
-              >
-                {/* Header: Item Type + Account Badge + Priority */}
-                <div className="flex items-center justify-between gap-1.5 mb-1.5">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {getItemTypeBadge(task.item_type)}
-
-                    {task.account_type === "work" ? (
-                      <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-indigo-500/10 text-indigo-300">
-                        <Briefcase className="w-2.5 h-2.5" /> Trab.
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-500/10 text-purple-300">
-                        <User className="w-2.5 h-2.5" /> Pess.
-                      </span>
-                    )}
-
-                    <span className="text-[10px] text-[#9490AC] truncate max-w-[100px]">
-                      {task.category}
+            {/* 2. Collapsible Completed Tasks Section (Google Tasks Style) */}
+            {completedTasks.length > 0 && (
+              <div className="pt-3 border-t border-[#242038]/80 mt-3">
+                <button
+                  type="button"
+                  onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-[#12101F] border border-[#242038] hover:border-[#383353] text-xs font-semibold text-[#9490AC] hover:text-[#EAE9FC] transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-[#7B61FF] transition-transform duration-200 ${
+                        isCompletedExpanded ? "" : "-rotate-90"
+                      }`}
+                    />
+                    <span>Concluídas</span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#242038] text-[#9D8DF1]">
+                      {completedTasks.length}
                     </span>
                   </div>
-
-                  <span
-                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${getPriorityStyle(
-                      task.priority
-                    )}`}
-                  >
-                    {task.priority}
+                  <span className="text-[10px] font-normal text-[#9490AC]">
+                    {isCompletedExpanded ? "Ocultar" : "Mostrar"}
                   </span>
-                </div>
+                </button>
 
-                {/* Title */}
-                <h4
-                  className={`text-xs font-medium leading-snug line-clamp-2 ${
-                    task.status === "COMPLETED"
-                      ? "line-through text-[#9490AC]"
-                      : task.status === "CANCELED"
-                      ? "line-through text-rose-400/70"
-                      : "text-[#EAE9FC]"
-                  }`}
-                >
-                  {task.title}
-                </h4>
-
-                {/* Status & SLA Due Date */}
-                <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-[#242038]/60">
-                  <div className="flex items-center gap-1.5">
-                    {getStatusBadge(task.status)}
-                    {task.extension_count > 0 && (
-                      <span
-                        className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-amber-500/10 text-amber-300 border border-amber-500/20"
-                        title={`${task.extension_count} adiamento(s)`}
-                      >
-                        +{task.extension_count}
-                      </span>
-                    )}
+                {isCompletedExpanded && (
+                  <div className="mt-2 space-y-2 animate-in fade-in duration-150">
+                    {completedTasks.map((task) => renderTaskCard(task, true))}
                   </div>
-
-                  <div
-                    className={`flex items-center gap-1 text-[11px] font-medium ${
-                      overdue
-                        ? "text-rose-400 font-bold"
-                        : "text-[#9490AC]"
-                    }`}
-                  >
-                    <Clock className="w-3 h-3 shrink-0" />
-                    <span>{dueFormatted}</span>
-                  </div>
-                </div>
-
-                {/* Subtle Action Toolbar (Clean on hover / selection) */}
-                <div
-                  className="flex items-center justify-end gap-1 mt-2 pt-1.5 border-t border-[#242038]/40"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  {task.status !== "IN_PROGRESS" && task.status !== "COMPLETED" && (
-                    <button
-                      onClick={() => onUpdateStatus(task.id, "IN_PROGRESS")}
-                      title="Iniciar Execução"
-                      className="px-2 py-0.5 rounded-md bg-[#090810] text-[#9D8DF1] hover:bg-[#7B61FF] hover:text-white transition-colors border border-[#242038] text-[10px] flex items-center gap-1"
-                    >
-                      <Play className="w-3 h-3" /> Iniciar
-                    </button>
-                  )}
-
-                  {task.status === "IN_PROGRESS" && (
-                    <button
-                      onClick={() => onUpdateStatus(task.id, "WAITING")}
-                      title="Pausar / Aguardando"
-                      className="px-2 py-0.5 rounded-md bg-[#090810] text-amber-400 hover:bg-amber-600 hover:text-white transition-colors border border-[#242038] text-[10px] flex items-center gap-1"
-                    >
-                      <Pause className="w-3 h-3" /> Pausar
-                    </button>
-                  )}
-
-                  {task.status !== "COMPLETED" && (
-                    <button
-                      onClick={() => onRequestResolution(task)}
-                      title="Concluir"
-                      className="px-2 py-0.5 rounded-md bg-[#090810] text-emerald-400 hover:bg-emerald-600 hover:text-white transition-colors border border-[#242038] text-[10px] flex items-center gap-1"
-                    >
-                      <CheckCircle2 className="w-3 h-3" /> Concluir
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => onRequestExtendDeadline(task)}
-                    title="Adiar prazo"
-                    className="p-1 rounded-md text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#242038] transition-colors"
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                  </button>
-
-                  <button
-                    onClick={() => onDeleteTask(task.id)}
-                    title="Excluir"
-                    className="p-1 rounded-md text-[#9490AC] hover:text-rose-400 hover:bg-[#242038] transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                )}
               </div>
-            );
-          })
+            )}
+          </>
         )}
       </div>
     </aside>
