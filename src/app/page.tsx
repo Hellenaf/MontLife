@@ -9,7 +9,7 @@ import { ResolutionModal } from "@/components/modals/ResolutionModal";
 import { ExtendDeadlineModal } from "@/components/modals/ExtendDeadlineModal";
 import { AnnualReportModal } from "@/components/modals/AnnualReportModal";
 import { AccountsModal } from "@/components/modals/AccountsModal";
-import { Task, ConnectedAccount, TaskStatus } from "@/types";
+import { Task, ConnectedAccount, TaskStatus, ItemType } from "@/types";
 
 export default function MontOpsDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -99,6 +99,27 @@ export default function MontOpsDashboard() {
     }
   };
 
+  const handleUpdateItemType = async (taskId: string, itemType: ItemType) => {
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ item_type: itemType }),
+      });
+      const data = await res.json();
+      if (data.success && data.task) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === taskId ? data.task : t))
+        );
+        if (selectedTask?.id === taskId) {
+          setSelectedTask(data.task);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to update item type:", err);
+    }
+  };
+
   const handleConfirmResolution = async (resolutionNotes: string) => {
     if (!taskForResolution) return;
     await handleUpdateStatus(taskForResolution.id, "COMPLETED", resolutionNotes);
@@ -152,7 +173,7 @@ export default function MontOpsDashboard() {
   };
 
   return (
-    <div className="w-screen h-screen overflow-hidden flex flex-col bg-[#0F0E17]">
+    <div className="w-screen h-screen overflow-hidden flex flex-col bg-[#090810]">
       {/* 1. Header Fixo & Barra de Comando IA */}
       <HeaderCommandBar
         accounts={accounts}
@@ -163,7 +184,7 @@ export default function MontOpsDashboard() {
 
       {/* 2. Fixed-Grid: 3 Colunas Abaixo do Header (Tela Cheia, Scroll Interno Independente) */}
       <div className="flex-1 flex overflow-hidden pt-16">
-        {/* Quadrante Esquerdo: Gestão de Tarefas */}
+        {/* Quadrante Esquerdo: Gestão de Tarefas, Atividades e Lembretes */}
         <LeftTasksQuadrant
           tasks={tasks}
           selectedTaskId={selectedTask?.id || null}
@@ -180,7 +201,7 @@ export default function MontOpsDashboard() {
           onDeleteTask={handleDeleteTask}
         />
 
-        {/* Quadrante Central: Timeline & Detalhes & Estudo */}
+        {/* Quadrante Central: Detalhes, Seletor de Tipo, Agenda & Estudo */}
         <CentralQuadrant
           selectedTask={selectedTask}
           allTasks={tasks}
@@ -193,9 +214,10 @@ export default function MontOpsDashboard() {
             setIsExtendModalOpen(true);
           }}
           onUpdateStatus={handleUpdateStatus}
+          onUpdateItemType={handleUpdateItemType}
         />
 
-        {/* Quadrante Direito: KPIs & Metrificação */}
+        {/* Quadrante Direito: KPIs em Tempo Real */}
         <RightKpiQuadrant
           tasks={tasks}
           onOpenReportModal={() => setIsReportModalOpen(true)}
@@ -238,4 +260,3 @@ export default function MontOpsDashboard() {
     </div>
   );
 }
-

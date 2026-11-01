@@ -11,8 +11,12 @@ import {
   Clock,
   BookOpen,
   ArrowUpRight,
-  AlertCircle,
-  Zap,
+  Layers,
+  PlayCircle,
+  XCircle,
+  ListTodo,
+  Activity,
+  Bell,
 } from "lucide-react";
 import { Task } from "@/types";
 
@@ -29,6 +33,19 @@ export function RightKpiQuadrant({
     const total = tasks.length;
     const completed = tasks.filter((t) => t.status === "COMPLETED");
     const completedCount = completed.length;
+
+    const inProgressList = tasks.filter(
+      (t) => t.status === "IN_PROGRESS" || t.status === "WAITING" || t.status === "TODO"
+    );
+    const inProgressCount = inProgressList.length;
+
+    const canceledList = tasks.filter((t) => t.status === "CANCELED");
+    const canceledCount = canceledList.length;
+
+    // Type breakdown
+    const tasksCount = tasks.filter((t) => (t.item_type || "task") === "task").length;
+    const activitiesCount = tasks.filter((t) => t.item_type === "activity").length;
+    const remindersCount = tasks.filter((t) => t.item_type === "reminder").length;
 
     const workTasks = tasks.filter((t) => t.account_type === "work");
     const personalTasks = tasks.filter((t) => t.account_type === "personal");
@@ -66,6 +83,11 @@ export function RightKpiQuadrant({
     return {
       total,
       completedCount,
+      inProgressCount,
+      canceledCount,
+      tasksCount,
+      activitiesCount,
+      remindersCount,
       workTasks: workTasks.length,
       personalTasks: personalTasks.length,
       workPct,
@@ -79,26 +101,102 @@ export function RightKpiQuadrant({
   }, [tasks]);
 
   return (
-    <aside className="w-[320px] xl:w-[350px] h-full flex flex-col border-l border-[#2E2B44] bg-[#141221] shrink-0 overflow-hidden">
+    <aside className="w-[300px] xl:w-[330px] h-full flex flex-col border-l border-[#2E2B44] bg-[#110F1C] shrink-0 overflow-hidden">
       {/* Header */}
-      <div className="h-12 border-b border-[#2E2B44] px-5 flex items-center justify-between shrink-0 bg-[#161424]">
+      <div className="h-12 border-b border-[#2E2B44] px-5 flex items-center justify-between shrink-0 bg-[#141221]">
         <div className="flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-[#7B61FF]" />
           <h2 className="text-xs font-bold text-[#EAE9FC] tracking-wider uppercase">
-            KPIs & Metrificação
+            KPIs em Tempo Real
           </h2>
         </div>
-        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Métricas em tempo real" />
+        <span className="flex items-center gap-1.5 text-[10px] text-emerald-400 font-medium">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          Ativo
+        </span>
       </div>
 
       {/* Scrollable KPIs container */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Card 1: SLA Compliance */}
-        <div className="p-4 rounded-xl bg-[#1A1829] border border-[#2E2B44] space-y-3">
+        {/* CORE 4-KPI SUMMARY GRID */}
+        <div className="grid grid-cols-2 gap-2">
+          {/* Total */}
+          <div className="p-3 rounded-xl bg-[#171526] border border-[#2E2B44] space-y-1">
+            <span className="text-[11px] text-[#9490AC] flex items-center gap-1">
+              <Layers className="w-3 h-3 text-[#9D8DF1]" /> Total
+            </span>
+            <div className="text-xl font-black text-[#EAE9FC]">
+              {metrics.total}
+            </div>
+            <div className="text-[10px] text-[#9490AC]/80">cadastradas</div>
+          </div>
+
+          {/* Concluídas */}
+          <div className="p-3 rounded-xl bg-[#171526] border border-emerald-500/20 space-y-1">
+            <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+              <CheckCircle2 className="w-3 h-3" /> Concluídas
+            </span>
+            <div className="text-xl font-black text-emerald-400">
+              {metrics.completedCount}
+            </div>
+            <div className="text-[10px] text-emerald-400/80">
+              {metrics.total > 0 ? Math.round((metrics.completedCount / metrics.total) * 100) : 0}% entregue
+            </div>
+          </div>
+
+          {/* Em Andamento */}
+          <div className="p-3 rounded-xl bg-[#171526] border border-blue-500/20 space-y-1">
+            <span className="text-[11px] text-blue-400 flex items-center gap-1">
+              <PlayCircle className="w-3 h-3" /> Em Andamento
+            </span>
+            <div className="text-xl font-black text-blue-400">
+              {metrics.inProgressCount}
+            </div>
+            <div className="text-[10px] text-blue-400/80">ativas / pendentes</div>
+          </div>
+
+          {/* Canceladas */}
+          <div className="p-3 rounded-xl bg-[#171526] border border-rose-500/20 space-y-1">
+            <span className="text-[11px] text-rose-400 flex items-center gap-1">
+              <XCircle className="w-3 h-3" /> Canceladas
+            </span>
+            <div className="text-xl font-black text-rose-400">
+              {metrics.canceledCount}
+            </div>
+            <div className="text-[10px] text-rose-400/80">descartadas</div>
+          </div>
+        </div>
+
+        {/* Breakdown by Type: Tarefas / Atividades / Lembretes */}
+        <div className="p-3.5 rounded-xl bg-[#171526] border border-[#2E2B44] space-y-2.5">
+          <span className="text-xs font-semibold text-[#EAE9FC] block">
+            Distribuição por Tipo
+          </span>
+          <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
+            <div className="p-2 rounded-lg bg-[#0F0E17] border border-indigo-500/20">
+              <ListTodo className="w-3.5 h-3.5 text-indigo-400 mx-auto mb-1" />
+              <span className="font-bold text-[#EAE9FC] block">{metrics.tasksCount}</span>
+              <span className="text-[#9490AC]">Tarefas</span>
+            </div>
+            <div className="p-2 rounded-lg bg-[#0F0E17] border border-purple-500/20">
+              <Activity className="w-3.5 h-3.5 text-purple-400 mx-auto mb-1" />
+              <span className="font-bold text-[#EAE9FC] block">{metrics.activitiesCount}</span>
+              <span className="text-[#9490AC]">Atividades</span>
+            </div>
+            <div className="p-2 rounded-lg bg-[#0F0E17] border border-amber-500/20">
+              <Bell className="w-3.5 h-3.5 text-amber-400 mx-auto mb-1" />
+              <span className="font-bold text-[#EAE9FC] block">{metrics.remindersCount}</span>
+              <span className="text-[#9490AC]">Lembretes</span>
+            </div>
+          </div>
+        </div>
+
+        {/* SLA Compliance */}
+        <div className="p-3.5 rounded-xl bg-[#171526] border border-[#2E2B44] space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#EAE9FC] flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-[#9D8DF1]" />
-              Cumprimento de SLA
+              Assertividade de SLA
             </span>
             <span className="text-xs font-bold text-emerald-400">
               {metrics.onTimePct}% no prazo
@@ -124,12 +222,12 @@ export function RightKpiQuadrant({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-1 pt-1 text-center text-[10px]">
+          <div className="grid grid-cols-3 gap-1 pt-0.5 text-center text-[10px]">
             <div className="p-1 rounded bg-[#0F0E17]">
               <span className="text-emerald-400 block font-bold">
                 {metrics.onTimePct}%
               </span>
-              <span className="text-[#9490AC]">Original</span>
+              <span className="text-[#9490AC]">No Prazo</span>
             </div>
             <div className="p-1 rounded bg-[#0F0E17]">
               <span className="text-amber-400 block font-bold">
@@ -146,15 +244,15 @@ export function RightKpiQuadrant({
           </div>
         </div>
 
-        {/* Card 2: Work vs Personal Ratio */}
-        <div className="p-4 rounded-xl bg-[#1A1829] border border-[#2E2B44] space-y-3">
+        {/* Work vs Personal Ratio */}
+        <div className="p-3.5 rounded-xl bg-[#171526] border border-[#2E2B44] space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#EAE9FC] flex items-center gap-1.5">
               <PieChart className="w-3.5 h-3.5 text-[#7B61FF]" />
-              Proporção de Contextos
+              Trabalho vs Pessoal
             </span>
             <span className="text-[11px] text-[#9490AC]">
-              {metrics.total} tarefas
+              {metrics.total} total
             </span>
           </div>
 
@@ -195,34 +293,38 @@ export function RightKpiQuadrant({
           </div>
         </div>
 
-        {/* Card 3: Top Categories */}
-        <div className="p-4 rounded-xl bg-[#1A1829] border border-[#2E2B44] space-y-2.5">
+        {/* Top Categories */}
+        <div className="p-3.5 rounded-xl bg-[#171526] border border-[#2E2B44] space-y-2">
           <span className="text-xs font-semibold text-[#EAE9FC] block">
             Top Categorias
           </span>
           <div className="space-y-1.5">
-            {metrics.categories.map(([cat, count]) => {
-              const pct = metrics.total > 0 ? Math.round((count / metrics.total) * 100) : 0;
-              return (
-                <div key={cat} className="space-y-1">
-                  <div className="flex items-center justify-between text-[11px] text-[#9490AC]">
-                    <span className="text-[#EAE9FC] truncate max-w-[170px]">{cat}</span>
-                    <span>{count}</span>
+            {metrics.categories.length === 0 ? (
+              <span className="text-xs text-[#9490AC]">Sem tarefas registradas</span>
+            ) : (
+              metrics.categories.map(([cat, count]) => {
+                const pct = metrics.total > 0 ? Math.round((count / metrics.total) * 100) : 0;
+                return (
+                  <div key={cat} className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px] text-[#9490AC]">
+                      <span className="text-[#EAE9FC] truncate max-w-[170px]">{cat}</span>
+                      <span>{count}</span>
+                    </div>
+                    <div className="w-full h-1 rounded-full bg-[#0F0E17]">
+                      <div
+                        style={{ width: `${pct}%` }}
+                        className="h-full bg-[#9D8DF1] rounded-full transition-all"
+                      />
+                    </div>
                   </div>
-                  <div className="w-full h-1 rounded-full bg-[#0F0E17]">
-                    <div
-                      style={{ width: `${pct}%` }}
-                      className="h-full bg-[#9D8DF1] rounded-full transition-all"
-                    />
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
 
-        {/* Card 4: Knowledge Base Wiki */}
-        <div className="p-4 rounded-xl bg-[#1A1829] border border-[#2E2B44] space-y-2">
+        {/* Wiki Técnica */}
+        <div className="p-3.5 rounded-xl bg-[#171526] border border-[#2E2B44] space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-[#EAE9FC] flex items-center gap-1.5">
               <BookOpen className="w-3.5 h-3.5 text-[#9D8DF1]" />
@@ -233,28 +335,27 @@ export function RightKpiQuadrant({
             </span>
           </div>
           <p className="text-[11px] text-[#9490AC] leading-relaxed">
-            As resoluções registradas são indexadas e sugeridas automaticamente pelo Gemini quando novos tickets similares chegam.
+            Resoluções salvas viram sugestões imediatas quando novos chamados similares ocorrem.
           </p>
         </div>
 
         {/* Big CTA for Annual Report */}
         <button
           onClick={onOpenReportModal}
-          className="w-full p-4 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-white shadow-xl shadow-[#7B61FF]/25 flex items-center justify-between transition-all active:scale-98 group"
+          className="w-full p-3.5 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-white shadow-lg shadow-[#7B61FF]/20 flex items-center justify-between transition-all active:scale-98 group"
         >
           <div className="text-left">
             <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider">
               <Award className="w-4 h-4" />
-              Balanço & Relatório Anual
+              Relatório Completo
             </div>
             <p className="text-[10px] text-white/80 mt-0.5">
-              Auditoria de desempenho e assertividade
+              Auditoria de desempenho e exportação
             </p>
           </div>
-          <ArrowUpRight className="w-5 h-5 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+          <ArrowUpRight className="w-4 h-4 group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
         </button>
       </div>
     </aside>
   );
 }
-

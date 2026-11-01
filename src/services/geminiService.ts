@@ -1,7 +1,14 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { GeminiTriageResponse, TaskCategory, Priority, AccountType } from "@/types";
+import { GeminiTriageResponse, TaskCategory, Priority, AccountType, ItemType } from "@/types";
 
-const SYSTEM_PROMPT = `Você é o agente operacional do sistema Mont Ops. Sua função é receber uma anotação rápida da usuária e transformá-la em uma tarefa clara, profissional e estruturada. Classifique se a tarefa pertence ao contexto 'work' (TI escolar, TOTVS RM, Google Workspace, suporte a professores/alunos/pais, scripts, infraestrutura) ou 'personal' (vida pessoal, catequese, estudos de idiomas, música, finanças, casa). Importante: na comunicação escolar com famílias, nunca use os termos 'Tarefas' ou 'Entregas' para atividades de alunos; use sempre 'Lição de Casa'. Defina a prioridade (P1 a P4), extraia tags técnicas para indexação futura de resolução de problemas e gere 2 termos de busca objetivos para vídeos no YouTube ou artigos técnicos que ajudem a executar ou automatizar essa tarefa.`;
+const SYSTEM_PROMPT = `Você é o agente operacional do sistema Mont Ops. Sua função é receber uma anotação rápida da usuária e transformá-la em um registro claro, profissional e estruturado.
+1. Classifique se o registro pertence ao contexto 'work' (TI escolar, TOTVS RM, Google Workspace, suporte a professores/alunos/pais, scripts, infraestrutura) ou 'personal' (vida pessoal, catequese, estudos de idiomas, música, finanças, casa).
+2. Classifique o tipo de registro ('item_type'):
+   - 'task': Tarefa operacional ou técnica que exige execução, entrega ou resolução técnica com passos claros.
+   - 'activity': Atividade contínua, compromisso, reunião, aula, encontro, catequese ou rotina agendada.
+   - 'reminder': Lembrete rápido, aviso pontual, não esquecer de algo, compra simples ou pagamento.
+3. Importante: na comunicação escolar com famílias, nunca use os termos 'Tarefas' ou 'Entregas' para atividades de alunos; use sempre 'Lição de Casa'.
+4. Defina a prioridade (P1 a P4), extraia tags técnicas para indexação futura de resolução de problemas e gere 2 termos de busca objetivos para vídeos no YouTube ou artigos técnicos que ajudem a executar ou automatizar essa tarefa.`;
 
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
@@ -18,6 +25,11 @@ const RESPONSE_SCHEMA = {
       type: Type.STRING,
       enum: ["work", "personal"],
       description: "Define se a tarefa vai para a conta Google de Trabalho ou Pessoal.",
+    },
+    item_type: {
+      type: Type.STRING,
+      enum: ["task", "activity", "reminder"],
+      description: "Tipo de registro: 'task' para tarefa operacional, 'activity' para reunião/evento/atividade contínua, 'reminder' para lembrete rápido.",
     },
     category: {
       type: Type.STRING,
@@ -57,6 +69,7 @@ const RESPONSE_SCHEMA = {
     "refined_title",
     "structured_description",
     "account_type",
+    "item_type",
     "category",
     "priority",
     "search_tags",
@@ -73,6 +86,37 @@ function fallbackTriage(rawInput: string): GeminiTriageResponse {
   let accountType: AccountType = "work";
   let category: TaskCategory = "Suporte TI";
   let priority: Priority = "P3";
+  let itemType: ItemType = "task";
+
+  // Infer item_type
+  if (
+    lower.includes("lembr") ||
+    lower.includes("esquec") ||
+    lower.includes("aviso") ||
+    lower.includes("pagar") ||
+    lower.includes("comprar") ||
+    lower.includes("ligar") ||
+    lower.includes("tomar") ||
+    lower.includes("pegar")
+  ) {
+    itemType = "reminder";
+  } else if (
+    lower.includes("reuni") ||
+    lower.includes("encontro") ||
+    lower.includes("aula") ||
+    lower.includes("catequese") ||
+    lower.includes("missa") ||
+    lower.includes("curso") ||
+    lower.includes("treino") ||
+    lower.includes("consulta") ||
+    lower.includes("alinhamento") ||
+    lower.includes("rotina") ||
+    lower.includes("evento")
+  ) {
+    itemType = "activity";
+  } else {
+    itemType = "task";
+  }
 
   // Context inference
   if (
@@ -168,11 +212,11 @@ function fallbackTriage(rawInput: string): GeminiTriageResponse {
   if (title.length > 0) {
     title = title.charAt(0).toUpperCase() + title.slice(1);
   } else {
-    title = "Nova Atividade Operacional";
+    title = itemType === "reminder" ? "Novo Lembrete" : itemType === "activity" ? "Nova Atividade" : "Nova Tarefa";
   }
 
   // Extract tags
-  const tags: string[] = [category.toLowerCase().replace(/\s+/g, "-")];
+  const tags: string[] = [category.toLowerCase().replace(/\s+/g, "-"), itemType];
   if (lower.includes("rm")) tags.push("totvs-rm");
   if (lower.includes("sincronização")) tags.push("sincronizacao");
   if (lower.includes("notas")) tags.push("notas");
@@ -190,6 +234,7 @@ function fallbackTriage(rawInput: string): GeminiTriageResponse {
     refined_title: title,
     structured_description: `Contexto operacional estruturado: ${rawInput}\n\nRecomendações e checklist:\n- [ ] Diagnosticar impacto imediato\n- [ ] Executar validação de integridade\n- [ ] Registrar resolução na Wiki técnica Mont Ops`,
     account_type: accountType,
+    item_type: itemType,
     category,
     priority,
     extracted_due_date_iso: null,
@@ -211,7 +256,7 @@ export async function triageInputWithGemini(
 
   try {
     const ai = new GoogleGenAI({ apiKey: key });
-    // Use gemini-2.5-flash as specified in the PRD
+    // Use gemini-3.8-flash
     const response = await ai.models.generateContent({
       model: "gemini-3.8-flash",
       contents: rawInput,
@@ -229,6 +274,9 @@ export async function triageInputWithGemini(
     }
 
     const parsed = JSON.parse(text) as GeminiTriageResponse;
+    if (!parsed.item_type) {
+      parsed.item_type = fallbackTriage(rawInput).item_type;
+    }
     return parsed;
   } catch (error) {
     console.warn("Gemini API call failed, using intelligent fallback triage:", error);
@@ -286,6 +334,7 @@ ${
 ${JSON.stringify(
   tasks.map((t) => ({
     titulo: t.title,
+    tipo: t.item_type || "tarefa",
     categoria: t.category,
     status: t.status,
     prioridade: t.priority,

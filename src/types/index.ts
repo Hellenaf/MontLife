@@ -1,5 +1,7 @@
 export type AccountType = "work" | "personal";
 
+export type ItemType = "task" | "activity" | "reminder";
+
 export type TaskCategory =
   | "TOTVS RM"
   | "Google Workspace"
@@ -45,6 +47,7 @@ export interface Task {
   title: string;
   description: string;
   account_type: AccountType;
+  item_type?: ItemType;
   category: TaskCategory;
   tags: string[];
   priority: Priority;
@@ -79,6 +82,7 @@ export interface GeminiTriageResponse {
   refined_title: string;
   structured_description: string;
   account_type: AccountType;
+  item_type: ItemType;
   category: TaskCategory;
   priority: Priority;
   extracted_due_date_iso: string | null;
@@ -102,10 +106,10 @@ export interface AnalyticsMetrics {
   in_progress_count: number;
   waiting_count: number;
   todo_count: number;
+  canceled_count: number;
   sla_on_time_pct: number;
   sla_extended_pct: number;
   sla_breached_pct: number;
   categories_distribution: Record<string, number>;
   knowledge_base_reuse_count: number;
 }
-

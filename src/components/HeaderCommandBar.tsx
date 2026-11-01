@@ -18,6 +18,9 @@ import {
   Tag,
   ArrowRight,
   BookOpen,
+  ListTodo,
+  Activity,
+  Bell,
 } from "lucide-react";
 import {
   GeminiTriageResponse,
@@ -28,6 +31,7 @@ import {
   AccountType,
   Priority,
   TaskCategory,
+  ItemType,
 } from "@/types";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { format, parseISO } from "date-fns";
@@ -49,6 +53,7 @@ export function HeaderCommandBar({
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [preferredType, setPreferredType] = useState<"auto" | ItemType>("auto");
 
   // Triage state
   const [triageData, setTriageData] = useState<GeminiTriageResponse | null>(null);
@@ -60,6 +65,7 @@ export function HeaderCommandBar({
   const [editTitle, setEditTitle] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editAccountType, setEditAccountType] = useState<AccountType>("work");
+  const [editItemType, setEditItemType] = useState<ItemType>("task");
   const [editCategory, setEditCategory] = useState<TaskCategory>("Suporte TI");
   const [editPriority, setEditPriority] = useState<Priority>("P3");
   const [editDueDate, setEditDueDate] = useState("");
@@ -99,15 +105,16 @@ export function HeaderCommandBar({
 
   const toggleVoiceInput = () => {
     if (!recognitionRef.current) {
-      alert("Reconhecimento de voz não é suportado no seu navegador.");
+      alert("Reconhecimento de voz não suportado neste navegador.");
       return;
     }
+
     if (isListening) {
       recognitionRef.current.stop();
       setIsListening(false);
     } else {
-      recognitionRef.current.start();
       setIsListening(true);
+      recognitionRef.current.start();
     }
   };
 
@@ -135,6 +142,8 @@ export function HeaderCommandBar({
         setEditTitle(triage.refined_title);
         setEditDescription(triage.structured_description);
         setEditAccountType(triage.account_type);
+        // Use preferred type if explicitly chosen, otherwise AI suggestion
+        setEditItemType(preferredType !== "auto" ? preferredType : triage.item_type || "task");
         setEditCategory(triage.category);
         setEditPriority(triage.priority);
         setEditDueDate(data.calculated_due_date);
@@ -162,6 +171,7 @@ export function HeaderCommandBar({
         title: editTitle,
         description: editDescription,
         account_type: editAccountType,
+        item_type: editItemType,
         category: editCategory,
         priority: editPriority,
         due_date: editDueDate || calculatedDueDate,
@@ -186,6 +196,7 @@ export function HeaderCommandBar({
         setSimilarResolutions([]);
         setLearningResources(null);
         setInput("");
+        setPreferredType("auto");
       }
     } catch (err) {
       console.error("Failed to create task:", err);
@@ -204,29 +215,29 @@ export function HeaderCommandBar({
   const personalAcc = accounts.find((a) => a.id === "personal");
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 h-16 bg-[#141221] border-b border-[#2E2B44] px-6 flex items-center justify-between shadow-lg">
+    <header className="fixed top-0 left-0 right-0 z-30 h-16 bg-[#110F1C]/95 backdrop-blur-md border-b border-[#242038] px-4 sm:px-6 flex items-center justify-between shadow-lg shadow-black/20">
       {/* Brand & Identity */}
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#7B61FF] to-[#9D8DF1] flex items-center justify-center font-bold text-white shadow-md shadow-[#7B61FF]/30">
+      <div className="flex items-center gap-3 shrink-0">
+        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#7B61FF] to-[#9D8DF1] flex items-center justify-center font-bold text-white shadow-md shadow-[#7B61FF]/25">
           M
         </div>
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-extrabold text-sm tracking-widest text-[#EAE9FC]">
+            <span className="font-black text-sm tracking-widest text-[#EAE9FC]">
               MONT OPS
             </span>
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#7B61FF]/20 text-[#9D8DF1] border border-[#7B61FF]/30">
-              v2.5 AI
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[#7B61FF]/15 text-[#9D8DF1] border border-[#7B61FF]/30">
+              3.8 AI
             </span>
           </div>
           <p className="text-[10px] text-[#9490AC] hidden sm:block">
-            Hub de Produtividade & Wiki Técnica
+            Gestão & Inteligência Operacional
           </p>
         </div>
       </div>
 
       {/* Center Natural Language Command Bar */}
-      <div className="flex-1 max-w-2xl mx-6 relative">
+      <div className="flex-1 max-w-2xl mx-3 sm:mx-6">
         <form
           onSubmit={handleRunTriage}
           className="relative flex items-center w-full"
@@ -235,8 +246,8 @@ export function HeaderCommandBar({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Comando em linguagem natural (ex: arrumar sincronização de notas no RM amanhã)..."
-            className="w-full h-10 pl-4 pr-24 rounded-xl bg-[#0F0E17] border border-[#2E2B44] text-xs text-[#EAE9FC] placeholder-[#9490AC]/60 focus:outline-none focus:border-[#9D8DF1] focus:ring-1 focus:ring-[#9D8DF1] transition-all"
+            placeholder="Digite ou fale uma anotação (ex: reunião pedagógica amanhã às 14h, pagar fatura, consertar RM)..."
+            className="w-full h-10 pl-4 pr-24 rounded-xl bg-[#090810] border border-[#242038] text-xs text-[#EAE9FC] placeholder-[#9490AC]/50 focus:outline-none focus:border-[#7B61FF] focus:ring-1 focus:ring-[#7B61FF] transition-all"
             disabled={isProcessing}
           />
 
@@ -248,20 +259,20 @@ export function HeaderCommandBar({
               className={`p-1.5 rounded-lg transition-colors ${
                 isListening
                   ? "bg-rose-500/20 text-rose-400 animate-pulse"
-                  : "text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#2E2B44]"
+                  : "text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#1E1B2E]"
               }`}
             >
               {isListening ? (
-                <MicOff className="w-4 h-4 text-rose-400" />
+                <MicOff className="w-3.5 h-3.5 text-rose-400" />
               ) : (
-                <Mic className="w-4 h-4" />
+                <Mic className="w-3.5 h-3.5" />
               )}
             </button>
 
             <button
               type="submit"
               disabled={isProcessing || !input.trim()}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-white font-medium text-xs transition-all active:scale-95 disabled:opacity-40 shadow-sm"
+              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#7B61FF] hover:bg-[#6C50FF] text-white text-xs font-semibold shadow-md shadow-[#7B61FF]/20 transition-all disabled:opacity-40 disabled:hover:bg-[#7B61FF]"
             >
               {isProcessing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -277,11 +288,11 @@ export function HeaderCommandBar({
       </div>
 
       {/* Right Account Badges & Navigation */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 shrink-0">
         {/* Connected Accounts Status */}
         <button
           onClick={onOpenAccountsModal}
-          className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#0F0E17] border border-[#2E2B44] hover:border-[#9D8DF1]/50 text-xs text-[#9490AC] transition-all"
+          className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-[#090810] border border-[#242038] hover:border-[#7B61FF]/50 text-xs text-[#9490AC] transition-all"
           title="Gerenciar Contas Google Conectadas"
         >
           <div className="flex items-center gap-1.5">
@@ -292,7 +303,7 @@ export function HeaderCommandBar({
             />
             <Briefcase className="w-3.5 h-3.5 text-indigo-400" />
           </div>
-          <span className="text-[#2E2B44]">|</span>
+          <span className="text-[#242038]">|</span>
           <div className="flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full ${
@@ -306,38 +317,97 @@ export function HeaderCommandBar({
         {/* Annual Report CTA */}
         <button
           onClick={onOpenReportModal}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2E2B44] hover:bg-[#3B3857] text-[#EAE9FC] text-xs font-medium transition-colors"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#242038] hover:bg-[#2F2A47] text-[#EAE9FC] text-xs font-medium transition-colors"
         >
           <Award className="w-3.5 h-3.5 text-[#9D8DF1]" />
-          <span className="hidden lg:inline">Relatório Anual</span>
+          <span className="hidden lg:inline">Relatório</span>
         </button>
       </div>
 
       {/* Floating / Embedded AI Confirmation Card */}
       {triageData && (
         <div className="fixed top-18 left-1/2 -translate-x-1/2 w-full max-w-3xl z-40 animate-in fade-in slide-in-from-top-4 duration-200">
-          <div className="m-4 p-5 rounded-2xl bg-[#1A1829] border border-[#7B61FF]/40 shadow-2xl backdrop-blur-xl glow-lavender space-y-4">
+          <div className="m-4 p-5 rounded-2xl bg-[#141221] border border-[#7B61FF]/40 shadow-2xl backdrop-blur-xl glow-lavender space-y-4">
             {/* Header of confirmation */}
-            <div className="flex items-center justify-between border-b border-[#2E2B44] pb-3">
+            <div className="flex items-center justify-between border-b border-[#242038] pb-3">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 rounded-lg bg-[#7B61FF]/20 text-[#9D8DF1]">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-[#EAE9FC]">
-                    Triagem Inteligente do Gemini — Revisão de Tarefa
+                    Triagem Inteligente — Revisão & Decisão de Tipo
                   </h3>
                   <p className="text-[11px] text-[#9490AC]">
-                    Confirme ou ajuste os parâmetros antes de sincronizar com o Google Tasks
+                    A IA analisou sua anotação. Você pode alterar o tipo, prazo ou conta antes de salvar.
                   </p>
                 </div>
               </div>
               <button
                 onClick={handleDiscardTriage}
-                className="text-[#9490AC] hover:text-white p-1 rounded-lg hover:bg-[#2E2B44]"
+                className="text-[#9490AC] hover:text-white p-1 rounded-lg hover:bg-[#242038]"
               >
                 <X className="w-4 h-4" />
               </button>
+            </div>
+
+            {/* SELETOR INTERATIVO: TAREFA, ATIVIDADE OU LEMBRETE (SOLICITADO) */}
+            <div className="p-3 rounded-xl bg-[#090810] border border-[#242038] flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-[#EAE9FC]">
+                <span>Classificação do Registro:</span>
+                <span className="text-[11px] text-[#9D8DF1] font-normal">
+                  (Sugerido pela IA:{" "}
+                  <strong>
+                    {triageData.item_type === "reminder"
+                      ? "Lembrete"
+                      : triageData.item_type === "activity"
+                      ? "Atividade"
+                      : "Tarefa"}
+                  </strong>
+                  )
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1 bg-[#141221] p-1 rounded-xl border border-[#242038]">
+                <button
+                  type="button"
+                  onClick={() => setEditItemType("task")}
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                    editItemType === "task"
+                      ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                      : "text-[#9490AC] hover:text-[#EAE9FC]"
+                  }`}
+                >
+                  <ListTodo className="w-3.5 h-3.5" />
+                  📌 Tarefa
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEditItemType("activity")}
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                    editItemType === "activity"
+                      ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
+                      : "text-[#9490AC] hover:text-[#EAE9FC]"
+                  }`}
+                >
+                  <Activity className="w-3.5 h-3.5" />
+                  ⚡ Atividade
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEditItemType("reminder")}
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all ${
+                    editItemType === "reminder"
+                      ? "bg-amber-600 text-white shadow-md shadow-amber-600/30"
+                      : "text-[#9490AC] hover:text-[#EAE9FC]"
+                  }`}
+                >
+                  <Bell className="w-3.5 h-3.5" />
+                  🔔 Lembrete
+                </button>
+              </div>
             </div>
 
             {/* Knowledge Base Alert: Past resolution match */}
@@ -359,7 +429,7 @@ export function HeaderCommandBar({
                   &quot;{similarResolutions[0].resolution_notes}&quot;
                 </p>
                 <div className="pl-6 text-[10px] text-amber-400/80 flex items-center gap-1">
-                  <BookOpen className="w-3 h-3" />
+                  <BookOpen className="w-3.5 h-3.5" />
                   Tags coincidentes: {similarResolutions[0].matched_tags.join(", ")}
                 </div>
               </div>
@@ -375,31 +445,31 @@ export function HeaderCommandBar({
                   type="text"
                   value={editTitle}
                   onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-[#0F0E17] border border-[#2E2B44] text-[#EAE9FC] focus:outline-none focus:border-[#9D8DF1]"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-[#090810] border border-[#242038] text-[#EAE9FC] focus:outline-none focus:border-[#7B61FF]"
                 />
               </div>
 
               <div>
                 <label className="text-[11px] font-medium text-[#9490AC] block mb-1">
-                  Descrição & Passos Sugeridos:
+                  Descrição & Detalhes:
                 </label>
                 <textarea
-                  rows={3}
+                  rows={2}
                   value={editDescription}
                   onChange={(e) => setEditDescription(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-[#0F0E17] border border-[#2E2B44] text-[#EAE9FC] focus:outline-none focus:border-[#9D8DF1] resize-none"
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-[#090810] border border-[#242038] text-[#EAE9FC] focus:outline-none focus:border-[#7B61FF] resize-none"
                 />
               </div>
             </div>
 
             {/* Controls: Account, Category, Priority, SLA */}
-            <div className="grid grid-cols-4 gap-3 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
               {/* Account toggle */}
               <div>
                 <label className="text-[11px] font-medium text-[#9490AC] block mb-1">
-                  Conta Google:
+                  Contexto:
                 </label>
-                <div className="flex rounded-lg bg-[#0F0E17] border border-[#2E2B44] p-0.5">
+                <div className="flex rounded-lg bg-[#090810] border border-[#242038] p-0.5">
                   <button
                     type="button"
                     onClick={() => setEditAccountType("work")}
@@ -428,7 +498,7 @@ export function HeaderCommandBar({
               {/* Priority */}
               <div>
                 <label className="text-[11px] font-medium text-[#9490AC] block mb-1">
-                  Prioridade & SLA:
+                  Prioridade:
                 </label>
                 <div className="flex gap-1">
                   {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
@@ -447,8 +517,8 @@ export function HeaderCommandBar({
                         onClick={() => handlePriorityChange(p)}
                         className={`flex-1 py-1 text-[11px] rounded-lg font-bold border transition-colors ${
                           editPriority === p
-                            ? `bg-[#2E2B44] ${color}`
-                            : "bg-[#0F0E17] border-[#2E2B44] text-[#9490AC]"
+                            ? `bg-[#242038] ${color}`
+                            : "bg-[#090810] border-[#242038] text-[#9490AC]"
                         }`}
                       >
                         {p}
@@ -466,7 +536,7 @@ export function HeaderCommandBar({
                 <select
                   value={editCategory}
                   onChange={(e) => setEditCategory(e.target.value as TaskCategory)}
-                  className="w-full h-8 px-2 text-[11px] rounded-lg bg-[#0F0E17] border border-[#2E2B44] text-[#EAE9FC] focus:outline-none focus:border-[#9D8DF1]"
+                  className="w-full h-8 px-2 text-[11px] rounded-lg bg-[#090810] border border-[#242038] text-[#EAE9FC] focus:outline-none focus:border-[#7B61FF]"
                 >
                   <option value="TOTVS RM">TOTVS RM</option>
                   <option value="Google Workspace">Google Workspace</option>
@@ -484,7 +554,7 @@ export function HeaderCommandBar({
                 <label className="text-[11px] font-medium text-[#9490AC] block mb-1">
                   Prazo Calculado (SLA):
                 </label>
-                <div className="flex items-center gap-1 h-8 px-2 rounded-lg bg-[#0F0E17] border border-[#2E2B44] text-[11px] text-[#EAE9FC]">
+                <div className="flex items-center gap-1 h-8 px-2 rounded-lg bg-[#090810] border border-[#242038] text-[11px] text-[#EAE9FC]">
                   <Clock className="w-3.5 h-3.5 text-[#9D8DF1] shrink-0" />
                   <span className="truncate">
                     {editDueDate
@@ -498,7 +568,7 @@ export function HeaderCommandBar({
             </div>
 
             {/* Actions */}
-            <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#2E2B44]">
+            <div className="flex items-center justify-end gap-3 pt-2 border-t border-[#242038]">
               <button
                 type="button"
                 onClick={handleDiscardTriage}
@@ -517,7 +587,7 @@ export function HeaderCommandBar({
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    Confirmar & Sincronizar Google Tasks
+                    Confirmar & Salvar
                   </>
                 )}
               </button>
@@ -528,4 +598,3 @@ export function HeaderCommandBar({
     </header>
   );
 }
-

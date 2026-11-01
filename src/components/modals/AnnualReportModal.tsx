@@ -23,8 +23,14 @@ import {
   Layers,
   ChevronDown,
   ChevronUp,
+  XCircle,
+  PlayCircle,
+  ListTodo,
+  Activity,
+  Bell,
+  FileText,
 } from "lucide-react";
-import { Task, AccountType } from "@/types";
+import { Task, AccountType, ItemType } from "@/types";
 import { parseISO, getYear, getMonth, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -95,11 +101,31 @@ export function AnnualReportModal({
     });
   }, [tasks, selectedYear, selectedMonth, scopeFilter]);
 
-  // Metrics computation
+  // Core KPI metrics computation
   const total = filteredTasks.length;
   const completed = filteredTasks.filter((t) => t.status === "COMPLETED");
   const completedCount = completed.length;
-  const inProgress = filteredTasks.filter((t) => t.status === "IN_PROGRESS" || t.status === "WAITING");
+  
+  // In progress / pending (includes IN_PROGRESS, WAITING, and TODO)
+  const inProgressList = filteredTasks.filter(
+    (t) => t.status === "IN_PROGRESS" || t.status === "WAITING" || t.status === "TODO"
+  );
+  const inProgressCount = inProgressList.length;
+  const activeRunningCount = filteredTasks.filter((t) => t.status === "IN_PROGRESS").length;
+  
+  // Canceled
+  const canceledList = filteredTasks.filter((t) => t.status === "CANCELED");
+  const canceledCount = canceledList.length;
+
+  // Breakdown by Item Type (Tarefa vs Atividade vs Lembrete)
+  const tasksCount = filteredTasks.filter((t) => (t.item_type || "task") === "task").length;
+  const activitiesCount = filteredTasks.filter((t) => t.item_type === "activity").length;
+  const remindersCount = filteredTasks.filter((t) => t.item_type === "reminder").length;
+
+  // Percentages
+  const completedPct = total > 0 ? Math.round((completedCount / total) * 100) : 0;
+  const inProgressPct = total > 0 ? Math.round((inProgressCount / total) * 100) : 0;
+  const canceledPct = total > 0 ? Math.round((canceledCount / total) * 100) : 0;
 
   // SLA breakdown
   const onTimeCount = completed.filter(
@@ -161,6 +187,7 @@ export function AnnualReportModal({
   const handleExportCsv = () => {
     const headers = [
       "ID",
+      "Tipo",
       "Titulo",
       "Contexto",
       "Categoria",
@@ -176,6 +203,7 @@ export function AnnualReportModal({
 
     const rows = filteredTasks.map((t) => [
       `"${t.id}"`,
+      `"${t.item_type === "reminder" ? "Lembrete" : t.item_type === "activity" ? "Atividade" : "Tarefa"}"`,
       `"${t.title.replace(/"/g, '""')}"`,
       `"${t.account_type === "work" ? "Trabalho" : "Pessoal"}"`,
       `"${t.category}"`,
@@ -202,14 +230,21 @@ export function AnnualReportModal({
   const handleCopyEmailReport = () => {
     const summaryText = aiSummary || `RELATÓRIO DE ENTREGAS — ${selectedMonthLabel.toUpperCase()}
 Contexto: ${scopeFilter === "work" ? "Tecnologia da Informação & Operações" : "Atividades Pessoais"}
-Total de Demandas Gerenciadas: ${total} | Concluídas com Sucesso: ${completedCount}
-Taxa de Cumprimento de SLA: ${onTimePct}% no prazo original (+ ${extendedPct}% com adiamento gerenciado)
+
+QUADRO GERAL DE KPIS:
+- Total de Demandas Registradas: ${total}
+  • Tarefas: ${tasksCount} | Atividades: ${activitiesCount} | Lembretes: ${remindersCount}
+- Concluídas com Sucesso: ${completedCount} (${completedPct}%)
+- Em Andamento / Pendentes: ${inProgressCount} (${inProgressPct}%)
+- Canceladas / Descartadas: ${canceledCount} (${canceledPct}%)
+- Índice de Assertividade de SLA: ${onTimePct}% no prazo original (+ ${extendedPct}% com adiamento gerenciado)
+- Soluções Técnicas Registradas na Wiki: ${wikiResolved.length}
 
 PRINCIPAIS ATIVIDADES E ENTREGAS TÉCNICAS:
 ${completed
   .map(
     (t, idx) =>
-      `${idx + 1}. [${t.category}] ${t.title}\n   - Status: Concluído em ${
+      `${idx + 1}. [${t.item_type === "reminder" ? "Lembrete" : t.item_type === "activity" ? "Atividade" : "Tarefa"} - ${t.category}] ${t.title}\n   - Status: Concluído em ${
         t.completed_at ? format(parseISO(t.completed_at), "dd/MM/yyyy") : "Data não reg."
       }\n   ${t.resolution_notes ? `- Resolução Técnica: ${t.resolution_notes}` : `- Detalhes: ${t.description}`}`
   )
@@ -226,21 +261,45 @@ Relatório gerado via Mont Ops.`;
     window.print();
   };
 
+  const getItemTypeBadge = (itemType?: ItemType) => {
+    switch (itemType) {
+      case "reminder":
+        return (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+            <Bell className="w-2.5 h-2.5" /> Lembrete
+          </span>
+        );
+      case "activity":
+        return (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30 flex items-center gap-1">
+            <Activity className="w-2.5 h-2.5" /> Atividade
+          </span>
+        );
+      case "task":
+      default:
+        return (
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
+            <ListTodo className="w-2.5 h-2.5" /> Tarefa
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
         id="printable-report"
-        className="relative w-full max-w-5xl max-h-[92vh] rounded-2xl bg-[#1A1829] border border-[#2E2B44] shadow-2xl flex flex-col overflow-hidden glow-violet print:border-none print:shadow-none print:bg-white"
+        className="relative w-full max-w-5xl max-h-[92vh] rounded-2xl bg-[#141221] border border-[#2E2B44] shadow-2xl flex flex-col overflow-hidden glow-violet print:border-none print:shadow-none print:bg-white"
       >
         {/* Top Action Bar (Hidden when printing) */}
-        <div className="no-print flex items-center justify-between p-5 border-b border-[#2E2B44] bg-[#141221] shrink-0">
+        <div className="no-print flex items-center justify-between p-4 sm:p-5 border-b border-[#2E2B44] bg-[#0F0E17] shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-[#7B61FF] to-[#9D8DF1] text-white shadow-lg shadow-[#7B61FF]/30">
-              <Award className="w-6 h-6" />
+              <Award className="w-5 h-5 sm:w-6 sm:h-6" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-lg font-bold text-[#EAE9FC]">
+                <h2 className="text-base sm:text-lg font-bold text-[#EAE9FC]">
                   Relatório & Prestação de Contas
                 </h2>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#7B61FF]/20 text-[#9D8DF1] border border-[#7B61FF]/30">
@@ -251,18 +310,18 @@ Relatório gerado via Mont Ops.`;
                     : "Consolidado Geral"}
                 </span>
               </div>
-              <p className="text-xs text-[#9490AC]">
-                Consolidação de atividades, comprovações técnicas e síntese de entregas por período
+              <p className="text-xs text-[#9490AC] hidden sm:block">
+                Painel analítico de produtividade, auditoria de SLA e volume de entregas
               </p>
             </div>
           </div>
 
-          {/* Action buttons */}
           <div className="flex items-center gap-2">
             <button
               onClick={handleGenerateAiSummary}
               disabled={isGeneratingAi}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:brightness-110 text-xs font-semibold text-white shadow-md shadow-[#7B61FF]/20 transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:opacity-90 text-xs font-bold text-white shadow-md shadow-[#7B61FF]/20 transition-all disabled:opacity-50"
+              title="Gerar relatório textual formal com Google Gemini"
             >
               {isGeneratingAi ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -285,7 +344,7 @@ Relatório gerado via Mont Ops.`;
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>Copiar p/ E-mail</span>
+                  <span className="hidden sm:inline">Copiar p/ E-mail</span>
                 </>
               )}
             </button>
@@ -296,7 +355,7 @@ Relatório gerado via Mont Ops.`;
               title="Imprimir ou Salvar como PDF"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Imprimir / PDF</span>
+              <span className="hidden sm:inline">PDF</span>
             </button>
 
             <button
@@ -318,7 +377,7 @@ Relatório gerado via Mont Ops.`;
         </div>
 
         {/* Filter Bar: Scope (Strict Isolation) + Year + Month */}
-        <div className="no-print px-6 py-3 border-b border-[#2E2B44] bg-[#0F0E17] flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="no-print px-4 sm:px-6 py-3 border-b border-[#2E2B44] bg-[#0B0A10] flex flex-wrap items-center justify-between gap-3 shrink-0">
           {/* Scope Selector: Work vs Personal vs All */}
           <div className="flex items-center gap-1 bg-[#1A1829] p-1 rounded-xl border border-[#2E2B44]">
             <button
@@ -326,14 +385,14 @@ Relatório gerado via Mont Ops.`;
                 setScopeFilter("work");
                 setAiSummary(null);
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 scopeFilter === "work"
                   ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
                   : "text-[#9490AC] hover:text-[#EAE9FC]"
               }`}
             >
               <Briefcase className="w-3.5 h-3.5" />
-              Apenas Trabalho (Profissional)
+              Trabalho
             </button>
 
             <button
@@ -348,7 +407,7 @@ Relatório gerado via Mont Ops.`;
               }`}
             >
               <User className="w-3.5 h-3.5" />
-              Apenas Pessoal
+              Pessoal
             </button>
 
             <button
@@ -356,44 +415,36 @@ Relatório gerado via Mont Ops.`;
                 setScopeFilter("all");
                 setAiSummary(null);
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
                 scopeFilter === "all"
                   ? "bg-[#2E2B44] text-[#EAE9FC]"
                   : "text-[#9490AC] hover:text-[#EAE9FC]"
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
               Consolidado
             </button>
           </div>
 
-          {/* Period selector */}
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-[#9D8DF1]" />
-              {[2026, 2025, 2024].map((year) => (
-                <button
-                  key={year}
-                  onClick={() => setSelectedYear(year)}
-                  className={`px-2 py-1 text-xs rounded-lg font-medium transition-colors ${
-                    selectedYear === year
-                      ? "bg-[#7B61FF] text-white"
-                      : "bg-[#1A1829] text-[#9490AC] hover:text-[#EAE9FC]"
-                  }`}
-                >
-                  {year}
-                </button>
-              ))}
-            </div>
+          {/* Period Selector: Year & Months */}
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              className="h-8 px-2.5 rounded-lg bg-[#1A1829] border border-[#2E2B44] text-xs font-bold text-[#EAE9FC] focus:outline-none focus:border-[#9D8DF1]"
+            >
+              <option value={2026}>2026</option>
+              <option value={2025}>2025</option>
+              <option value={2024}>2024</option>
+            </select>
 
-            <div className="flex items-center gap-0.5 overflow-x-auto max-w-sm">
+            <div className="flex items-center gap-0.5 bg-[#1A1829] p-0.5 rounded-lg border border-[#2E2B44] text-[11px]">
               {months.map((m) => (
                 <button
-                  key={m.label}
-                  onClick={() => setSelectedMonth(m.value as number | "ALL")}
-                  className={`px-2 py-0.5 text-[11px] rounded-md font-medium transition-colors ${
+                  key={String(m.value)}
+                  onClick={() => setSelectedMonth(m.value as any)}
+                  className={`px-2 py-1 rounded font-medium transition-colors ${
                     selectedMonth === m.value
-                      ? "bg-[#9D8DF1] text-black font-bold"
+                      ? "bg-[#9D8DF1] text-black font-bold shadow"
                       : "text-[#9490AC] hover:text-[#EAE9FC]"
                   }`}
                 >
@@ -405,7 +456,7 @@ Relatório gerado via Mont Ops.`;
         </div>
 
         {/* Security & Scope Banner */}
-        <div className="no-print px-6 py-2 bg-[#141221] border-b border-[#2E2B44] flex items-center justify-between text-xs">
+        <div className="no-print px-4 sm:px-6 py-2 bg-[#141221] border-b border-[#2E2B44] flex flex-wrap items-center justify-between text-xs gap-2">
           <div className="flex items-center gap-2">
             <ShieldCheck
               className={`w-4 h-4 ${
@@ -418,7 +469,7 @@ Relatório gerado via Mont Ops.`;
             />
             {scopeFilter === "work" && (
               <span className="text-emerald-300 font-medium text-[11px]">
-                🔒 <strong>Escopo Profissional:</strong> Tarefas pessoais estão 100% ocultas deste relatório. Exibe exclusivamente atividades de trabalho.
+                🔒 <strong>Escopo Profissional:</strong> Exibindo exclusivamente atividades institucionais de trabalho.
               </span>
             )}
             {scopeFilter === "personal" && (
@@ -428,12 +479,12 @@ Relatório gerado via Mont Ops.`;
             )}
             {scopeFilter === "all" && (
               <span className="text-amber-300 font-medium text-[11px]">
-                ⚠️ <strong>Atenção:</strong> Modo consolidado exibe tanto tarefas institucionais quanto pessoais.
+                ⚠️ <strong>Modo Consolidado:</strong> Exibe tanto atividades de trabalho quanto compromissos pessoais.
               </span>
             )}
           </div>
 
-          {/* Internal sub-tabs */}
+          {/* Sub-tabs */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => setActiveTab("dashboard")}
@@ -443,7 +494,7 @@ Relatório gerado via Mont Ops.`;
                   : "text-[#9490AC] hover:text-[#EAE9FC]"
               }`}
             >
-              Métricas & Gráficos
+              Métricas & KPIs
             </button>
             <button
               onClick={() => setActiveTab("activities")}
@@ -453,7 +504,7 @@ Relatório gerado via Mont Ops.`;
                   : "text-[#9490AC] hover:text-[#EAE9FC]"
               }`}
             >
-              Quadro de Entregas & Soluções ({filteredTasks.length})
+              Quadro de Entregas ({filteredTasks.length})
             </button>
             {aiSummary && (
               <button
@@ -477,13 +528,13 @@ Relatório gerado via Mont Ops.`;
                 MONT OPS — RELATÓRIO OPERACIONAL DE ATIVIDADES
               </h1>
               <p className="text-sm text-gray-700 font-semibold mt-1">
-                Prestação de Contas & Auditoria de Entregas Técnicas
+                Prestação de Contas, Auditoria de SLA & Metrificação de Entregas
               </p>
             </div>
             <div className="text-right text-xs">
               <p className="font-bold">Período: {selectedMonthLabel}</p>
               <p className="text-gray-600">
-                Contexto: {scopeFilter === "work" ? "Trabalho (TI Escolar)" : "Pessoal"}
+                Contexto: {scopeFilter === "work" ? "Trabalho (TI Escolar)" : scopeFilter === "personal" ? "Pessoal" : "Consolidado"}
               </p>
               <p className="text-gray-500">
                 Emitido em: {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
@@ -493,25 +544,98 @@ Relatório gerado via Mont Ops.`;
         </div>
 
         {/* Scrollable Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6 print:overflow-visible print:p-8 print:text-black">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 print:overflow-visible print:p-8 print:text-black">
           {/* TAB 1: DASHBOARD METRICS */}
           {activeTab === "dashboard" && (
             <div className="space-y-6">
-              {/* KPI Cards */}
-              <div className="grid grid-cols-4 gap-4 print:grid-cols-4">
-                <div className="p-4 rounded-xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-gray-50 space-y-1">
-                  <span className="text-xs text-[#9490AC] print:text-gray-600">
-                    Total no Período
-                  </span>
-                  <div className="text-2xl font-bold text-[#EAE9FC] print:text-black">
+              {/* PRIMARY 4-KPI CORE STATUS GRID (SOLICITADO) */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 print:grid-cols-4">
+                {/* 1. QUANTIDADE TOTAL */}
+                <div className="p-4 rounded-2xl bg-[#0F0E17] border border-[#2E2B44] hover:border-[#7B61FF]/40 transition-all print:border-gray-300 print:bg-gray-50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-[#9490AC] print:text-gray-600 flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-[#9D8DF1]" />
+                      Total de Demandas
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#9D8DF1]/15 text-[#9D8DF1] border border-[#9D8DF1]/30">
+                      100%
+                    </span>
+                  </div>
+                  <div className="text-3xl font-extrabold text-[#EAE9FC] print:text-black tracking-tight">
                     {total}
                   </div>
-                  <span className="text-[11px] text-emerald-400 print:text-emerald-700 flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" /> {completedCount} finalizadas
-                  </span>
+                  <div className="flex items-center gap-1 text-[11px] text-[#9490AC] print:text-gray-600 pt-1 border-t border-[#2E2B44]/60">
+                    <span>{tasksCount} Tarefas</span>
+                    <span>•</span>
+                    <span>{activitiesCount} Ativ.</span>
+                    <span>•</span>
+                    <span>{remindersCount} Lemb.</span>
+                  </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-gray-50 space-y-1">
+                {/* 2. TOTAL CONCLUÍDAS */}
+                <div className="p-4 rounded-2xl bg-[#0F0E17] border border-emerald-500/20 hover:border-emerald-500/40 transition-all print:border-gray-300 print:bg-gray-50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-emerald-400 print:text-emerald-700 flex items-center gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      Concluídas
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30">
+                      {completedPct}%
+                    </span>
+                  </div>
+                  <div className="text-3xl font-extrabold text-emerald-400 print:text-emerald-700 tracking-tight">
+                    {completedCount}
+                  </div>
+                  <div className="text-[11px] text-[#9490AC] print:text-gray-600 pt-1 border-t border-[#2E2B44]/60">
+                    Taxa de entrega com sucesso
+                  </div>
+                </div>
+
+                {/* 3. TOTAL EM ANDAMENTO */}
+                <div className="p-4 rounded-2xl bg-[#0F0E17] border border-blue-500/20 hover:border-blue-500/40 transition-all print:border-gray-300 print:bg-gray-50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-blue-400 print:text-blue-700 flex items-center gap-1.5">
+                      <PlayCircle className="w-3.5 h-3.5" />
+                      Em Andamento
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                      {inProgressPct}%
+                    </span>
+                  </div>
+                  <div className="text-3xl font-extrabold text-blue-400 print:text-blue-700 tracking-tight">
+                    {inProgressCount}
+                  </div>
+                  <div className="flex items-center gap-1 text-[11px] text-[#9490AC] print:text-gray-600 pt-1 border-t border-[#2E2B44]/60">
+                    <span>{activeRunningCount} ativas agora</span>
+                    <span>•</span>
+                    <span>{inProgressCount - activeRunningCount} aguardando</span>
+                  </div>
+                </div>
+
+                {/* 4. TOTAL CANCELADAS */}
+                <div className="p-4 rounded-2xl bg-[#0F0E17] border border-rose-500/20 hover:border-rose-500/40 transition-all print:border-gray-300 print:bg-gray-50 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-rose-400 print:text-rose-700 flex items-center gap-1.5">
+                      <XCircle className="w-3.5 h-3.5" />
+                      Canceladas
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                      {canceledPct}%
+                    </span>
+                  </div>
+                  <div className="text-3xl font-extrabold text-rose-400 print:text-rose-700 tracking-tight">
+                    {canceledCount}
+                  </div>
+                  <div className="text-[11px] text-[#9490AC] print:text-gray-600 pt-1 border-t border-[#2E2B44]/60">
+                    Itens descartados ou suspensos
+                  </div>
+                </div>
+              </div>
+
+              {/* SECONDARY ROW: SLA ASSERTIVENESS & WIKI */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 print:grid-cols-3">
+                <div className="p-4 rounded-2xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-gray-50 space-y-1">
                   <span className="text-xs text-[#9490AC] print:text-gray-600">
                     Assertividade SLA Original
                   </span>
@@ -519,37 +643,37 @@ Relatório gerado via Mont Ops.`;
                     {onTimePct}%
                   </div>
                   <span className="text-[11px] text-[#9490AC] print:text-gray-600">
-                    {onTimeCount} dentro do SLA inicial
+                    {onTimeCount} dentro do SLA inicial sem prorrogação
                   </span>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-gray-50 space-y-1">
+                <div className="p-4 rounded-2xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-gray-50 space-y-1">
                   <span className="text-xs text-[#9490AC] print:text-gray-600">
-                    Extensões Justificadas
+                    Extensões Gerenciadas
                   </span>
                   <div className="text-2xl font-bold text-amber-400 print:text-amber-700">
                     {extendedPct}%
                   </div>
                   <span className="text-[11px] text-[#9490AC] print:text-gray-600">
-                    {extendedAndCompletedCount} com motivo registrado
+                    {extendedAndCompletedCount} com justificativa técnica registrada
                   </span>
                 </div>
 
-                <div className="p-4 rounded-xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-gray-50 space-y-1">
+                <div className="p-4 rounded-2xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-gray-50 space-y-1">
                   <span className="text-xs text-[#9490AC] print:text-gray-600">
-                    Wiki Técnica / Soluções
+                    Base de Conhecimento / Wiki
                   </span>
                   <div className="text-2xl font-bold text-[#9D8DF1] print:text-indigo-700">
                     {wikiResolved.length}
                   </div>
                   <span className="text-[11px] text-[#9490AC] print:text-gray-600">
-                    resoluções documentadas
+                    soluções técnicas documentadas para reuso
                   </span>
                 </div>
               </div>
 
               {/* SLA Performance Bar */}
-              <div className="p-5 rounded-xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-white space-y-3">
+              <div className="p-5 rounded-2xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-white space-y-3">
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-semibold text-[#EAE9FC] print:text-black flex items-center gap-1.5">
                     <TrendingUp className="w-4 h-4 text-[#7B61FF]" />
@@ -568,16 +692,16 @@ Relatório gerado via Mont Ops.`;
                   </div>
                 </div>
 
-                <div className="w-full h-3 rounded-full bg-[#2E2B44] print:bg-gray-200 overflow-hidden flex">
-                  <div style={{ width: `${onTimePct}%` }} className="bg-emerald-500 h-full" />
-                  <div style={{ width: `${extendedPct}%` }} className="bg-amber-500 h-full" />
-                  <div style={{ width: `${breachedPct}%` }} className="bg-rose-500 h-full" />
+                <div className="w-full h-3 rounded-full bg-[#1A1829] print:bg-gray-200 overflow-hidden flex">
+                  <div style={{ width: `${onTimePct}%` }} className="bg-emerald-500 h-full transition-all" />
+                  <div style={{ width: `${extendedPct}%` }} className="bg-amber-500 h-full transition-all" />
+                  <div style={{ width: `${breachedPct}%` }} className="bg-rose-500 h-full transition-all" />
                 </div>
               </div>
 
               {/* Category Breakdown & Highlights */}
-              <div className="grid grid-cols-2 gap-4 print:grid-cols-2">
-                <div className="p-5 rounded-xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-white space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 print:grid-cols-2">
+                <div className="p-5 rounded-2xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-white space-y-3">
                   <h3 className="text-xs font-semibold text-[#EAE9FC] print:text-black">
                     Volume por Categoria / Função
                   </h3>
@@ -590,7 +714,7 @@ Relatório gerado via Mont Ops.`;
                             <span className="text-[#EAE9FC] print:text-black font-medium">{cat}</span>
                             <span>{count} ({pct}%)</span>
                           </div>
-                          <div className="w-full h-1.5 rounded-full bg-[#2E2B44] print:bg-gray-200">
+                          <div className="w-full h-1.5 rounded-full bg-[#1A1829] print:bg-gray-200">
                             <div
                               style={{ width: `${pct}%` }}
                               className="h-full bg-[#9D8DF1] print:bg-indigo-600 rounded-full"
@@ -602,30 +726,34 @@ Relatório gerado via Mont Ops.`;
                   </div>
                 </div>
 
-                <div className="p-5 rounded-xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-white space-y-3">
+                <div className="p-5 rounded-2xl bg-[#0F0E17] border border-[#2E2B44] print:border-gray-300 print:bg-white space-y-3">
                   <h3 className="text-xs font-semibold text-[#EAE9FC] print:text-black flex items-center gap-1.5">
                     <BookOpen className="w-4 h-4 text-[#9D8DF1]" />
-                    Exemplos de Problemas Complexos Solucionados
+                    Exemplos de Incidentes Solucionados
                   </h3>
                   <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
-                    {wikiResolved.slice(0, 3).map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-3 rounded-lg bg-[#141221] print:bg-gray-50 border border-[#2E2B44] print:border-gray-200 text-xs space-y-1"
-                      >
-                        <div className="flex items-center justify-between">
-                          <span className="font-semibold text-[#EAE9FC] print:text-black">
-                            {item.title}
-                          </span>
-                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#2E2B44] print:bg-gray-200 text-[#9D8DF1] print:text-gray-700">
-                            {item.category}
-                          </span>
+                    {wikiResolved.length === 0 ? (
+                      <p className="text-xs text-[#9490AC] italic">Nenhuma solução documentada neste período.</p>
+                    ) : (
+                      wikiResolved.slice(0, 3).map((item) => (
+                        <div
+                          key={item.id}
+                          className="p-3 rounded-xl bg-[#141221] print:bg-gray-50 border border-[#2E2B44] print:border-gray-200 text-xs space-y-1"
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="font-semibold text-[#EAE9FC] print:text-black">
+                              {item.title}
+                            </span>
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#2E2B44] print:bg-gray-200 text-[#9D8DF1] print:text-gray-700">
+                              {item.category}
+                            </span>
+                          </div>
+                          <p className="text-[#9490AC] print:text-gray-700 italic">
+                            &quot;{item.resolution_notes}&quot;
+                          </p>
                         </div>
-                        <p className="text-[#9490AC] print:text-gray-700 italic">
-                          &quot;{item.resolution_notes}&quot;
-                        </p>
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </div>
               </div>
@@ -638,14 +766,14 @@ Relatório gerado via Mont Ops.`;
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-sm font-bold text-[#EAE9FC] print:text-black">
-                    Registro Detalhado de Atividades para Comprovação
+                    Registro Detalhado de Demandas para Comprovação
                   </h3>
                   <p className="text-xs text-[#9490AC] print:text-gray-600">
-                    Histórico completo com diagnósticos técnicos, ações tomadas e cumprimento de prazos
+                    Histórico com tipo, diagnósticos técnicos, ações tomadas e cumprimento de prazos
                   </p>
                 </div>
                 <span className="text-xs text-[#9D8DF1] font-semibold print:text-gray-800">
-                  {filteredTasks.length} tarefas listadas
+                  {filteredTasks.length} registros no período
                 </span>
               </div>
 
@@ -662,10 +790,11 @@ Relatório gerado via Mont Ops.`;
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1">
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
                             <span className="font-mono text-[11px] font-bold text-[#9490AC]">
                               #{idx + 1}
                             </span>
+                            {getItemTypeBadge(t.item_type)}
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#2E2B44] print:bg-gray-100 text-[#EAE9FC] print:text-black">
                               {t.category}
                             </span>
@@ -678,6 +807,8 @@ Relatório gerado via Mont Ops.`;
                                   ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
                                   : t.status === "IN_PROGRESS"
                                   ? "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                                  : t.status === "CANCELED"
+                                  ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
                                   : "bg-[#2E2B44] text-[#9490AC]"
                               }`}
                             >
@@ -685,6 +816,8 @@ Relatório gerado via Mont Ops.`;
                                 ? "Concluída"
                                 : t.status === "IN_PROGRESS"
                                 ? "Em Execução"
+                                : t.status === "CANCELED"
+                                ? "Cancelada"
                                 : "A Fazer"}
                             </span>
                           </div>

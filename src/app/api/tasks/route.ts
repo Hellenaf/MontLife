@@ -8,6 +8,7 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const accountType = searchParams.get("account_type");
+    const itemType = searchParams.get("item_type");
     const status = searchParams.get("status");
     const priority = searchParams.get("priority");
     const query = searchParams.get("q")?.toLowerCase();
@@ -16,6 +17,10 @@ export async function GET(req: NextRequest) {
 
     if (accountType && accountType !== "all") {
       tasks = tasks.filter((t) => t.account_type === accountType);
+    }
+
+    if (itemType && itemType !== "all") {
+      tasks = tasks.filter((t) => (t.item_type || "task") === itemType);
     }
 
     if (status && status !== "ALL") {
@@ -59,6 +64,7 @@ export async function POST(req: NextRequest) {
       title: body.title,
       description: body.description || "",
       account_type: body.account_type || "work",
+      item_type: body.item_type || "task",
       category: body.category || "Suporte TI",
       tags: body.tags || [],
       priority,
@@ -97,4 +103,3 @@ export async function POST(req: NextRequest) {
     );
   }
 }
-

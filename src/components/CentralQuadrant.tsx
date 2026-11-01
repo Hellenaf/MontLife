@@ -16,8 +16,14 @@ import {
   History,
   Tag,
   Share2,
+  ListTodo,
+  Activity,
+  Bell,
+  Play,
+  Pause,
+  XCircle,
 } from "lucide-react";
-import { Task, TaskStatus } from "@/types";
+import { Task, TaskStatus, ItemType } from "@/types";
 import { format, parseISO, isToday, getHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -27,6 +33,7 @@ interface CentralQuadrantProps {
   onRequestResolution: (task: Task) => void;
   onRequestExtendDeadline: (task: Task) => void;
   onUpdateStatus: (taskId: string, status: TaskStatus) => void;
+  onUpdateItemType?: (taskId: string, itemType: ItemType) => void;
 }
 
 export function CentralQuadrant({
@@ -35,6 +42,7 @@ export function CentralQuadrant({
   onRequestResolution,
   onRequestExtendDeadline,
   onUpdateStatus,
+  onUpdateItemType,
 }: CentralQuadrantProps) {
   const [activeTab, setActiveTab] = useState<"details" | "timeline" | "study">("details");
 
@@ -50,20 +58,20 @@ export function CentralQuadrant({
   const hoursArray = Array.from({ length: 13 }, (_, i) => i + 8); // 08:00 to 20:00
 
   return (
-    <main className="flex-1 h-full flex flex-col bg-[#0F0E17] overflow-hidden">
+    <main className="flex-1 h-full flex flex-col bg-[#0A0912] overflow-hidden">
       {/* Top Tab Bar */}
-      <div className="h-12 border-b border-[#2E2B44] px-6 flex items-center justify-between shrink-0 bg-[#141221]">
-        <div className="flex items-center gap-2">
+      <div className="h-12 border-b border-[#242038] px-6 flex items-center justify-between shrink-0 bg-[#0F0D1B]">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={() => setActiveTab("details")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "details"
                 ? "bg-[#7B61FF] text-white shadow-md shadow-[#7B61FF]/20"
-                : "text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#2E2B44]"
+                : "text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#1E1B2E]"
             }`}
           >
             <FileText className="w-3.5 h-3.5" />
-            Detalhes da Atividade
+            Detalhes do Registro
           </button>
 
           <button
@@ -71,11 +79,11 @@ export function CentralQuadrant({
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "timeline"
                 ? "bg-[#7B61FF] text-white shadow-md shadow-[#7B61FF]/20"
-                : "text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#2E2B44]"
+                : "text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#1E1B2E]"
             }`}
           >
             <CalendarIcon className="w-3.5 h-3.5" />
-            Timeline & Agenda do Dia
+            Agenda & Timeline do Dia
           </button>
 
           <button
@@ -83,11 +91,11 @@ export function CentralQuadrant({
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               activeTab === "study"
                 ? "bg-[#7B61FF] text-white shadow-md shadow-[#7B61FF]/20"
-                : "text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#2E2B44]"
+                : "text-[#9490AC] hover:text-[#EAE9FC] hover:bg-[#1E1B2E]"
             }`}
           >
             <Youtube className="w-3.5 h-3.5 text-rose-400" />
-            Estudo & Melhoria (YouTube)
+            Estudo & Melhoria
             {selectedTask?.learning_resources?.youtube_videos?.length ? (
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
             ) : null}
@@ -98,14 +106,14 @@ export function CentralQuadrant({
           <div className="flex items-center gap-2 text-xs text-[#9490AC]">
             <span>ID:</span>
             <span className="font-mono text-[11px] text-[#9D8DF1]">
-              {selectedTask.id.slice(0, 10)}...
+              {selectedTask.id.slice(0, 12)}
             </span>
           </div>
         )}
       </div>
 
       {/* Main Tab Content (Inner Scroll) */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6">
         {/* TAB 1: DETAILS */}
         {activeTab === "details" && (
           <div>
@@ -113,47 +121,81 @@ export function CentralQuadrant({
               <div className="h-96 flex flex-col items-center justify-center text-center text-[#9490AC] space-y-3">
                 <FileText className="w-12 h-12 opacity-30 text-[#9D8DF1]" />
                 <h3 className="text-sm font-semibold text-[#EAE9FC]">
-                  Nenhuma tarefa selecionada
+                  Nenhum item selecionado
                 </h3>
                 <p className="text-xs max-w-sm opacity-70">
-                  Clique em um card na lista à esquerda para inspecionar os detalhes, SLA, resoluções e recursos de estudo.
+                  Selecione um card na lista à esquerda para ver os detalhes, alternar tipo entre Tarefa, Atividade ou Lembrete, estender prazos e ver vídeos recomendados.
                 </p>
               </div>
             ) : (
-              <div className="max-w-3xl space-y-6">
-                {/* Header card of selected task */}
-                <div className="p-5 rounded-2xl bg-[#1A1829] border border-[#2E2B44] space-y-4 glow-lavender">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+              <div className="max-w-3xl space-y-5">
+                {/* Header card of selected item */}
+                <div className="p-5 rounded-2xl bg-[#131122] border border-[#242038] space-y-4">
+                  {/* Top Bar with Context + Type Switcher + Priority */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#242038]/60 pb-3">
+                    <div className="flex items-center gap-2 flex-wrap">
                       {selectedTask.account_type === "work" ? (
-                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
-                          <Briefcase className="w-3.5 h-3.5" /> Trabalho (Workspace)
+                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30">
+                          <Briefcase className="w-3.5 h-3.5" /> Trabalho
                         </span>
                       ) : (
-                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-500/20 text-purple-300 border border-purple-500/30">
-                          <User className="w-3.5 h-3.5" /> Pessoal (Google Account)
+                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-500/15 text-purple-300 border border-purple-500/30">
+                          <User className="w-3.5 h-3.5" /> Pessoal
                         </span>
                       )}
 
-                      <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[#2E2B44] text-[#EAE9FC]">
+                      <span className="px-2.5 py-1 rounded-lg text-xs font-medium bg-[#1F1C33] text-[#EAE9FC] border border-[#2E2B44]">
                         {selectedTask.category}
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-[#9490AC]">Prioridade:</span>
-                      <span className="px-2 py-0.5 rounded text-xs font-bold bg-[#7B61FF]/20 text-[#9D8DF1] border border-[#7B61FF]/40">
-                        {selectedTask.priority}
-                      </span>
+                    {/* INTERACTIVE ITEM TYPE SWITCHER */}
+                    <div className="flex items-center gap-1 bg-[#090810] p-1 rounded-xl border border-[#242038]">
+                      <span className="text-[10px] text-[#9490AC] px-1.5 font-medium hidden sm:inline">Tipo:</span>
+                      <button
+                        type="button"
+                        onClick={() => onUpdateItemType?.(selectedTask.id, "task")}
+                        className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
+                          (selectedTask.item_type || "task") === "task"
+                            ? "bg-indigo-600 text-white shadow-sm"
+                            : "text-[#9490AC] hover:text-[#EAE9FC]"
+                        }`}
+                      >
+                        <ListTodo className="w-3 h-3" /> Tarefa
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onUpdateItemType?.(selectedTask.id, "activity")}
+                        className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
+                          selectedTask.item_type === "activity"
+                            ? "bg-purple-600 text-white shadow-sm"
+                            : "text-[#9490AC] hover:text-[#EAE9FC]"
+                        }`}
+                      >
+                        <Activity className="w-3 h-3" /> Atividade
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => onUpdateItemType?.(selectedTask.id, "reminder")}
+                        className={`flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all ${
+                          selectedTask.item_type === "reminder"
+                            ? "bg-amber-600 text-white shadow-sm"
+                            : "text-[#9490AC] hover:text-[#EAE9FC]"
+                        }`}
+                      >
+                        <Bell className="w-3 h-3" /> Lembrete
+                      </button>
                     </div>
                   </div>
 
-                  <h1 className="text-xl font-bold text-[#EAE9FC] leading-snug">
+                  <h1 className="text-lg sm:text-xl font-bold text-[#EAE9FC] leading-snug">
                     {selectedTask.title}
                   </h1>
 
                   {/* Raw input reference */}
-                  <div className="p-2.5 rounded-xl bg-[#0F0E17] border border-[#2E2B44] text-xs text-[#9490AC] flex items-start gap-2">
+                  <div className="p-2.5 rounded-xl bg-[#090810] border border-[#242038] text-xs text-[#9490AC] flex items-start gap-2">
                     <Sparkles className="w-3.5 h-3.5 text-[#9D8DF1] shrink-0 mt-0.5" />
                     <div>
                       <span className="font-semibold text-[#EAE9FC]">Comando Original: </span>
@@ -164,9 +206,9 @@ export function CentralQuadrant({
                   {/* Description */}
                   <div className="space-y-1.5">
                     <h3 className="text-xs font-semibold text-[#9490AC] uppercase tracking-wide">
-                      Descrição & Plano de Ação Estruturado:
+                      Descrição & Detalhes Operacionais:
                     </h3>
-                    <div className="p-4 rounded-xl bg-[#0F0E17] border border-[#2E2B44] text-xs text-[#EAE9FC] leading-relaxed whitespace-pre-wrap">
+                    <div className="p-4 rounded-xl bg-[#090810] border border-[#242038] text-xs text-[#EAE9FC] leading-relaxed whitespace-pre-wrap font-sans">
                       {selectedTask.description || "Nenhuma descrição fornecida."}
                     </div>
                   </div>
@@ -178,7 +220,7 @@ export function CentralQuadrant({
                       {selectedTask.tags.map((tag) => (
                         <span
                           key={tag}
-                          className="px-2 py-0.5 rounded-md bg-[#2E2B44]/60 text-[11px] text-[#9D8DF1]"
+                          className="px-2 py-0.5 rounded-md bg-[#1F1C33] border border-[#2E2B44] text-[10px] text-[#9D8DF1]"
                         >
                           #{tag}
                         </span>
@@ -188,24 +230,24 @@ export function CentralQuadrant({
                 </div>
 
                 {/* SLA & Deadlines Card */}
-                <div className="p-5 rounded-2xl bg-[#1A1829] border border-[#2E2B44] space-y-4">
+                <div className="p-5 rounded-2xl bg-[#131122] border border-[#242038] space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-semibold text-[#EAE9FC] flex items-center gap-2">
                       <Clock className="w-4 h-4 text-[#9D8DF1]" />
-                      Ciclo de Vida do SLA & Extensões
+                      Prazos e Histórico de SLA
                     </h3>
                     {selectedTask.status !== "COMPLETED" && (
                       <button
                         onClick={() => onRequestExtendDeadline(selectedTask)}
                         className="px-3 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-medium transition-colors"
                       >
-                        Estender Prazo
+                        Adiar / Estender Prazo
                       </button>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="p-3 rounded-xl bg-[#0F0E17] border border-[#2E2B44]">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3 rounded-xl bg-[#090810] border border-[#242038]">
                       <span className="text-[11px] text-[#9490AC] block">Criado em</span>
                       <span className="text-xs font-semibold text-[#EAE9FC]">
                         {format(parseISO(selectedTask.created_at), "dd/MM/yyyy HH:mm", {
@@ -214,7 +256,7 @@ export function CentralQuadrant({
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-[#0F0E17] border border-[#2E2B44]">
+                    <div className="p-3 rounded-xl bg-[#090810] border border-[#242038]">
                       <span className="text-[11px] text-[#9490AC] block">
                         Prazo Original (SLA {selectedTask.priority})
                       </span>
@@ -225,7 +267,7 @@ export function CentralQuadrant({
                       </span>
                     </div>
 
-                    <div className="p-3 rounded-xl bg-[#0F0E17] border border-[#2E2B44]">
+                    <div className="p-3 rounded-xl bg-[#090810] border border-[#242038]">
                       <span className="text-[11px] text-[#9490AC] block">
                         Prazo Atual {selectedTask.extension_count > 0 ? `(${selectedTask.extension_count}x estendido)` : ""}
                       </span>
@@ -239,15 +281,15 @@ export function CentralQuadrant({
 
                   {/* Extension history table */}
                   {selectedTask.deadline_extensions?.length > 0 && (
-                    <div className="space-y-2 pt-2 border-t border-[#2E2B44]">
+                    <div className="space-y-2 pt-2 border-t border-[#242038]">
                       <span className="text-[11px] font-semibold text-[#9490AC] flex items-center gap-1">
-                        <History className="w-3.5 h-3.5" /> Histórico de Adiamentos:
+                        <History className="w-3.5 h-3.5" /> Histórico de Adiamentos Justificados:
                       </span>
                       <div className="space-y-1.5">
                         {selectedTask.deadline_extensions.map((ext, idx) => (
                           <div
                             key={idx}
-                            className="p-2.5 rounded-lg bg-[#0F0E17] border border-[#2E2B44] text-[11px] flex items-center justify-between"
+                            className="p-2.5 rounded-lg bg-[#090810] border border-[#242038] text-[11px] flex items-center justify-between"
                           >
                             <div>
                               <span className="text-[#9D8DF1] font-semibold">
@@ -269,7 +311,7 @@ export function CentralQuadrant({
                 </div>
 
                 {/* Resolution Notes (Knowledge Base) */}
-                <div className="p-5 rounded-2xl bg-[#1A1829] border border-[#2E2B44] space-y-3">
+                <div className="p-5 rounded-2xl bg-[#131122] border border-[#242038] space-y-3">
                   <div className="flex items-center justify-between">
                     <h3 className="text-xs font-semibold text-[#EAE9FC] flex items-center gap-2">
                       <BookOpen className="w-4 h-4 text-[#9D8DF1]" />
@@ -290,12 +332,12 @@ export function CentralQuadrant({
                   </div>
 
                   {selectedTask.resolution_notes ? (
-                    <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 text-xs text-emerald-200 leading-relaxed">
+                    <div className="p-4 rounded-xl bg-emerald-950/20 border border-emerald-500/30 text-xs text-emerald-200 leading-relaxed font-sans">
                       {selectedTask.resolution_notes}
                     </div>
                   ) : (
-                    <div className="p-4 rounded-xl bg-[#0F0E17] border border-[#2E2B44] text-xs text-[#9490AC] italic text-center">
-                      Nenhuma nota de resolução registrada ainda. Conclua a tarefa para alimentar a base de conhecimento inteligente.
+                    <div className="p-4 rounded-xl bg-[#090810] border border-[#242038] text-xs text-[#9490AC] italic text-center">
+                      Nenhuma nota de resolução registrada ainda. Conclua a tarefa para salvar a solução na base de conhecimento.
                     </div>
                   )}
                 </div>
@@ -307,7 +349,7 @@ export function CentralQuadrant({
         {/* TAB 2: TIMELINE DO DIA */}
         {activeTab === "timeline" && (
           <div className="max-w-3xl space-y-4">
-            <div className="flex items-center justify-between p-4 rounded-xl bg-[#1A1829] border border-[#2E2B44]">
+            <div className="flex items-center justify-between p-4 rounded-xl bg-[#131122] border border-[#242038]">
               <div>
                 <h3 className="text-sm font-semibold text-[#EAE9FC]">
                   Agenda Unificada do Dia (Trabalho + Pessoal)
@@ -316,7 +358,7 @@ export function CentralQuadrant({
                   Visualização integrada de eventos e compromissos sincronizados com o Google Calendar
                 </p>
               </div>
-              <span className="text-xs font-semibold text-[#9D8DF1] px-3 py-1 rounded-full bg-[#2E2B44]">
+              <span className="text-xs font-semibold text-[#9D8DF1] px-3 py-1 rounded-full bg-[#1F1C33] border border-[#2E2B44]">
                 Hoje: {format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR })}
               </span>
             </div>
@@ -336,7 +378,7 @@ export function CentralQuadrant({
                 return (
                   <div
                     key={hour}
-                    className="flex gap-4 p-2.5 rounded-xl border border-[#2E2B44]/40 bg-[#141221] hover:bg-[#1A1829] transition-colors"
+                    className="flex gap-4 p-2.5 rounded-xl border border-[#242038]/50 bg-[#12101F] hover:bg-[#161426] transition-colors"
                   >
                     <span className="w-14 text-xs font-mono font-semibold text-[#9490AC] pt-1">
                       {hourFormatted}
@@ -372,13 +414,13 @@ export function CentralQuadrant({
           </div>
         )}
 
-        {/* TAB 3: ESTUDO RÁPIDO & YOUTUBE */}
+        {/* TAB 3: ESTUDO & YOUTUBE */}
         {activeTab === "study" && (
           <div className="max-w-3xl space-y-5">
-            <div className="p-4 rounded-xl bg-[#1A1829] border border-[#2E2B44]">
+            <div className="p-4 rounded-xl bg-[#131122] border border-[#242038]">
               <h3 className="text-sm font-semibold text-[#EAE9FC] flex items-center gap-2">
                 <Youtube className="w-4 h-4 text-rose-500" />
-                Curadoria Automática de Aprendizado (YouTube Data API v3)
+                Curadoria de Aprendizado (YouTube)
               </h3>
               <p className="text-xs text-[#9490AC] mt-1">
                 Tutoriais e materiais recomendados pela IA para executar ou automatizar esta tarefa com eficiência máxima
@@ -387,16 +429,16 @@ export function CentralQuadrant({
 
             {!selectedTask ? (
               <div className="p-8 text-center text-[#9490AC] text-xs">
-                Selecione uma tarefa à esquerda para ver a curadoria técnica de vídeos.
+                Selecione um item à esquerda para ver os vídeos recomendados.
               </div>
             ) : (
               <div className="space-y-4">
                 {/* Search queries recommended by Gemini */}
                 {selectedTask.learning_resources?.search_queries?.length > 0 && (
-                  <div className="p-4 rounded-xl bg-[#141221] border border-[#2E2B44] space-y-2">
+                  <div className="p-4 rounded-xl bg-[#12101F] border border-[#242038] space-y-2">
                     <span className="text-xs font-semibold text-[#9D8DF1] flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5" />
-                      Queries Otimizadas Geradas pelo Gemini:
+                      Termos de Busca Recomendados:
                     </span>
                     <div className="flex flex-wrap gap-2">
                       {selectedTask.learning_resources.search_queries.map((q, idx) => (
@@ -407,7 +449,7 @@ export function CentralQuadrant({
                           )}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0F0E17] border border-[#2E2B44] hover:border-[#9D8DF1] text-xs text-[#EAE9FC] transition-colors"
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#090810] border border-[#242038] hover:border-[#7B61FF] text-xs text-[#EAE9FC] transition-colors"
                         >
                           <span>{q}</span>
                           <ExternalLink className="w-3 h-3 text-[#9D8DF1]" />
@@ -418,7 +460,7 @@ export function CentralQuadrant({
                 )}
 
                 {/* YouTube Video Cards */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {selectedTask.learning_resources?.youtube_videos?.length > 0 ? (
                     selectedTask.learning_resources.youtube_videos.map((vid, i) => (
                       <a
@@ -426,7 +468,7 @@ export function CentralQuadrant({
                         href={vid.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="group block rounded-xl overflow-hidden bg-[#1A1829] border border-[#2E2B44] hover:border-[#9D8DF1] transition-all shadow-lg hover:shadow-[#7B61FF]/20"
+                        className="group block rounded-xl overflow-hidden bg-[#131122] border border-[#242038] hover:border-[#7B61FF] transition-all shadow-lg hover:shadow-[#7B61FF]/20"
                       >
                         <div className="relative aspect-video w-full bg-black overflow-hidden">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -452,7 +494,7 @@ export function CentralQuadrant({
                       </a>
                     ))
                   ) : (
-                    <div className="col-span-2 p-6 rounded-xl bg-[#141221] border border-[#2E2B44] text-center text-xs text-[#9490AC]">
+                    <div className="col-span-2 p-6 rounded-xl bg-[#12101F] border border-[#242038] text-center text-xs text-[#9490AC]">
                       Nenhum vídeo adicional disponível para esta atividade.
                     </div>
                   )}
@@ -465,4 +507,3 @@ export function CentralQuadrant({
     </main>
   );
 }
-
