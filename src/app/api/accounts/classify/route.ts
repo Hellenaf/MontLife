@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPendingAuth, clearPendingAuth } from "@/lib/pendingAuth";
 import { saveConnectedAccount, getTasksFromDb, saveTaskToDb, deleteTaskFromDb } from "@/services/taskService";
-import { getOAuth2Client } from "@/services/googleService";
+import { fetchAllGoogleTasksFromAccount, fetchYouTubeResources } from "@/services/googleService";
+import { categorizeTaskWithAI } from "@/services/geminiService";
 import { AccountType, Task } from "@/types";
 import { stripGoogleTaskPrefix } from "@/lib/sla";
-import { google } from "googleapis";
 
 export async function POST(req: NextRequest) {
   try {
@@ -37,27 +37,18 @@ export async function POST(req: NextRequest) {
     // Clean pending doc
     await clearPendingAuth();
 
-    // 2. Auto-sync real Google Tasks immediately
+    // 2. Auto-sync real Google Tasks across all lists and with full history pagination
     let importedCount = 0;
     if (refresh_token || access_token) {
       try {
-        const oauth2Client = getOAuth2Client();
-        oauth2Client.setCredentials({
+        const items = await fetchAllGoogleTasksFromAccount({
           access_token: access_token || undefined,
           refresh_token: refresh_token || undefined,
         });
 
-        const tasksApi = google.tasks({ version: "v1", auth: oauth2Client });
-        const res = await tasksApi.tasks.list({
-          tasklist: "@default",
-          showCompleted: true,
-          showHidden: true,
-        });
-
-        const items = res.data.items || [];
         const currentTasks = await getTasksFromDb();
 
-        // Purge dummy seed tasks now that user has linked their real account
+        // Purge any legacy dummy seed tasks
         for (const t of currentTasks) {
           if (t.id.startsWith("seed-task-")) {
             await deleteTaskFromDb(t.id);
@@ -66,34 +57,46 @@ export async function POST(req: NextRequest) {
 
         for (const item of items) {
           if (!item.id || !item.title) continue;
-          const cleanTitle = stripGoogleTaskPrefix(item.title);
-          const newTask: Task = {
-            id: `gt-imported-${item.id}`,
-            raw_input: cleanTitle,
-            title: cleanTitle,
-            description: item.notes || "",
-            account_type: type,
-            item_type: "task",
-            category: type === "work" ? "Suporte TI" : "Finanças & Pessoal",
-            tags: ["google-tasks"],
-            priority: "P3",
-            status: item.status === "completed" ? "COMPLETED" : "TODO",
-            created_at: item.updated || new Date().toISOString(),
-            started_at: null,
-            completed_at: item.completed || null,
-            original_due_date: item.due || new Date(Date.now() + 86400000).toISOString(),
-            current_due_date: item.due || new Date(Date.now() + 86400000).toISOString(),
-            extension_count: 0,
-            deadline_extensions: [],
-            resolution_notes: null,
-            cancel_reason: null,
-            google_task_id: item.id,
-            google_calendar_event_id: null,
-            learning_resources: { youtube_videos: [], search_queries: [] },
-            met_original_sla: item.status === "completed" ? true : null,
-          };
-          await saveTaskToDb(newTask);
-          importedCount++;
+
+          const existing = currentTasks.find((t) => t.google_task_id === item.id);
+          if (!existing) {
+            const cleanTitle = stripGoogleTaskPrefix(item.title);
+            const aiData = await categorizeTaskWithAI(cleanTitle, item.notes, type);
+            const yt = await fetchYouTubeResources(aiData.learning_queries);
+
+            const isCompleted = item.status === "completed";
+            const taskDate = item.updated || item.completed || item.due || new Date().toISOString();
+            const dueDate = item.due || taskDate;
+
+            const newTask: Task = {
+              id: `gt-imported-${item.id}`,
+              raw_input: cleanTitle,
+              title: cleanTitle,
+              description: item.notes || "",
+              account_type: type,
+              item_type: aiData.item_type || "task",
+              category: aiData.category,
+              tags: aiData.tags.length > 0 ? aiData.tags : [item.taskListName || "Google Tasks"],
+              priority: aiData.priority || "P3",
+              status: isCompleted ? "COMPLETED" : "TODO",
+              created_at: taskDate,
+              started_at: null,
+              completed_at: isCompleted ? (item.completed || taskDate) : null,
+              original_due_date: dueDate,
+              current_due_date: dueDate,
+              extension_count: 0,
+              deadline_extensions: [],
+              resolution_notes: null,
+              cancel_reason: null,
+              google_task_id: item.id,
+              google_calendar_event_id: null,
+              learning_resources: yt,
+              met_original_sla: isCompleted ? true : null,
+            };
+
+            await saveTaskToDb(newTask);
+            importedCount++;
+          }
         }
       } catch (syncErr) {
         console.warn("Auto-sync tasks in classify failed:", syncErr);

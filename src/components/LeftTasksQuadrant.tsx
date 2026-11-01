@@ -1,25 +1,25 @@
-"use client";
-
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
-  Search,
-  Filter,
-  Play,
-  Pause,
-  CheckCircle2,
-  Clock,
   Briefcase,
   User,
+  Clock,
+  CheckCircle2,
   AlertCircle,
-  Tag,
-  Check,
+  Filter,
+  Search,
+  MoreVertical,
   Calendar,
+  Check,
   Trash2,
-  ListTodo,
   Activity,
+  ListTodo,
   Bell,
   Plus,
   ChevronDown,
+  Sparkles,
+  RefreshCw,
+  Tag,
+  Loader2,
 } from "lucide-react";
 import { Task, TaskStatus, Priority, AccountType, ItemType } from "@/types";
 import { isTaskOverdue } from "@/lib/sla";
@@ -40,6 +40,7 @@ interface LeftTasksQuadrantProps {
   onRequestExtendDeadline: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onRequestNewTask?: () => void;
+  onRefreshTasks?: () => Promise<void> | void;
 }
 
 export function LeftTasksQuadrant({
@@ -51,13 +52,87 @@ export function LeftTasksQuadrant({
   onRequestExtendDeadline,
   onDeleteTask,
   onRequestNewTask,
+  onRefreshTasks,
 }: LeftTasksQuadrantProps) {
   const [accountFilter, setAccountFilter] = useState<"all" | AccountType>("all");
   const [itemTypeFilter, setItemTypeFilter] = useState<"ALL" | ItemType>("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | TaskStatus>("ALL");
   const [priorityFilter, setPriorityFilter] = useState<"ALL" | Priority>("ALL");
+  const [categoryFilter, setCategoryFilter] = useState<string>("ALL");
+  const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
+  const [isCategorizing, setIsCategorizing] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+
+  // Extract unique categories dynamically from tasks (managed autonomously by AI)
+  const dynamicCategories = useMemo(() => {
+    const cats = new Set<string>();
+    for (const t of tasks) {
+      if (t.category && t.category.trim()) {
+        cats.add(t.category.trim());
+      }
+    }
+    return Array.from(cats).sort();
+  }, [tasks]);
+
+  // Extract popular tags
+  const dynamicTags = useMemo(() => {
+    const tagCount: Record<string, number> = {};
+    for (const t of tasks) {
+      for (const tag of t.tags || []) {
+        if (!tag || tag === "google-tasks" || tag === "google-tasks-sync") continue;
+        tagCount[tag] = (tagCount[tag] || 0) + 1;
+      }
+    }
+    return Object.entries(tagCount)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([tag]) => tag);
+  }, [tasks]);
+
+  // Trigger AI auto-categorization
+  const handleAiCategorize = async () => {
+    setIsCategorizing(true);
+    setStatusMessage("IA analisando e organizando demandas...");
+    try {
+      const res = await fetch("/api/tasks/ai-categorize", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setStatusMessage(data.message || "Tarefas organizadas com IA!");
+        if (onRefreshTasks) await onRefreshTasks();
+      } else {
+        setStatusMessage("Não foi possível categorizar agora.");
+      }
+    } catch {
+      setStatusMessage("Erro ao executar IA.");
+    } finally {
+      setIsCategorizing(false);
+      setTimeout(() => setStatusMessage(null), 4000);
+    }
+  };
+
+  // Trigger Google Tasks full sync
+  const handleSyncGoogleTasks = async () => {
+    setIsSyncing(true);
+    setStatusMessage("Sincronizando tarefas (2024 até hoje)...");
+    try {
+      const res = await fetch("/api/google/sync", { method: "POST" });
+      const data = await res.json();
+      if (data.success) {
+        setStatusMessage(`Sincronizado! +${data.imported_count || 0} novas tarefas.`);
+        if (onRefreshTasks) await onRefreshTasks();
+      } else {
+        setStatusMessage("Erro ao sincronizar tarefas.");
+      }
+    } catch {
+      setStatusMessage("Falha na sincronização.");
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => setStatusMessage(null), 4000);
+    }
+  };
 
   // Filter tasks
   const filteredTasks = tasks.filter((task) => {
@@ -71,6 +146,12 @@ export function LeftTasksQuadrant({
       return false;
     }
     if (priorityFilter !== "ALL" && task.priority !== priorityFilter) {
+      return false;
+    }
+    if (categoryFilter !== "ALL" && task.category !== categoryFilter) {
+      return false;
+    }
+    if (selectedTagFilter && !task.tags?.includes(selectedTagFilter)) {
       return false;
     }
     if (searchTerm.trim()) {
@@ -129,43 +210,6 @@ export function LeftTasksQuadrant({
     }
   };
 
-  const getStatusBadge = (status: TaskStatus) => {
-    switch (status) {
-      case "IN_PROGRESS":
-        return (
-          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-500/15 dark:text-indigo-300 dark:border-indigo-500/30">
-            Executando
-          </span>
-        );
-      case "WAITING":
-        return (
-          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-500/15 dark:text-amber-400 dark:border-amber-500/30">
-            Aguardando
-          </span>
-        );
-      case "COMPLETED":
-        return (
-          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30 flex items-center gap-1">
-            <Check className="w-2.5 h-2.5" />
-            Concluída
-          </span>
-        );
-      case "CANCELED":
-        return (
-          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
-            Cancelada
-          </span>
-        );
-      case "TODO":
-      default:
-        return (
-          <span className="px-1.5 py-0.5 rounded-full text-[9px] font-medium bg-slate-100 text-slate-600 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700">
-            Pendente
-          </span>
-        );
-    }
-  };
-
   const renderTaskCard = (task: Task, isCompletedCard: boolean = false) => {
     const isSelected = selectedTaskId === task.id;
     const isCompleted = task.status === "COMPLETED";
@@ -173,7 +217,7 @@ export function LeftTasksQuadrant({
 
     let dueFormatted = "";
     try {
-      dueFormatted = format(parseISO(task.current_due_date), "dd/MM HH:mm", {
+      dueFormatted = format(parseISO(task.current_due_date), "dd/MM/yy", {
         locale: ptBR,
       });
     } catch {
@@ -218,85 +262,99 @@ export function LeftTasksQuadrant({
           <div className="flex-1 min-w-0">
             {/* Top Badges */}
             <div className="flex items-center justify-between gap-1.5 mb-1.5">
-              <div className="flex items-center gap-1 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap">
                 {getItemTypeBadge(task.item_type)}
 
-                {task.account_type === "work" ? (
-                  <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
-                    <Briefcase className="w-2.5 h-2.5" /> Trabalho
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-500/10 dark:text-purple-300">
-                    <User className="w-2.5 h-2.5" /> Pessoal
-                  </span>
-                )}
+                <span
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-semibold border ${getPriorityStyle(
+                    task.priority
+                  )}`}
+                >
+                  {task.priority}
+                </span>
+
+                <span
+                  className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-[#1a1b26] text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-zinc-800 truncate max-w-[120px]"
+                  title={task.category}
+                >
+                  {task.category}
+                </span>
               </div>
 
-              <span
-                className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${getPriorityStyle(
-                  task.priority
-                )}`}
-              >
-                {task.priority}
-              </span>
+              {overdue && (
+                <span className="flex items-center gap-1 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                  <AlertCircle className="w-3 h-3" />
+                  Atrasada
+                </span>
+              )}
             </div>
 
-            {/* Title */}
+            {/* Task Title */}
             <h4
               className={`text-xs font-semibold leading-snug line-clamp-2 ${
                 isCompleted
-                  ? "line-through text-slate-400 dark:text-slate-500"
-                  : task.status === "CANCELED"
-                  ? "line-through text-rose-500 dark:text-rose-400"
-                  : "text-slate-800 dark:text-slate-100"
-              }`}
+                  ? "line-through text-slate-400 dark:text-zinc-500 font-normal"
+                  : "text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
+              } transition-colors`}
             >
               {task.title}
             </h4>
 
-            {/* Bottom Meta & Due Date */}
-            <div className="flex items-center justify-between gap-2 mt-2 pt-1.5 border-t border-slate-100 dark:border-zinc-800/80">
-              <div className="flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
-                <span className="truncate max-w-[95px]">{task.category}</span>
-                {getStatusBadge(task.status)}
-              </div>
+            {/* Optional task description snippet */}
+            {task.description && (
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-1 font-normal">
+                {task.description}
+              </p>
+            )}
 
-              <div
-                className={`flex items-center gap-1 text-[10px] font-medium ${
-                  overdue
-                    ? "text-rose-600 dark:text-rose-400 font-bold"
-                    : "text-slate-500 dark:text-slate-400"
-                }`}
-              >
-                <Clock className="w-3 h-3 shrink-0" />
-                <span>{dueFormatted}</span>
+            {/* Tags preview */}
+            {task.tags && task.tags.filter((t) => !t.includes("google-task")).length > 0 && (
+              <div className="flex items-center gap-1 mt-1.5 flex-wrap">
+                {task.tags
+                  .filter((t) => !t.includes("google-task"))
+                  .slice(0, 3)
+                  .map((tg, idx) => (
+                    <span
+                      key={idx}
+                      className="px-1.5 py-0.2 rounded text-[9px] font-medium bg-slate-50 dark:bg-[#181926] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-zinc-800/80"
+                    >
+                      #{tg}
+                    </span>
+                  ))}
+              </div>
+            )}
+
+            {/* Footer Metadata */}
+            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 mt-2 pt-1 border-t border-slate-100 dark:border-zinc-800/60">
+              <span className="flex items-center gap-1 font-mono">
+                <Clock className="w-3 h-3 text-slate-400" />
+                {dueFormatted}
+              </span>
+
+              <div className="flex items-center gap-1.5">
+                {task.account_type === "work" ? (
+                  <span className="flex items-center gap-0.5 text-blue-600 dark:text-blue-400 font-medium">
+                    <Briefcase className="w-2.5 h-2.5" /> Trabalho
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-0.5 text-purple-600 dark:text-purple-400 font-medium">
+                    <User className="w-2.5 h-2.5" /> Pessoal
+                  </span>
+                )}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Action Toolbar */}
-        <div
-          className="flex items-center justify-end gap-1 mt-2 pt-1.5 border-t border-slate-100 dark:border-zinc-800/80"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {task.status !== "IN_PROGRESS" && task.status !== "COMPLETED" && (
+        {/* Quick Hover Action Bar */}
+        <div className="absolute right-2 top-2 hidden group-hover:flex items-center gap-0.5 bg-white/95 dark:bg-[#181926]/95 border border-slate-200 dark:border-zinc-700 rounded-lg p-0.5 shadow-sm">
+          {!isCompleted && (
             <button
-              onClick={() => onUpdateStatus(task.id, "IN_PROGRESS")}
-              title="Iniciar Execução"
-              className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-600 hover:text-white transition-colors border border-slate-200 dark:border-zinc-700 text-[10px] flex items-center gap-1"
+              onClick={() => onRequestResolution(task)}
+              title="Concluir com solução"
+              className="p-1 rounded-md text-slate-400 hover:text-emerald-600 dark:text-slate-500 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
             >
-              <Play className="w-3 h-3" /> Iniciar
-            </button>
-          )}
-
-          {task.status === "IN_PROGRESS" && (
-            <button
-              onClick={() => onUpdateStatus(task.id, "WAITING")}
-              title="Pausar / Aguardando"
-              className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-amber-600 dark:text-amber-400 hover:bg-amber-600 hover:text-white transition-colors border border-slate-200 dark:border-zinc-700 text-[10px] flex items-center gap-1"
-            >
-              <Pause className="w-3 h-3" /> Pausar
+              <CheckCircle2 className="w-3.5 h-3.5" />
             </button>
           )}
 
@@ -330,7 +388,7 @@ export function LeftTasksQuadrant({
             onClick={() => setAccountFilter("all")}
             className={`py-1 text-xs font-semibold rounded-lg transition-all ${
               accountFilter === "all"
-                ? "bg-white dark:bg-[#202230] text-slate-900 dark:text-white shadow-sm"
+                ? "bg-white dark:bg-[#202230] text-slate-900 dark:white shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
@@ -358,7 +416,7 @@ export function LeftTasksQuadrant({
           </button>
         </div>
 
-        {/* Search Bar + Quick Add Button */}
+        {/* Search Bar + AI Categorize + Sync Buttons */}
         <div className="flex items-center gap-1.5">
           <div className="relative flex-1">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
@@ -366,21 +424,105 @@ export function LeftTasksQuadrant({
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar demandas ou tags..."
+              placeholder="Buscar demandas, tags..."
               className="w-full h-8 pl-8 pr-3 rounded-lg bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
             />
           </div>
+
+          <button
+            type="button"
+            onClick={handleAiCategorize}
+            disabled={isCategorizing}
+            title="Classificar e organizar categorias e tags com IA"
+            className="h-8 px-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 text-[11px] font-semibold shrink-0 transition-all active:scale-95 disabled:opacity-50"
+          >
+            {isCategorizing ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Sparkles className="w-3 h-3 text-indigo-500" />
+            )}
+            <span className="hidden sm:inline">IA</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={handleSyncGoogleTasks}
+            disabled={isSyncing}
+            title="Sincronizar Google Tasks (todo o histórico de 2024 até hoje)"
+            className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#161722] hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-zinc-800 flex items-center justify-center shrink-0 transition-all active:scale-95 disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-indigo-500" : ""}`} />
+          </button>
+
           {onRequestNewTask && (
             <button
               type="button"
               onClick={onRequestNewTask}
-              title="Nova Demanda Detalhada"
-              className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center shrink-0 transition-all active:scale-95"
+              title="Nova Demanda"
+              className="w-8 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shrink-0 transition-all shadow-sm active:scale-95"
             >
               <Plus className="w-4 h-4" />
             </button>
           )}
         </div>
+
+        {/* Dynamic Category Selector */}
+        {dynamicCategories.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium shrink-0">
+              Categoria:
+            </span>
+            <select
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="flex-1 h-7 px-2 rounded-lg bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-[11px] text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+            >
+              <option value="ALL">Todas as categorias ({dynamicCategories.length})</option>
+              {dynamicCategories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        {/* Popular Tags Chips */}
+        {dynamicTags.length > 0 && (
+          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar text-[10px]">
+            <span className="text-slate-400 dark:text-slate-500 shrink-0 font-medium">Tags:</span>
+            {selectedTagFilter && (
+              <button
+                type="button"
+                onClick={() => setSelectedTagFilter(null)}
+                className="px-1.5 py-0.5 rounded font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 shrink-0"
+              >
+                Limpar tag ✕
+              </button>
+            )}
+            {dynamicTags.map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setSelectedTagFilter(selectedTagFilter === t ? null : t)}
+                className={`px-1.5 py-0.5 rounded font-medium shrink-0 transition-colors ${
+                  selectedTagFilter === t
+                    ? "bg-indigo-600 text-white"
+                    : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-zinc-800"
+                }`}
+              >
+                #{t}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Status feedback message */}
+        {statusMessage && (
+          <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-[11px] font-medium text-indigo-700 dark:text-indigo-300 text-center animate-in fade-in">
+            {statusMessage}
+          </div>
+        )}
 
         {/* Item Type Selector Filter */}
         <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-[11px]">
@@ -433,10 +575,10 @@ export function LeftTasksQuadrant({
           <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500">
             <Filter className="w-8 h-8 mb-2 opacity-30 text-indigo-500" />
             <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Nenhuma demanda cadastrada
+              Nenhuma demanda encontrada
             </p>
             <p className="text-[11px] mt-1 max-w-[240px] leading-relaxed">
-              Suas tarefas sincronizadas do Google Tasks ou criadas manualmente aparecerão aqui.
+              Tente mudar o filtro de categoria ou sincronizar tarefas do Google.
             </p>
             {onRequestNewTask && (
               <button

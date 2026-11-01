@@ -307,6 +307,7 @@ export default function MontOpsDashboard() {
               setNewTaskInitialText("");
               setIsNewTaskModalOpen(true);
             }}
+            onRefreshTasks={loadTasks}
           />
 
           {/* Quadrante Central: Detalhes, Seletor de Tipo, Agenda & Estudo */}

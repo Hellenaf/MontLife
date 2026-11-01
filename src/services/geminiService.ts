@@ -1,25 +1,38 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GeminiTriageResponse, TaskCategory, Priority, AccountType, ItemType } from "@/types";
 
-const SYSTEM_PROMPT = `Você é o agente operacional do sistema MontLife. Sua função é receber uma anotação rápida da usuária e transformá-la em um registro claro, profissional e estruturado.
-1. Classifique se o registro pertence ao contexto 'work' (TI escolar, TOTVS RM, Google Workspace, suporte a professores/alunos/pais, scripts, infraestrutura) ou 'personal' (vida pessoal, catequese, estudos de idiomas, música, finanças, casa).
-2. Classifique o tipo de registro ('item_type'):
-   - 'task': Tarefa operacional ou técnica que exige execução, entrega ou resolução técnica com passos claros.
-   - 'activity': Atividade contínua, compromisso, reunião, aula, encontro, catequese ou rotina agendada.
-   - 'reminder': Lembrete rápido, aviso pontual, não esquecer de algo, compra simples ou pagamento.
-3. Importante: na comunicação escolar com famílias, nunca use os termos 'Tarefas' ou 'Entregas' para atividades de alunos; use sempre 'Lição de Casa'.
-4. Defina a prioridade (P1 a P4), extraia tags técnicas para indexação futura de resolução de problemas e gere 2 termos de busca objetivos para vídeos no YouTube ou artigos técnicos que ajudem a executar ou automatizar essa tarefa.`;
+const SYSTEM_PROMPT = `Você é o assistente inteligente de organização, triagem e produtividade autônoma do MontLife.
+O MontLife é uma plataforma universal de produtividade projetada para qualquer usuário e equipe (profissionais de TI, gestores, analistas, engenheiros, educadores, profissionais liberais e uso pessoal).
+
+Sua função é analisar a demanda ou anotação enviada e estruturá-la com alto nível de autonomia e inteligência:
+1. Contexto ('account_type'):
+   - 'work': Demandas profissionais, corporativas, acadêmicas, relatórios, contratos, sistemas, TI, reuniões de trabalho.
+   - 'personal': Vida pessoal, finanças pessoais, saúde, estudos, compras, casa, família e compromissos cotidianos.
+2. Tipo de Registro ('item_type'):
+   - 'task': Tarefa ou entrega prática que exige ação ou resolução técnica com passos claros.
+   - 'activity': Reunião, compromisso, aula, consulta ou evento com horário agendado.
+   - 'reminder': Lembrete rápido, aviso pontual ou memorando.
+3. Categoria Dinâmica ('category'):
+   - Crie ou selecione com autonomia a categoria mais precisa, elegante e profissional para o assunto.
+   - Exemplos: 'BI & Analytics', 'Sistemas ERP', 'Gestão & Contratos', 'Finanças & Tesouraria', 'Engenharia de Software', 'Infraestrutura & Redes', 'Comunicação & Mensagens', 'Gestão Educacional', 'Projetos', 'Jurídico', 'Operações', 'Estudos & Capacitação', 'Saúde & Bem-estar', 'Vida Pessoal', etc.
+   - O campo é livre e dinâmico: adapte à realidade do usuário.
+4. Prioridade ('priority'):
+   - 'P1' (Urgente / Crítica - SLA 4h), 'P2' (Alta - SLA 24h), 'P3' (Média / Padrão - SLA 3 dias), 'P4' (Baixa / Planejamento - SLA 7 dias).
+5. Tags Técnicas & Tópicos ('search_tags'):
+   - Extraia de 2 a 5 tags objetivas e contextuais (ferramentas, tecnologias, áreas, departamentos ou palavras-chave).
+6. Recursos de Estudo no YouTube ('learning_queries'):
+   - Gere 2 queries de busca específicas e objetivas para encontrar tutoriais ou documentações em vídeo no YouTube que facilitem a execução dessa tarefa.`;
 
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
   properties: {
     refined_title: {
       type: Type.STRING,
-      description: "Título claro, objetivo e acionável para a tarefa.",
+      description: "Título claro, profissional e acionável para a tarefa.",
     },
     structured_description: {
       type: Type.STRING,
-      description: "Passos sugeridos ou contexto organizado da tarefa.",
+      description: "Passos sugeridos, checklist ou contexto organizado da tarefa.",
     },
     account_type: {
       type: Type.STRING,
@@ -29,40 +42,31 @@ const RESPONSE_SCHEMA = {
     item_type: {
       type: Type.STRING,
       enum: ["task", "activity", "reminder"],
-      description: "Tipo de registro: 'task' para tarefa operacional, 'activity' para reunião/evento/atividade contínua, 'reminder' para lembrete rápido.",
+      description: "Tipo de registro: 'task', 'activity' ou 'reminder'.",
     },
     category: {
       type: Type.STRING,
-      enum: [
-        "TOTVS RM",
-        "Google Workspace",
-        "Suporte TI",
-        "Automações & Scripts",
-        "Infra & Hardware",
-        "Catequese",
-        "Idiomas & Estudos",
-        "Finanças & Pessoal",
-      ],
+      description: "Categoria dinâmica concisa e profissional que melhor define o assunto da tarefa.",
     },
     priority: {
       type: Type.STRING,
       enum: ["P1", "P2", "P3", "P4"],
-      description: "P1: Urgente (4h), P2: Alta (24h), P3: Média (3 dias), P4: Baixa (7 dias).",
+      description: "P1: Urgente, P2: Alta, P3: Média, P4: Baixa.",
     },
     extracted_due_date_iso: {
       type: Type.STRING,
       nullable: true,
-      description: "Data/hora ISO 8601 se o usuário mencionou prazo específico, ou null para usar o SLA automático da prioridade.",
+      description: "Data/hora ISO 8601 se o usuário mencionou prazo específico, ou null.",
     },
     search_tags: {
       type: Type.ARRAY,
       items: { type: Type.STRING },
-      description: "Palavras-chave técnicas para buscar se esse problema já foi resolvido no passado.",
+      description: "Tags contextuais e técnicas para indexar a demanda.",
     },
     learning_queries: {
       type: Type.ARRAY,
       items: { type: Type.STRING },
-      description: "2 queries de busca para encontrar tutoriais no YouTube ou artigos que facilitem esse processo.",
+      description: "2 queries de busca para encontrar tutoriais no YouTube.",
     },
   },
   required: [
@@ -78,171 +82,296 @@ const RESPONSE_SCHEMA = {
 };
 
 /**
- * Intelligent fallback analyzer when GEMINI_API_KEY is not set or during offline/mock use.
+ * Autonomous heuristic classifier that categorizes any task with high fidelity
+ * when Gemini API quota is reached, key is offline, or during high-throughput imports.
  */
-function fallbackTriage(rawInput: string): GeminiTriageResponse {
-  const lower = rawInput.toLowerCase();
+export function classifyTaskHeuristic(
+  title: string,
+  notes: string = "",
+  accountTypeHint?: AccountType
+): {
+  account_type: AccountType;
+  item_type: ItemType;
+  category: TaskCategory;
+  priority: Priority;
+  tags: string[];
+  learning_queries: string[];
+} {
+  const text = `${title} ${notes}`.toLowerCase();
 
-  let accountType: AccountType = "work";
-  let category: TaskCategory = "Suporte TI";
-  let priority: Priority = "P3";
+  let accountType: AccountType = accountTypeHint || "work";
   let itemType: ItemType = "task";
+  let category: TaskCategory = "Operações & Geral";
+  let priority: Priority = "P3";
+  const tags: string[] = [];
 
-  // Infer item_type
+  // 1. Detect Item Type
   if (
-    lower.includes("lembr") ||
-    lower.includes("esquec") ||
-    lower.includes("aviso") ||
-    lower.includes("pagar") ||
-    lower.includes("comprar") ||
-    lower.includes("ligar") ||
-    lower.includes("tomar") ||
-    lower.includes("pegar")
+    text.includes("lembr") ||
+    text.includes("esquec") ||
+    text.includes("aviso") ||
+    text.includes("pagar") ||
+    text.includes("comprar") ||
+    text.includes("ligar") ||
+    text.includes("tomar") ||
+    text.includes("pegar")
   ) {
     itemType = "reminder";
   } else if (
-    lower.includes("reuni") ||
-    lower.includes("encontro") ||
-    lower.includes("aula") ||
-    lower.includes("catequese") ||
-    lower.includes("missa") ||
-    lower.includes("curso") ||
-    lower.includes("treino") ||
-    lower.includes("consulta") ||
-    lower.includes("alinhamento") ||
-    lower.includes("rotina") ||
-    lower.includes("evento")
+    text.includes("reuni") ||
+    text.includes("encontro") ||
+    text.includes("aula") ||
+    text.includes("treino") ||
+    text.includes("consulta") ||
+    text.includes("alinhamento") ||
+    text.includes("call") ||
+    text.includes("evento") ||
+    text.includes("missa") ||
+    text.includes("culto")
   ) {
     itemType = "activity";
   } else {
     itemType = "task";
   }
 
-  // Context inference
+  // 2. High-precision contextual domains for dynamic categories & tags
   if (
-    lower.includes("rm") ||
-    lower.includes("totvs") ||
-    lower.includes("portal") ||
-    lower.includes("matrícula") ||
-    lower.includes("boletim")
+    text.includes("power bi") ||
+    text.includes("bi") ||
+    text.includes("dashboard") ||
+    text.includes("relatório") ||
+    text.includes("relatorio") ||
+    text.includes("cubo") ||
+    text.includes("dax") ||
+    text.includes("metabase")
   ) {
+    category = "BI & Analytics";
     accountType = "work";
-    category = "TOTVS RM";
+    tags.push("Power BI", "Relatórios");
+    if (text.includes("tesouraria")) tags.push("Tesouraria");
+    if (text.includes("bolsa")) tags.push("Bolsas");
   } else if (
-    lower.includes("google") ||
-    lower.includes("workspace") ||
-    lower.includes("classroom") ||
-    lower.includes("drive") ||
-    lower.includes("email") ||
-    lower.includes("gmail")
+    text.includes("totvs") ||
+    text.includes(" rm") ||
+    text.includes("patch") ||
+    text.includes("protheus") ||
+    text.includes("erp") ||
+    text.includes("portal do aluno")
   ) {
+    category = "Sistemas ERP";
     accountType = "work";
-    category = "Google Workspace";
+    tags.push("TOTVS RM", "ERP");
+    if (text.includes("patch")) tags.push("Patch");
+    if (text.includes("portal")) tags.push("Portal");
   } else if (
-    lower.includes("script") ||
-    lower.includes("python") ||
-    lower.includes("api") ||
-    lower.includes("automação") ||
-    lower.includes("banco")
+    text.includes("contrato") ||
+    text.includes("matrícula") ||
+    text.includes("matricula") ||
+    text.includes("aditivo") ||
+    text.includes("jurídic")
   ) {
+    category = "Gestão & Contratos";
     accountType = "work";
-    category = "Automações & Scripts";
+    tags.push("Contratos", "Documentação");
+    if (text.includes("matrícula") || text.includes("matricula")) tags.push("Matrícula");
   } else if (
-    lower.includes("switch") ||
-    lower.includes("rede") ||
-    lower.includes("impressora") ||
-    lower.includes("servidor") ||
-    lower.includes("wifi")
+    text.includes("classapp") ||
+    text.includes("agendaedu") ||
+    text.includes("email") ||
+    text.includes("e-mail") ||
+    text.includes("mensagem") ||
+    text.includes("comunicação") ||
+    text.includes("comunicado")
   ) {
+    category = "Comunicação & Mensagens";
     accountType = "work";
-    category = "Infra & Hardware";
+    tags.push("Comunicação");
+    if (text.includes("classapp")) tags.push("Classapp");
+    if (text.includes("extração") || text.includes("extracao")) tags.push("Extração de Dados");
   } else if (
-    lower.includes("catequese") ||
-    lower.includes("igreja") ||
-    lower.includes("missa") ||
-    lower.includes("encontro")
+    text.includes("tesouraria") ||
+    text.includes("bolsa") ||
+    text.includes("financeir") ||
+    text.includes("fatura") ||
+    text.includes("banco") ||
+    text.includes("pagamento") ||
+    text.includes("cobrança")
   ) {
+    category = "Finanças & Tesouraria";
+    tags.push("Finanças");
+    if (text.includes("tesouraria")) tags.push("Tesouraria");
+    if (text.includes("bolsa")) tags.push("Bolsas");
+  } else if (
+    text.includes("ingresso") ||
+    text.includes("venda") ||
+    text.includes("evento") ||
+    text.includes("festa") ||
+    text.includes("show") ||
+    text.includes("agendamento")
+  ) {
+    category = "Eventos & Vendas";
+    tags.push("Eventos", "Ingressos");
+  } else if (
+    text.includes("aluno") ||
+    text.includes("professor") ||
+    text.includes("pedagógic") ||
+    text.includes("escola") ||
+    text.includes("colégio") ||
+    text.includes("cnd") ||
+    text.includes("ndc")
+  ) {
+    category = "Gestão Educacional";
+    accountType = "work";
+    tags.push("Educação", "Alunos");
+  } else if (
+    text.includes("servidor") ||
+    text.includes("rede") ||
+    text.includes("switch") ||
+    text.includes("wifi") ||
+    text.includes("hardware") ||
+    text.includes("impressora") ||
+    text.includes("cabo") ||
+    text.includes("infra")
+  ) {
+    category = "Infraestrutura & Redes";
+    accountType = "work";
+    tags.push("Infraestrutura", "Hardware");
+  } else if (
+    text.includes("script") ||
+    text.includes("python") ||
+    text.includes("código") ||
+    text.includes("api") ||
+    text.includes("automação") ||
+    text.includes("automacao") ||
+    text.includes("bot") ||
+    text.includes("carta senha")
+  ) {
+    category = "Engenharia & Automações";
+    accountType = "work";
+    tags.push("Automação", "Scripts");
+  } else if (
+    text.includes("estudo") ||
+    text.includes("curso") ||
+    text.includes("livro") ||
+    text.includes("inglês") ||
+    text.includes("espanhol") ||
+    text.includes("certificação") ||
+    text.includes("leitura")
+  ) {
+    category = "Estudos & Capacitação";
+    accountType = accountTypeHint || "personal";
+    tags.push("Estudos", "Capacitação");
+  } else if (
+    text.includes("saúde") ||
+    text.includes("saude") ||
+    text.includes("médic") ||
+    text.includes("dentista") ||
+    text.includes("treino") ||
+    text.includes("remédio") ||
+    text.includes("consulta")
+  ) {
+    category = "Saúde & Bem-estar";
     accountType = "personal";
-    category = "Catequese";
+    tags.push("Saúde", "Pessoal");
   } else if (
-    lower.includes("inglês") ||
-    lower.includes("espanhol") ||
-    lower.includes("curso") ||
-    lower.includes("estudar") ||
-    lower.includes("leitura")
+    text.includes("casa") ||
+    text.includes("supermercado") ||
+    text.includes("mercado") ||
+    text.includes("reforma") ||
+    text.includes("limpeza") ||
+    text.includes("família")
   ) {
+    category = "Vida Pessoal & Casa";
     accountType = "personal";
-    category = "Idiomas & Estudos";
-  } else if (
-    lower.includes("banco") ||
-    lower.includes("conta") ||
-    lower.includes("comprar") ||
-    lower.includes("mercado") ||
-    lower.includes("pagar") ||
-    lower.includes("fatura")
-  ) {
-    accountType = "personal";
-    category = "Finanças & Pessoal";
+    tags.push("Casa", "Pessoal");
+  } else {
+    // Dynamic fallback based on account type
+    if (accountType === "personal") {
+      category = "Vida Pessoal";
+      tags.push("Pessoal");
+    } else {
+      category = "Suporte & Demandas";
+      tags.push("Geral");
+    }
   }
 
-  // Priority inference
+  // Priority detection
   if (
-    lower.includes("urgente") ||
-    lower.includes("parou") ||
-    lower.includes("fora do ar") ||
-    lower.includes("crítico") ||
-    lower.includes("hoje agora")
+    text.includes("urgente") ||
+    text.includes("parou") ||
+    text.includes("fora do ar") ||
+    text.includes("crítico") ||
+    text.includes("não dá para fazer") ||
+    text.includes("imediato")
   ) {
     priority = "P1";
   } else if (
-    lower.includes("amanhã") ||
-    lower.includes("importante") ||
-    lower.includes("diretoria") ||
-    lower.includes("prazo curto")
+    text.includes("importante") ||
+    text.includes("diretoria") ||
+    text.includes("prazo curto") ||
+    text.includes("amanhã")
   ) {
     priority = "P2";
-  } else if (lower.includes("quando der") || lower.includes("planejar") || lower.includes("ideia")) {
+  } else if (
+    text.includes("quando der") ||
+    text.includes("planejar") ||
+    text.includes("ideia") ||
+    text.includes("futuro")
+  ) {
     priority = "P4";
   }
 
-  // Refined title: ensure school communication rule (use "Lição de Casa" instead of "Tarefas" / "Entregas")
-  let title = rawInput
-    .replace(/\b(tarefas|entregas)\b/gi, "Lição de Casa")
-    .trim();
-  if (title.length > 0) {
-    title = title.charAt(0).toUpperCase() + title.slice(1);
-  } else {
-    title = itemType === "reminder" ? "Novo Lembrete" : itemType === "activity" ? "Nova Atividade" : "Nova Tarefa";
-  }
-
-  // Extract tags
-  const tags: string[] = [category.toLowerCase().replace(/\s+/g, "-"), itemType];
-  if (lower.includes("rm")) tags.push("totvs-rm");
-  if (lower.includes("sincronização")) tags.push("sincronizacao");
-  if (lower.includes("notas")) tags.push("notas");
-  if (lower.includes("aluno")) tags.push("alunos");
-  if (lower.includes("professor")) tags.push("professores");
-  if (lower.includes("senha")) tags.push("autenticacao");
-  if (lower.includes("backup")) tags.push("backup");
-
+  const cleanCategory = category;
   const learningQueries = [
-    `${category} ${tags.slice(0, 2).join(" ")} tutorial e melhores práticas`,
-    `Como resolver e automatizar ${category} ${tags[1] || ""}`,
+    `${cleanCategory} ${tags[0] || ""} tutorial e melhores práticas`,
+    `Como resolver e estruturar ${title.slice(0, 40)}`,
   ];
 
   return {
-    refined_title: title,
-    structured_description: `Contexto operacional estruturado: ${rawInput}\n\nRecomendações e checklist:\n- [ ] Diagnosticar impacto imediato\n- [ ] Executar validação de integridade\n- [ ] Registrar resolução na base do MontLife`,
     account_type: accountType,
     item_type: itemType,
-    category,
+    category: cleanCategory,
     priority,
-    extracted_due_date_iso: null,
-    search_tags: tags,
+    tags: Array.from(new Set(tags)),
     learning_queries: learningQueries,
   };
 }
 
+/**
+ * Intelligent fallback triage for manual user input.
+ */
+function fallbackTriage(rawInput: string): GeminiTriageResponse {
+  const heuristic = classifyTaskHeuristic(rawInput);
+
+  let title = rawInput.trim();
+  if (title.length > 0) {
+    title = title.charAt(0).toUpperCase() + title.slice(1);
+  } else {
+    title =
+      heuristic.item_type === "reminder"
+        ? "Novo Lembrete"
+        : heuristic.item_type === "activity"
+        ? "Nova Atividade"
+        : "Nova Tarefa";
+  }
+
+  return {
+    refined_title: title,
+    structured_description: `Contexto operacional registrado: ${rawInput}\n\nChecklist sugerido:\n- [ ] Avaliar escopo da demanda\n- [ ] Executar etapas necessárias\n- [ ] Registrar conclusão no MontLife`,
+    account_type: heuristic.account_type,
+    item_type: heuristic.item_type,
+    category: heuristic.category,
+    priority: heuristic.priority,
+    extracted_due_date_iso: null,
+    search_tags: heuristic.tags,
+    learning_queries: heuristic.learning_queries,
+  };
+}
+
+/**
+ * Triages free-text input using Gemini with schema enforcement,
+ * falling back gracefully to heuristic classification if key has no quota.
+ */
 export async function triageInputWithGemini(
   rawInput: string,
   apiKey?: string
@@ -250,13 +379,11 @@ export async function triageInputWithGemini(
   const key = apiKey || process.env.GEMINI_API_KEY;
 
   if (!key || key === "sua_chave_da_gemini_api") {
-    // Graceful offline/local inference
     return fallbackTriage(rawInput);
   }
 
   try {
     const ai = new GoogleGenAI({ apiKey: key });
-    // Use gemini-3.8-flash
     const response = await ai.models.generateContent({
       model: "gemini-3.8-flash",
       contents: rawInput,
@@ -277,11 +404,78 @@ export async function triageInputWithGemini(
     if (!parsed.item_type) {
       parsed.item_type = fallbackTriage(rawInput).item_type;
     }
+    if (!parsed.category) {
+      parsed.category = fallbackTriage(rawInput).category;
+    }
     return parsed;
   } catch (error) {
-    console.warn("Gemini API call failed, using intelligent fallback triage:", error);
+    console.warn("Gemini API call failed, using autonomous heuristic classifier:", error);
     return fallbackTriage(rawInput);
   }
+}
+
+/**
+ * Autonomously categorizes and tags any task with AI.
+ */
+export async function categorizeTaskWithAI(
+  title: string,
+  notes: string = "",
+  accountTypeHint?: AccountType,
+  apiKey?: string
+): Promise<{
+  category: TaskCategory;
+  tags: string[];
+  priority: Priority;
+  item_type: ItemType;
+  learning_queries: string[];
+}> {
+  const key = apiKey || process.env.GEMINI_API_KEY;
+
+  if (key && key !== "sua_chave_da_gemini_api") {
+    try {
+      const ai = new GoogleGenAI({ apiKey: key });
+      const prompt = `Analise este título e notas de tarefa e gere a melhor categoria profissional dinâmica e tags:
+Título: ${title}
+Notas: ${notes}
+Contexto: ${accountTypeHint || "work"}`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.8-flash",
+        contents: prompt,
+        config: {
+          systemInstruction: SYSTEM_PROMPT,
+          responseMimeType: "application/json",
+          responseSchema: RESPONSE_SCHEMA,
+          temperature: 0.2,
+        },
+      });
+
+      const text = typeof response.text === "function" ? (response.text as any)() : response.text;
+      if (text) {
+        const parsed = JSON.parse(text) as GeminiTriageResponse;
+        if (parsed.category && parsed.search_tags?.length > 0) {
+          return {
+            category: parsed.category,
+            tags: parsed.search_tags,
+            priority: parsed.priority || "P3",
+            item_type: parsed.item_type || "task",
+            learning_queries: parsed.learning_queries || [],
+          };
+        }
+      }
+    } catch {
+      // Use high-precision heuristic fallback
+    }
+  }
+
+  const h = classifyTaskHeuristic(title, notes, accountTypeHint);
+  return {
+    category: h.category,
+    tags: h.tags,
+    priority: h.priority,
+    item_type: h.item_type,
+    learning_queries: h.learning_queries,
+  };
 }
 
 export async function generateExecutiveSummary(
@@ -294,34 +488,17 @@ export async function generateExecutiveSummary(
   const inProgress = tasks.filter((t) => t.status === "IN_PROGRESS" || t.status === "WAITING");
 
   const fallbackSummary = `### Síntese Executiva de Atividades — ${periodLabel}
-**Contexto:** ${accountType === "work" ? "Tecnologia da Informação & Operações Institucionais (Trabalho)" : "Gestão Pessoal & Estudos"}
+**Contexto:** ${accountType === "work" ? "Operações Profissionais & Projetos (Trabalho)" : "Gestão Pessoal & Estudos"}
 
 #### 1. Visão Geral das Entregas
-No período analisado (${periodLabel}), foram registradas e gerenciadas **${tasks.length} atividades**, das quais **${completed.length} foram concluídas com sucesso**. O índice de cumprimento das diretrizes de atendimento manteve estabilidade operacional e alinhamento com as prioridades do setor.
+No período analisado (${periodLabel}), foram registradas e gerenciadas **${tasks.length} atividades**, das quais **${completed.length} foram concluídas com sucesso**. O fluxo de trabalho manteve estabilidade e alta taxa de resolução.
 
-#### 2. Destaques Técnicos e Incidentes Solucionados
-${completed
-  .slice(0, 6)
-  .map(
-    (t) =>
-      `* **${t.title}** (${t.category}): ${
-        t.resolution_notes
-          ? `*Solução técnica aplicada:* ${t.resolution_notes}`
-          : t.description || "Entrega executada conforme especificação."
-      }`
-  )
-  .join("\n")}
+#### 2. Destaques Operacionais
+- **Atividades Ativas / Em Andamento:** ${inProgress.length} demandas em acompanhamento contínuo.
+- **Categorias mais recorrentes:** ${Array.from(new Set(tasks.map((t) => t.category))).slice(0, 4).join(", ") || "Geral"}.
+- **Autonomia & Organização:** Sistema indexado dinamicamente com categorização automática e busca indexada de resolução.
 
-#### 3. Eficiência Operacional e Continuidade
-${
-  inProgress.length > 0
-    ? inProgress
-        .map((t) => `* **${t.title}** — Em andamento (${t.category}, prioridade ${t.priority}).`)
-        .join("\n")
-    : "* Todas as demandas do período foram finalizadas satisfatoriamente sem pendências críticas."
-}
-
-*Relatório gerado via MontLife para comprovação e prestação de contas executiva.*`;
+*Relatório consolidado pelo MontLife Intelligence.*`;
 
   const key = apiKey || process.env.GEMINI_API_KEY;
   if (!key || key === "sua_chave_da_gemini_api") {
@@ -330,32 +507,13 @@ ${
 
   try {
     const ai = new GoogleGenAI({ apiKey: key });
-    const prompt = `Gere uma síntese executiva formal de prestação de contas para o período "${periodLabel}" com base nas seguintes atividades:
-${JSON.stringify(
-  tasks.map((t) => ({
-    titulo: t.title,
-    tipo: t.item_type || "tarefa",
-    categoria: t.category,
-    status: t.status,
-    prioridade: t.priority,
-    resolucao: t.resolution_notes,
-    descricao: t.description,
-  })),
-  null,
-  2
-)}
-
-O relatório destina-se à prestação de contas, auditoria de entregas e acompanhamento de produtividade pessoal e profissional para comprovar com clareza técnica e objetividade tudo o que foi realizado e demonstrar o valor gerado.
-${
-  accountType === "work"
-    ? "IMPORTANTE: Mantenha 100% o foco profissional em TI Escolar, TOTVS RM, Google Workspace, Infraestrutura e Atendimento Institucional. NUNCA mencione termos ou tarefas pessoais."
-    : ""
-}
-Estruture a resposta em Markdown claro e elegante com:
-1. Resumo Executivo das Entregas (métricas e impacto)
-2. Principais Incidentes e Soluções Técnicas (destacando os problemas diagnosticados e como foram resolvidos)
-3. Confiabilidade e Cumprimento de Prazos (SLA)
-4. Demandas em Andamento e Próximos Passos`;
+    const prompt = `Gere uma síntese executiva em Markdown para o período "${periodLabel}" no contexto "${accountType}".
+Total de demandas: ${tasks.length}
+Concluídas: ${completed.length}
+Em andamento: ${inProgress.length}
+Categorias presentes: ${Array.from(new Set(tasks.map((t) => t.category))).join(", ")}
+Títulos de exemplo: ${tasks.slice(0, 10).map((t) => t.title).join("; ")}
+Use tom executivo, claro e objetivo.`;
 
     const response = await ai.models.generateContent({
       model: "gemini-3.8-flash",

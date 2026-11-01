@@ -26,18 +26,115 @@ export function getAuthUrl(accountType: string = "ask") {
   });
 }
 
+export interface RawGoogleTaskItem {
+  id: string;
+  title: string;
+  notes?: string;
+  status: string; // 'completed' | 'needsAction'
+  updated?: string;
+  completed?: string;
+  due?: string;
+  taskListId: string;
+  taskListName: string;
+}
+
+/**
+ * Fetches all Google Tasks across ALL user's tasklists with full pagination (from 2024 to today).
+ */
+export async function fetchAllGoogleTasksFromAccount(tokens: {
+  access_token?: string;
+  refresh_token?: string;
+}): Promise<RawGoogleTaskItem[]> {
+  if (!tokens?.refresh_token && !tokens?.access_token) {
+    return [];
+  }
+
+  const oauth2Client = getOAuth2Client();
+  oauth2Client.setCredentials(tokens);
+  const tasksApi = google.tasks({ version: "v1", auth: oauth2Client });
+
+  // 1. Fetch all user's task lists
+  let taskLists: { id: string; title: string }[] = [];
+  try {
+    const listsRes = await tasksApi.tasklists.list({ maxResults: 100 });
+    if (listsRes.data.items && listsRes.data.items.length > 0) {
+      taskLists = listsRes.data.items.map((l) => ({
+        id: l.id || "@default",
+        title: l.title || "Principal",
+      }));
+    }
+  } catch (err) {
+    console.warn("Could not list all tasklists, falling back to @default:", err);
+  }
+
+  if (taskLists.length === 0) {
+    taskLists = [{ id: "@default", title: "Principal" }];
+  }
+
+  const allItems: RawGoogleTaskItem[] = [];
+  const seenIds = new Set<string>();
+
+  // 2. Paginate through each list (from 2024 to present)
+  for (const list of taskLists) {
+    let pageToken: string | undefined = undefined;
+    let pageCount = 0;
+    const MAX_PAGES = 50; // supports up to 5,000 tasks per list
+
+    do {
+      try {
+        const res: any = await tasksApi.tasks.list({
+          tasklist: list.id,
+          showCompleted: true,
+          showHidden: true,
+          showDeleted: false,
+          maxResults: 100,
+          pageToken,
+        });
+
+        const items = res.data.items || [];
+        for (const item of items) {
+          if (!item.id || !item.title) continue;
+          if (seenIds.has(item.id)) continue;
+          seenIds.add(item.id);
+
+          allItems.push({
+            id: item.id,
+            title: item.title,
+            notes: item.notes || "",
+            status: item.status || "needsAction",
+            updated: item.updated || undefined,
+            completed: item.completed || undefined,
+            due: item.due || undefined,
+            taskListId: list.id,
+            taskListName: list.title,
+          });
+        }
+
+        pageToken = res.data.nextPageToken || undefined;
+        pageCount++;
+      } catch (pageErr) {
+        console.warn(`Error fetching tasks page for list ${list.id}:`, pageErr);
+        break;
+      }
+    } while (pageToken && pageCount < MAX_PAGES);
+  }
+
+  return allItems;
+}
+
 /**
  * Searches YouTube Data API v3 for relevant tutorials and study resources.
  */
 export async function fetchYouTubeResources(queries: string[]): Promise<LearningResources> {
-  const apiKey = process.env.YOUTUBE_API_KEY;
+  const apiKey = process.env.YOUTUBE_API_KEY || process.env.GOOGLE_API_KEY;
   const videos: YouTubeVideo[] = [];
 
-  if (apiKey && apiKey !== "sua_api_key_do_google_cloud") {
+  if (apiKey && apiKey !== "sua_api_key_do_google_cloud" && apiKey.length > 10) {
     try {
       const youtube = google.youtube({ version: "v3", auth: apiKey });
 
       for (const q of queries.slice(0, 2)) {
+        if (!q.trim()) continue;
         const res = await youtube.search.list({
           part: ["snippet"],
           q,
@@ -67,18 +164,19 @@ export async function fetchYouTubeResources(queries: string[]): Promise<Learning
   // Curated fallbacks if needed
   if (videos.length === 0) {
     for (const q of queries.slice(0, 2)) {
+      if (!q.trim()) continue;
       videos.push({
-        title: `Guia & Documentação: ${q}`,
+        title: `Tutorial & Guia: ${q}`,
         url: `https://www.youtube.com/results?search_query=${encodeURIComponent(q)}`,
         thumbnail: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=400&q=80",
-        channel: "MontLife — Base de Conhecimento",
+        channel: "YouTube",
       });
     }
   }
 
   return {
     youtube_videos: videos,
-    search_queries: queries,
+    search_queries: queries.filter((q) => q.trim().length > 0),
   };
 }
 

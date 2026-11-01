@@ -2,15 +2,7 @@ export type AccountType = "work" | "personal";
 
 export type ItemType = "task" | "activity" | "reminder";
 
-export type TaskCategory =
-  | "TOTVS RM"
-  | "Google Workspace"
-  | "Suporte TI"
-  | "Automações & Scripts"
-  | "Infra & Hardware"
-  | "Catequese"
-  | "Idiomas & Estudos"
-  | "Finanças & Pessoal";
+export type TaskCategory = string;
 
 export type Priority = "P1" | "P2" | "P3" | "P4";
 

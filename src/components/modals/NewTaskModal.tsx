@@ -36,15 +36,20 @@ interface NewTaskModalProps {
   initialType?: ItemType;
 }
 
-const CATEGORIES: TaskCategory[] = [
-  "Suporte TI",
-  "TOTVS RM",
-  "Google Workspace",
-  "Automações & Scripts",
-  "Infra & Hardware",
-  "Catequese",
-  "Idiomas & Estudos",
-  "Finanças & Pessoal",
+const DEFAULT_CATEGORIES: string[] = [
+  "BI & Analytics",
+  "Sistemas ERP",
+  "Gestão & Contratos",
+  "Comunicação & Mensagens",
+  "Finanças & Tesouraria",
+  "Infraestrutura & Redes",
+  "Engenharia & Automações",
+  "Gestão Educacional",
+  "Eventos & Vendas",
+  "Estudos & Capacitação",
+  "Saúde & Bem-estar",
+  "Vida Pessoal & Casa",
+  "Suporte & Demandas",
 ];
 
 export function NewTaskModal({
@@ -383,19 +388,21 @@ export function NewTaskModal({
 
             <div className="space-y-1.5">
               <label className="text-xs font-semibold text-slate-600 dark:text-slate-400 block">
-                Categoria:
+                Categoria (gerenciada por IA ou personalizada):
               </label>
-              <select
+              <input
+                list="categories-list"
+                type="text"
                 value={category}
-                onChange={(e) => setCategory(e.target.value as TaskCategory)}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Ex: BI & Analytics, Finanças, ERP..."
                 className="w-full h-10 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
-              >
-                {CATEGORIES.map((cat) => (
-                  <option key={cat} value={cat}>
-                    {cat}
-                  </option>
+              />
+              <datalist id="categories-list">
+                {DEFAULT_CATEGORIES.map((cat) => (
+                  <option key={cat} value={cat} />
                 ))}
-              </select>
+              </datalist>
             </div>
           </div>
 

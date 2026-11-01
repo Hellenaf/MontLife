@@ -543,20 +543,29 @@ export function HeaderCommandBar({
                 <label className="text-[11px] font-medium text-slate-600 dark:text-slate-400 block mb-1">
                   Categoria:
                 </label>
-                <select
+                <input
+                  list="header-categories-list"
+                  type="text"
                   value={editCategory}
-                  onChange={(e) => setEditCategory(e.target.value as TaskCategory)}
+                  onChange={(e) => setEditCategory(e.target.value)}
+                  placeholder="Categoria da demanda..."
                   className="w-full h-8 px-2 text-[11px] rounded-lg bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
-                >
-                  <option value="TOTVS RM">TOTVS RM</option>
-                  <option value="Google Workspace">Google Workspace</option>
-                  <option value="Suporte TI">Suporte TI</option>
-                  <option value="Automações & Scripts">Automações & Scripts</option>
-                  <option value="Infra & Hardware">Infra & Hardware</option>
-                  <option value="Catequese">Catequese</option>
-                  <option value="Idiomas & Estudos">Idiomas & Estudos</option>
-                  <option value="Finanças & Pessoal">Finanças & Pessoal</option>
-                </select>
+                />
+                <datalist id="header-categories-list">
+                  <option value="BI & Analytics" />
+                  <option value="Sistemas ERP" />
+                  <option value="Gestão & Contratos" />
+                  <option value="Comunicação & Mensagens" />
+                  <option value="Finanças & Tesouraria" />
+                  <option value="Infraestrutura & Redes" />
+                  <option value="Engenharia & Automações" />
+                  <option value="Gestão Educacional" />
+                  <option value="Eventos & Vendas" />
+                  <option value="Estudos & Capacitação" />
+                  <option value="Saúde & Bem-estar" />
+                  <option value="Vida Pessoal & Casa" />
+                  <option value="Suporte & Demandas" />
+                </datalist>
               </div>
 
               {/* Due Date */}
