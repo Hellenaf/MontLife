@@ -42,6 +42,8 @@ interface LeftTasksQuadrantProps {
   onDeleteTask: (taskId: string) => void;
   onRequestNewTask?: () => void;
   onRefreshTasks?: () => Promise<void> | void;
+  accountFilter?: "all" | AccountType;
+  onAccountFilterChange?: (filter: "all" | AccountType) => void;
 }
 
 export function LeftTasksQuadrant({
@@ -54,8 +56,15 @@ export function LeftTasksQuadrant({
   onDeleteTask,
   onRequestNewTask,
   onRefreshTasks,
+  accountFilter: propAccountFilter,
+  onAccountFilterChange,
 }: LeftTasksQuadrantProps) {
-  const [accountFilter, setAccountFilter] = useState<"all" | AccountType>("all");
+  const [internalAccountFilter, setInternalAccountFilter] = useState<"all" | AccountType>("all");
+  const accountFilter = propAccountFilter !== undefined ? propAccountFilter : internalAccountFilter;
+  const setAccountFilter = (filter: "all" | AccountType) => {
+    setInternalAccountFilter(filter);
+    onAccountFilterChange?.(filter);
+  };
   const [itemTypeFilter, setItemTypeFilter] = useState<"ALL" | ItemType>("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | TaskStatus>("ALL");
   const [priorityFilter, setPriorityFilter] = useState<"ALL" | Priority>("ALL");

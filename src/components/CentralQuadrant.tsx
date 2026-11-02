@@ -79,6 +79,8 @@ interface CentralQuadrantProps {
   onUpdateTaskFields?: (taskId: string, fields: Partial<Task>) => Promise<void> | void;
   onSelectTask?: (task: Task) => void;
   onOpenNewTaskModal?: () => void;
+  activeTab?: "details" | "timeline" | "study";
+  onTabChange?: (tab: "details" | "timeline" | "study") => void;
 }
 
 const CATEGORY_SUGGESTIONS = [
@@ -108,8 +110,15 @@ export function CentralQuadrant({
   onUpdateTaskFields,
   onSelectTask,
   onOpenNewTaskModal,
+  activeTab: propActiveTab,
+  onTabChange,
 }: CentralQuadrantProps) {
-  const [activeTab, setActiveTab] = useState<"details" | "timeline" | "study">("details");
+  const [internalActiveTab, setInternalActiveTab] = useState<"details" | "timeline" | "study">("details");
+  const activeTab = propActiveTab !== undefined ? propActiveTab : internalActiveTab;
+  const setActiveTab = (tab: "details" | "timeline" | "study") => {
+    setInternalActiveTab(tab);
+    onTabChange?.(tab);
+  };
 
   // Automatically open Details tab whenever a task is selected or clicked
   useEffect(() => {

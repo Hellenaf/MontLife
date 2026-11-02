@@ -22,6 +22,8 @@ export default function MontOpsDashboard() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
   const [activeNav, setActiveNav] = useState("inicio");
+  const [accountFilter, setAccountFilter] = useState<"all" | AccountType>("all");
+  const [centralActiveTab, setCentralActiveTab] = useState<"details" | "timeline" | "study">("details");
 
   // Dynamically derive selected task from tasks array
   const selectedTask =
@@ -297,15 +299,23 @@ export default function MontOpsDashboard() {
       <div className="hidden lg:flex h-full">
         <SidebarNav
           accounts={accounts}
+          tasks={tasks}
           activeNav={activeNav}
           onSelectNav={(nav) => {
             setActiveNav(nav);
             if (nav === "wiki") setIsWikiModalOpen(true);
             if (nav === "relatorios") setIsReportModalOpen(true);
             if (nav === "config") setIsAccountsModalOpen(true);
+            if (nav === "agenda") {
+              setCentralActiveTab("timeline");
+            } else if (nav === "inicio" || nav === "tarefas") {
+              setCentralActiveTab("details");
+            }
           }}
           onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
           onOpenReportModal={() => setIsReportModalOpen(true)}
+          selectedAccountFilter={accountFilter}
+          onSelectAccountFilter={(filter) => setAccountFilter(filter)}
           completedTasksCount={tasks.filter((t) => t.status === "COMPLETED").length}
         />
       </div>
@@ -367,7 +377,10 @@ export default function MontOpsDashboard() {
           <LeftTasksQuadrant
             tasks={tasks}
             selectedTaskId={selectedTask?.id || null}
-            onSelectTask={(task) => setSelectedTaskId(task.id)}
+            onSelectTask={(task) => {
+              setSelectedTaskId(task.id);
+              setCentralActiveTab("details");
+            }}
             onUpdateStatus={handleUpdateStatus}
             onRequestResolution={(task) => {
               setTaskForResolution(task);
@@ -383,6 +396,8 @@ export default function MontOpsDashboard() {
               setIsNewTaskModalOpen(true);
             }}
             onRefreshTasks={loadTasks}
+            accountFilter={accountFilter}
+            onAccountFilterChange={setAccountFilter}
           />
 
           {/* Quadrante Central: Detalhes da Demanda (ABOVE) & Agenda do Dia (BELOW) */}
@@ -402,6 +417,8 @@ export default function MontOpsDashboard() {
             onUpdateTaskFields={handleUpdateTaskFields}
             onSelectTask={(task) => setSelectedTaskId(task.id)}
             onOpenNewTaskModal={() => setIsNewTaskModalOpen(true)}
+            activeTab={centralActiveTab}
+            onTabChange={setCentralActiveTab}
           />
 
           {/* Quadrante Direito: Métricas & Desempenho + Resumo Anual */}
