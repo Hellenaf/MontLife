@@ -259,7 +259,8 @@ export function HeaderCommandBar({
   const personalAcc = accounts.find((a) => a.id === "personal");
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-30 h-16 bg-white/95 dark:bg-[#101118]/95 backdrop-blur-md border-b border-slate-200 dark:border-zinc-800/80 px-4 sm:px-6 flex items-center justify-between shadow-sm transition-colors duration-200">
+    <>
+      <header className="fixed top-0 left-0 right-0 z-30 h-16 bg-white/95 dark:bg-[#101118]/95 backdrop-blur-md border-b border-slate-200 dark:border-zinc-800/80 px-4 sm:px-6 flex items-center justify-between shadow-sm transition-colors duration-200">
       {/* Brand & Identity */}
       <div className="flex items-center gap-3 shrink-0">
         <div className="w-8 h-8 rounded-xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center font-black text-sm text-white shadow-sm">
@@ -408,12 +409,13 @@ export function HeaderCommandBar({
           {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
         </button>
       </div>
+    </header>
 
-      {/* Floating Confirmation Modal with Backdrop */}
-      {triageData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
-            {/* Header of confirmation - Fixed */}
+    {/* Floating Confirmation Modal with Backdrop - Rendered outside header to avoid backdrop-filter coordinate containment */}
+    {triageData && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
+        <div className="relative w-full max-w-2xl my-auto flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all max-h-[85vh]">
+          {/* Header of confirmation - Fixed */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className="p-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
@@ -762,6 +764,6 @@ export function HeaderCommandBar({
           </div>
         </div>
       )}
-    </header>
+    </>
   );
 }

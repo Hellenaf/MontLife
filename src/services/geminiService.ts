@@ -186,6 +186,9 @@ export function classifyTaskHeuristic(
     tags.push("TOTVS RM", "ERP");
     if (text.includes("patch")) tags.push("Patch");
     if (text.includes("portal")) tags.push("Portal");
+    if (/\brh\b/.test(text) || text.includes("funcionário") || text.includes("funcionario")) tags.push("RH");
+    if (text.includes("cpf")) tags.push("CPF");
+    if (text.includes("biblioteca")) tags.push("Biblioteca");
   } else if (
     text.includes("contrato") ||
     text.includes("matrícula") ||
@@ -437,38 +440,178 @@ export function extractDeadlinesHeuristic(text: string): string | null {
 }
 
 /**
+ * Autonomous NLP Title Synthesizer:
+ * Extracts a concise, professional title from verbose, unstructured natural language messages.
+ */
+export function synthesizeRefinedTitle(rawInput: string): string {
+  const clean = rawInput.trim().replace(/\s+/g, " ");
+  if (!clean) return "Nova Demanda";
+
+  if (clean.length <= 50 && !clean.includes(".") && !clean.includes(";") && !clean.includes(",")) {
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
+  }
+
+  // Detect first primary objective clause before explanatory connectors
+  let title = clean;
+  const firstClauseMatch = clean.match(
+    /^([^.,;]+?)(?:,\s*(?:pois|porque|já\s+que|para\s+que|onde|afim\s+de)|[.;]|\n)/i
+  );
+  if (firstClauseMatch) {
+    title = firstClauseMatch[1].trim();
+  }
+
+  // Refine colloquial or verbose phrases into punchy, professional phrasing
+  title = title
+    .replace(/a forma que eles registram/i, "o registro de")
+    .replace(/a forma como registram/i, "o registro de")
+    .replace(/a forma de registrar/i, "o registro de")
+    .replace(/como eles cadastram/i, "o cadastro de")
+    .replace(/como cadastrar/i, "o cadastro de")
+    .replace(/verificar com o ([a-z0-9]+) a forma/i, "Alinhar com $1 o processo")
+    .replace(/\s+(?:pois|porque|para|com|em|de|que|e|se)$/i, "");
+
+  // If text mentions critical systems/contexts missing from the clause, append concisely
+  const lower = clean.toLowerCase();
+  if (lower.includes("totvs") && !title.toLowerCase().includes("totvs")) {
+    title += " no TOTVS";
+  }
+  if (lower.includes("cpf") && !title.toLowerCase().includes("cpf")) {
+    title += " (Vínculo CPF)";
+  }
+
+  title = title.charAt(0).toUpperCase() + title.slice(1);
+
+  if (title.length > 70) {
+    const spaceIdx = title.lastIndexOf(" ", 67);
+    title = (spaceIdx > 35 ? title.substring(0, spaceIdx) : title.substring(0, 67)).trim() + "...";
+  }
+
+  return title;
+}
+
+/**
+ * Autonomous NLP Structured Description Synthesizer:
+ * Transforms raw message dumps into structured enterprise-grade Markdown with objectives and context.
+ */
+export function synthesizeStructuredDescription(
+  rawInput: string,
+  title: string,
+  category: TaskCategory
+): string {
+  const clean = rawInput.trim();
+  if (!clean) return "";
+
+  // Split into sentences
+  const sentences = clean.split(/(?<=[.?!])\s+/).filter(Boolean);
+  const mainGoal = sentences[0] || clean;
+
+  const systems: string[] = [];
+  if (/totvs/i.test(clean)) systems.push("TOTVS (Gestão / RM)");
+  if (/power\s*bi/i.test(clean)) systems.push("Power BI");
+  if (/excel|planilha/i.test(clean)) systems.push("Planilhas / Excel");
+  if (/email|e-mail|outlook|gmail/i.test(clean)) systems.push("Email / Mensageria");
+  if (/catraca|acesso/i.test(clean)) systems.push("Controle de Acesso");
+
+  const depts: string[] = [];
+  if (/\brh\b/i.test(clean)) depts.push("Recursos Humanos (RH)");
+  if (/biblioteca/i.test(clean)) depts.push("Biblioteca");
+  if (/tesouraria|financeir/i.test(clean)) depts.push("Tesouraria / Financeiro");
+  if (/secretaria/i.test(clean)) depts.push("Secretaria Acadêmica");
+  if (/ti|suporte/i.test(clean)) depts.push("TI & Suporte Técnico");
+
+  let desc = `📋 **Objetivo da Demanda:**\n${mainGoal}\n\n`;
+
+  const details: string[] = [];
+  if (systems.length > 0) details.push(`• **Sistemas Envolvidos:** ${systems.join(", ")}`);
+  if (depts.length > 0) details.push(`• **Setores Impactados:** ${depts.join(", ")}`);
+  if (/cpf/i.test(clean)) details.push(`• **Ponto Crítico:** Vínculo por CPF (atenção para não mesclar históricos de ex-alunos ou responsáveis)`);
+  if (/sonia/i.test(clean)) details.push(`• **Interessado / Solicitante:** Observação reportada por Sonia (Biblioteca)`);
+
+  // Extra context if multiple sentences exist
+  if (sentences.length > 1) {
+    const additionalNotes = sentences.slice(1).join(" ").trim();
+    if (additionalNotes) {
+      details.push(`• **Observações Adicionais:** ${additionalNotes}`);
+    }
+  }
+
+  if (details.length > 0) {
+    desc += `🔍 **Contexto & Detalhes Operacionais:**\n${details.join("\n")}\n\n`;
+  }
+
+  desc += `💬 **Demanda Original Registrada:**\n"${clean}"`;
+
+  return desc;
+}
+
+/**
+ * Autonomous Context-Tailored Validation Steps Synthesizer:
+ * Suggests actionable, sequential execution checkpoints based on detected systems and domain keywords.
+ */
+export function synthesizeValidationSteps(rawInput: string, title: string): string[] {
+  const t = rawInput.toLowerCase();
+  const steps: string[] = [];
+
+  if (
+    t.includes("totvs") ||
+    t.includes("rh") ||
+    t.includes("cadastro") ||
+    t.includes("funcionario") ||
+    t.includes("funcionário")
+  ) {
+    steps.push("1. Alinhar com o RH o fluxo atual de inclusão e consulta de colaboradores no sistema.");
+    steps.push("2. Avaliar no TOTVS a regra de chave por CPF para evitar sobrescrever registros de ex-alunos ou responsáveis.");
+    if (t.includes("biblioteca") || t.includes("emprestimo") || t.includes("empréstimo")) {
+      steps.push("3. Verificar no módulo da Biblioteca a segregação do histórico de empréstimos.");
+    }
+    steps.push("4. Definir e homologar a parametrização para preservar a integridade dos dados históricos.");
+    steps.push("5. Finalizar a demanda prestando o retorno à solicitante (Sonia) e às equipes envolvidas.");
+  } else if (
+    t.includes("power bi") ||
+    t.includes("relatório") ||
+    t.includes("relatorio") ||
+    t.includes("dashboard")
+  ) {
+    steps.push("1. Levantar as métricas e regras de negócio exigidas no relatório.");
+    steps.push("2. Realizar a extração e tratamento dos dados na fonte.");
+    steps.push("3. Desenvolver o painel / relatório e validar os números.");
+    steps.push("4. Homologar os resultados e publicar para os usuários.");
+  } else if (
+    t.includes("pagar") ||
+    t.includes("comprar") ||
+    t.includes("financeir") ||
+    t.includes("tesouraria") ||
+    t.includes("boleto")
+  ) {
+    steps.push("1. Conferir os valores, comprovantes fiscais e datas de vencimento.");
+    steps.push("2. Obter autorização da coordenação / diretoria.");
+    steps.push("3. Executar o pagamento / lançamento e realizar a conciliação bancária.");
+    steps.push("4. Arquivar o comprovante e notificar os envolvidos.");
+  } else {
+    steps.push("1. Analisar o escopo detalhado e dependências da demanda.");
+    steps.push("2. Executar as ações e configurações necessárias no ambiente.");
+    steps.push("3. Realizar testes de homologação e validação técnica.");
+    steps.push("4. Confirmar a conclusão e alinhar com o solicitante.");
+  }
+
+  return steps;
+}
+
+/**
  * Intelligent fallback triage for manual user input.
  */
 function fallbackTriage(rawInput: string): GeminiTriageResponse {
   const heuristic = classifyTaskHeuristic(rawInput);
   const detectedDueDate = extractDeadlinesHeuristic(rawInput);
 
-  let title = rawInput.trim();
-  if (title.length > 0) {
-    title = title.charAt(0).toUpperCase() + title.slice(1);
-    if (title.includes("\n")) {
-      title = title.split("\n")[0].trim().slice(0, 80);
-    }
-  } else {
-    title =
-      heuristic.item_type === "reminder"
-        ? "Novo Lembrete"
-        : heuristic.item_type === "activity"
-        ? "Nova Atividade"
-        : "Nova Tarefa";
-  }
-
-  const defaultValidationSteps: string[] = [
-    `1. Analisar requisitos e escopo de: ${title.slice(0, 45)}`,
-    "2. Executar as ações e configurações necessárias",
-    "3. Realizar testes de homologação e validação técnica",
-    "4. Confirmar conclusão e entrega com o solicitante",
-  ];
+  const title = synthesizeRefinedTitle(rawInput);
+  const description = synthesizeStructuredDescription(rawInput, title, heuristic.category);
+  const validationSteps = synthesizeValidationSteps(rawInput, title);
 
   return {
     refined_title: title,
-    structured_description: rawInput.trim(),
-    validation_steps: defaultValidationSteps,
+    structured_description: description,
+    validation_steps: validationSteps,
     account_type: heuristic.account_type,
     item_type: heuristic.item_type,
     category: heuristic.category,
