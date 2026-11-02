@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   Sparkles,
   Mic,
@@ -44,9 +44,12 @@ import { calculateSlaDueDate } from "@/lib/sla";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTheme } from "@/context/ThemeContext";
+import { getAllCategories } from "@/lib/categories";
 
 interface HeaderCommandBarProps {
   accounts: ConnectedAccount[];
+  tasks?: Task[];
+  availableCategories?: string[];
   onTaskCreated: (task: Task) => void;
   onOpenAccountsModal: () => void;
   onOpenReportModal: () => void;
@@ -55,12 +58,18 @@ interface HeaderCommandBarProps {
 
 export function HeaderCommandBar({
   accounts,
+  tasks = [],
+  availableCategories,
   onTaskCreated,
   onOpenAccountsModal,
   onOpenReportModal,
   onOpenNewTaskModal,
 }: HeaderCommandBarProps) {
   const { theme, toggleTheme } = useTheme();
+  const categoriesList = useMemo(() => {
+    if (availableCategories && availableCategories.length > 0) return availableCategories;
+    return getAllCategories(tasks);
+  }, [availableCategories, tasks]);
   const [input, setInput] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isListening, setIsListening] = useState(false);
@@ -413,8 +422,8 @@ export function HeaderCommandBar({
 
     {/* Floating Confirmation Modal with Backdrop - Rendered outside header to avoid backdrop-filter coordinate containment */}
     {triageData && (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/75 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
-        <div className="relative w-full max-w-2xl my-auto flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all max-h-[85vh]">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
+        <div className="relative w-full max-w-2xl my-auto flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all max-h-[90vh]">
           {/* Header of confirmation - Fixed */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
               <div className="flex items-center gap-2.5">
@@ -647,33 +656,45 @@ export function HeaderCommandBar({
                   </div>
                 </div>
 
-                {/* Category */}
+                {/* Category with complete menu & datalist */}
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                    Categoria:
-                  </label>
-                  <input
-                    list="header-categories-list"
-                    type="text"
-                    value={editCategory}
-                    onChange={(e) => setEditCategory(e.target.value)}
-                    placeholder="Categoria da demanda..."
-                    className="w-full h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
-                  />
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">
+                      Categoria:
+                    </label>
+                    <span className="text-[10px] text-slate-400">
+                      Selecione ou digite livremente
+                    </span>
+                  </div>
+                  <div className="flex gap-1.5">
+                    <input
+                      list="header-categories-list"
+                      type="text"
+                      value={editCategory}
+                      onChange={(e) => setEditCategory(e.target.value)}
+                      placeholder="Ex: Sistemas ERP, RH, Finanças..."
+                      className="flex-1 h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 font-medium"
+                    />
+                    <select
+                      value={categoriesList.includes(editCategory) ? editCategory : ""}
+                      onChange={(e) => {
+                        if (e.target.value) setEditCategory(e.target.value);
+                      }}
+                      className="h-9 px-2 text-xs rounded-xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 focus:outline-none max-w-[135px]"
+                      title="Escolher do menu de todas as categorias"
+                    >
+                      <option value="">Menu...</option>
+                      {categoriesList.map((cat) => (
+                        <option key={cat} value={cat}>
+                          {cat}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <datalist id="header-categories-list">
-                    <option value="BI & Analytics" />
-                    <option value="Sistemas ERP" />
-                    <option value="Gestão & Contratos" />
-                    <option value="Comunicação & Mensagens" />
-                    <option value="Finanças & Tesouraria" />
-                    <option value="Infraestrutura & Redes" />
-                    <option value="Engenharia & Automações" />
-                    <option value="Gestão Educacional" />
-                    <option value="Eventos & Vendas" />
-                    <option value="Estudos & Capacitação" />
-                    <option value="Saúde & Bem-estar" />
-                    <option value="Vida Pessoal & Casa" />
-                    <option value="Suporte & Demandas" />
+                    {categoriesList.map((cat) => (
+                      <option key={cat} value={cat} />
+                    ))}
                   </datalist>
                 </div>
               </div>

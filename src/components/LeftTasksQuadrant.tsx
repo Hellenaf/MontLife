@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Task, TaskStatus, Priority, AccountType, ItemType } from "@/types";
 import { isTaskOverdue } from "@/lib/sla";
+import { getAllCategories } from "@/lib/categories";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -66,15 +67,9 @@ export function LeftTasksQuadrant({
   const [isSyncing, setIsSyncing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  // Extract unique categories dynamically from tasks (managed autonomously by AI)
+  // Extract unique categories dynamically from tasks + standard list
   const dynamicCategories = useMemo(() => {
-    const cats = new Set<string>();
-    for (const t of tasks) {
-      if (t.category && t.category.trim()) {
-        cats.add(t.category.trim());
-      }
-    }
-    return Array.from(cats).sort();
+    return getAllCategories(tasks);
   }, [tasks]);
 
   // Extract popular tags
@@ -483,14 +478,17 @@ export function LeftTasksQuadrant({
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="flex-1 h-7 px-2 rounded-lg bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-[11px] text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500"
+              className="flex-1 h-7 px-2 rounded-lg bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-[11px] text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 font-medium"
             >
               <option value="ALL">Todas as categorias ({dynamicCategories.length})</option>
-              {dynamicCategories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
+              {dynamicCategories.map((cat) => {
+                const count = tasks.filter((t) => t.category === cat).length;
+                return (
+                  <option key={cat} value={cat}>
+                    {cat} {count > 0 ? `(${count})` : ""}
+                  </option>
+                );
+              })}
             </select>
           </div>
         )}

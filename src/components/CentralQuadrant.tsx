@@ -37,6 +37,7 @@ import {
 import { Task, TaskAttachment, ValidationStep, TaskStatus, ItemType, AccountType, Priority } from "@/types";
 import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
 import { calculateSlaDueDate } from "@/lib/sla";
+import { getAllCategories } from "@/lib/categories";
 import {
   getTaskScheduleDate,
   isTaskScheduledForDay,
@@ -118,6 +119,11 @@ export function CentralQuadrant({
   const [tempCategory, setTempCategory] = useState("");
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [newTagInput, setNewTagInput] = useState("");
+
+  // Complete list of categories (standard + dynamic from all tasks)
+  const categoriesList = React.useMemo(() => {
+    return getAllCategories(allTasks);
+  }, [allTasks]);
 
   // Google Calendar View States (Mês | Semana | Dia | Programação)
   const [calendarViewMode, setCalendarViewMode] = useState<"month" | "week" | "day" | "schedule">("month");
@@ -1100,18 +1106,34 @@ export function CentralQuadrant({
 
                       {/* Interactive Editable Category */}
                       {isEditingCategory ? (
-                        <div className="flex items-center gap-1 animate-in fade-in">
+                        <div className="flex items-center gap-1.5 animate-in fade-in">
                           <input
                             list="central-category-datalist"
                             type="text"
                             value={tempCategory}
                             onChange={(e) => setTempCategory(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && handleSaveCategory()}
-                            className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-800 dark:text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500"
+                            className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-800 dark:text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500 w-36"
+                            placeholder="Digitar ou escolher..."
                             autoFocus
                           />
+                          <select
+                            value={categoriesList.includes(tempCategory) ? tempCategory : ""}
+                            onChange={(e) => {
+                              if (e.target.value) setTempCategory(e.target.value);
+                            }}
+                            className="h-7 px-1.5 text-xs rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 focus:outline-none max-w-[125px]"
+                            title="Escolher do menu de categorias"
+                          >
+                            <option value="">Menu...</option>
+                            {categoriesList.map((cat) => (
+                              <option key={cat} value={cat}>
+                                {cat}
+                              </option>
+                            ))}
+                          </select>
                           <datalist id="central-category-datalist">
-                            {CATEGORY_SUGGESTIONS.map((cat) => (
+                            {categoriesList.map((cat) => (
                               <option key={cat} value={cat} />
                             ))}
                           </datalist>

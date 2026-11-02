@@ -159,8 +159,51 @@ export function classifyTaskHeuristic(
 
   // 2. High-precision contextual domains for dynamic categories & tags
   if (
+    text.includes("totvs") ||
+    text.includes(" rm") ||
+    text.includes("patch") ||
+    text.includes("protheus") ||
+    text.includes("erp") ||
+    text.includes("portal do aluno")
+  ) {
+    category = "Sistemas ERP";
+    accountType = "work";
+    tags.push("TOTVS RM", "ERP");
+    if (text.includes("patch")) tags.push("Patch");
+    if (text.includes("portal")) tags.push("Portal");
+    if (/\brh\b/.test(text) || text.includes("funcionário") || text.includes("funcionario")) tags.push("RH", "Funcionários");
+    if (text.includes("cpf")) tags.push("CPF");
+    if (text.includes("biblioteca")) tags.push("Biblioteca");
+  } else if (
+    /\brh\b/.test(text) ||
+    text.includes("recursos humanos") ||
+    text.includes("departamento pessoal") ||
+    /\bdp\b/.test(text) ||
+    text.includes("admissão") ||
+    text.includes("admissao") ||
+    text.includes("demissão") ||
+    text.includes("demissao") ||
+    text.includes("folha de pagamento") ||
+    text.includes("colaborador") ||
+    text.includes("funcionário") ||
+    text.includes("funcionario")
+  ) {
+    category = "Recursos Humanos & DP";
+    accountType = "work";
+    tags.push("RH", "Gestão de Pessoas");
+    if (text.includes("cpf")) tags.push("CPF");
+  } else if (
+    text.includes("biblioteca") ||
+    text.includes("acervo") ||
+    text.includes("pergamum") ||
+    text.includes("empréstimo de livro")
+  ) {
+    category = "Biblioteca & Acervo";
+    accountType = "work";
+    tags.push("Biblioteca", "Acervo");
+  } else if (
     text.includes("power bi") ||
-    text.includes("bi") ||
+    /\bbi\b/.test(text) ||
     text.includes("dashboard") ||
     text.includes("relatório") ||
     text.includes("relatorio") ||
@@ -174,32 +217,24 @@ export function classifyTaskHeuristic(
     if (text.includes("tesouraria")) tags.push("Tesouraria");
     if (text.includes("bolsa")) tags.push("Bolsas");
   } else if (
-    text.includes("totvs") ||
-    text.includes(" rm") ||
-    text.includes("patch") ||
-    text.includes("protheus") ||
-    text.includes("erp") ||
-    text.includes("portal do aluno")
-  ) {
-    category = "Sistemas ERP";
-    accountType = "work";
-    tags.push("TOTVS RM", "ERP");
-    if (text.includes("patch")) tags.push("Patch");
-    if (text.includes("portal")) tags.push("Portal");
-    if (/\brh\b/.test(text) || text.includes("funcionário") || text.includes("funcionario")) tags.push("RH");
-    if (text.includes("cpf")) tags.push("CPF");
-    if (text.includes("biblioteca")) tags.push("Biblioteca");
-  } else if (
     text.includes("contrato") ||
-    text.includes("matrícula") ||
-    text.includes("matricula") ||
     text.includes("aditivo") ||
     text.includes("jurídic")
   ) {
     category = "Gestão & Contratos";
     accountType = "work";
     tags.push("Contratos", "Documentação");
-    if (text.includes("matrícula") || text.includes("matricula")) tags.push("Matrícula");
+  } else if (
+    text.includes("secretaria") ||
+    text.includes("matrícula") ||
+    text.includes("matricula") ||
+    text.includes("histórico escolar") ||
+    text.includes("declaracao escolar") ||
+    text.includes("declaração escolar")
+  ) {
+    category = "Secretaria Acadêmica";
+    accountType = "work";
+    tags.push("Secretaria", "Matrícula");
   } else if (
     text.includes("classapp") ||
     text.includes("agendaedu") ||

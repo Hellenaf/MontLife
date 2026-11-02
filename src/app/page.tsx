@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { HeaderCommandBar } from "@/components/HeaderCommandBar";
 import { LeftTasksQuadrant } from "@/components/LeftTasksQuadrant";
 import { CentralQuadrant } from "@/components/CentralQuadrant";
@@ -12,6 +12,7 @@ import { AccountsModal } from "@/components/modals/AccountsModal";
 import { NewTaskModal } from "@/components/modals/NewTaskModal";
 import { ClassifyAccountModal } from "@/components/modals/ClassifyAccountModal";
 import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
+import { getAllCategories } from "@/lib/categories";
 import { ExternalLink } from "lucide-react";
 
 export default function MontOpsDashboard() {
@@ -284,12 +285,15 @@ export default function MontOpsDashboard() {
   };
 
   const hasConnectedAccount = accounts.some((a) => a.is_connected);
+  const allCategories = useMemo(() => getAllCategories(tasks), [tasks]);
 
   return (
     <div className="w-screen h-screen overflow-hidden flex flex-col bg-slate-50 dark:bg-[#090A0F] text-slate-800 dark:text-slate-100 transition-colors duration-200">
       {/* 1. Header Fixo & Barra de Comando IA */}
       <HeaderCommandBar
         accounts={accounts}
+        tasks={tasks}
+        availableCategories={allCategories}
         onTaskCreated={handleTaskCreated}
         onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
         onOpenReportModal={() => setIsReportModalOpen(true)}
@@ -427,6 +431,7 @@ export default function MontOpsDashboard() {
           setIsNewTaskModalOpen(false);
         }}
         initialText={newTaskInitialText}
+        availableCategories={allCategories}
       />
 
       <ClassifyAccountModal

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import {
   X,
   ListTodo,
@@ -36,6 +36,7 @@ import {
 import { calculateSlaDueDate } from "@/lib/sla";
 import { format } from "date-fns";
 import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
+import { getAllCategories } from "@/lib/categories";
 
 interface NewTaskModalProps {
   isOpen: boolean;
@@ -43,23 +44,8 @@ interface NewTaskModalProps {
   onTaskCreated: (task: Task) => void;
   initialText?: string;
   initialType?: ItemType;
+  availableCategories?: string[];
 }
-
-const DEFAULT_CATEGORIES: string[] = [
-  "BI & Analytics",
-  "Sistemas ERP",
-  "Gestão & Contratos",
-  "Comunicação & Mensagens",
-  "Finanças & Tesouraria",
-  "Infraestrutura & Redes",
-  "Engenharia & Automações",
-  "Gestão Educacional",
-  "Eventos & Vendas",
-  "Estudos & Capacitação",
-  "Saúde & Bem-estar",
-  "Vida Pessoal & Casa",
-  "Suporte & Demandas",
-];
 
 export function NewTaskModal({
   isOpen,
@@ -67,7 +53,12 @@ export function NewTaskModal({
   onTaskCreated,
   initialText = "",
   initialType = "task",
+  availableCategories,
 }: NewTaskModalProps) {
+  const categoriesList = useMemo(() => {
+    if (availableCategories && availableCategories.length > 0) return availableCategories;
+    return getAllCategories();
+  }, [availableCategories]);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [itemType, setItemType] = useState<ItemType>(initialType);
@@ -314,8 +305,8 @@ export function NewTaskModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-2xl max-h-[90vh] flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
+      <div className="relative w-full max-w-2xl my-auto max-h-[90vh] flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
         {/* Header - Fixed */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
           <div className="flex items-center gap-2.5">
@@ -583,19 +574,41 @@ export function NewTaskModal({
             </div>
 
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
-                Categoria (livre ou IA):
-              </label>
-              <input
-                list="categories-list"
-                type="text"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Ex: BI & Analytics, Finanças, ERP..."
-                className="w-full h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
-              />
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
+                  Categoria (livre ou menu):
+                </label>
+                <span className="text-[10px] text-slate-400">
+                  Selecione ou digite livremente
+                </span>
+              </div>
+              <div className="flex gap-1.5">
+                <input
+                  list="categories-list"
+                  type="text"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="Ex: Sistemas ERP, RH, Finanças..."
+                  className="flex-1 h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-medium"
+                />
+                <select
+                  value={categoriesList.includes(category) ? category : ""}
+                  onChange={(e) => {
+                    if (e.target.value) setCategory(e.target.value);
+                  }}
+                  className="h-9 px-2 text-xs rounded-xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 focus:outline-none max-w-[135px]"
+                  title="Escolher do menu de todas as categorias"
+                >
+                  <option value="">Menu...</option>
+                  {categoriesList.map((cat) => (
+                    <option key={cat} value={cat}>
+                      {cat}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <datalist id="categories-list">
-                {DEFAULT_CATEGORIES.map((cat) => (
+                {categoriesList.map((cat) => (
                   <option key={cat} value={cat} />
                 ))}
               </datalist>
