@@ -13,6 +13,7 @@ import { AccountsModal } from "@/components/modals/AccountsModal";
 import { NewTaskModal } from "@/components/modals/NewTaskModal";
 import { ClassifyAccountModal } from "@/components/modals/ClassifyAccountModal";
 import { WikiModal } from "@/components/modals/WikiModal";
+import { AgendaDoDiaView } from "@/components/AgendaDoDiaView";
 import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
 import { getAllCategories } from "@/lib/categories";
 import { ExternalLink } from "lucide-react";
@@ -21,9 +22,9 @@ export default function MontOpsDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
-  const [activeNav, setActiveNav] = useState("inicio");
+  const [activeNav, setActiveNav] = useState("tarefas");
   const [accountFilter, setAccountFilter] = useState<"all" | AccountType>("all");
-  const [centralActiveTab, setCentralActiveTab] = useState<"details" | "timeline" | "study">("details");
+  const [centralActiveTab, setCentralActiveTab] = useState<"details" | "study">("details");
 
   // Dynamically derive selected task from tasks array
   const selectedTask =
@@ -306,9 +307,7 @@ export default function MontOpsDashboard() {
             if (nav === "wiki") setIsWikiModalOpen(true);
             if (nav === "relatorios") setIsReportModalOpen(true);
             if (nav === "config") setIsAccountsModalOpen(true);
-            if (nav === "agenda") {
-              setCentralActiveTab("timeline");
-            } else if (nav === "inicio" || nav === "tarefas") {
+            if (nav === "tarefas" || nav === "inicio") {
               setCentralActiveTab("details");
             }
           }}
@@ -371,62 +370,80 @@ export default function MontOpsDashboard() {
           </div>
         )}
 
-        {/* 3 Columns Grid */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Quadrante Esquerdo: Minhas Tarefas */}
-          <LeftTasksQuadrant
-            tasks={tasks}
-            selectedTaskId={selectedTask?.id || null}
-            onSelectTask={(task) => {
-              setSelectedTaskId(task.id);
-              setCentralActiveTab("details");
-            }}
-            onUpdateStatus={handleUpdateStatus}
-            onRequestResolution={(task) => {
-              setTaskForResolution(task);
-              setIsResolutionModalOpen(true);
-            }}
-            onRequestExtendDeadline={(task) => {
-              setTaskForExtend(task);
-              setIsExtendModalOpen(true);
-            }}
-            onDeleteTask={handleDeleteTask}
-            onRequestNewTask={() => {
-              setNewTaskInitialText("");
-              setIsNewTaskModalOpen(true);
-            }}
-            onRefreshTasks={loadTasks}
-            accountFilter={accountFilter}
-            onAccountFilterChange={setAccountFilter}
-          />
+        {/* Main Content: Dedicated Agenda do Dia View OR 3 Columns Demand Grid */}
+        {activeNav === "agenda" ? (
+          <main className="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+            <AgendaDoDiaView
+              tasks={tasks}
+              selectedTaskId={selectedTaskId}
+              onSelectTask={(task) => {
+                setSelectedTaskId(task.id);
+                setActiveNav("tarefas");
+                setCentralActiveTab("details");
+              }}
+              onOpenNewTaskModal={() => {
+                setNewTaskInitialText("");
+                setIsNewTaskModalOpen(true);
+              }}
+            />
+          </main>
+        ) : (
+          <div className="flex-1 flex overflow-hidden">
+            {/* Quadrante Esquerdo: Minhas Tarefas */}
+            <LeftTasksQuadrant
+              tasks={tasks}
+              selectedTaskId={selectedTask?.id || null}
+              onSelectTask={(task) => {
+                setSelectedTaskId(task.id);
+                setCentralActiveTab("details");
+              }}
+              onUpdateStatus={handleUpdateStatus}
+              onRequestResolution={(task) => {
+                setTaskForResolution(task);
+                setIsResolutionModalOpen(true);
+              }}
+              onRequestExtendDeadline={(task) => {
+                setTaskForExtend(task);
+                setIsExtendModalOpen(true);
+              }}
+              onDeleteTask={handleDeleteTask}
+              onRequestNewTask={() => {
+                setNewTaskInitialText("");
+                setIsNewTaskModalOpen(true);
+              }}
+              onRefreshTasks={loadTasks}
+              accountFilter={accountFilter}
+              onAccountFilterChange={setAccountFilter}
+            />
 
-          {/* Quadrante Central: Detalhes da Demanda (ABOVE) & Agenda do Dia (BELOW) */}
-          <CentralQuadrant
-            selectedTask={selectedTask}
-            allTasks={tasks}
-            onRequestResolution={(task) => {
-              setTaskForResolution(task);
-              setIsResolutionModalOpen(true);
-            }}
-            onRequestExtendDeadline={(task) => {
-              setTaskForExtend(task);
-              setIsExtendModalOpen(true);
-            }}
-            onUpdateStatus={handleUpdateStatus}
-            onUpdateItemType={handleUpdateItemType}
-            onUpdateTaskFields={handleUpdateTaskFields}
-            onSelectTask={(task) => setSelectedTaskId(task.id)}
-            onOpenNewTaskModal={() => setIsNewTaskModalOpen(true)}
-            activeTab={centralActiveTab}
-            onTabChange={setCentralActiveTab}
-          />
+            {/* Quadrante Central: Detalhes da Demanda (sem duplicação de agenda) */}
+            <CentralQuadrant
+              selectedTask={selectedTask}
+              allTasks={tasks}
+              onRequestResolution={(task) => {
+                setTaskForResolution(task);
+                setIsResolutionModalOpen(true);
+              }}
+              onRequestExtendDeadline={(task) => {
+                setTaskForExtend(task);
+                setIsExtendModalOpen(true);
+              }}
+              onUpdateStatus={handleUpdateStatus}
+              onUpdateItemType={handleUpdateItemType}
+              onUpdateTaskFields={handleUpdateTaskFields}
+              onSelectTask={(task) => setSelectedTaskId(task.id)}
+              onOpenNewTaskModal={() => setIsNewTaskModalOpen(true)}
+              activeTab={centralActiveTab}
+              onTabChange={setCentralActiveTab}
+            />
 
-          {/* Quadrante Direito: Métricas & Desempenho + Resumo Anual */}
-          <RightKpiQuadrant
-            tasks={tasks}
-            onOpenReportModal={() => setIsReportModalOpen(true)}
-          />
-        </div>
+            {/* Quadrante Direito: Métricas & Desempenho + Resumo Anual */}
+            <RightKpiQuadrant
+              tasks={tasks}
+              onOpenReportModal={() => setIsReportModalOpen(true)}
+            />
+          </div>
+        )}
       </div>
 
       {/* Modais do Sistema */}
@@ -460,13 +477,13 @@ export default function MontOpsDashboard() {
         isOpen={isWikiModalOpen}
         onClose={() => {
           setIsWikiModalOpen(false);
-          setActiveNav("inicio");
+          setActiveNav("tarefas");
         }}
         tasks={tasks}
         onSelectTask={(task) => {
           setSelectedTaskId(task.id);
           setIsWikiModalOpen(false);
-          setActiveNav("inicio");
+          setActiveNav("tarefas");
         }}
       />
 

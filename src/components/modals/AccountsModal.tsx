@@ -13,6 +13,7 @@ import {
   Sparkles,
   PlusCircle,
   Smartphone,
+  CheckSquare,
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
@@ -87,15 +88,15 @@ export function AccountsModal({
       const data = await res.json();
       if (data.success) {
         setSyncFeedback(
-          `Lembretes Samsung sincronizados! ${data.imported_count || 0} itens importados.`
+          `Tarefas e lembretes do Microsoft To Do sincronizados! ${data.imported_count || 0} itens importados.`
         );
         await onRefreshAccounts();
       } else {
-        setSyncFeedback(data.error || "Erro ao sincronizar Samsung Reminder.");
+        setSyncFeedback(data.error || "Erro ao sincronizar Microsoft To Do.");
       }
     } catch (err) {
       console.error(err);
-      setSyncFeedback("Falha de conexão com a API do Samsung Reminder.");
+      setSyncFeedback("Falha de conexão com a API do Microsoft To Do.");
     } finally {
       setIsSyncingSamsung(false);
     }
@@ -104,7 +105,7 @@ export function AccountsModal({
   const handleDisconnect = async (type: string) => {
     let label = "Pessoal";
     if (type === "work") label = "de Trabalho";
-    if (type === "samsung" || type === "microsoft") label = "Samsung Reminder";
+    if (type === "samsung" || type === "microsoft") label = "Microsoft To Do";
 
     if (!confirm(`Deseja realmente desconectar a conta ${label}?`)) {
       return;
@@ -144,7 +145,7 @@ export function AccountsModal({
                 Contas Conectadas & Sincronização
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Google Tasks, Google Agenda e Samsung Reminder.
+                Google Tasks, Google Agenda e Microsoft To Do.
               </p>
             </div>
           </div>
@@ -342,26 +343,26 @@ export function AccountsModal({
             </div>
           </div>
 
-          {/* Samsung Reminder Card */}
+          {/* Microsoft To Do Card (com suporte a Samsung Reminder) */}
           <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800">
-                  <Smartphone className="w-4 h-4" />
+                  <CheckSquare className="w-4 h-4" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                      Samsung Reminder (Galaxy)
+                      Microsoft To Do
                     </h4>
                     <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
-                      via Microsoft To Do
+                      M365 & Samsung
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[220px]">
+                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[260px]">
                     {samsungAccount?.is_connected && samsungAccount.email
                       ? samsungAccount.email
-                      : "Lembretes do smartphone Samsung Galaxy"}
+                      : "Tarefas do Microsoft To Do, Outlook e Galaxy"}
                   </p>
                 </div>
               </div>
@@ -392,7 +393,7 @@ export function AccountsModal({
                 onClick={() => setShowSamsungGuide((prev) => !prev)}
                 className="w-full flex items-center justify-between text-[11px] font-semibold text-sky-700 dark:text-sky-400"
               >
-                <span>Como sincronizar os lembretes do seu Galaxy</span>
+                <span>Como sincronizar suas tarefas com o Microsoft To Do e celulares Galaxy</span>
                 {showSamsungGuide ? (
                   <ChevronUp className="w-3.5 h-3.5" />
                 ) : (
@@ -403,16 +404,13 @@ export function AccountsModal({
               {showSamsungGuide && (
                 <div className="mt-2 space-y-1.5 text-[11px] text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-zinc-800/80 pt-2">
                   <p>
-                    1. No seu celular Samsung, abra o app <strong>Lembretes</strong> (Samsung Reminder).
+                    1. Clique no botão abaixo para conectar sua conta <strong>Microsoft</strong> (Outlook, Hotmail ou corporativa) ao MontLife.
                   </p>
                   <p>
-                    2. Toque no ícone de opções (3 pontinhos ou menu) &gt; ⚙️ <strong>Configurações</strong>.
+                    2. Suas listas e tarefas do <strong>Microsoft To Do</strong> serão sincronizadas em tempo real.
                   </p>
                   <p>
-                    3. Ative a opção <strong>Sincronizar com o Microsoft To Do</strong> e faça login com a sua conta Microsoft.
-                  </p>
-                  <p>
-                    4. Clique no botão abaixo para vincular sua conta Microsoft ao MontLife e trazer todos os seus lembretes automaticamente.
+                    3. <strong>Samsung Galaxy:</strong> No celular, abra o app <strong>Lembretes</strong> &gt; ⚙️ Configurações &gt; ative <em>&quot;Sincronizar com o Microsoft To Do&quot;</em> para que os lembretes do smartphone venham automaticamente para cá!
                   </p>
                 </div>
               )}
@@ -440,7 +438,7 @@ export function AccountsModal({
                   <button
                     onClick={() => handleDisconnect("samsung")}
                     className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-                    title="Desconectar Samsung Reminder"
+                    title="Desconectar Microsoft To Do"
                   >
                     <LogOut className="w-3.5 h-3.5" />
                   </button>
@@ -451,7 +449,7 @@ export function AccountsModal({
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95"
                 >
                   <PlusCircle className="w-3.5 h-3.5" />
-                  Vincular Samsung
+                  Vincular Microsoft To Do
                 </a>
               )}
             </div>

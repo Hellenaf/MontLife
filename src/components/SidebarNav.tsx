@@ -93,31 +93,12 @@ export function SidebarNav({
             Navegação Principal
           </div>
 
-          {/* Início */}
-          <button
-            type="button"
-            onClick={() => onSelectNav("inicio")}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-              activeNav === "inicio"
-                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 font-bold"
-                : "text-slate-400 hover:text-white hover:bg-white/5"
-            }`}
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <Home className="w-4 h-4 text-purple-400" />
-              <span className="truncate">Início</span>
-            </div>
-            <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-slate-300">
-              {totalTasks}
-            </span>
-          </button>
-
-          {/* Minhas Demandas */}
+          {/* Minhas Demandas (Opção Principal) */}
           <button
             type="button"
             onClick={() => onSelectNav("tarefas")}
-            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-              activeNav === "tarefas"
+            className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+              activeNav === "tarefas" || activeNav === "inicio"
                 ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 font-bold"
                 : "text-slate-400 hover:text-white hover:bg-white/5"
             }`}
@@ -126,11 +107,17 @@ export function SidebarNav({
               <CheckSquare className="w-4 h-4 text-blue-400" />
               <span className="truncate">Minhas Demandas</span>
             </div>
-            {pendingTasks > 0 && (
-              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/30 text-indigo-300 border border-indigo-500/40">
-                {pendingTasks}
-              </span>
-            )}
+            <div className="flex items-center gap-1.5 shrink-0">
+              {pendingTasks > 0 ? (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-500/40 text-indigo-200 border border-indigo-500/50">
+                  {pendingTasks} abertas
+                </span>
+              ) : (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-white/10 text-slate-300">
+                  {totalTasks}
+                </span>
+              )}
+            </div>
           </button>
 
           {/* Google Agenda */}
