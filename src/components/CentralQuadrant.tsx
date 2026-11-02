@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
+  Calendar,
   Calendar as CalendarIcon,
   FileText,
   Youtube,
@@ -45,6 +46,7 @@ import { CategoryCombobox } from "@/components/CategoryCombobox";
 import {
   getTaskScheduleDate,
   isTaskScheduledForDay,
+  isTaskAllDay,
   isTaskAllDay as checkTaskIsAllDay,
 } from "@/lib/taskSchedule";
 import {
@@ -149,7 +151,7 @@ export function CentralQuadrant({
   }, [allTasks]);
 
   // Google Calendar View States (Mês | Semana | Dia | Programação)
-  const [calendarViewMode, setCalendarViewMode] = useState<"month" | "week" | "day" | "schedule">("month");
+  const [calendarViewMode, setCalendarViewMode] = useState<"week" | "month">("week");
   const [calendarDate, setCalendarDate] = useState<Date>(new Date());
   const [calendarSourceFilter, setCalendarSourceFilter] = useState<"all" | "work" | "personal" | "agenda" | "samsung">("all");
   const [previewTask, setPreviewTask] = useState<Task | null>(null);
@@ -211,14 +213,12 @@ export function CentralQuadrant({
 
   // Navigation handlers (Google Calendar style)
   const handlePrev = () => {
-    if (calendarViewMode === "day") setCalendarDate((d) => subDays(d, 1));
-    else if (calendarViewMode === "week") setCalendarDate((d) => subWeeks(d, 1));
+    if (calendarViewMode === "week") setCalendarDate((d) => subWeeks(d, 1));
     else setCalendarDate((d) => subMonths(d, 1));
   };
 
   const handleNext = () => {
-    if (calendarViewMode === "day") setCalendarDate((d) => addDays(d, 1));
-    else if (calendarViewMode === "week") setCalendarDate((d) => addWeeks(d, 1));
+    if (calendarViewMode === "week") setCalendarDate((d) => addWeeks(d, 1));
     else setCalendarDate((d) => addMonths(d, 1));
   };
 
@@ -468,7 +468,7 @@ export function CentralQuadrant({
             }`}
           >
             <CalendarIcon className="w-3.5 h-3.5" />
-            Google Agenda & Tarefas
+            Agenda do Dia
           </button>
 
           <button
@@ -499,43 +499,38 @@ export function CentralQuadrant({
 
       {/* Main Tab Content */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-5">
-        {/* TAB 1: GOOGLE CALENDAR EXPERIENCE */}
+        {/* TAB 1: AGENDA DO DIA (MODO SEMANAL & MENSAL) */}
         {activeTab === "timeline" && (
-          <div className="max-w-7xl mx-auto space-y-3">
-            {/* GOOGLE CALENDAR TOOLBAR */}
+          <div className="max-w-7xl mx-auto space-y-4">
+            {/* AGENDA TOOLBAR */}
             <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
-              {/* Left Side: + Criar button + Hoje + Chevrons + Date Title */}
+              {/* Left Side: + Nova Demanda + Hoje + Chevrons + Date Title */}
               <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                 {onOpenNewTaskModal && (
                   <button
                     type="button"
                     onClick={onOpenNewTaskModal}
-                    className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white dark:bg-[#1a1b26] hover:bg-slate-50 dark:hover:bg-zinc-800 text-slate-800 dark:text-slate-100 border border-slate-300 dark:border-zinc-700 shadow-sm hover:shadow text-xs font-medium transition-all active:scale-95"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-sm active:scale-95"
                   >
-                    <svg className="w-4 h-4" viewBox="0 0 36 36">
-                      <path fill="#4285F4" d="M16 16v14h4V16h14v-4H20V-2h-4v14H2v4z" />
-                      <path fill="#34A853" d="M30 16H20l-4-4h14z" />
-                      <path fill="#FBBC05" d="M20 16v14l-4-4V16z" />
-                      <path fill="#EA4335" d="M20 16H6l4-4h10z" />
-                    </svg>
-                    <span>Criar</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Nova Demanda</span>
                   </button>
                 )}
 
                 <button
                   type="button"
                   onClick={handleToday}
-                  className="px-3.5 py-1.5 rounded-full border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-medium transition-colors shadow-2xs active:scale-95"
+                  className="px-3 py-1.5 rounded-xl border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors shadow-2xs active:scale-95"
                 >
                   Hoje
                 </button>
 
-                <div className="flex items-center">
+                <div className="flex items-center gap-0.5">
                   <button
                     type="button"
                     onClick={handlePrev}
                     aria-label="Anterior"
-                    className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
@@ -543,607 +538,408 @@ export function CentralQuadrant({
                     type="button"
                     onClick={handleNext}
                     aria-label="Próximo"
-                    className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors"
+                    className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
 
-                <h2 className="text-base sm:text-lg font-medium text-slate-900 dark:text-white capitalize">
-                  {calendarViewMode === "month" &&
-                    format(calendarDate, "MMMM 'de' yyyy", { locale: ptBR })}
-                  {calendarViewMode === "week" &&
-                    `${format(weekStart, "d 'de' MMM", { locale: ptBR })} – ${format(
-                      weekEnd,
-                      "d 'de' MMM 'de' yyyy",
-                      { locale: ptBR }
-                    )}`}
-                  {calendarViewMode === "day" &&
-                    format(calendarDate, "EEEE, d 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                  {calendarViewMode === "schedule" &&
-                    format(calendarDate, "MMMM 'de' yyyy", { locale: ptBR })}
-                </h2>
+                <div>
+                  <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white capitalize leading-tight">
+                    {calendarViewMode === "week"
+                      ? format(calendarDate, "EEEE, d 'de' MMMM", { locale: ptBR })
+                      : format(calendarDate, "MMMM 'de' yyyy", { locale: ptBR })}
+                  </h2>
+                  <p className="text-[11px] text-slate-400 capitalize">
+                    {calendarViewMode === "week"
+                      ? `Semana de ${format(weekStart, "d 'de' MMM", { locale: ptBR })} a ${format(weekEnd, "d 'de' MMM yyyy", { locale: ptBR })}`
+                      : `${monthGridDays.filter((d) => isSameMonth(d, calendarDate)).length} dias no mês`}
+                  </p>
+                </div>
               </div>
 
-              {/* Right Side: Calendar Filters + View Selector */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {/* Source Filter Pills */}
+              {/* Right Side: Account Filter & 2 Modes Switcher */}
+              <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                {/* Account Filter */}
                 <div className="flex items-center bg-slate-100 dark:bg-[#1a1b26] p-1 rounded-xl border border-slate-200 dark:border-zinc-800 text-[11px]">
                   <button
                     type="button"
                     onClick={() => setCalendarSourceFilter("all")}
-                    className={`px-2 py-0.5 rounded-lg font-medium transition-all ${
+                    className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
                       calendarSourceFilter === "all"
                         ? "bg-white dark:bg-[#202230] text-slate-900 dark:text-white shadow-xs font-semibold"
                         : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    Todas
+                    Todos
                   </button>
                   <button
                     type="button"
                     onClick={() => setCalendarSourceFilter("work")}
-                    className={`px-2 py-0.5 rounded-lg font-medium transition-all flex items-center gap-1 ${
+                    className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
                       calendarSourceFilter === "work"
-                        ? "bg-[#1a73e8] text-white shadow-xs font-semibold"
+                        ? "bg-blue-600 text-white shadow-xs font-semibold"
                         : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    <span className="w-2 h-2 rounded-full bg-[#1a73e8] inline-block" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-300 inline-block" />
                     Trabalho
                   </button>
                   <button
                     type="button"
                     onClick={() => setCalendarSourceFilter("personal")}
-                    className={`px-2 py-0.5 rounded-lg font-medium transition-all flex items-center gap-1 ${
+                    className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 ${
                       calendarSourceFilter === "personal"
-                        ? "bg-[#8e24aa] text-white shadow-xs font-semibold"
+                        ? "bg-purple-600 text-white shadow-xs font-semibold"
                         : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    <span className="w-2 h-2 rounded-full bg-[#8e24aa] inline-block" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-300 inline-block" />
                     Pessoal
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCalendarSourceFilter("agenda")}
-                    className={`px-2 py-0.5 rounded-lg font-medium transition-all flex items-center gap-1 ${
-                      calendarSourceFilter === "agenda"
-                        ? "bg-[#0b8043] text-white shadow-xs font-semibold"
-                        : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-[#0b8043] inline-block" />
-                    Google Agenda
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCalendarSourceFilter("samsung")}
-                    className={`px-2 py-0.5 rounded-lg font-medium transition-all flex items-center gap-1 ${
-                      calendarSourceFilter === "samsung"
-                        ? "bg-[#e37400] text-white shadow-xs font-semibold"
-                        : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    <span className="w-2 h-2 rounded-full bg-[#e37400] inline-block" />
-                    Samsung
                   </button>
                 </div>
 
-                {/* Google Calendar Mode Switcher */}
+                {/* View Mode Switcher (Semana / Dia vs Mês) */}
                 <div className="flex items-center rounded-xl border border-slate-300 dark:border-zinc-700 bg-white dark:bg-[#181926] p-0.5 shadow-2xs text-xs">
                   <button
                     type="button"
-                    onClick={() => setCalendarViewMode("day")}
-                    className={`px-3 py-1 rounded-lg transition-all ${
-                      calendarViewMode === "day"
-                        ? "bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold shadow-2xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    Dia
-                  </button>
-                  <button
-                    type="button"
                     onClick={() => setCalendarViewMode("week")}
-                    className={`px-3 py-1 rounded-lg transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all ${
                       calendarViewMode === "week"
-                        ? "bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold shadow-2xs"
+                        ? "bg-indigo-600 text-white font-bold shadow-xs"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    Semana
+                    <Calendar className="w-3.5 h-3.5" />
+                    <span>Semana / Dia</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setCalendarViewMode("month")}
-                    className={`px-3 py-1 rounded-lg transition-all ${
+                    className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all ${
                       calendarViewMode === "month"
-                        ? "bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold shadow-2xs"
+                        ? "bg-indigo-600 text-white font-bold shadow-xs"
                         : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
-                    Mês
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCalendarViewMode("schedule")}
-                    className={`px-3 py-1 rounded-lg transition-all ${
-                      calendarViewMode === "schedule"
-                        ? "bg-slate-100 dark:bg-zinc-800 text-slate-900 dark:text-white font-bold shadow-2xs"
-                        : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                    }`}
-                  >
-                    Programação
+                    <CalendarIcon className="w-3.5 h-3.5" />
+                    <span>Mês</span>
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* 1. GOOGLE CALENDAR: MÊS (MONTH VIEW) */}
-            {calendarViewMode === "month" && (
-              <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm overflow-hidden flex flex-col animate-in fade-in">
-                {/* 7 Days of Week Header */}
-                <div className="grid grid-cols-7 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#151622] text-center">
-                  {["DOM.", "SEG.", "TER.", "QUA.", "QUI.", "SEX.", "SÁB."].map((wd) => (
-                    <div
-                      key={wd}
-                      className="py-2.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-wider"
-                    >
-                      {wd}
-                    </div>
-                  ))}
+            {/* MODO 1: SEMANA / DIA (O VISUAL DA AGENDA DO DIA QUE O USUÁRIO PREFERE) */}
+            {calendarViewMode === "week" && (
+              <div className="space-y-4 animate-in fade-in">
+                {/* Horizontal Week Strip (7 dias da semana: Seg -> Dom) */}
+                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm">
+                  <div className="flex items-center justify-between gap-1.5 overflow-x-auto pb-1">
+                    {weekDays.map((day) => {
+                      const isSelected = isSameDay(day, calendarDate);
+                      const isDayToday = isToday(day);
+                      const hasTasks = calendarTasks.some((t) => isTaskScheduledForDay(t, day));
+                      const tasksCount = calendarTasks.filter((t) => isTaskScheduledForDay(t, day)).length;
+
+                      return (
+                        <button
+                          key={day.toISOString()}
+                          type="button"
+                          onClick={() => setCalendarDate(day)}
+                          className={`flex-1 min-w-[52px] py-2.5 px-1.5 rounded-xl flex flex-col items-center justify-center transition-all ${
+                            isSelected
+                              ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold scale-[1.02]"
+                              : isDayToday
+                              ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60"
+                              : "bg-slate-50 dark:bg-[#0c0d13] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800/80"
+                          }`}
+                        >
+                          <span className="text-[10px] uppercase tracking-wider opacity-80 mb-0.5">
+                            {format(day, "EEE", { locale: ptBR })}
+                          </span>
+                          <span className="text-sm font-black leading-tight">
+                            {format(day, "d")}
+                          </span>
+                          <div className="h-2 flex items-center justify-center mt-1">
+                            {hasTasks ? (
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  isSelected ? "bg-white" : "bg-indigo-500"
+                                }`}
+                                title={`${tasksCount} demanda(s)`}
+                              />
+                            ) : null}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
 
-                {/* Month Grid */}
-                <div className="grid grid-cols-7 auto-rows-fr">
-                  {monthGridDays.map((day, idx) => {
-                    const tasksForDay = getTasksForDay(day);
-                    const isDayInCurrentMonth = isSameMonth(day, calendarDate);
-                    const isDayToday = isToday(day);
+                {/* Daily Scheduled Tasks List for Selected Day */}
+                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                        <CalendarIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-slate-900 dark:text-white capitalize">
+                          {format(calendarDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                        </h3>
+                        <p className="text-[11px] text-slate-400">
+                          {tasksForSelectedDay.length === 1
+                            ? "1 demanda agendada"
+                            : `${tasksForSelectedDay.length} demandas agendadas`}
+                        </p>
+                      </div>
+                    </div>
 
-                    return (
-                      <div
-                        key={day.toISOString()}
-                        className={`min-h-[115px] sm:min-h-[125px] p-1.5 border-r border-b border-slate-100 dark:border-zinc-800/70 flex flex-col justify-start transition-colors relative group ${
-                          !isDayInCurrentMonth
-                            ? "bg-slate-50/40 dark:bg-zinc-950/20 text-slate-400"
-                            : "bg-white dark:bg-[#12131A] hover:bg-slate-50/60 dark:hover:bg-[#171824]"
-                        }`}
-                      >
-                        {/* Day Number Header */}
-                        <div className="flex items-center justify-center pb-1">
+                    <button
+                      type="button"
+                      onClick={() => setCalendarViewMode("month")}
+                      className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
+                    >
+                      <span>Ver no modo Mês</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-2 pt-1 max-h-[460px] overflow-y-auto custom-scrollbar">
+                    {tasksForSelectedDay.length === 0 ? (
+                      <div className="py-12 text-center text-slate-400 dark:text-slate-500 space-y-2">
+                        <Clock className="w-8 h-8 mx-auto opacity-40 text-indigo-400" />
+                        <p className="text-xs font-medium">
+                          Nenhuma tarefa ou compromisso agendado para este dia.
+                        </p>
+                        {onOpenNewTaskModal && (
                           <button
                             type="button"
+                            onClick={onOpenNewTaskModal}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            Agendar Demanda
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      tasksForSelectedDay.map((task) => {
+                        const isAllDay = isTaskAllDay(task);
+                        const timeText = isAllDay
+                          ? "Dia inteiro"
+                          : format(parseISO(getTaskScheduleDate(task)), "HH:mm");
+                        const isCurrentSelected = selectedTask?.id === task.id;
+
+                        return (
+                          <div
+                            key={task.id}
                             onClick={() => {
-                              setCalendarDate(day);
-                              setCalendarViewMode("day");
+                              onSelectTask?.(task);
+                              setActiveTab("details");
                             }}
-                            className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition-transform hover:scale-110 ${
-                              isDayToday
-                                ? "bg-[#1a73e8] text-white font-bold shadow-xs"
-                                : isDayInCurrentMonth
-                                ? "text-slate-700 dark:text-slate-300 font-medium"
-                                : "text-slate-300 dark:text-zinc-600 font-normal"
+                            className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                              isCurrentSelected
+                                ? "ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-[#141520] bg-indigo-50/40 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-700"
+                                : "bg-slate-50/70 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-xs"
                             }`}
                           >
-                            {format(day, "d")}
-                          </button>
-                        </div>
-
-                        {/* Event Chips (Exact Google Calendar Pill Style) */}
-                        <div className="space-y-1 overflow-hidden flex-1">
-                          {tasksForDay.slice(0, 3).map((task) => {
-                            const colors = getGoogleCalendarColor(task);
-                            const isAllDay = isAllDayTask(task);
-                            const timeStr = !isAllDay
-                              ? format(parseISO(task.current_due_date), "HH:mm")
-                              : "";
-
-                            return (
-                              <div
-                                key={task.id}
-                                onClick={() => setPreviewTask(task)}
-                                className={`rounded px-1.5 py-0.5 text-[11px] font-medium leading-snug truncate flex items-center gap-1 cursor-pointer transition-all shadow-2xs ${colors.pillBg}`}
-                                title={`${timeStr ? `${timeStr} ` : ""}${task.title}`}
-                              >
-                                {timeStr && (
-                                  <span className="font-bold opacity-90 text-[10px] shrink-0">
-                                    {timeStr}
-                                  </span>
+                            <div className="flex items-center gap-3 min-w-0">
+                              <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-200 shrink-0">
+                                {timeText}
+                              </span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700 shrink-0" />
+                              <div className="flex items-center gap-2 min-w-0">
+                                {task.item_type === "activity" ? (
+                                  <Activity className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                                ) : task.item_type === "reminder" ? (
+                                  <Bell className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                ) : (
+                                  <ListTodo className="w-3.5 h-3.5 text-blue-500 shrink-0" />
                                 )}
-                                <span className="truncate">{task.title}</span>
+                                <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                                  {task.title}
+                                </span>
                               </div>
-                            );
-                          })}
+                            </div>
 
-                          {tasksForDay.length > 3 && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setCalendarDate(day);
-                                setCalendarViewMode("day");
-                              }}
-                              className="text-[11px] font-semibold text-[#1a73e8] dark:text-blue-400 hover:underline px-1 py-0.5 block text-left"
-                            >
-                              +{tasksForDay.length - 3} mais
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span
+                                className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${
+                                  task.account_type === "work"
+                                    ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20"
+                                    : "bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20"
+                                }`}
+                              >
+                                {task.account_type === "work" ? "Trabalho" : "Pessoal"}
+                              </span>
+                              <span className="text-[10px] text-slate-400">
+                                {task.category}
+                              </span>
+                              <span className="text-[10px] font-bold text-purple-600 dark:text-purple-400">
+                                {task.priority}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* 2. GOOGLE CALENDAR: SEMANA (WEEK VIEW TIMELINE) */}
-            {calendarViewMode === "week" && (
-              <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm overflow-hidden flex flex-col animate-in fade-in">
-                {/* Week Day Header */}
-                <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#151622] sticky top-0 z-30">
-                  <div className="p-2 border-r border-slate-200 dark:border-zinc-800 flex items-center justify-center text-[10px] font-mono text-slate-400">
-                    GMT-3
-                  </div>
-                  {weekDays.map((day) => {
-                    const isDayToday = isToday(day);
-                    return (
+            {/* MODO 2: VISÃO MENSAL (GRADE COMPLETA DO MÊS) */}
+            {calendarViewMode === "month" && (
+              <div className="space-y-4 animate-in fade-in">
+                <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm overflow-hidden flex flex-col">
+                  {/* Days of Week Header */}
+                  <div className="grid grid-cols-7 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#151622] text-center">
+                    {["SEG.", "TER.", "QUA.", "QUI.", "SEX.", "SÁB.", "DOM."].map((wd) => (
                       <div
-                        key={day.toISOString()}
-                        className={`p-2.5 text-center border-r border-slate-200/80 dark:border-zinc-800/80 ${
-                          isDayToday ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
-                        }`}
+                        key={wd}
+                        className="py-2.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 tracking-wider"
                       >
-                        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase block">
-                          {format(day, "EEE", { locale: ptBR })}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setCalendarDate(day);
-                            setCalendarViewMode("day");
-                          }}
-                          className={`w-9 h-9 rounded-full flex items-center justify-center text-sm mx-auto transition-transform hover:scale-105 ${
-                            isDayToday
-                              ? "bg-[#1a73e8] text-white font-bold shadow-xs"
-                              : "text-slate-800 dark:text-slate-200 font-medium"
-                          }`}
-                        >
-                          {format(day, "d")}
-                        </button>
+                        {wd}
                       </div>
-                    );
-                  })}
-                </div>
-
-                {/* All-Day (Dia Inteiro) Row */}
-                <div className="grid grid-cols-[60px_repeat(7,1fr)] border-b border-slate-200 dark:border-zinc-800 bg-slate-50/30 dark:bg-[#141520] min-h-[44px]">
-                  <div className="p-2 border-r border-slate-200 dark:border-zinc-800 text-[10px] font-medium text-slate-400 flex items-center justify-center">
-                    dia todo
+                    ))}
                   </div>
-                  {weekDays.map((day) => {
-                    const allDayTasks = getTasksForDay(day).filter(isAllDayTask);
-                    return (
-                      <div
-                        key={`all-day-${day.toISOString()}`}
-                        className="p-1 border-r border-slate-100 dark:border-zinc-800/60 space-y-1 overflow-hidden"
-                      >
-                        {allDayTasks.map((t) => {
-                          const colors = getGoogleCalendarColor(t);
-                          return (
-                            <div
-                              key={t.id}
-                              onClick={() => setPreviewTask(t)}
-                              className={`rounded px-1.5 py-0.5 text-[10px] font-medium truncate cursor-pointer shadow-2xs ${colors.pillBg}`}
-                              title={t.title}
-                            >
-                              {t.title}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    );
-                  })}
-                </div>
 
-                {/* Timed Grid (Scrollable, with Current Time Red Line) */}
-                <div className="relative max-h-[620px] overflow-y-auto">
-                  <div className="grid grid-cols-[60px_repeat(7,1fr)] relative">
-                    {/* Time Gutter Column */}
-                    <div className="border-r border-slate-200 dark:border-zinc-800 bg-slate-50/40 dark:bg-[#12131A] select-none">
-                      {dayHours.map((h) => (
-                        <div
-                          key={h}
-                          className="h-14 border-b border-slate-100 dark:border-zinc-800/60 pr-2 text-right text-[11px] font-mono text-slate-400 flex items-start justify-end -translate-y-2.5"
-                        >
-                          {`${h.toString().padStart(2, "0")}:00`}
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* 7 Days Hour Slots */}
-                    {weekDays.map((day) => {
+                  {/* Month Grid */}
+                  <div className="grid grid-cols-7 auto-rows-fr">
+                    {monthGridDays.map((day) => {
+                      const tasksForDay = calendarTasks.filter((t) => isTaskScheduledForDay(t, day));
+                      const isDayInCurrentMonth = isSameMonth(day, calendarDate);
                       const isDayToday = isToday(day);
-                      const timedTasks = getTasksForDay(day).filter((t) => !isAllDayTask(t));
+                      const isDaySelected = isSameDay(day, calendarDate);
 
                       return (
                         <div
                           key={day.toISOString()}
-                          className={`border-r border-slate-100 dark:border-zinc-800/60 relative ${
-                            isDayToday ? "bg-blue-50/10 dark:bg-blue-950/10" : ""
+                          onClick={() => setCalendarDate(day)}
+                          className={`min-h-[105px] sm:min-h-[115px] p-1.5 border-r border-b border-slate-100 dark:border-zinc-800/70 flex flex-col justify-start transition-all cursor-pointer relative group ${
+                            isDaySelected
+                              ? "bg-indigo-50/60 dark:bg-indigo-950/30 ring-1 ring-inset ring-indigo-500"
+                              : !isDayInCurrentMonth
+                              ? "bg-slate-50/40 dark:bg-zinc-950/20 text-slate-400"
+                              : "bg-white dark:bg-[#12131A] hover:bg-slate-50/80 dark:hover:bg-[#171824]"
                           }`}
                         >
-                          {/* Hour lines */}
-                          {dayHours.map((h) => (
-                            <div
-                              key={h}
-                              className="h-14 border-b border-slate-100 dark:border-zinc-800/60"
-                            />
-                          ))}
-
-                          {/* Current Time Red Line if Today */}
-                          {isDayToday && isCurrentTimeInGrid && (
-                            <div
-                              className="absolute left-0 right-0 z-20 flex items-center pointer-events-none"
-                              style={{ top: `${currentTimeTopPx}px` }}
+                          {/* Day Number Header */}
+                          <div className="flex items-center justify-between pb-1">
+                            <span
+                              className={`w-6 h-6 rounded-full flex items-center justify-center text-xs transition-transform ${
+                                isDayToday
+                                  ? "bg-indigo-600 text-white font-bold shadow-xs"
+                                  : isDaySelected
+                                  ? "bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 font-bold"
+                                  : isDayInCurrentMonth
+                                  ? "text-slate-700 dark:text-slate-300 font-medium"
+                                  : "text-slate-300 dark:text-zinc-600 font-normal"
+                              }`}
                             >
-                              <div className="w-2.5 h-2.5 rounded-full bg-red-500 -ml-1.25 shrink-0 shadow-xs" />
-                              <div className="flex-1 h-[2px] bg-red-500" />
-                            </div>
-                          )}
+                              {format(day, "d")}
+                            </span>
 
-                          {/* Timed Event Blocks */}
-                          {timedTasks.map((t) => {
-                            const colors = getGoogleCalendarColor(t);
-                            const scheduleDate = getTaskScheduleDate(t);
-                            const date = parseISO(scheduleDate);
-                            const h = getHours(date);
-                            const m = getMinutes(date);
-                            if (h < START_HOUR || h > END_HOUR) return null;
+                            {tasksForDay.length > 0 && (
+                              <span className="text-[10px] text-slate-400 font-mono font-bold">
+                                {tasksForDay.length}
+                              </span>
+                            )}
+                          </div>
 
-                            const topPx = (h - START_HOUR) * 56 + (m / 60) * 56;
-                            const timeFormatted = format(date, "HH:mm");
-
-                            return (
-                              <div
-                                key={t.id}
-                                onClick={() => setPreviewTask(t)}
-                                style={{ top: `${topPx}px` }}
-                                className={`absolute left-1 right-1 rounded-lg p-1.5 cursor-pointer shadow-xs border transition-all hover:scale-[1.01] hover:z-30 overflow-hidden ${colors.cardBg}`}
-                              >
-                                <div className="flex items-center gap-1 text-[10px] font-bold">
-                                  <span>{timeFormatted}</span>
+                          {/* Event Chips */}
+                          <div className="space-y-1 overflow-hidden flex-1">
+                            {tasksForDay.slice(0, 2).map((task) => {
+                              const isWork = task.account_type === "work";
+                              return (
+                                <div
+                                  key={task.id}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onSelectTask?.(task);
+                                    setActiveTab("details");
+                                  }}
+                                  className={`rounded px-1.5 py-0.5 text-[10px] font-medium leading-tight truncate flex items-center gap-1 transition-all ${
+                                    isWork
+                                      ? "bg-blue-500/10 text-blue-700 dark:text-blue-300 border border-blue-500/20"
+                                      : "bg-purple-500/10 text-purple-700 dark:text-purple-300 border border-purple-500/20"
+                                  }`}
+                                  title={task.title}
+                                >
+                                  <span className="truncate">{task.title}</span>
                                 </div>
-                                <h4 className="text-[11px] font-semibold truncate leading-tight mt-0.5">
-                                  {t.title}
-                                </h4>
-                                <span className="text-[9px] opacity-80 block truncate">
-                                  {t.category}
-                                </span>
-                              </div>
-                            );
-                          })}
+                              );
+                            })}
+
+                            {tasksForDay.length > 2 && (
+                              <span className="text-[10px] font-semibold text-indigo-600 dark:text-indigo-400 block px-1">
+                                +{tasksForDay.length - 2} mais
+                              </span>
+                            )}
+                          </div>
                         </div>
                       );
                     })}
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* 3. GOOGLE CALENDAR: DIA (DAY VIEW) */}
-            {calendarViewMode === "day" && (
-              <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm overflow-hidden flex flex-col animate-in fade-in">
-                {/* Day Header */}
-                <div className="p-4 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-[#151622] flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-lg font-bold ${
-                        isToday(calendarDate)
-                          ? "bg-[#1a73e8] text-white shadow-xs"
-                          : "bg-slate-200 dark:bg-zinc-800 text-slate-800 dark:text-slate-200"
-                      }`}
+                {/* Selected Day Agenda Drawer in Month View */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-2">
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white capitalize flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-indigo-500" />
+                      Demandas de {format(calendarDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                    </h4>
+                    <button
+                      type="button"
+                      onClick={() => setCalendarViewMode("week")}
+                      className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
                     >
-                      {format(calendarDate, "d")}
-                    </span>
-                    <div>
-                      <h3 className="text-base font-semibold text-slate-900 dark:text-white capitalize">
-                        {format(calendarDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
-                      </h3>
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {getTasksForDay(calendarDate).length} demandas e eventos programados
+                      <span>Abrir visão semanal</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  <div className="space-y-2 max-h-56 overflow-y-auto custom-scrollbar">
+                    {tasksForSelectedDay.length === 0 ? (
+                      <p className="text-xs text-slate-400 italic py-2">
+                        Nenhuma demanda agendada para este dia.
                       </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setCalendarViewMode("month")}
-                    className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 transition-colors"
-                  >
-                    Ver Mês Completo
-                  </button>
-                </div>
-
-                {/* Day All-Day Tasks */}
-                {getTasksForDay(calendarDate).filter(isAllDayTask).length > 0 && (
-                  <div className="p-3 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/30 dark:bg-[#141520] space-y-2">
-                    <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block uppercase tracking-wider">
-                      Dia Inteiro
-                    </span>
-                    <div className="flex flex-wrap gap-2">
-                      {getTasksForDay(calendarDate)
-                        .filter(isAllDayTask)
-                        .map((t) => {
-                          const colors = getGoogleCalendarColor(t);
-                          return (
-                            <div
-                              key={t.id}
-                              onClick={() => setPreviewTask(t)}
-                              className={`rounded-lg px-3 py-1.5 text-xs font-semibold cursor-pointer shadow-xs ${colors.pillBg}`}
-                            >
-                              {t.title}
-                            </div>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Day Timed Grid */}
-                <div className="relative max-h-[640px] overflow-y-auto p-4 space-y-2">
-                  {dayHours.map((hour) => {
-                    const hourFormatted = `${hour.toString().padStart(2, "0")}:00`;
-                    const dayTasks = getTasksForDay(calendarDate);
-                    const tasksInHour = dayTasks.filter((t) => {
-                      if (isAllDayTask(t)) return false;
-                      try {
-                        return getHours(parseISO(getTaskScheduleDate(t))) === hour;
-                      } catch {
-                        return false;
-                      }
-                    });
-
-                    const isCurrentHourSlot =
-                      isToday(calendarDate) && currentTime.getHours() === hour;
-
-                    return (
-                      <div
-                        key={hour}
-                        className={`flex gap-4 p-3 rounded-xl border transition-all ${
-                          isCurrentHourSlot
-                            ? "bg-blue-50/40 dark:bg-blue-950/20 border-blue-400/60 dark:border-blue-500/50"
-                            : "bg-white dark:bg-[#141520] border-slate-200/80 dark:border-zinc-800/80 hover:bg-slate-50 dark:hover:bg-[#181926]"
-                        }`}
-                      >
-                        <span className="w-16 text-xs font-mono font-bold text-slate-400 dark:text-slate-500 pt-1 shrink-0">
-                          {hourFormatted}
-                        </span>
-
-                        <div className="flex-1 space-y-2">
-                          {tasksInHour.length === 0 ? (
-                            <div className="h-6 flex items-center text-xs text-slate-400 dark:text-slate-600 italic">
-                              Sem compromissos
-                            </div>
-                          ) : (
-                            tasksInHour.map((task) => {
-                              const colors = getGoogleCalendarColor(task);
-                              return (
-                                <div
-                                  key={task.id}
-                                  onClick={() => setPreviewTask(task)}
-                                  className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer hover:shadow-md transition-all ${colors.cardBg}`}
-                                >
-                                  <div className="flex items-center gap-2.5 min-w-0">
-                                    {colors.icon}
-                                    <div>
-                                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
-                                        {task.title}
-                                      </h4>
-                                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                                        {format(parseISO(task.current_due_date), "HH:mm")} • {task.category}
-                                      </span>
-                                    </div>
-                                  </div>
-
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${colors.badgeBg}`}>
-                                      {colors.sourceName}
-                                    </span>
-                                  </div>
-                                </div>
-                              );
-                            })
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* 4. GOOGLE CALENDAR: PROGRAMAÇÃO (SCHEDULE / AGENDA VIEW) */}
-            {calendarViewMode === "schedule" && (
-              <div className="rounded-2xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm p-4 space-y-4 animate-in fade-in">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white border-b border-slate-100 dark:border-zinc-800 pb-2">
-                  Programação Mensal • {format(calendarDate, "MMMM 'de' yyyy", { locale: ptBR })}
-                </h3>
-
-                {monthGridDays
-                  .filter((day) => isSameMonth(day, calendarDate) && getTasksForDay(day).length > 0)
-                  .map((day) => {
-                    const tasksForDay = getTasksForDay(day);
-                    const isDayToday = isToday(day);
-
-                    return (
-                      <div
-                        key={day.toISOString()}
-                        className="grid grid-cols-1 md:grid-cols-[140px_1fr] gap-3 pb-4 border-b border-slate-100 dark:border-zinc-800/80 last:border-b-0"
-                      >
-                        {/* Day Column */}
-                        <div className="flex items-center gap-2.5">
-                          <span
-                            className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold ${
-                              isDayToday
-                                ? "bg-[#1a73e8] text-white shadow-xs"
-                                : "bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-slate-200"
-                            }`}
-                          >
-                            {format(day, "d")}
-                          </span>
-                          <div>
-                            <span className="text-xs font-bold text-slate-900 dark:text-white capitalize block">
-                              {format(day, "EEEE", { locale: ptBR })}
+                    ) : (
+                      tasksForSelectedDay.map((task) => (
+                        <div
+                          key={task.id}
+                          onClick={() => {
+                            onSelectTask?.(task);
+                            setActiveTab("details");
+                          }}
+                          className="p-2.5 rounded-xl border border-slate-200 dark:border-zinc-800 hover:border-indigo-400 bg-slate-50/50 dark:bg-[#0c0d13] flex items-center justify-between cursor-pointer transition-all"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <span className="text-xs font-mono font-bold text-slate-700 dark:text-slate-300 shrink-0">
+                              {isTaskAllDay(task)
+                                ? "Dia todo"
+                                : format(parseISO(getTaskScheduleDate(task)), "HH:mm")}
                             </span>
-                            <span className="text-[11px] text-slate-400">
-                              {format(day, "dd/MM/yyyy")}
+                            <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                              {task.title}
                             </span>
                           </div>
+                          <span
+                            className={`px-2 py-0.5 rounded text-[10px] font-semibold shrink-0 ${
+                              task.account_type === "work"
+                                ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20"
+                                : "bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20"
+                            }`}
+                          >
+                            {task.account_type === "work" ? "Trabalho" : "Pessoal"}
+                          </span>
                         </div>
-
-                        {/* Events List */}
-                        <div className="space-y-2">
-                          {tasksForDay.map((task) => {
-                            const colors = getGoogleCalendarColor(task);
-                            const isAllDay = isAllDayTask(task);
-                            const timeText = isAllDay
-                              ? "Dia inteiro"
-                              : format(parseISO(getTaskScheduleDate(task)), "HH:mm");
-
-                            return (
-                              <div
-                                key={task.id}
-                                onClick={() => setPreviewTask(task)}
-                                className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer hover:shadow-md transition-all ${colors.cardBg}`}
-                              >
-                                <div className="flex items-center gap-3 min-w-0">
-                                  <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-200 shrink-0">
-                                    {timeText}
-                                  </span>
-                                  <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-                                  <div className="min-w-0">
-                                    <h4 className="text-xs font-semibold text-slate-900 dark:text-white truncate">
-                                      {task.title}
-                                    </h4>
-                                    <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">
-                                      {task.category}
-                                    </span>
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <span className={`px-2 py-0.5 rounded text-[10px] font-semibold ${colors.badgeBg}`}>
-                                    {colors.sourceName}
-                                  </span>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             )}
           </div>

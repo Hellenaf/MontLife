@@ -145,7 +145,7 @@ export function SidebarNav({
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <Calendar className="w-4 h-4 text-emerald-400" />
-              <span className="truncate">Google Agenda</span>
+              <span className="truncate">Agenda do Dia</span>
             </div>
             <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 uppercase tracking-wider">
               Hoje
