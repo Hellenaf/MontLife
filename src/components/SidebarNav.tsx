@@ -4,14 +4,11 @@ import React from "react";
 import {
   Home,
   BookOpen,
-  Award,
   Settings,
   Briefcase,
   User,
-  TrendingUp,
-  ChevronDown,
-  Sparkles,
   BarChart3,
+  LogOut,
 } from "lucide-react";
 import { ConnectedAccount } from "@/types";
 
@@ -21,6 +18,7 @@ interface SidebarNavProps {
   onSelectNav: (nav: string) => void;
   onOpenAccountsModal: () => void;
   onOpenReportModal: () => void;
+  onLogout?: () => void;
   completedTasksCount?: number;
 }
 
@@ -30,10 +28,19 @@ export function SidebarNav({
   onSelectNav,
   onOpenAccountsModal,
   onOpenReportModal,
+  onLogout,
   completedTasksCount = 0,
 }: SidebarNavProps) {
   const workAcc = accounts.find((a) => a.id === "work");
   const personalAcc = accounts.find((a) => a.id === "personal");
+
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
+    } else if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
+  };
 
   return (
     <aside className="w-56 xl:w-60 h-full flex flex-col bg-[#0e0d1d] border-r border-[#1f1d38] text-slate-200 shrink-0 select-none transition-all duration-200">
@@ -95,6 +102,7 @@ export function SidebarNav({
           type="button"
           onClick={onOpenAccountsModal}
           className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+          title="Configurações e Vínculo de Contas"
         >
           <Settings className="w-4 h-4" />
           <span>Configurações</span>
@@ -110,9 +118,9 @@ export function SidebarNav({
           <button
             type="button"
             onClick={onOpenAccountsModal}
-            className="text-[10px] text-purple-400 hover:text-purple-200"
+            className="text-[10px] text-purple-400 hover:text-purple-200 font-semibold"
           >
-            Gerenciar
+            Vincular
           </button>
         </div>
 
@@ -120,6 +128,7 @@ export function SidebarNav({
         <div
           onClick={onOpenAccountsModal}
           className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 cursor-pointer transition-colors"
+          title="Conta Google Corporativa (Trabalho)"
         >
           <div className="flex items-center gap-2">
             <Briefcase className="w-3.5 h-3.5 text-blue-400" />
@@ -141,6 +150,7 @@ export function SidebarNav({
         <div
           onClick={onOpenAccountsModal}
           className="flex items-center justify-between p-2 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 cursor-pointer transition-colors"
+          title="Conta Google Pessoal"
         >
           <div className="flex items-center gap-2">
             <User className="w-3.5 h-3.5 text-purple-400" />
@@ -179,8 +189,8 @@ export function SidebarNav({
         </div>
       </div>
 
-      {/* 5. User Profile Pill at Bottom */}
-      <div className="p-3 border-t border-[#1f1d38]/80 flex items-center justify-between">
+      {/* 5. User Profile Pill at Bottom (Apenas com a opção de Sair para a tela de login) */}
+      <div className="p-3 border-t border-[#1f1d38]/80 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center text-white text-xs font-bold border border-purple-400/40 shrink-0">
             HF
@@ -190,20 +200,22 @@ export function SidebarNav({
               Hellen Ferreira
             </span>
             <span className="text-[10px] text-purple-300/60 block truncate">
-              {workAcc?.email || personalAcc?.email || "Administradora"}
+              {workAcc?.email || personalAcc?.email || "hellen@montlife.com"}
             </span>
           </div>
         </div>
+
+        {/* Botão direto para Sair para a tela de login */}
         <button
           type="button"
-          onClick={onOpenAccountsModal}
-          className="text-slate-400 hover:text-white p-1 rounded-lg transition-colors"
-          title="Opções de conta"
+          onClick={handleLogout}
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/40 transition-all shrink-0 active:scale-95"
+          title="Sair para a tela de login"
         >
-          <ChevronDown className="w-4 h-4" />
+          <LogOut className="w-3.5 h-3.5" />
+          <span>Sair</span>
         </button>
       </div>
     </aside>
   );
 }
-

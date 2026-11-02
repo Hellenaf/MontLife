@@ -12,6 +12,7 @@ import { AnnualReportModal } from "@/components/modals/AnnualReportModal";
 import { AccountsModal } from "@/components/modals/AccountsModal";
 import { NewTaskModal } from "@/components/modals/NewTaskModal";
 import { ClassifyAccountModal } from "@/components/modals/ClassifyAccountModal";
+import { WikiModal } from "@/components/modals/WikiModal";
 import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
 import { getAllCategories } from "@/lib/categories";
 import { ExternalLink } from "lucide-react";
@@ -35,6 +36,7 @@ export default function MontOpsDashboard() {
 
   const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const [isWikiModalOpen, setIsWikiModalOpen] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [isClassifyModalOpen, setIsClassifyModalOpen] = useState(false);
   const [classifyEmail, setClassifyEmail] = useState("");
@@ -298,7 +300,8 @@ export default function MontOpsDashboard() {
           activeNav={activeNav}
           onSelectNav={(nav) => {
             setActiveNav(nav);
-            if (nav === "wiki" || nav === "relatorios") setIsReportModalOpen(true);
+            if (nav === "wiki") setIsWikiModalOpen(true);
+            if (nav === "relatorios") setIsReportModalOpen(true);
             if (nav === "config") setIsAccountsModalOpen(true);
           }}
           onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
@@ -315,6 +318,7 @@ export default function MontOpsDashboard() {
           tasks={tasks}
           availableCategories={allCategories}
           onTaskCreated={handleTaskCreated}
+          onSelectTask={(task) => setSelectedTaskId(task.id)}
           onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
           onOpenReportModal={() => setIsReportModalOpen(true)}
           onOpenNewTaskModal={(prefill) => {
@@ -433,6 +437,20 @@ export default function MontOpsDashboard() {
         isOpen={isReportModalOpen}
         onClose={() => setIsReportModalOpen(false)}
         tasks={tasks}
+      />
+
+      <WikiModal
+        isOpen={isWikiModalOpen}
+        onClose={() => {
+          setIsWikiModalOpen(false);
+          setActiveNav("inicio");
+        }}
+        tasks={tasks}
+        onSelectTask={(task) => {
+          setSelectedTaskId(task.id);
+          setIsWikiModalOpen(false);
+          setActiveNav("inicio");
+        }}
       />
 
       <AccountsModal

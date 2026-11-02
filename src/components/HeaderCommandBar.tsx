@@ -42,10 +42,11 @@ import {
   ValidationStep,
 } from "@/types";
 import { calculateSlaDueDate } from "@/lib/sla";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, isPast, isSameDay, differenceInHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTheme } from "@/context/ThemeContext";
 import { getAllCategories } from "@/lib/categories";
+import { CategoryCombobox } from "@/components/CategoryCombobox";
 
 interface HeaderCommandBarProps {
   accounts: ConnectedAccount[];
@@ -55,6 +56,7 @@ interface HeaderCommandBarProps {
   onOpenAccountsModal: () => void;
   onOpenReportModal: () => void;
   onOpenNewTaskModal?: (initialText?: string) => void;
+  onSelectTask?: (task: Task) => void;
 }
 
 export function HeaderCommandBar({
@@ -65,6 +67,7 @@ export function HeaderCommandBar({
   onOpenAccountsModal,
   onOpenReportModal,
   onOpenNewTaskModal,
+  onSelectTask,
 }: HeaderCommandBarProps) {
   const { theme, toggleTheme } = useTheme();
   const categoriesList = useMemo(() => {
@@ -100,6 +103,40 @@ export function HeaderCommandBar({
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
   }, []);
+
+    // Notifications Popover & Real-time Due Date Alerts
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const notificationRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+        setIsNotificationOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const deadlineAlertTasks = useMemo(() => {
+    const now = new Date();
+    return tasks
+      .filter((t) => {
+        if (t.status === "COMPLETED" || t.status === "CANCELED") return false;
+        if (!t.current_due_date) return false;
+        try {
+          const dueDate = parseISO(t.current_due_date);
+          return (
+            isPast(dueDate) ||
+            isSameDay(dueDate, now) ||
+            (differenceInHours(dueDate, now) >= 0 && differenceInHours(dueDate, now) <= 24)
+          );
+        } catch {
+          return false;
+        }
+      })
+      .sort((a, b) => new Date(a.current_due_date).getTime() - new Date(b.current_due_date).getTime());
+  }, [tasks]);
 
   const recognitionRef = useRef<any>(null);
 
@@ -371,18 +408,133 @@ export function HeaderCommandBar({
           </span>
         </div>
 
-        {/* Notifications Bell with badge 2 */}
-        <button
-          type="button"
-          onClick={onOpenReportModal}
-          className="relative p-2 rounded-xl border border-slate-200 dark:border-[#282647] bg-white dark:bg-[#16152a] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
-          title="Notificações e Alertas"
-        >
-          <Bell className="w-4 h-4" />
-          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
-            2
-          </span>
-        </button>
+        {/* Notifications Bell with real-time deadline alerts */}
+        <div ref={notificationRef} className="relative">
+          <button
+            type="button"
+            onClick={() => setIsNotificationOpen((prev) => !prev)}
+            className={`relative p-2 rounded-xl border transition-all shadow-sm ${
+              isNotificationOpen
+                ? "bg-purple-50 dark:bg-[#201e3b] border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300"
+                : "border-slate-200 dark:border-[#282647] bg-white dark:bg-[#16152a] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+            }`}
+            title="Alertas de Vencimento e Prazos"
+          >
+            <Bell className="w-4 h-4" />
+            {deadlineAlertTasks.length > 0 && (
+              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs animate-pulse">
+                {deadlineAlertTasks.length}
+              </span>
+            )}
+          </button>
+
+          {/* Interactive Notifications Popover */}
+          {isNotificationOpen && (
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-[#141326] border border-slate-200 dark:border-[#282647] shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+              <div className="p-3.5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/70 dark:bg-[#100f1f]">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-500">
+                    <Bell className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                      Alertas de Prazos
+                    </h4>
+                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      Demandas no último dia ou com prazo atingido ({deadlineAlertTasks.length})
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsNotificationOpen(false)}
+                  className="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs p-1"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="max-h-80 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
+                {deadlineAlertTasks.length === 0 ? (
+                  <div className="py-8 text-center text-slate-400 space-y-1.5">
+                    <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-500 opacity-60" />
+                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                      Tudo em dia!
+                    </p>
+                    <p className="text-[11px] text-slate-400">
+                      Nenhuma demanda atingindo o limite de prazo no momento.
+                    </p>
+                  </div>
+                ) : (
+                  deadlineAlertTasks.map((t) => {
+                    const dueDate = parseISO(t.current_due_date);
+                    const nowTime = new Date();
+                    const isOverdue = isPast(dueDate) && !isSameDay(dueDate, nowTime);
+                    const isDueToday = isSameDay(dueDate, nowTime);
+
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => {
+                          onSelectTask?.(t);
+                          setIsNotificationOpen(false);
+                        }}
+                        className="p-2.5 rounded-xl border border-slate-100 dark:border-white/5 hover:border-purple-300 dark:hover:border-purple-500/40 bg-slate-50/50 dark:bg-[#18172e]/60 hover:bg-purple-50/30 dark:hover:bg-[#1e1c38] cursor-pointer transition-all space-y-1"
+                      >
+                        <div className="flex items-center justify-between gap-2">
+                          <span
+                            className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                              isOverdue
+                                ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800"
+                                : isDueToday
+                                ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
+                                : "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800"
+                            }`}
+                          >
+                            {isOverdue
+                              ? "🚨 Atrasada"
+                              : isDueToday
+                              ? "⚠️ Vence Hoje"
+                              : "⏳ Vence em 24h"}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">
+                            {format(dueDate, "dd/MM 'às' HH:mm")}
+                          </span>
+                        </div>
+                        <h5 className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2">
+                          {t.title}
+                        </h5>
+                        <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+                          <span className="truncate max-w-[180px]">{t.category}</span>
+                          <span className="font-bold text-purple-600 dark:text-purple-400">
+                            {t.priority}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Popover Footer */}
+              <div className="p-2.5 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#100f1f] flex items-center justify-between text-xs">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsNotificationOpen(false);
+                    onOpenReportModal();
+                  }}
+                  className="text-purple-600 dark:text-purple-400 hover:underline font-semibold text-[11px]"
+                >
+                  Ver Relatório Completo de SLA
+                </button>
+                <span className="text-[10px] text-slate-400">
+                  {deadlineAlertTasks.length} alertas ativos
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Connected Accounts Status */}
         <button
@@ -682,36 +834,12 @@ export function HeaderCommandBar({
                       Selecione ou digite livremente
                     </span>
                   </div>
-                  <div className="flex gap-1.5">
-                    <input
-                      list="header-categories-list"
-                      type="text"
-                      value={editCategory}
-                      onChange={(e) => setEditCategory(e.target.value)}
-                      placeholder="Ex: Sistemas ERP, RH, Finanças..."
-                      className="flex-1 h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 font-medium"
-                    />
-                    <select
-                      value={categoriesList.includes(editCategory) ? editCategory : ""}
-                      onChange={(e) => {
-                        if (e.target.value) setEditCategory(e.target.value);
-                      }}
-                      className="h-9 px-2 text-xs rounded-xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 focus:outline-none max-w-[135px]"
-                      title="Escolher do menu de todas as categorias"
-                    >
-                      <option value="">Menu...</option>
-                      {categoriesList.map((cat) => (
-                        <option key={cat} value={cat}>
-                          {cat}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <datalist id="header-categories-list">
-                    {categoriesList.map((cat) => (
-                      <option key={cat} value={cat} />
-                    ))}
-                  </datalist>
+                  <CategoryCombobox
+                    value={editCategory}
+                    onChange={(val) => setEditCategory(val)}
+                    categories={categoriesList}
+                    placeholder="Ex: Sistemas ERP, RH, Finanças..."
+                  />
                 </div>
               </div>
 

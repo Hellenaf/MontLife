@@ -37,6 +37,7 @@ import { calculateSlaDueDate } from "@/lib/sla";
 import { format } from "date-fns";
 import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
 import { getAllCategories } from "@/lib/categories";
+import { CategoryCombobox } from "@/components/CategoryCombobox";
 
 interface NewTaskModalProps {
   isOpen: boolean;
@@ -567,45 +568,22 @@ export function NewTaskModal({
               </div>
             </div>
 
+            {/* Categoria com botão único (digitação + menu dropdown integrado) */}
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
-                  Categoria (livre ou menu):
+                  Categoria:
                 </label>
                 <span className="text-[10px] text-slate-400">
-                  Selecione ou digite livremente
+                  Selecione no menu ou digite livremente
                 </span>
               </div>
-              <div className="flex gap-1.5">
-                <input
-                  list="categories-list"
-                  type="text"
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  placeholder="Ex: Sistemas ERP, RH, Finanças..."
-                  className="flex-1 h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-medium"
-                />
-                <select
-                  value={categoriesList.includes(category) ? category : ""}
-                  onChange={(e) => {
-                    if (e.target.value) setCategory(e.target.value);
-                  }}
-                  className="h-9 px-2 text-xs rounded-xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 focus:outline-none max-w-[135px]"
-                  title="Escolher do menu de todas as categorias"
-                >
-                  <option value="">Menu...</option>
-                  {categoriesList.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <datalist id="categories-list">
-                {categoriesList.map((cat) => (
-                  <option key={cat} value={cat} />
-                ))}
-              </datalist>
+              <CategoryCombobox
+                value={category}
+                onChange={(val) => setCategory(val)}
+                categories={categoriesList}
+                placeholder="Ex: Sistemas ERP, RH, Finanças..."
+              />
             </div>
           </div>
 

@@ -41,6 +41,7 @@ import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { getAllCategories } from "@/lib/categories";
 import { FormattedText } from "@/components/FormattedText";
+import { CategoryCombobox } from "@/components/CategoryCombobox";
 import {
   getTaskScheduleDate,
   isTaskScheduledForDay,
@@ -1169,54 +1170,31 @@ export function CentralQuadrant({
                         </span>
                       )}
 
-                      {/* Interactive Editable Category */}
+                      {/* Interactive Editable Category (Single Unified Combobox) */}
                       {isEditingCategory ? (
                         <div className="flex items-center gap-1.5 animate-in fade-in">
-                          <input
-                            list="central-category-datalist"
-                            type="text"
+                          <CategoryCombobox
                             value={tempCategory}
-                            onChange={(e) => setTempCategory(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && handleSaveCategory()}
-                            className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-800 dark:text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500 w-36"
-                            placeholder="Digitar ou escolher..."
+                            onChange={(val) => setTempCategory(val)}
+                            categories={categoriesList}
+                            className="w-48"
                             autoFocus
                           />
-                          <select
-                            value={categoriesList.includes(tempCategory) ? tempCategory : ""}
-                            onChange={(e) => {
-                              if (e.target.value) setTempCategory(e.target.value);
-                            }}
-                            className="h-7 px-1.5 text-xs rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 focus:outline-none max-w-[125px]"
-                            title="Escolher do menu de categorias"
-                          >
-                            <option value="">Menu...</option>
-                            {categoriesList.map((cat) => (
-                              <option key={cat} value={cat}>
-                                {cat}
-                              </option>
-                            ))}
-                          </select>
-                          <datalist id="central-category-datalist">
-                            {categoriesList.map((cat) => (
-                              <option key={cat} value={cat} />
-                            ))}
-                          </datalist>
                           <button
                             type="button"
                             onClick={handleSaveCategory}
-                            className="p-1 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500"
+                            className="p-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm"
                             title="Salvar categoria"
                           >
-                            <Check className="w-3 h-3" />
+                            <Check className="w-3.5 h-3.5" />
                           </button>
                           <button
                             type="button"
                             onClick={() => setIsEditingCategory(false)}
-                            className="p-1 rounded-lg bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300"
+                            className="p-2 rounded-lg bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300"
                             title="Cancelar"
                           >
-                            <X className="w-3 h-3" />
+                            <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       ) : (
