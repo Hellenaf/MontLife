@@ -306,7 +306,7 @@ export function LeftTasksQuadrant({
             {/* Optional task description snippet */}
             {task.description && (
               <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-1 font-normal">
-                {task.description}
+                {task.description.replace(/\*\*/g, "")}
               </p>
             )}
 

@@ -33,6 +33,7 @@ import {
 import { Task, AccountType, ItemType } from "@/types";
 import { parseISO, getYear, getMonth, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { FormattedText } from "@/components/FormattedText";
 
 interface AnnualReportModalProps {
   isOpen: boolean;
@@ -246,7 +247,7 @@ ${completed
     (t, idx) =>
       `${idx + 1}. [${t.item_type === "reminder" ? "Lembrete" : t.item_type === "activity" ? "Atividade" : "Tarefa"} - ${t.category}] ${t.title}\n   - Status: Concluído em ${
         t.completed_at ? format(parseISO(t.completed_at), "dd/MM/yyyy") : "Data não reg."
-      }\n   ${t.resolution_notes ? `- Resolução Técnica: ${t.resolution_notes}` : `- Detalhes: ${t.description}`}`
+      }\n   ${t.resolution_notes ? `- Resolução Técnica: ${t.resolution_notes}` : `- Detalhes: ${(t.description || "").replace(/\*\*/g, "")}`}`
   )
   .join("\n\n")}
 
@@ -859,9 +860,9 @@ Relatório gerado via MontLife.`;
 
                       {/* Description */}
                       {t.description && (
-                        <p className="text-[#9490AC] print:text-gray-700 leading-relaxed text-[11px] pl-2 border-l-2 border-[#2E2B44] print:border-gray-300">
-                          {t.description}
-                        </p>
+                        <div className="text-[#9490AC] print:text-gray-700 leading-relaxed text-[11px] pl-2 border-l-2 border-[#2E2B44] print:border-gray-300">
+                          <FormattedText text={t.description} />
+                        </div>
                       )}
 
                       {/* Resolution notes: The proof of work! */}

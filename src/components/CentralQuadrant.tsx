@@ -18,6 +18,7 @@ import {
   Activity,
   Bell,
   Edit2,
+  Edit3,
   Check,
   X,
   Plus,
@@ -38,6 +39,7 @@ import { Task, TaskAttachment, ValidationStep, TaskStatus, ItemType, AccountType
 import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { getAllCategories } from "@/lib/categories";
+import { FormattedText } from "@/components/FormattedText";
 import {
   getTaskScheduleDate,
   isTaskScheduledForDay,
@@ -111,6 +113,10 @@ export function CentralQuadrant({
   useEffect(() => {
     if (selectedTask?.id) {
       setActiveTab("details");
+      setIsEditingCategory(false);
+      setIsAddingTag(false);
+      setIsEditingTitle(false);
+      setIsEditingDescription(false);
     }
   }, [selectedTask?.id]);
 
@@ -119,6 +125,12 @@ export function CentralQuadrant({
   const [tempCategory, setTempCategory] = useState("");
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [newTagInput, setNewTagInput] = useState("");
+
+  // Title and Description Editing States
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState("");
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [tempDescription, setTempDescription] = useState("");
 
   // Complete list of categories (standard + dynamic from all tasks)
   const categoriesList = React.useMemo(() => {
@@ -225,6 +237,41 @@ export function CentralQuadrant({
     if (onUpdateTaskFields) {
       await onUpdateTaskFields(selectedTask.id, { tags: updatedTags });
     }
+  };
+
+  // Title handlers
+  const handleStartEditTitle = () => {
+    if (!selectedTask) return;
+    setTempTitle(selectedTask.title);
+    setIsEditingTitle(true);
+  };
+
+  const handleSaveTitle = async () => {
+    const clean = tempTitle.trim();
+    if (!clean || !selectedTask) return;
+    if (onUpdateTaskFields) {
+      await onUpdateTaskFields(selectedTask.id, { title: clean });
+    }
+    setIsEditingTitle(false);
+  };
+
+  // Description handlers
+  const handleStartEditDescription = () => {
+    if (!selectedTask) return;
+    setTempDescription(selectedTask.description || "");
+    setIsEditingDescription(true);
+  };
+
+  const handleSaveDescription = async () => {
+    if (!selectedTask) return;
+    if (onUpdateTaskFields) {
+      await onUpdateTaskFields(selectedTask.id, { description: tempDescription });
+    }
+    setIsEditingDescription(false);
+  };
+
+  const handleCleanAsterisks = () => {
+    setTempDescription((prev) => prev.replace(/\*\*/g, ""));
   };
 
   // Upload attachment directly from Details view
@@ -1214,13 +1261,113 @@ export function CentralQuadrant({
                   </div>
 
                   {/* Title & Description */}
-                  <div className="space-y-2">
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-snug">
-                      {selectedTask.title}
-                    </h2>
-                    <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                      {selectedTask.description || "Nenhuma descrição fornecida."}
-                    </p>
+                  <div className="space-y-3">
+                    {/* Title */}
+                    {isEditingTitle ? (
+                      <div className="space-y-1.5 animate-in fade-in">
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            value={tempTitle}
+                            onChange={(e) => setTempTitle(e.target.value)}
+                            onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
+                            className="flex-1 px-3 py-1.5 rounded-xl text-base font-bold border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500"
+                            placeholder="Título da demanda..."
+                            autoFocus
+                          />
+                          <button
+                            type="button"
+                            onClick={handleSaveTitle}
+                            className="p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 text-xs font-semibold shadow-sm"
+                            title="Salvar título"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingTitle(false)}
+                            className="p-2 rounded-xl bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-semibold"
+                            title="Cancelar"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between gap-3 group">
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white leading-snug flex-1">
+                          {selectedTask.title}
+                        </h2>
+                        <button
+                          type="button"
+                          onClick={handleStartEditTitle}
+                          className="opacity-0 group-hover:opacity-100 p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all shrink-0"
+                          title="Editar título"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Description with Formatted Text (no raw asterisks) & Edit */}
+                    {isEditingDescription ? (
+                      <div className="space-y-2 animate-in fade-in">
+                        <div className="flex items-center justify-between">
+                          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                            Editar Descrição da Demanda:
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleCleanAsterisks}
+                            className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
+                            title="Remover todos os asteriscos (**) do texto"
+                          >
+                            Remover asteriscos (**)
+                          </button>
+                        </div>
+                        <textarea
+                          rows={6}
+                          value={tempDescription}
+                          onChange={(e) => setTempDescription(e.target.value)}
+                          className="w-full p-3 rounded-xl text-xs sm:text-sm border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500 font-sans leading-relaxed resize-y"
+                          placeholder="Descrição da demanda..."
+                          autoFocus
+                        />
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setIsEditingDescription(false)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleSaveDescription}
+                            className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm"
+                          >
+                            Salvar Descrição
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="group relative">
+                        <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
+                          <FormattedText text={selectedTask.description || "Nenhuma descrição fornecida."} />
+                        </div>
+                        <div className="mt-1">
+                          <button
+                            type="button"
+                            onClick={handleStartEditDescription}
+                            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                            title="Editar texto da descrição"
+                          >
+                            <Edit3 className="w-3 h-3" />
+                            <span>Editar descrição</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Tags Manager with Autonomous AI and Manual Editing */}
@@ -1949,7 +2096,7 @@ export function CentralQuadrant({
               {/* Description preview */}
               {previewTask.description && (
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-600 dark:text-slate-300 max-h-24 overflow-y-auto leading-relaxed">
-                  {previewTask.description}
+                  <FormattedText text={previewTask.description} />
                 </div>
               )}
 

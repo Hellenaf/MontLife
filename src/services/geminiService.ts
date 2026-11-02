@@ -9,6 +9,7 @@ Sua função é analisar a demanda, e-mail, áudio transcrito ou anotação envi
    - Crie um título conciso, profissional e orientado à ação para a demanda.
 2. Descrição Estruturada ('structured_description'):
    - Resuma o contexto do chamado/solicitação, detalhando escopo, informações recebidas e especificações técnicas.
+   - Escreva de forma limpa, direta e profissional, SEM usar asteriscos markdown duplos (**texto**). Utilize quebras de linha e marcadores simples (•) para listar tópicos.
 3. Pontos de Validação & Etapas de Finalização ('validation_steps'):
    - Sugira uma lista sequencial de 3 a 6 etapas práticas de execução e pontos de validação que o responsável deve seguir passo a passo para testar e finalizar a demanda com segurança.
    - Exemplos:
@@ -554,27 +555,27 @@ export function synthesizeStructuredDescription(
   if (/secretaria/i.test(clean)) depts.push("Secretaria Acadêmica");
   if (/ti|suporte/i.test(clean)) depts.push("TI & Suporte Técnico");
 
-  let desc = `📋 **Objetivo da Demanda:**\n${mainGoal}\n\n`;
+  let desc = `📋 Objetivo da Demanda:\n${mainGoal}\n\n`;
 
   const details: string[] = [];
-  if (systems.length > 0) details.push(`• **Sistemas Envolvidos:** ${systems.join(", ")}`);
-  if (depts.length > 0) details.push(`• **Setores Impactados:** ${depts.join(", ")}`);
-  if (/cpf/i.test(clean)) details.push(`• **Ponto Crítico:** Vínculo por CPF (atenção para não mesclar históricos de ex-alunos ou responsáveis)`);
-  if (/sonia/i.test(clean)) details.push(`• **Interessado / Solicitante:** Observação reportada por Sonia (Biblioteca)`);
+  if (systems.length > 0) details.push(`• Sistemas Envolvidos: ${systems.join(", ")}`);
+  if (depts.length > 0) details.push(`• Setores Impactados: ${depts.join(", ")}`);
+  if (/cpf/i.test(clean)) details.push(`• Ponto Crítico: Vínculo por CPF (atenção para não mesclar históricos de ex-alunos ou responsáveis)`);
+  if (/sonia/i.test(clean)) details.push(`• Interessado / Solicitante: Observação reportada por Sonia (Biblioteca)`);
 
   // Extra context if multiple sentences exist
   if (sentences.length > 1) {
     const additionalNotes = sentences.slice(1).join(" ").trim();
     if (additionalNotes) {
-      details.push(`• **Observações Adicionais:** ${additionalNotes}`);
+      details.push(`• Observações Adicionais: ${additionalNotes}`);
     }
   }
 
   if (details.length > 0) {
-    desc += `🔍 **Contexto & Detalhes Operacionais:**\n${details.join("\n")}\n\n`;
+    desc += `🔍 Contexto & Detalhes Operacionais:\n${details.join("\n")}\n\n`;
   }
 
-  desc += `💬 **Demanda Original Registrada:**\n"${clean}"`;
+  desc += `💬 Demanda Original Registrada:\n"${clean}"`;
 
   return desc;
 }
