@@ -12,8 +12,8 @@ import { AnnualReportModal } from "@/components/modals/AnnualReportModal";
 import { AccountsModal } from "@/components/modals/AccountsModal";
 import { NewTaskModal } from "@/components/modals/NewTaskModal";
 import { ClassifyAccountModal } from "@/components/modals/ClassifyAccountModal";
-import { WikiModal } from "@/components/modals/WikiModal";
 import { AgendaDoDiaView } from "@/components/AgendaDoDiaView";
+import { WikiTechnicalView } from "@/components/WikiTechnicalView";
 import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
 import { getAllCategories } from "@/lib/categories";
 import { ExternalLink } from "lucide-react";
@@ -39,7 +39,6 @@ export default function MontOpsDashboard() {
 
   const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [isWikiModalOpen, setIsWikiModalOpen] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [isClassifyModalOpen, setIsClassifyModalOpen] = useState(false);
   const [classifyEmail, setClassifyEmail] = useState("");
@@ -304,7 +303,6 @@ export default function MontOpsDashboard() {
           activeNav={activeNav}
           onSelectNav={(nav) => {
             setActiveNav(nav);
-            if (nav === "wiki") setIsWikiModalOpen(true);
             if (nav === "relatorios") setIsReportModalOpen(true);
             if (nav === "config") setIsAccountsModalOpen(true);
             if (nav === "tarefas" || nav === "inicio") {
@@ -370,7 +368,7 @@ export default function MontOpsDashboard() {
           </div>
         )}
 
-        {/* Main Content: Dedicated Agenda do Dia View OR 3 Columns Demand Grid */}
+        {/* Main Content: Dedicated Agenda do Dia View OR Wiki Técnica View OR 3 Columns Demand Grid */}
         {activeNav === "agenda" ? (
           <main className="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <AgendaDoDiaView
@@ -384,6 +382,21 @@ export default function MontOpsDashboard() {
               onOpenNewTaskModal={() => {
                 setNewTaskInitialText("");
                 setIsNewTaskModalOpen(true);
+              }}
+            />
+          </main>
+        ) : activeNav === "wiki" ? (
+          <main className="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+            <WikiTechnicalView
+              tasks={tasks}
+              onSelectTask={(task) => {
+                setSelectedTaskId(task.id);
+                setActiveNav("tarefas");
+                setCentralActiveTab("details");
+              }}
+              onBackToTasks={() => {
+                setActiveNav("tarefas");
+                setCentralActiveTab("details");
               }}
             />
           </main>
@@ -473,19 +486,6 @@ export default function MontOpsDashboard() {
         tasks={tasks}
       />
 
-      <WikiModal
-        isOpen={isWikiModalOpen}
-        onClose={() => {
-          setIsWikiModalOpen(false);
-          setActiveNav("tarefas");
-        }}
-        tasks={tasks}
-        onSelectTask={(task) => {
-          setSelectedTaskId(task.id);
-          setIsWikiModalOpen(false);
-          setActiveNav("tarefas");
-        }}
-      />
 
       <AccountsModal
         isOpen={isAccountsModalOpen}
