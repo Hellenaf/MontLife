@@ -161,8 +161,12 @@ export function SidebarNav({
           {/* Relatórios */}
           <button
             type="button"
-            onClick={onOpenReportModal}
-            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white hover:bg-white/5 transition-all"
+            onClick={() => onSelectNav("relatorios")}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+              activeNav === "relatorios"
+                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 font-bold"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
               <BarChart3 className="w-4 h-4 text-rose-400" />

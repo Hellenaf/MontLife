@@ -565,15 +565,6 @@ export function HeaderCommandBar({
           </div>
         </button>
 
-        {/* Annual Report Button */}
-        <button
-          onClick={onOpenReportModal}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#282647] bg-white dark:bg-[#16152a] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-800/80 text-xs font-medium transition-all shadow-sm"
-          title="Relatório Executivo & SLA"
-        >
-          <Award className="w-3.5 h-3.5 text-purple-500" />
-          <span className="hidden lg:inline">Relatório</span>
-        </button>
 
         {/* Theme Switcher Toggle (Light / Dark) */}
         <button

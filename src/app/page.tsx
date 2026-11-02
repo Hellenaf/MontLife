@@ -8,12 +8,12 @@ import { CentralQuadrant } from "@/components/CentralQuadrant";
 import { RightKpiQuadrant } from "@/components/RightKpiQuadrant";
 import { ResolutionModal } from "@/components/modals/ResolutionModal";
 import { ExtendDeadlineModal } from "@/components/modals/ExtendDeadlineModal";
-import { AnnualReportModal } from "@/components/modals/AnnualReportModal";
 import { AccountsModal } from "@/components/modals/AccountsModal";
 import { NewTaskModal } from "@/components/modals/NewTaskModal";
 import { ClassifyAccountModal } from "@/components/modals/ClassifyAccountModal";
 import { AgendaDoDiaView } from "@/components/AgendaDoDiaView";
 import { WikiTechnicalView } from "@/components/WikiTechnicalView";
+import { ReportsView } from "@/components/ReportsView";
 import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
 import { getAllCategories } from "@/lib/categories";
 import { ExternalLink } from "lucide-react";
@@ -38,7 +38,6 @@ export default function MontOpsDashboard() {
   const [taskForExtend, setTaskForExtend] = useState<Task | null>(null);
 
   const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [isClassifyModalOpen, setIsClassifyModalOpen] = useState(false);
   const [classifyEmail, setClassifyEmail] = useState("");
@@ -303,14 +302,13 @@ export default function MontOpsDashboard() {
           activeNav={activeNav}
           onSelectNav={(nav) => {
             setActiveNav(nav);
-            if (nav === "relatorios") setIsReportModalOpen(true);
             if (nav === "config") setIsAccountsModalOpen(true);
             if (nav === "tarefas" || nav === "inicio") {
               setCentralActiveTab("details");
             }
           }}
           onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
-          onOpenReportModal={() => setIsReportModalOpen(true)}
+          onOpenReportModal={() => setActiveNav("relatorios")}
           selectedAccountFilter={accountFilter}
           onSelectAccountFilter={(filter) => setAccountFilter(filter)}
           completedTasksCount={tasks.filter((t) => t.status === "COMPLETED").length}
@@ -327,7 +325,7 @@ export default function MontOpsDashboard() {
           onTaskCreated={handleTaskCreated}
           onSelectTask={(task) => setSelectedTaskId(task.id)}
           onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
-          onOpenReportModal={() => setIsReportModalOpen(true)}
+          onOpenReportModal={() => setActiveNav("relatorios")}
           onOpenNewTaskModal={(prefill) => {
             setNewTaskInitialText(prefill || "");
             setIsNewTaskModalOpen(true);
@@ -400,6 +398,16 @@ export default function MontOpsDashboard() {
               }}
             />
           </main>
+        ) : activeNav === "relatorios" ? (
+          <main className="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+            <ReportsView
+              tasks={tasks}
+              onBackToTasks={() => {
+                setActiveNav("tarefas");
+                setCentralActiveTab("details");
+              }}
+            />
+          </main>
         ) : (
           <div className="flex-1 flex overflow-hidden">
             {/* Quadrante Esquerdo: Minhas Tarefas */}
@@ -453,7 +461,7 @@ export default function MontOpsDashboard() {
             {/* Quadrante Direito: Métricas & Desempenho + Resumo Anual */}
             <RightKpiQuadrant
               tasks={tasks}
-              onOpenReportModal={() => setIsReportModalOpen(true)}
+              onOpenReportModal={() => setActiveNav("relatorios")}
             />
           </div>
         )}
@@ -478,12 +486,6 @@ export default function MontOpsDashboard() {
           setTaskForExtend(null);
         }}
         onConfirm={handleConfirmExtendDeadline}
-      />
-
-      <AnnualReportModal
-        isOpen={isReportModalOpen}
-        onClose={() => setIsReportModalOpen(false)}
-        tasks={tasks}
       />
 
 
