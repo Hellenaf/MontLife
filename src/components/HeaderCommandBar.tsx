@@ -13,6 +13,7 @@ import {
   User,
   ShieldCheck,
   Award,
+  Calendar,
   Lightbulb,
   Clock,
   Tag,
@@ -93,6 +94,12 @@ export function HeaderCommandBar({
   const [newHeaderStep, setNewHeaderStep] = useState("");
   const [isAddingHeaderStep, setIsAddingHeaderStep] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [currentTime, setCurrentTime] = useState<Date>(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const recognitionRef = useRef<any>(null);
 
@@ -191,8 +198,6 @@ export function HeaderCommandBar({
 
   const handlePriorityChange = (newP: Priority) => {
     setEditPriority(newP);
-    const newDate = calculateSlaDueDate(newP);
-    setEditDueDate(newDate);
   };
 
   const handleRemoveHeaderStep = (id: string) => {
@@ -269,36 +274,29 @@ export function HeaderCommandBar({
 
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-30 h-16 bg-white/95 dark:bg-[#101118]/95 backdrop-blur-md border-b border-slate-200 dark:border-zinc-800/80 px-4 sm:px-6 flex items-center justify-between shadow-sm transition-colors duration-200">
-      {/* Brand & Identity */}
-      <div className="flex items-center gap-3 shrink-0">
-        <div className="w-8 h-8 rounded-xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center font-black text-sm text-white shadow-sm">
+      <header className="h-16 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-4 sm:px-6 flex items-center justify-between shadow-sm transition-colors duration-200 z-30">
+      {/* Brand & Identity (visible on mobile where sidebar is hidden) */}
+      <div className="flex items-center gap-2.5 shrink-0 lg:hidden">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-black text-sm text-white shadow-sm">
           M
         </div>
         <div>
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">
-              MontLife
-            </span>
-            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700">
-              Tasks
-            </span>
-          </div>
-          <p className="text-[10px] text-slate-500 dark:text-slate-400 hidden sm:block">
-            Central de Demandas & Rotinas
-          </p>
+          <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">
+            Mont Ops
+          </span>
         </div>
       </div>
 
       {/* Center Command Bar + Nova Demanda */}
-      <div className="flex-1 max-w-2xl mx-3 sm:mx-6 flex items-center gap-2">
+      <div className="flex-1 max-w-2xl mx-2 sm:mx-4 flex items-center gap-2">
         <form onSubmit={handleRunTriage} className="relative flex items-center flex-1">
+          <Sparkles className="w-4 h-4 text-purple-500 absolute left-3.5 pointer-events-none" />
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Criar demanda rápida ou pesquisar (ex: atualizar TOTVS, comprar materiais)..."
-            className="w-full h-10 pl-4 pr-32 rounded-xl bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+            placeholder="Digite um comando... (ex: criar tarefa, ver minhas metas, estudar sobre React)"
+            className="w-full h-10 pl-10 pr-28 rounded-xl bg-slate-100 dark:bg-[#16152a] border border-slate-200 dark:border-[#282647] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-medium"
             disabled={isProcessing}
           />
 
@@ -334,15 +332,13 @@ export function HeaderCommandBar({
             <button
               type="submit"
               disabled={isProcessing || !input.trim()}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-40"
+              className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white text-xs font-semibold shadow-md shadow-purple-600/30 transition-all disabled:opacity-40"
+              title="Executar comando inteligente"
             >
               {isProcessing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <>
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span className="hidden md:inline">Criar</span>
-                </>
+                <Send className="w-3.5 h-3.5" />
               )}
             </button>
           </div>
@@ -352,10 +348,10 @@ export function HeaderCommandBar({
           <button
             type="button"
             onClick={() => onOpenNewTaskModal("")}
-            className="flex items-center gap-1.5 px-3.5 py-2 h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-all shrink-0 active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-2 h-10 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-sm transition-all shrink-0 active:scale-95"
             title="Adicionar demanda detalhada"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Nova Demanda</span>
           </button>
         )}
@@ -363,47 +359,67 @@ export function HeaderCommandBar({
 
       {/* Right Navigation & Tools */}
       <div className="flex items-center gap-2 shrink-0">
+        {/* Clock & Date Widget (Matching mockup) */}
+        <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#16152a] border border-slate-200 dark:border-[#282647] text-xs text-slate-700 dark:text-slate-300 font-medium">
+          <Calendar className="w-3.5 h-3.5 text-purple-500" />
+          <span className="capitalize">
+            {format(currentTime, "EEE, d 'de' MMM", { locale: ptBR })}
+          </span>
+          <span className="text-slate-300 dark:text-zinc-600">|</span>
+          <span className="font-bold font-mono text-purple-600 dark:text-purple-400">
+            {format(currentTime, "HH:mm")}
+          </span>
+        </div>
+
+        {/* Notifications Bell with badge 2 */}
+        <button
+          type="button"
+          onClick={onOpenReportModal}
+          className="relative p-2 rounded-xl border border-slate-200 dark:border-[#282647] bg-white dark:bg-[#16152a] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
+          title="Notificações e Alertas"
+        >
+          <Bell className="w-4 h-4" />
+          <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+            2
+          </span>
+        </button>
+
         {/* Connected Accounts Status */}
         <button
           onClick={onOpenAccountsModal}
           className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs transition-all ${
             workAcc?.is_connected || personalAcc?.is_connected
-              ? "bg-slate-50 dark:bg-[#161722] border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-zinc-700"
-              : "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/60"
+              ? "bg-slate-50 dark:bg-[#16152a] border-slate-200 dark:border-[#282647] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-zinc-700"
+              : "bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100/60"
           }`}
           title="Gerenciar Contas Google"
         >
           <div className="flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full ${
-                workAcc?.is_connected ? "bg-emerald-500" : "bg-slate-300 dark:bg-zinc-600"
+                workAcc?.is_connected ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : "bg-slate-300 dark:bg-zinc-600"
               }`}
             />
-            <Briefcase className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+            <Briefcase className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
           </div>
           <span className="text-slate-300 dark:text-zinc-700">|</span>
           <div className="flex items-center gap-1.5">
             <span
               className={`w-2 h-2 rounded-full ${
-                personalAcc?.is_connected ? "bg-emerald-500" : "bg-slate-300 dark:bg-zinc-600"
+                personalAcc?.is_connected ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : "bg-slate-300 dark:bg-zinc-600"
               }`}
             />
             <User className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
           </div>
-          {!(workAcc?.is_connected || personalAcc?.is_connected) && (
-            <span className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-300 hidden md:inline ml-1">
-              Vincular Google
-            </span>
-          )}
         </button>
 
         {/* Annual Report Button */}
         <button
           onClick={onOpenReportModal}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#161722] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-800/80 text-xs font-medium transition-all shadow-sm"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-[#282647] bg-white dark:bg-[#16152a] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-800/80 text-xs font-medium transition-all shadow-sm"
           title="Relatório Executivo & SLA"
         >
-          <Award className="w-3.5 h-3.5 text-indigo-500" />
+          <Award className="w-3.5 h-3.5 text-purple-500" />
           <span className="hidden lg:inline">Relatório</span>
         </button>
 
@@ -412,7 +428,7 @@ export function HeaderCommandBar({
           type="button"
           onClick={toggleTheme}
           aria-label="Alternar modo claro e escuro"
-          className="p-2 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#161722] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm active:scale-95"
+          className="p-2 rounded-xl border border-slate-200 dark:border-[#282647] bg-white dark:bg-[#16152a] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm active:scale-95"
           title={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
         >
           {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}

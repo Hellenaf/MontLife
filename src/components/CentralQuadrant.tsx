@@ -19,6 +19,7 @@ import {
   Bell,
   Edit2,
   Edit3,
+  ArrowRight,
   Check,
   X,
   Plus,
@@ -175,16 +176,27 @@ export function CentralQuadrant({
   const END_HOUR = 23;
   const dayHours = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => i + START_HOUR);
 
-  // Week calculation (Sunday to Saturday, like Google Calendar)
-  const weekStart = startOfWeek(calendarDate, { weekStartsOn: 0 });
-  const weekEnd = endOfWeek(calendarDate, { weekStartsOn: 0 });
+  // Week calculation (Monday to Sunday, matching user mockup Seg -> Dom)
+  const weekStart = startOfWeek(calendarDate, { weekStartsOn: 1 });
+  const weekEnd = endOfWeek(calendarDate, { weekStartsOn: 1 });
   const weekDays = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+  // Tasks scheduled for the currently selected day in Agenda do Dia
+  const tasksForSelectedDay = React.useMemo(() => {
+    return allTasks
+      .filter((t) => isTaskScheduledForDay(t, calendarDate))
+      .sort((a, b) => {
+        const dateA = new Date(getTaskScheduleDate(a)).getTime();
+        const dateB = new Date(getTaskScheduleDate(b)).getTime();
+        return dateA - dateB;
+      });
+  }, [allTasks, calendarDate]);
 
   // Month calculation
   const monthStart = startOfMonth(calendarDate);
   const monthEnd = endOfMonth(calendarDate);
-  const monthGridStart = startOfWeek(monthStart, { weekStartsOn: 0 });
-  const monthGridEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  const monthGridStart = startOfWeek(monthStart, { weekStartsOn: 1 });
+  const monthGridEnd = endOfWeek(monthEnd, { weekStartsOn: 1 });
   const monthGridDays = eachDayOfInterval({ start: monthGridStart, end: monthGridEnd });
 
   // Navigation handlers (Google Calendar style)
@@ -346,13 +358,19 @@ export function CentralQuadrant({
     await onUpdateTaskFields(selectedTask.id, { validation_steps: updated });
   };
 
-  // Change priority level directly in details
+  // Change priority level directly in details (independent of deadline)
   const handleChangeDetailPriority = async (newPriority: Priority) => {
     if (!selectedTask || !onUpdateTaskFields) return;
-    const newDueDate = calculateSlaDueDate(newPriority);
     await onUpdateTaskFields(selectedTask.id, {
       priority: newPriority,
-      current_due_date: newDueDate,
+    });
+  };
+
+  // Change deadline directly in details (independent of priority)
+  const handleChangeDetailDueDate = async (newDueDateIso: string) => {
+    if (!selectedTask || !onUpdateTaskFields || !newDueDateIso) return;
+    await onUpdateTaskFields(selectedTask.id, {
+      current_due_date: newDueDateIso,
     });
   };
 
@@ -1121,21 +1139,21 @@ export function CentralQuadrant({
           </div>
         )}
 
-        {/* TAB 2: DETAILS OF SELECTED ITEM */}
+        {/* TAB 2: DETAILS OF SELECTED ITEM (ABOVE) & AGENDA DO DIA (BELOW) */}
         {activeTab === "details" && (
-          <div>
+          <div className="max-w-4xl mx-auto space-y-4">
             {!selectedTask ? (
-              <div className="h-96 flex flex-col items-center justify-center text-center text-slate-400 dark:text-slate-500 space-y-3">
-                <FileText className="w-12 h-12 opacity-30 text-indigo-500" />
+              <div className="p-8 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 text-center space-y-2 shadow-sm">
+                <FileText className="w-8 h-8 mx-auto opacity-30 text-indigo-500" />
                 <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
                   Nenhuma demanda selecionada
                 </h3>
-                <p className="text-xs max-w-sm leading-relaxed">
-                  Selecione um compromisso ou tarefa na agenda para visualizar e editar todos os detalhes.
+                <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
+                  Selecione uma tarefa na lista à esquerda ou na Agenda do Dia abaixo para visualizar e editar todos os detalhes.
                 </p>
               </div>
             ) : (
-              <div className="max-w-4xl mx-auto space-y-4">
+              <>
                 {/* Header card of selected item */}
                 <div className="p-6 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
                   {/* Top Bar with Context + Category Editor + Type Switcher */}
@@ -1815,70 +1833,118 @@ export function CentralQuadrant({
                     )}
                   </div>
 
-                  {/* Priority Level Switcher (P1, P2, P3, P4) */}
-                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-1">
-                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        Alterar Nível de Prioridade & Prazo (SLA):
-                      </span>
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                        Clique para alterar o nível da demanda
-                      </span>
+                  {/* Priority & Deadline Control - Separated and Independent */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {/* Priority Selector (Independent) */}
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          Nível de Prioridade:
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          O que priorizar
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {[
+                          { p: "P1" as Priority, label: "P1 - Crítica", color: "border-rose-500 text-rose-600 bg-rose-50/80 dark:bg-rose-950/40" },
+                          { p: "P2" as Priority, label: "P2 - Alta", color: "border-orange-500 text-orange-600 bg-orange-50/80 dark:bg-orange-950/40" },
+                          { p: "P3" as Priority, label: "P3 - Média", color: "border-amber-500 text-amber-600 bg-amber-50/80 dark:bg-amber-950/40" },
+                          { p: "P4" as Priority, label: "P4 - Baixa", color: "border-emerald-500 text-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40" },
+                        ].map((item) => {
+                          const isSelected = selectedTask.priority === item.p;
+                          return (
+                            <button
+                              key={item.p}
+                              type="button"
+                              onClick={() => handleChangeDetailPriority(item.p)}
+                              className={`py-1.5 px-2 rounded-lg border text-center transition-all text-xs font-semibold ${
+                                isSelected
+                                  ? `${item.color} font-bold ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-[#141520] shadow-xs`
+                                  : "border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800/60 text-slate-600 dark:text-slate-400"
+                              }`}
+                            >
+                              {item.label}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                      {[
-                        { p: "P1" as Priority, label: "P1 - Crítico", desc: "4h", color: "border-rose-500 text-rose-600 bg-rose-50/80 dark:bg-rose-950/40" },
-                        { p: "P2" as Priority, label: "P2 - Alto", desc: "24h", color: "border-orange-500 text-orange-600 bg-orange-50/80 dark:bg-orange-950/40" },
-                        { p: "P3" as Priority, label: "P3 - Normal", desc: "48h", color: "border-amber-500 text-amber-600 bg-amber-50/80 dark:bg-amber-950/40" },
-                        { p: "P4" as Priority, label: "P4 - Baixo", desc: "72h+", color: "border-purple-500 text-purple-600 bg-purple-50/80 dark:bg-purple-950/40" },
-                      ].map((item) => {
-                        const isSelected = selectedTask.priority === item.p;
-                        return (
-                          <button
-                            key={item.p}
-                            type="button"
-                            onClick={() => handleChangeDetailPriority(item.p)}
-                            className={`p-2 rounded-lg border text-left transition-all ${
-                              isSelected
-                                ? `${item.color} font-bold ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-[#141520] shadow-xs`
-                                : "border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800/60 text-slate-600 dark:text-slate-400"
-                            }`}
-                          >
-                            <div className="text-xs font-semibold flex items-center justify-between">
-                              <span>{item.label}</span>
-                              <span className="text-[10px] font-bold opacity-80">{item.desc}</span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">Criado em</span>
-                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        {format(parseISO(selectedTask.created_at), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
-                        Prazo Original (SLA {selectedTask.priority})
-                      </span>
-                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        {format(parseISO(selectedTask.original_due_date), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400 block">
-                        Prazo Atual {selectedTask.extension_count > 0 ? `(${selectedTask.extension_count}x estendido)` : ""}
-                      </span>
-                      <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                        {format(parseISO(selectedTask.current_due_date), "dd/MM/yyyy HH:mm", { locale: ptBR })}
-                      </span>
+                    {/* Deadline / Due Date Editor (Independent) */}
+                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                          Prazo / Limite da Demanda:
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          Data limite independente
+                        </span>
+                      </div>
+                      <input
+                        type="datetime-local"
+                        value={
+                          selectedTask.current_due_date
+                            ? format(parseISO(selectedTask.current_due_date), "yyyy-MM-dd'T'HH:mm")
+                            : ""
+                        }
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleChangeDetailDueDate(new Date(e.target.value).toISOString());
+                          }
+                        }}
+                        className="w-full h-8 px-2.5 text-xs rounded-lg bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-medium"
+                      />
+                      <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const d = new Date();
+                            d.setHours(18, 0, 0, 0);
+                            handleChangeDetailDueDate(d.toISOString());
+                          }}
+                          className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
+                        >
+                          Hoje 18h
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + 1);
+                            d.setHours(18, 0, 0, 0);
+                            handleChangeDetailDueDate(d.toISOString());
+                          }}
+                          className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
+                        >
+                          Amanhã
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + 4);
+                            d.setHours(18, 0, 0, 0);
+                            handleChangeDetailDueDate(d.toISOString());
+                          }}
+                          className="px-2 py-0.5 rounded text-[10px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800"
+                          title="Definir prazo para 4 dias"
+                        >
+                          +4 dias
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const d = new Date();
+                            d.setDate(d.getDate() + 7);
+                            d.setHours(18, 0, 0, 0);
+                            handleChangeDetailDueDate(d.toISOString());
+                          }}
+                          className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
+                        >
+                          +1 semana
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1958,8 +2024,150 @@ export function CentralQuadrant({
                     </p>
                   )}
                 </div>
-              </div>
+              </>
             )}
+
+            {/* CARD 2: AGENDA DO DIA (ABAIXO DOS DETALHES DA TAREFA) */}
+            <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
+              {/* Header */}
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                <div className="flex items-center gap-2">
+                  <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                    <CalendarIcon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      Agenda do Dia
+                    </h3>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize">
+                      {format(calendarDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("timeline")}
+                  className="flex items-center gap-1.5 text-xs font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                  title="Abrir visão completa do Google Agenda"
+                >
+                  <span>Ver calendário</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+
+              {/* Horizontal Week Strip (7 dias da semana: Seg -> Dom) */}
+              <div className="flex items-center justify-between gap-1.5 overflow-x-auto pb-1">
+                {weekDays.map((day) => {
+                  const isSelected = isSameDay(day, calendarDate);
+                  const isToday = isSameDay(day, new Date());
+                  const hasTasks = allTasks.some((t) => isTaskScheduledForDay(t, day));
+
+                  return (
+                    <button
+                      key={day.toISOString()}
+                      type="button"
+                      onClick={() => setCalendarDate(day)}
+                      className={`flex-1 min-w-[44px] py-2 px-1 rounded-xl flex flex-col items-center justify-center transition-all ${
+                        isSelected
+                          ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold scale-[1.02]"
+                          : isToday
+                          ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60"
+                          : "bg-slate-50 dark:bg-[#0c0d13] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800/80"
+                      }`}
+                    >
+                      <span className="text-xs font-bold leading-tight">
+                        {format(day, "d")}
+                      </span>
+                      <span className="text-[10px] uppercase tracking-wider opacity-80 mt-0.5">
+                        {format(day, "EEE", { locale: ptBR })}
+                      </span>
+                      {/* Dot indicator if day has tasks */}
+                      <span
+                        className={`w-1.5 h-1.5 rounded-full mt-1 ${
+                          hasTasks
+                            ? isSelected
+                              ? "bg-white"
+                              : "bg-indigo-500"
+                            : "opacity-0"
+                        }`}
+                      />
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Daily Events / Scheduled Tasks for the Selected Day */}
+              <div className="space-y-2 pt-1 max-h-80 overflow-y-auto custom-scrollbar">
+                {tasksForSelectedDay.length === 0 ? (
+                  <div className="py-6 text-center text-slate-400 dark:text-slate-500 space-y-2">
+                    <Clock className="w-8 h-8 mx-auto opacity-40 text-indigo-400" />
+                    <p className="text-xs">
+                      Nenhuma tarefa ou compromisso agendado para este dia.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={onOpenNewTaskModal}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Agendar Tarefa
+                    </button>
+                  </div>
+                ) : (
+                  tasksForSelectedDay.map((task) => {
+                    const isAllDay = isAllDayTask(task);
+                    const timeText = isAllDay
+                      ? "Dia inteiro"
+                      : format(parseISO(getTaskScheduleDate(task)), "HH:mm");
+                    const isCurrentSelected = selectedTask?.id === task.id;
+
+                    return (
+                      <div
+                        key={task.id}
+                        onClick={() => onSelectTask?.(task)}
+                        className={`p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
+                          isCurrentSelected
+                            ? "ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-[#141520] bg-indigo-50/40 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-700"
+                            : "bg-slate-50/70 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-xs"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-200 shrink-0">
+                            {timeText}
+                          </span>
+                          <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700 shrink-0" />
+                          <div className="flex items-center gap-2 min-w-0">
+                            {task.item_type === "activity" ? (
+                              <Activity className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                            ) : task.item_type === "reminder" ? (
+                              <Bell className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                            ) : (
+                              <ListTodo className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                            )}
+                            <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                              {task.title}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold ${
+                              task.account_type === "work"
+                                ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20"
+                                : "bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20"
+                            }`}
+                          >
+                            {task.account_type === "work" ? "Trabalho" : "Pessoal"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
           </div>
         )}
 

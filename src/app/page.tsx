@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { SidebarNav } from "@/components/SidebarNav";
 import { HeaderCommandBar } from "@/components/HeaderCommandBar";
 import { LeftTasksQuadrant } from "@/components/LeftTasksQuadrant";
 import { CentralQuadrant } from "@/components/CentralQuadrant";
@@ -19,6 +20,7 @@ export default function MontOpsDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
+  const [activeNav, setActiveNav] = useState("inicio");
 
   // Dynamically derive selected task from tasks array
   const selectedTask =
@@ -288,23 +290,39 @@ export default function MontOpsDashboard() {
   const allCategories = useMemo(() => getAllCategories(tasks), [tasks]);
 
   return (
-    <div className="w-screen h-screen overflow-hidden flex flex-col bg-slate-50 dark:bg-[#090A0F] text-slate-800 dark:text-slate-100 transition-colors duration-200">
-      {/* 1. Header Fixo & Barra de Comando IA */}
-      <HeaderCommandBar
-        accounts={accounts}
-        tasks={tasks}
-        availableCategories={allCategories}
-        onTaskCreated={handleTaskCreated}
-        onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
-        onOpenReportModal={() => setIsReportModalOpen(true)}
-        onOpenNewTaskModal={(prefill) => {
-          setNewTaskInitialText(prefill || "");
-          setIsNewTaskModalOpen(true);
-        }}
-      />
+    <div className="w-screen h-screen overflow-hidden flex bg-slate-50 dark:bg-[#090A0F] text-slate-800 dark:text-slate-100 transition-colors duration-200">
+      {/* 1. Sidebar Nav (Far Left, from the mockup) */}
+      <div className="hidden lg:flex h-full">
+        <SidebarNav
+          accounts={accounts}
+          activeNav={activeNav}
+          onSelectNav={(nav) => {
+            setActiveNav(nav);
+            if (nav === "wiki" || nav === "relatorios") setIsReportModalOpen(true);
+            if (nav === "config") setIsAccountsModalOpen(true);
+          }}
+          onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
+          onOpenReportModal={() => setIsReportModalOpen(true)}
+          completedTasksCount={tasks.filter((t) => t.status === "COMPLETED").length}
+        />
+      </div>
 
-      {/* 2. Fixed-Grid: 3 Colunas Abaixo do Header (Tela Cheia, Scroll Interno Independente) */}
-      <div className="flex-1 flex flex-col overflow-hidden pt-16">
+      {/* 2. Main Area (Header on top, then 3 columns below) */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+        {/* Header Command Bar */}
+        <HeaderCommandBar
+          accounts={accounts}
+          tasks={tasks}
+          availableCategories={allCategories}
+          onTaskCreated={handleTaskCreated}
+          onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
+          onOpenReportModal={() => setIsReportModalOpen(true)}
+          onOpenNewTaskModal={(prefill) => {
+            setNewTaskInitialText(prefill || "");
+            setIsNewTaskModalOpen(true);
+          }}
+        />
+
         {/* Banner if no account is connected */}
         {!hasConnectedAccount && accountsLoaded && accounts.length > 0 && (
           <div className="bg-indigo-50 dark:bg-indigo-950/60 border-b border-indigo-200 dark:border-indigo-800 px-4 py-2 flex items-center justify-between text-xs text-indigo-900 dark:text-indigo-200 shrink-0">
@@ -339,8 +357,9 @@ export default function MontOpsDashboard() {
           </div>
         )}
 
+        {/* 3 Columns Grid */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Quadrante Esquerdo: Gestão de Tarefas, Atividades e Lembretes */}
+          {/* Quadrante Esquerdo: Minhas Tarefas */}
           <LeftTasksQuadrant
             tasks={tasks}
             selectedTaskId={selectedTask?.id || null}
@@ -362,7 +381,7 @@ export default function MontOpsDashboard() {
             onRefreshTasks={loadTasks}
           />
 
-          {/* Quadrante Central: Detalhes, Seletor de Tipo, Agenda & Estudo */}
+          {/* Quadrante Central: Detalhes da Demanda (ABOVE) & Agenda do Dia (BELOW) */}
           <CentralQuadrant
             selectedTask={selectedTask}
             allTasks={tasks}
@@ -381,7 +400,7 @@ export default function MontOpsDashboard() {
             onOpenNewTaskModal={() => setIsNewTaskModalOpen(true)}
           />
 
-          {/* Quadrante Direito: KPIs em Tempo Real */}
+          {/* Quadrante Direito: Métricas & Desempenho + Resumo Anual */}
           <RightKpiQuadrant
             tasks={tasks}
             onOpenReportModal={() => setIsReportModalOpen(true)}

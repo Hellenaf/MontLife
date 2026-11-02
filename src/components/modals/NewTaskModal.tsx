@@ -176,12 +176,6 @@ export function NewTaskModal({
 
   const handlePriorityChange = (newP: Priority) => {
     setPriority(newP);
-    const calculated = calculateSlaDueDate(newP);
-    try {
-      setDueDate(format(new Date(calculated), "yyyy-MM-dd'T'HH:mm"));
-    } catch {
-      setDueDate(calculated.substring(0, 16));
-    }
   };
 
   const handleAnalyzeWithAI = async () => {
