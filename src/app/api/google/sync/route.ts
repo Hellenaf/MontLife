@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
-import { getConnectedAccounts, getTasksFromDb, saveTaskToDb, saveConnectedAccount } from "@/services/taskService";
+import {
+  getConnectedAccounts,
+  getTasksFromDb,
+  saveTaskToDb,
+  saveConnectedAccount,
+  deleteTaskFromDb,
+} from "@/services/taskService";
 import {
   fetchAllGoogleTasksFromAccount,
-  fetchAllGoogleCalendarEvents,
   fetchYouTubeResources,
+  syncTaskToGoogleCalendar,
 } from "@/services/googleService";
 import { categorizeTaskWithAI } from "@/services/geminiService";
 import { Task, AccountType } from "@/types";
@@ -15,12 +21,22 @@ export async function POST() {
     const tasks = await getTasksFromDb();
     let importedCount = 0;
     let updatedCount = 0;
+    let purgedGcalCount = 0;
+
+    // 1. Cleanup rule: Remove any legacy imported calendar events (gcal-*)
+    // The user explicitly stated: Google Calendar events should NOT come into the site.
+    for (const t of tasks) {
+      if (t.id.startsWith("gcal-") && !t.raw_input.startsWith("[MontLife]")) {
+        await deleteTaskFromDb(t.id);
+        purgedGcalCount++;
+      }
+    }
 
     for (const acc of accounts) {
       if (acc.is_connected && (acc.refresh_token || acc.access_token) && (acc.id === "work" || acc.id === "personal")) {
         const accountType: AccountType = acc.id;
         try {
-          // Fetch ALL tasks across ALL tasklists with full pagination (from 2024 to today)
+          // Fetch Google Tasks items (task management only)
           const items = await fetchAllGoogleTasksFromAccount({
             access_token: acc.access_token,
             refresh_token: acc.refresh_token,
@@ -33,7 +49,6 @@ export async function POST() {
             const cleanTitle = stripGoogleTaskPrefix(item.title);
 
             if (!existing) {
-              // Categorize autonomously with AI
               const aiData = await categorizeTaskWithAI(cleanTitle, item.notes, accountType);
               const yt = await fetchYouTubeResources(aiData.learning_queries);
 
@@ -70,7 +85,6 @@ export async function POST() {
               await saveTaskToDb(newTask);
               importedCount++;
             } else {
-              // If already exists but has old generic category ("Suporte TI", "Finanças & Pessoal", or tag "google-tasks"), upgrade it with AI!
               const isGeneric =
                 existing.category === "Suporte TI" ||
                 existing.category === "Finanças & Pessoal" ||
@@ -89,7 +103,6 @@ export async function POST() {
                 hasChanged = true;
               }
 
-              // Update completion status if changed in Google Tasks
               if (isCompleted && existing.status !== "COMPLETED") {
                 existing.status = "COMPLETED";
                 existing.completed_at = item.completed || item.updated || new Date().toISOString();
@@ -108,59 +121,29 @@ export async function POST() {
             }
           }
 
-          // 2. Sincronizar Google Agenda (Calendar Events)
-          try {
-            const calEvents = await fetchAllGoogleCalendarEvents({
-              access_token: acc.access_token,
-              refresh_token: acc.refresh_token,
-            });
-
-            for (const ev of calEvents) {
-              const existingEv = tasks.find(
-                (t) => t.google_calendar_event_id === ev.id || t.id === `gcal-${ev.id}`
-              );
-
-              if (!existingEv) {
-                const isPast = new Date(ev.start).getTime() < Date.now();
-                const newCalTask: Task = {
-                  id: `gcal-${ev.id}`,
-                  raw_input: ev.summary,
-                  title: ev.summary,
-                  description: ev.description || (ev.location ? `Local: ${ev.location}` : ""),
-                  account_type: accountType,
-                  item_type: "activity",
-                  category: "Agenda & Compromissos",
-                  tags: ["google-agenda", "evento", accountType === "personal" ? "pessoal" : "trabalho"],
-                  priority: "P3",
-                  status: isPast ? "COMPLETED" : "TODO",
-                  created_at: new Date().toISOString(),
-                  started_at: null,
-                  completed_at: isPast ? ev.start : null,
-                  original_due_date: ev.start,
-                  current_due_date: ev.start,
-                  extension_count: 0,
-                  deadline_extensions: [],
-                  resolution_notes: null,
-                  cancel_reason: null,
-                  google_task_id: null,
-                  google_calendar_event_id: ev.id,
-                  learning_resources: { youtube_videos: [], search_queries: [] },
-                  met_original_sla: isPast ? true : null,
-                };
-
-                await saveTaskToDb(newCalTask);
-                importedCount++;
+          // 2. Outbound-only sync: Push MontLife tasks with due dates TO Google Calendar
+          const montLifeTasksToPush = tasks.filter(
+            (t) => t.account_type === accountType && t.current_due_date && t.status !== "COMPLETED" && t.status !== "CANCELED"
+          );
+          for (const task of montLifeTasksToPush.slice(0, 10)) {
+            try {
+              const calEventId = await syncTaskToGoogleCalendar(task, {
+                access_token: acc.access_token,
+                refresh_token: acc.refresh_token,
+              });
+              if (calEventId && calEventId !== task.google_calendar_event_id) {
+                task.google_calendar_event_id = calEventId;
+                await saveTaskToDb(task);
               }
+            } catch (err) {
+              console.warn("Failed pushing task to calendar:", err);
             }
-          } catch (calErr) {
-            console.warn(`Calendar sync failed for account ${acc.id}:`, calErr);
           }
         } catch (syncErr) {
           console.warn(`Sync failed for account ${acc.id}:`, syncErr);
         }
       }
 
-      // Update sync timestamp
       await saveConnectedAccount({
         ...acc,
         last_sync_at: new Date().toISOString(),
@@ -172,6 +155,7 @@ export async function POST() {
       message: "Sincronização concluída com sucesso.",
       imported_count: importedCount,
       updated_count: updatedCount,
+      purged_gcal_count: purgedGcalCount,
       timestamp: new Date().toISOString(),
     });
   } catch (error: unknown) {

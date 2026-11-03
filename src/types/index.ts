@@ -44,10 +44,26 @@ export interface TaskAttachment {
   id: string;
   name: string;
   size: number;
-  type: string;
+  type: string; // MIME type or "url" / "link"
   url: string; // Base64 data URL or external URL
   created_at: string;
   stage: "creation" | "resolution";
+  is_external_link?: boolean;
+}
+
+export interface ExecutionRecord {
+  id: string;
+  date: string;
+  notes?: string;
+  method?: string;
+  registered_by?: string;
+}
+
+export interface AlternativeResolution {
+  id: string;
+  date: string;
+  method: string;
+  notes: string;
 }
 
 export interface Task {
@@ -77,6 +93,9 @@ export interface Task {
   attachments?: TaskAttachment[];
   resolution_attachments?: TaskAttachment[];
   validation_steps?: ValidationStep[];
+  recurrence_count?: number;
+  execution_history?: ExecutionRecord[];
+  alternative_resolutions?: AlternativeResolution[];
 }
 
 export interface ConnectedAccount {

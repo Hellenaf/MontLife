@@ -22,6 +22,9 @@ import {
   CheckSquare,
   Square,
   Plus,
+  Lightbulb,
+  ArrowRight,
+  Repeat,
 } from "lucide-react";
 import {
   ItemType,
@@ -35,9 +38,10 @@ import {
 } from "@/types";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { format } from "date-fns";
-import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
 import { getAllCategories } from "@/lib/categories";
 import { CategoryCombobox } from "@/components/CategoryCombobox";
+import { AttachmentManager } from "@/components/AttachmentManager";
+import { findSimilarTasks } from "@/lib/taskDeduplication";
 
 interface NewTaskModalProps {
   isOpen: boolean;
@@ -46,6 +50,9 @@ interface NewTaskModalProps {
   initialText?: string;
   initialType?: ItemType;
   availableCategories?: string[];
+  existingTasks?: Task[];
+  onSelectExistingTask?: (task: Task) => void;
+  onTaskUpdated?: (task: Task) => void;
 }
 
 export function NewTaskModal({
@@ -55,6 +62,9 @@ export function NewTaskModal({
   initialText = "",
   initialType = "task",
   availableCategories,
+  existingTasks = [],
+  onSelectExistingTask,
+  onTaskUpdated,
 }: NewTaskModalProps) {
   const categoriesList = useMemo(() => {
     if (availableCategories && availableCategories.length > 0) return availableCategories;
@@ -69,8 +79,6 @@ export function NewTaskModal({
   const [dueDate, setDueDate] = useState<string>("");
   const [tagsInput, setTagsInput] = useState<string>("");
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
-  const [isProcessingFile, setIsProcessingFile] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Validation Steps (Checklist suggested by AI or custom)
   const [validationSteps, setValidationSteps] = useState<ValidationStep[]>([]);
@@ -81,8 +89,23 @@ export function NewTaskModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<GeminiTriageResponse | null>(null);
 
+  // Deduplication & Recurrence detection state
+  const [ignoredSimilarityId, setIgnoredSimilarityId] = useState<string | null>(null);
+  const [isRegisteringRecurrence, setIsRegisteringRecurrence] = useState(false);
+
+  const similarMatches = useMemo(() => {
+    if (!title.trim() || !existingTasks || existingTasks.length === 0) return [];
+    return findSimilarTasks(title, description, existingTasks, 0.45);
+  }, [title, description, existingTasks]);
+
+  const topSimilar =
+    similarMatches.length > 0 && similarMatches[0].task.id !== ignoredSimilarityId
+      ? similarMatches[0]
+      : null;
+
   useEffect(() => {
     if (isOpen) {
+      setIgnoredSimilarityId(null);
       if (initialText) {
         if (initialText.includes("\n") || initialText.length > 60) {
           setDescription(initialText);
@@ -108,6 +131,7 @@ export function NewTaskModal({
       setValidationSteps([]);
       setNewStepText("");
       setIsAddingStep(false);
+      setIgnoredSimilarityId(null);
     }
   }, [isOpen, initialText, initialType]);
 
@@ -136,41 +160,8 @@ export function NewTaskModal({
     );
   };
 
-  const handleToggleValidationStep = (id: string) => {
-    setValidationSteps((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, completed: !s.completed } : s))
-    );
-  };
-
   const handleClearValidationSteps = () => {
     setValidationSteps([]);
-  };
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-
-    setIsProcessingFile(true);
-    try {
-      const newAttachments: TaskAttachment[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const att = await processFileToAttachment(file, "creation");
-        newAttachments.push(att);
-      }
-      setAttachments((prev) => [...prev, ...newAttachments]);
-    } catch (err) {
-      console.error("Erro ao processar anexo:", err);
-    } finally {
-      setIsProcessingFile(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
-
-  const handleRemoveAttachment = (id: string) => {
-    setAttachments((prev) => prev.filter((a) => a.id !== id));
   };
 
   if (!isOpen) return null;
@@ -293,107 +284,216 @@ export function NewTaskModal({
         onClose();
       }
     } catch (err) {
-      console.error("Falha ao salvar:", err);
+      console.error("Erro ao criar demanda:", err);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
-      <div className="relative w-full max-w-2xl my-auto max-h-[90vh] flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
         {/* Header - Fixed */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600 dark:bg-indigo-500 flex items-center justify-center text-white shadow-sm shrink-0">
-              <FileText className="w-4 h-4" />
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800 shrink-0">
+              <Plus className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                Nova Demanda Detalhada
+              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+                Nova Demanda & Atividade
               </h2>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                Insira textos elaborados, encaminhamentos ou especificações técnicas.
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Cadastre solicitações com SLA, etapas de validação e anexos.
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form Body - Scrollable with min-h-0 to avoid viewport overflow */}
-        <form onSubmit={handleSubmit} className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-3.5 custom-scrollbar">
-          {/* Seletor de Tipo */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
-              1. Classificação do Registro:
-            </label>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => setItemType("task")}
-                className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-0.5 ${
-                  itemType === "task"
-                    ? "bg-blue-50 dark:bg-blue-950/40 border-blue-500 ring-1 ring-blue-500/20"
-                    : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-zinc-700"
-                }`}
-              >
-                <div className="flex items-center gap-1.5 font-bold text-xs text-blue-700 dark:text-blue-300">
-                  <ListTodo className="w-3.5 h-3.5 shrink-0" />
-                  Tarefa
+        {/* Form Body - Scrollable */}
+        <form
+          id="new-task-form"
+          onSubmit={handleSubmit}
+          className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-left custom-scrollbar"
+        >
+          {/* Smart Deduplication Alert Banner */}
+          {topSimilar && (
+            <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-600/40 text-xs space-y-2 animate-fadeIn">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-amber-400 font-semibold text-[11px] uppercase tracking-wide">
+                  <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Demanda Similar Encontrada ({Math.round(topSimilar.similarityScore * 100)}% match)</span>
                 </div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Demanda com SLA e prazo.
+                <span className="text-[10px] font-mono text-zinc-400 bg-zinc-900/80 px-1.5 py-0.5 rounded border border-zinc-800">
+                  {topSimilar.task.status === "COMPLETED" ? "Concluída" : "Em Aberto"}
                 </span>
-              </button>
+              </div>
 
-              <button
-                type="button"
-                onClick={() => setItemType("activity")}
-                className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-0.5 ${
-                  itemType === "activity"
-                    ? "bg-purple-50 dark:bg-purple-950/40 border-purple-500 ring-1 ring-purple-500/20"
-                    : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-zinc-700"
-                }`}
-              >
-                <div className="flex items-center gap-1.5 font-bold text-xs text-purple-700 dark:text-purple-300">
-                  <Activity className="w-3.5 h-3.5 shrink-0" />
-                  Atividade
-                </div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Ação prática ou rotina.
-                </span>
-              </button>
+              <div className="space-y-1">
+                <p className="font-semibold text-zinc-200">{topSimilar.task.title}</p>
+                {topSimilar.hasPreviousResolution && topSimilar.previousResolutionNotes && (
+                  <div className="p-2 rounded-lg bg-zinc-900/90 border border-zinc-800 text-[11px] text-zinc-300">
+                    <span className="text-emerald-400 font-medium block">✓ Solução Anterior Registrada:</span>
+                    <span className="line-clamp-2 italic">{topSimilar.previousResolutionNotes}</span>
+                  </div>
+                )}
+              </div>
 
-              <button
-                type="button"
-                onClick={() => setItemType("reminder")}
-                className={`p-2.5 rounded-xl border text-left transition-all flex flex-col gap-0.5 ${
-                  itemType === "reminder"
-                    ? "bg-amber-50 dark:bg-amber-950/40 border-amber-500 ring-1 ring-amber-500/20"
-                    : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400 hover:border-slate-300 dark:hover:border-zinc-700"
-                }`}
-              >
-                <div className="flex items-center gap-1.5 font-bold text-xs text-amber-700 dark:text-amber-300">
-                  <Bell className="w-3.5 h-3.5 shrink-0" />
-                  Lembrete
-                </div>
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Aviso pontual ou alerta.
-                </span>
-              </button>
+              <div className="flex items-center flex-wrap gap-2 pt-1 border-t border-amber-900/30">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onSelectExistingTask) {
+                      onSelectExistingTask(topSimilar.task);
+                    }
+                    onClose();
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[11px] font-medium transition-all cursor-pointer"
+                >
+                  <ArrowRight className="w-3 h-3 text-indigo-400" />
+                  <span>Ver Demanda Existente</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isRegisteringRecurrence}
+                  onClick={async () => {
+                    setIsRegisteringRecurrence(true);
+                    try {
+                      const res = await fetch(`/api/tasks/${topSimilar.task.id}/recurrence`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          notes: `Nova ocorrência registrada na criação de demanda: "${title}"`,
+                          method: topSimilar.previousResolutionNotes || undefined,
+                          reopen_status: topSimilar.task.status === "COMPLETED" ? undefined : topSimilar.task.status,
+                        }),
+                      });
+                      const data = await res.json();
+                      if (data.success && data.task) {
+                        if (onTaskUpdated) onTaskUpdated(data.task);
+                        if (onSelectExistingTask) onSelectExistingTask(data.task);
+                        onClose();
+                      }
+                    } catch (err) {
+                      console.error("Erro ao registrar reincidência:", err);
+                    } finally {
+                      setIsRegisteringRecurrence(false);
+                    }
+                  }}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-medium shadow-xs transition-all cursor-pointer"
+                >
+                  {isRegisteringRecurrence ? (
+                    <Loader2 className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <Repeat className="w-3 h-3" />
+                  )}
+                  <span>Registrar como Reincidência (+1x)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setIgnoredSimilarityId(topSimilar.task.id)}
+                  className="text-[11px] text-zinc-400 hover:text-zinc-200 ml-auto cursor-pointer"
+                >
+                  Continuar Criando Nova
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Tipo de Item & Contexto da Conta */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Tipo de Item */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                1. Tipo de Registro:
+              </label>
+              <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 dark:bg-[#0c0d13] rounded-xl border border-slate-200 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setItemType("task")}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+                    itemType === "task"
+                      ? "bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  }`}
+                >
+                  <ListTodo className="w-3.5 h-3.5" />
+                  <span>Tarefa</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setItemType("activity")}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+                    itemType === "activity"
+                      ? "bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  }`}
+                >
+                  <Activity className="w-3.5 h-3.5" />
+                  <span>Atividade</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setItemType("reminder")}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+                    itemType === "reminder"
+                      ? "bg-white dark:bg-zinc-800 text-amber-600 dark:text-amber-400 shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  }`}
+                >
+                  <Bell className="w-3.5 h-3.5" />
+                  <span>Lembrete</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Contexto: Trabalho vs Pessoal */}
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                Conta & Contexto:
+              </label>
+              <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-[#0c0d13] rounded-xl border border-slate-200 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setAccountType("work")}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+                    accountType === "work"
+                      ? "bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  }`}
+                >
+                  <Briefcase className="w-3.5 h-3.5" />
+                  <span>Trabalho</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAccountType("personal")}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+                    accountType === "personal"
+                      ? "bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                  }`}
+                >
+                  <User className="w-3.5 h-3.5" />
+                  <span>Pessoal</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Título */}
+          {/* Título da Demanda */}
           <div className="space-y-1">
             <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
-              2. Título / Assunto:
+              2. Título da Demanda:
             </label>
             <input
               type="text"
@@ -401,7 +501,7 @@ export function NewTaskModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Ajuste de relatórios no TOTVS RM / Reunião de equipe..."
-              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
             />
           </div>
 
@@ -415,8 +515,8 @@ export function NewTaskModal({
                 type="button"
                 onClick={handleAnalyzeWithAI}
                 disabled={isAnalyzingAI || (!title.trim() && !description.trim())}
-                className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-all disabled:opacity-40"
-                title="A IA analisa o texto colado para sugerir título, categoria, prioridade e tags sem apagar seu texto"
+                className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-all disabled:opacity-40 cursor-pointer"
+                title="A IA analisa o texto para sugerir título, categoria, prioridade e tags sem apagar seu texto"
               >
                 {isAnalyzingAI ? (
                   <>
@@ -436,7 +536,7 @@ export function NewTaskModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Cole aqui o e-mail completo, mensagem encaminhada, orientações recebidas ou anotações detalhadas..."
-              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 leading-relaxed resize-none font-sans"
+              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 leading-relaxed resize-none font-sans"
             />
           </div>
 
@@ -455,8 +555,7 @@ export function NewTaskModal({
                   <button
                     type="button"
                     onClick={handleClearValidationSteps}
-                    className="text-[10px] text-slate-400 hover:text-rose-500 transition-colors"
-                    title="Remover todas as sugestões da IA"
+                    className="text-[10px] text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
                   >
                     Ignorar Sugestões
                   </button>
@@ -464,7 +563,7 @@ export function NewTaskModal({
                 <button
                   type="button"
                   onClick={() => setIsAddingStep(true)}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                  className="flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                 >
                   <Plus className="w-3 h-3" /> Inserir Etapa
                 </button>
@@ -489,12 +588,12 @@ export function NewTaskModal({
                       type="text"
                       value={step.text}
                       onChange={(e) => handleUpdateValidationStepText(step.id, e.target.value)}
-                      className="flex-1 text-xs bg-transparent text-slate-800 dark:text-slate-200 outline-none focus:text-indigo-600 dark:focus:text-indigo-400"
+                      className="flex-1 text-xs bg-transparent text-slate-800 dark:text-slate-200 outline-hidden focus:text-indigo-600 dark:focus:text-indigo-400"
                     />
                     <button
                       type="button"
                       onClick={() => handleRemoveValidationStep(step.id)}
-                      className="p-1 rounded text-slate-300 hover:text-rose-500 transition-colors shrink-0"
+                      className="p-1 rounded text-slate-300 hover:text-rose-500 transition-colors shrink-0 cursor-pointer"
                       title="Excluir esta etapa"
                     >
                       <Trash2 className="w-3 h-3" />
@@ -505,20 +604,20 @@ export function NewTaskModal({
             )}
 
             {isAddingStep && (
-              <div className="flex items-center gap-1.5 pt-1">
+              <div className="flex items-center gap-2 pt-1.5 animate-fadeIn">
                 <input
                   type="text"
-                  placeholder="Descreva a nova etapa de validação..."
+                  placeholder="Descreva a etapa ou teste..."
                   value={newStepText}
                   onChange={(e) => setNewStepText(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleAddValidationStep()}
-                  className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-[#141520] border border-indigo-300 dark:border-indigo-700 text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500"
+                  onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddValidationStep())}
+                  className="flex-1 text-xs p-2 rounded-xl bg-white dark:bg-[#0c0d13] border border-indigo-300 dark:border-indigo-800 text-slate-800 dark:text-slate-100 focus:outline-hidden"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={handleAddValidationStep}
-                  className="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
+                  className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-500 transition-colors"
                 >
                   Adicionar
                 </button>
@@ -528,7 +627,7 @@ export function NewTaskModal({
                     setIsAddingStep(false);
                     setNewStepText("");
                   }}
-                  className="px-2 py-1.5 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-white"
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-300 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -536,214 +635,86 @@ export function NewTaskModal({
             )}
           </div>
 
-          {/* Contexto & Categoria */}
+          {/* Categorias & Prioridade */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Categoria Combobox */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
-                Contexto:
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                Categoria Dinâmica:
               </label>
-              <div className="grid grid-cols-2 gap-1.5 bg-slate-100 dark:bg-[#0c0d13] p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
-                <button
-                  type="button"
-                  onClick={() => setAccountType("work")}
-                  className={`py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-                    accountType === "work"
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  <Briefcase className="w-3.5 h-3.5" /> Trabalho
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAccountType("personal")}
-                  className={`py-1.5 text-xs font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-                    accountType === "personal"
-                      ? "bg-purple-600 text-white shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-                >
-                  <User className="w-3.5 h-3.5" /> Pessoal
-                </button>
-              </div>
-            </div>
-
-            {/* Categoria com botão único (digitação + menu dropdown integrado) */}
-            <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
-                  Categoria:
-                </label>
-                <span className="text-[10px] text-slate-400">
-                  Selecione no menu ou digite livremente
-                </span>
-              </div>
               <CategoryCombobox
-                value={category}
-                onChange={(val) => setCategory(val)}
                 categories={categoriesList}
-                placeholder="Ex: Sistemas ERP, RH, Finanças..."
+                value={category}
+                onChange={setCategory}
               />
             </div>
-          </div>
 
-          {/* Prioridade & Prazo */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Prioridade & SLA */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
-                Prioridade & SLA:
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                Prioridade & Nível SLA:
               </label>
-              <div className="grid grid-cols-4 gap-1.5">
+              <div className="grid grid-cols-4 gap-1 p-1 bg-slate-100 dark:bg-[#0c0d13] rounded-xl border border-slate-200 dark:border-zinc-800">
                 {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
-                  const label =
-                    p === "P1"
-                      ? "P1 (4h)"
-                      : p === "P2"
-                      ? "P2 (24h)"
-                      : p === "P3"
-                      ? "P3 (48h)"
-                      : "P4 (72h)";
-                  const activeColor =
-                    p === "P1"
-                      ? "bg-rose-500 text-white"
-                      : p === "P2"
-                      ? "bg-amber-500 text-white"
-                      : p === "P3"
-                      ? "bg-indigo-600 text-white"
-                      : "bg-slate-600 text-white";
-
+                  const isSel = priority === p;
+                  let colorClass = "text-slate-600 dark:text-slate-400";
+                  if (isSel) {
+                    if (p === "P1") colorClass = "bg-rose-500 text-white shadow-sm";
+                    else if (p === "P2") colorClass = "bg-amber-500 text-white shadow-sm";
+                    else if (p === "P3") colorClass = "bg-indigo-600 text-white shadow-sm";
+                    else colorClass = "bg-slate-700 text-white shadow-sm";
+                  }
                   return (
                     <button
                       key={p}
                       type="button"
                       onClick={() => handlePriorityChange(p)}
-                      className={`py-1.5 text-[11px] font-bold rounded-xl border transition-all text-center ${
-                        priority === p
-                          ? `${activeColor} shadow-sm border-transparent`
-                          : "bg-slate-50 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400"
-                      }`}
+                      className={`py-1.5 px-1 rounded-lg text-xs font-mono font-bold transition-all ${colorClass}`}
                     >
-                      {label}
+                      {p}
                     </button>
                   );
                 })}
               </div>
             </div>
+          </div>
 
+          {/* Prazo Limite (Data/Hora) & Tags */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
-                Prazo / Data Limite (Último Prazo):
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                Prazo Limite / Agendamento:
               </label>
               <input
                 type="datetime-local"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className="w-full h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-hidden focus:border-indigo-500 font-mono"
               />
             </div>
-          </div>
 
-          {/* Tags */}
-          <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
-              Tags (separadas por vírgula):
-            </label>
-            <div className="relative">
-              <Tag className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+            <div className="space-y-1">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                Tags Técnicas (Separadas por vírgula):
+              </label>
               <input
                 type="text"
                 value={tagsInput}
                 onChange={(e) => setTagsInput(e.target.value)}
-                placeholder="suporte, totvs, professores, laboratório"
-                className="w-full h-8 pl-9 pr-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                placeholder="totvs, financeiro, biblioteca..."
+                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
               />
             </div>
           </div>
 
-          {/* Anexos e Arquivos */}
-          <div className="space-y-1.5 pt-1">
-            <div className="flex items-center justify-between">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block flex items-center gap-1.5">
-                <Paperclip className="w-3.5 h-3.5 text-slate-500" />
-                4. Anexar Arquivos / Evidências (Opcional):
-              </label>
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isProcessingFile}
-                className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1"
-              >
-                {isProcessingFile ? (
-                  <>
-                    <Loader2 className="w-3 h-3 animate-spin" />
-                    Processando...
-                  </>
-                ) : (
-                  <>+ Anexar Arquivo</>
-                )}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </div>
-
-            {attachments.length === 0 ? (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="p-3 rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#0c0d13]/50 text-center cursor-pointer hover:bg-slate-100/60 dark:hover:bg-zinc-800/40 transition-colors"
-              >
-                <div className="flex items-center justify-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                  <Paperclip className="w-3.5 h-3.5" />
-                  <span>Clique aqui para anexar print de erro, documento ou PDF</span>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                {attachments.map((att) => {
-                  const isImg = att.type.startsWith("image/");
-                  return (
-                    <div
-                      key={att.id}
-                      className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800"
-                    >
-                      <div className="flex items-center gap-2 min-w-0">
-                        {isImg ? (
-                          <img
-                            src={att.url}
-                            alt={att.name}
-                            className="w-7 h-7 rounded-lg object-cover border border-slate-200 dark:border-zinc-700 shrink-0"
-                          />
-                        ) : (
-                          <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-                            <FileText className="w-3.5 h-3.5" />
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
-                            {att.name}
-                          </p>
-                          <span className="text-[10px] text-slate-400">
-                            {formatFileSize(att.size)}
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveAttachment(att.id)}
-                        className="p-1 rounded-lg text-slate-400 hover:text-rose-500 transition-colors shrink-0"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+          {/* Anexos e Links Externos Reutilizável */}
+          <div className="pt-2 border-t border-slate-100 dark:border-zinc-800">
+            <AttachmentManager
+              attachments={attachments}
+              onChange={setAttachments}
+              stage="creation"
+              label="4. Anexos de Arquivos & Links Externos (Opcional)"
+            />
           </div>
         </form>
 
@@ -752,33 +723,26 @@ export function NewTaskModal({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+            className="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
           >
             Cancelar
           </button>
 
           <button
-            type="button"
-            onClick={handleSubmit}
+            type="submit"
+            form="new-task-form"
             disabled={isSubmitting || !title.trim()}
-            className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] cursor-pointer"
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Salvando...</span>
+                <span>Criando Demanda...</span>
               </>
             ) : (
               <>
-                <CheckCircle2 className="w-4 h-4" />
-                <span>
-                  Criar{" "}
-                  {itemType === "reminder"
-                    ? "Lembrete"
-                    : itemType === "activity"
-                    ? "Atividade"
-                    : "Tarefa"}
-                </span>
+                <Plus className="w-4 h-4" />
+                <span>Criar Demanda</span>
               </>
             )}
           </button>

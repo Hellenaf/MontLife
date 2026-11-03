@@ -3,7 +3,6 @@ import { getPendingAuth, clearPendingAuth } from "@/lib/pendingAuth";
 import { saveConnectedAccount, getTasksFromDb, saveTaskToDb, deleteTaskFromDb } from "@/services/taskService";
 import {
   fetchAllGoogleTasksFromAccount,
-  fetchAllGoogleCalendarEvents,
   fetchYouTubeResources,
 } from "@/services/googleService";
 import { categorizeTaskWithAI } from "@/services/geminiService";
@@ -38,12 +37,12 @@ export async function POST(req: NextRequest) {
       is_connected: true,
     });
 
-    // Clean pending doc
+    // Clear pending state
     await clearPendingAuth();
 
-    // 2. Auto-sync real Google Tasks across all lists and with full history pagination
+    // 2. Automatically sync real Google Tasks into MontLife
     let importedCount = 0;
-    if (refresh_token || access_token) {
+    if (access_token || refresh_token) {
       try {
         const items = await fetchAllGoogleTasksFromAccount({
           access_token: access_token || undefined,
@@ -52,7 +51,7 @@ export async function POST(req: NextRequest) {
 
         const currentTasks = await getTasksFromDb();
 
-        // Purge any legacy dummy seed tasks
+        // Clean up legacy seed tasks
         for (const t of currentTasks) {
           if (t.id.startsWith("seed-task-")) {
             await deleteTaskFromDb(t.id);
@@ -102,54 +101,6 @@ export async function POST(req: NextRequest) {
             importedCount++;
           }
         }
-
-        // 3. Sincronizar eventos da Google Agenda (Compromissos)
-        try {
-          const calEvents = await fetchAllGoogleCalendarEvents({
-            access_token: access_token || undefined,
-            refresh_token: refresh_token || undefined,
-          });
-
-          for (const ev of calEvents) {
-            const existingEv = currentTasks.find(
-              (t) => t.google_calendar_event_id === ev.id || t.id === `gcal-${ev.id}`
-            );
-
-            if (!existingEv) {
-              const isPast = new Date(ev.start).getTime() < Date.now();
-              const newCalTask: Task = {
-                id: `gcal-${ev.id}`,
-                raw_input: ev.summary,
-                title: ev.summary,
-                description: ev.description || (ev.location ? `Local: ${ev.location}` : ""),
-                account_type: type,
-                item_type: "activity",
-                category: "Agenda & Compromissos",
-                tags: ["google-agenda", "evento", type === "personal" ? "pessoal" : "trabalho"],
-                priority: "P3",
-                status: isPast ? "COMPLETED" : "TODO",
-                created_at: new Date().toISOString(),
-                started_at: null,
-                completed_at: isPast ? ev.start : null,
-                original_due_date: ev.start,
-                current_due_date: ev.start,
-                extension_count: 0,
-                deadline_extensions: [],
-                resolution_notes: null,
-                cancel_reason: null,
-                google_task_id: null,
-                google_calendar_event_id: ev.id,
-                learning_resources: { youtube_videos: [], search_queries: [] },
-                met_original_sla: isPast ? true : null,
-              };
-
-              await saveTaskToDb(newCalTask);
-              importedCount++;
-            }
-          }
-        } catch (calErr) {
-          console.warn("Auto-sync calendar in classify failed:", calErr);
-        }
       } catch (syncErr) {
         console.warn("Auto-sync tasks in classify failed:", syncErr);
       }
@@ -158,14 +109,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       type,
-      email,
-      imported_count: importedCount,
       account: saved,
+      imported_count: importedCount,
+      message: `Conta configurada como ${type === "work" ? "Trabalho" : "Pessoal"} com sucesso.`,
     });
   } catch (error: unknown) {
     console.error("POST /api/accounts/classify error:", error);
     return NextResponse.json(
-      { success: false, error: "Falha ao classificar conta." },
+      { success: false, error: "Falha ao classificar conta" },
       { status: 500 }
     );
   }

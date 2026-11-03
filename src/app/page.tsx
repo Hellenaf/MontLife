@@ -14,6 +14,7 @@ import { ClassifyAccountModal } from "@/components/modals/ClassifyAccountModal";
 import { AgendaDoDiaView } from "@/components/AgendaDoDiaView";
 import { WikiTechnicalView } from "@/components/WikiTechnicalView";
 import { ReportsView } from "@/components/ReportsView";
+import { KanbanView } from "@/components/KanbanView";
 import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
 import { getAllCategories } from "@/lib/categories";
 import { ExternalLink } from "lucide-react";
@@ -45,6 +46,31 @@ export default function MontOpsDashboard() {
   const [newTaskInitialText, setNewTaskInitialText] = useState("");
   const [oauthFeedback, setOauthFeedback] = useState<string | null>(null);
 
+  // Optimistic initial hydration from local cache
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cachedTasks = localStorage.getItem("montlife_cached_tasks");
+        if (cachedTasks) {
+          const parsed = JSON.parse(cachedTasks);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setTasks(parsed);
+            setSelectedTaskId(parsed[0].id);
+          }
+        }
+        const cachedAccounts = localStorage.getItem("montlife_cached_accounts");
+        if (cachedAccounts) {
+          const parsed = JSON.parse(cachedAccounts);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setAccounts(parsed);
+          }
+        }
+      } catch (e) {
+        // ignore parse error
+      }
+    }
+  }, []);
+
   // Fetch initial data ONCE on mount
   const loadTasks = useCallback(async () => {
     try {
@@ -53,6 +79,9 @@ export default function MontOpsDashboard() {
       if (data.success && Array.isArray(data.tasks)) {
         setTasks(data.tasks);
         setSelectedTaskId((prev) => prev || (data.tasks.length > 0 ? data.tasks[0].id : null));
+        if (typeof window !== "undefined") {
+          localStorage.setItem("montlife_cached_tasks", JSON.stringify(data.tasks));
+        }
       }
     } catch (err) {
       console.error("Failed to load tasks:", err);
@@ -65,6 +94,9 @@ export default function MontOpsDashboard() {
       const data = await res.json();
       if (data.success && Array.isArray(data.accounts)) {
         setAccounts(data.accounts);
+        if (typeof window !== "undefined") {
+          localStorage.setItem("montlife_cached_accounts", JSON.stringify(data.accounts));
+        }
       }
     } catch (err) {
       console.error("Failed to load accounts:", err);
@@ -72,6 +104,17 @@ export default function MontOpsDashboard() {
       setAccountsLoaded(true);
     }
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("montlife_cached_tasks");
+      localStorage.removeItem("montlife_cached_accounts");
+      window.location.href = "/login";
+    }
+  };
 
   useEffect(() => {
     loadTasks();
@@ -311,6 +354,7 @@ export default function MontOpsDashboard() {
           onOpenReportModal={() => setActiveNav("relatorios")}
           selectedAccountFilter={accountFilter}
           onSelectAccountFilter={(filter) => setAccountFilter(filter)}
+          onLogout={handleLogout}
           completedTasksCount={tasks.filter((t) => t.status === "COMPLETED").length}
         />
       </div>
@@ -395,6 +439,22 @@ export default function MontOpsDashboard() {
               onBackToTasks={() => {
                 setActiveNav("tarefas");
                 setCentralActiveTab("details");
+              }}
+            />
+          </main>
+        ) : activeNav === "kanban" ? (
+          <main className="flex-1 overflow-hidden p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+            <KanbanView
+              tasks={tasks}
+              onSelectTask={(task) => {
+                setSelectedTaskId(task.id);
+                setActiveNav("tarefas");
+                setCentralActiveTab("details");
+              }}
+              onUpdateStatus={handleUpdateStatus}
+              onOpenNewTaskModal={() => {
+                setNewTaskInitialText("");
+                setIsNewTaskModalOpen(true);
               }}
             />
           </main>
@@ -501,6 +561,18 @@ export default function MontOpsDashboard() {
         onClose={() => setIsNewTaskModalOpen(false)}
         onTaskCreated={(task) => {
           handleTaskCreated(task);
+          setIsNewTaskModalOpen(false);
+        }}
+        existingTasks={tasks}
+        onSelectExistingTask={(task) => {
+          setSelectedTaskId(task.id);
+          setIsNewTaskModalOpen(false);
+          setActiveNav("tarefas");
+          setCentralActiveTab("details");
+        }}
+        onTaskUpdated={(updatedTask) => {
+          setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
+          setSelectedTaskId(updatedTask.id);
           setIsNewTaskModalOpen(false);
         }}
         initialText={newTaskInitialText}

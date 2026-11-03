@@ -2,18 +2,30 @@ import { NextResponse } from "next/server";
 import { getTasksFromDb, saveTaskToDb } from "@/services/taskService";
 import { categorizeTaskWithAI } from "@/services/geminiService";
 import { fetchYouTubeResources } from "@/services/googleService";
+import { aiCache } from "@/lib/aiCache";
 
 export async function POST() {
   try {
     const tasks = await getTasksFromDb();
     let updatedCount = 0;
+    let tokensSaved = 0;
 
     for (const task of tasks) {
-      const aiData = await categorizeTaskWithAI(
-        task.title,
-        task.description,
-        task.account_type
-      );
+      const cacheKey = `cat:${task.title}:${task.description || ""}:${task.account_type}`;
+      const cached = aiCache.get<any>(cacheKey);
+
+      let aiData;
+      if (cached) {
+        aiData = cached.data;
+        tokensSaved += cached.tokensSaved;
+      } else {
+        aiData = await categorizeTaskWithAI(
+          task.title,
+          task.description,
+          task.account_type
+        );
+        aiCache.set(cacheKey, aiData, 300);
+      }
 
       let hasChanges = false;
 
@@ -48,21 +60,17 @@ export async function POST() {
       }
     }
 
-    const updatedTasks = await getTasksFromDb();
-    const uniqueCategories = Array.from(new Set(updatedTasks.map((t) => t.category).filter(Boolean)));
-
     return NextResponse.json({
       success: true,
-      message: `IA organizou ${updatedCount} tarefas com sucesso!`,
+      message: `Categorização concluída. ${updatedCount} tarefas atualizadas com categorias autônomas e tags.`,
       updated_count: updatedCount,
-      categories: uniqueCategories,
+      tokens_saved_estimate: tokensSaved,
     });
   } catch (error: unknown) {
     console.error("POST /api/tasks/ai-categorize error:", error);
     return NextResponse.json(
-      { success: false, error: "Falha ao categorizar tarefas com IA" },
+      { success: false, error: "Falha na auto-categorização das tarefas" },
       { status: 500 }
     );
   }
 }
-

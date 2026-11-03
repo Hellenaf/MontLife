@@ -307,3 +307,70 @@ export async function syncTaskToGoogle(
     return task.google_task_id;
   }
 }
+
+/**
+ * Unidirectional sync: pushes a MontLife task/event TO Google Calendar
+ * Does NOT pull external Google Calendar events into MontLife.
+ */
+export async function syncTaskToGoogleCalendar(
+  task: Task,
+  tokens?: { access_token?: string; refresh_token?: string }
+): Promise<string | null> {
+  if (!tokens?.refresh_token && !tokens?.access_token) {
+    return task.google_calendar_event_id || null;
+  }
+
+  if (!task.current_due_date) {
+    return task.google_calendar_event_id || null;
+  }
+
+  try {
+    const oauth2Client = getOAuth2Client();
+    oauth2Client.setCredentials(tokens);
+    const calendarApi = google.calendar({ version: "v3", auth: oauth2Client });
+
+    const startDate = new Date(task.current_due_date);
+    if (isNaN(startDate.getTime())) return null;
+
+    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+
+    const eventResource = {
+      summary: `[MontLife] ${task.title}`,
+      description: `${task.description || ""}\n\nCategoria: ${task.category}\nPrioridade: ${task.priority}\nStatus: ${task.status}`,
+      start: {
+        dateTime: startDate.toISOString(),
+      },
+      end: {
+        dateTime: endDate.toISOString(),
+      },
+    };
+
+    if (task.status === "CANCELED") {
+      if (task.google_calendar_event_id) {
+        await calendarApi.events.delete({
+          calendarId: "primary",
+          eventId: task.google_calendar_event_id,
+        }).catch(() => {});
+      }
+      return null;
+    }
+
+    if (task.google_calendar_event_id) {
+      const res = await calendarApi.events.patch({
+        calendarId: "primary",
+        eventId: task.google_calendar_event_id,
+        requestBody: eventResource,
+      });
+      return res.data.id || task.google_calendar_event_id;
+    } else {
+      const res = await calendarApi.events.insert({
+        calendarId: "primary",
+        requestBody: eventResource,
+      });
+      return res.data.id || null;
+    }
+  } catch (err) {
+    console.error("Failed to push task to Google Calendar:", err);
+    return task.google_calendar_event_id || null;
+  }
+}

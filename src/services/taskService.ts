@@ -176,6 +176,81 @@ export async function updateTaskStatus(
   return task;
 }
 
+export async function registerExecutionRecurrence(
+  taskId: string,
+  params: {
+    notes?: string;
+    method?: string;
+    registeredBy?: string;
+    reopenStatus?: TaskStatus;
+  }
+): Promise<Task | null> {
+  const tasks = await getTasksFromDb();
+  const task = tasks.find((t) => t.id === taskId);
+  if (!task) return null;
+
+  const nowIso = new Date().toISOString();
+  task.recurrence_count = (task.recurrence_count || 1) + 1;
+
+  if (!task.execution_history) {
+    task.execution_history = [];
+  }
+
+  // Record this execution in history
+  task.execution_history.unshift({
+    id: `exec-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+    date: nowIso,
+    notes: params.notes || "Nova ocorrência registrada na demanda existente.",
+    method: params.method || (task.resolution_notes ? "Método padrão anterior" : undefined),
+    registered_by: params.registeredBy || "Usuário",
+  });
+
+  // If a new alternative method was specified, record it
+  if (params.method && params.method.trim().length > 0) {
+    if (!task.alternative_resolutions) {
+      task.alternative_resolutions = [];
+    }
+    task.alternative_resolutions.push({
+      id: `res-${Date.now()}`,
+      date: nowIso,
+      method: params.method.trim(),
+      notes: params.notes || "",
+    });
+  }
+
+  // Update status if user wants to work on it again
+  if (params.reopenStatus) {
+    task.status = params.reopenStatus;
+    if (params.reopenStatus === "IN_PROGRESS") {
+      task.started_at = nowIso;
+      task.completed_at = null;
+    }
+  }
+
+  await saveTaskToDb(task);
+  return task;
+}
+
+export async function findDirectDbMatchForTriage(rawInput: string): Promise<Task | null> {
+  const tasks = await getTasksFromDb();
+  const cleanInput = rawInput.toLowerCase().trim();
+  if (!cleanInput) return null;
+
+  for (const t of tasks) {
+    const tTitle = (t.title || "").toLowerCase().trim();
+    const tRaw = (t.raw_input || "").toLowerCase().trim();
+
+    // Exact match or highly distinct similarity
+    if (tTitle === cleanInput || tRaw === cleanInput) {
+      return t;
+    }
+    if (cleanInput.length > 10 && (tTitle.includes(cleanInput) || cleanInput.includes(tTitle))) {
+      return t;
+    }
+  }
+  return null;
+}
+
 export async function extendTaskDeadline(
   taskId: string,
   newDueDateIso: string,

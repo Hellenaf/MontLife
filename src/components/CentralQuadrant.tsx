@@ -36,7 +36,9 @@ import {
   Trash2,
   Image as ImageIcon,
   Loader2,
+  Repeat,
 } from "lucide-react";
+import { AttachmentManager } from "@/components/AttachmentManager";
 import { Task, TaskAttachment, ValidationStep, TaskStatus, ItemType, AccountType, Priority } from "@/types";
 import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
 import { calculateSlaDueDate } from "@/lib/sla";
@@ -164,6 +166,41 @@ export function CentralQuadrant({
   // Validation steps states in Details view
   const [newDetailStepText, setNewDetailStepText] = useState("");
   const [isAddingDetailStep, setIsAddingDetailStep] = useState(false);
+
+  // Recurrence states in Details view
+  const [isAddingRecurrence, setIsAddingRecurrence] = useState(false);
+  const [recurrenceNotes, setRecurrenceNotes] = useState("");
+  const [recurrenceMethod, setRecurrenceMethod] = useState("");
+  const [recurrenceReopen, setRecurrenceReopen] = useState(false);
+  const [isSubmittingRecurrence, setIsSubmittingRecurrence] = useState(false);
+
+  const handleSaveRecurrence = async () => {
+    if (!selectedTask) return;
+    setIsSubmittingRecurrence(true);
+    try {
+      const res = await fetch(`/api/tasks/${selectedTask.id}/recurrence`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notes: recurrenceNotes.trim() || undefined,
+          method: recurrenceMethod.trim() || undefined,
+          reopen_status: recurrenceReopen ? "IN_PROGRESS" : undefined,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.task && onUpdateTaskFields) {
+        await onUpdateTaskFields(selectedTask.id, data.task);
+      }
+      setIsAddingRecurrence(false);
+      setRecurrenceNotes("");
+      setRecurrenceMethod("");
+      setRecurrenceReopen(false);
+    } catch (err) {
+      console.error("Erro ao registrar recorrência:", err);
+    } finally {
+      setIsSubmittingRecurrence(false);
+    }
+  };
 
   // Live timer for Google Calendar current-time red line
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
@@ -928,215 +965,30 @@ export function CentralQuadrant({
                 </div>
 
                 {/* Attachments Card (Criação & Solução) */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-3 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
-                        <Paperclip className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-                          Arquivos & Anexos da Demanda
-                        </h3>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          Prints, documentos, comprovantes de abertura e evidências de solução.
-                        </p>
-                      </div>
-                    </div>
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
+                  <AttachmentManager
+                    attachments={selectedTask.attachments || []}
+                    onChange={async (updated) => {
+                      if (onUpdateTaskFields) {
+                        await onUpdateTaskFields(selectedTask.id, { attachments: updated });
+                      }
+                    }}
+                    stage="creation"
+                    label="Arquivos & Links da Demanda (Criação)"
+                  />
 
-                    <button
-                      type="button"
-                      onClick={() => detailFileInputRef.current?.click()}
-                      disabled={isUploadingDetailFile}
-                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-colors"
-                    >
-                      {isUploadingDetailFile ? (
-                        <>
-                          <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-500" />
-                          <span>Anexando...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Adicionar Arquivo</span>
-                        </>
-                      )}
-                    </button>
-                    <input
-                      ref={detailFileInputRef}
-                      type="file"
-                      multiple
-                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt"
-                      onChange={handleUploadDetailAttachment}
-                      className="hidden"
-                    />
-                  </div>
-
-                  {/* List of attachments */}
-                  {((selectedTask.attachments?.length || 0) + (selectedTask.resolution_attachments?.length || 0)) === 0 ? (
-                    <div
-                      onClick={() => detailFileInputRef.current?.click()}
-                      className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#0c0d13]/50 text-center cursor-pointer hover:bg-slate-100/60 dark:hover:bg-zinc-800/40 transition-colors"
-                    >
-                      <Paperclip className="w-4 h-4 mx-auto text-slate-400 mb-1" />
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        Nenhum arquivo anexado a esta demanda.
-                      </p>
-                      <span className="text-[11px] text-indigo-600 dark:text-indigo-400 font-medium">
-                        Clique aqui para enviar prints de erro, documentos ou comprovantes.
-                      </span>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                      {/* Creation attachments */}
-                      {selectedTask.attachments?.map((att) => {
-                        const isImg = att.type.startsWith("image/");
-                        return (
-                          <div
-                            key={att.id}
-                            className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200/80 dark:border-zinc-800 group hover:border-slate-300 dark:hover:border-zinc-700 transition-colors"
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              {isImg ? (
-                                <div
-                                  onClick={() => setPreviewImageAttachment(att)}
-                                  className="w-10 h-10 rounded-lg overflow-hidden bg-slate-200 dark:bg-zinc-800 shrink-0 cursor-pointer border border-slate-200 dark:border-zinc-700 hover:opacity-85 transition-opacity"
-                                >
-                                  <img
-                                    src={att.url}
-                                    alt={att.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-                                  <FileText className="w-5 h-5" />
-                                </div>
-                              )}
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300">
-                                    Criação
-                                  </span>
-                                  <span className="text-[10px] text-slate-400">
-                                    {formatFileSize(att.size)}
-                                  </span>
-                                </div>
-                                <p
-                                  title={att.name}
-                                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5"
-                                >
-                                  {att.name}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0 ml-2">
-                              {isImg && (
-                                <button
-                                  type="button"
-                                  onClick={() => setPreviewImageAttachment(att)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
-                                  title="Visualizar Imagem"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              <a
-                                href={att.url}
-                                download={att.name}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
-                                title="Baixar Arquivo"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveDetailAttachment(att.id, "creation")}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
-                                title="Remover Anexo"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
-
-                      {/* Resolution attachments */}
-                      {selectedTask.resolution_attachments?.map((att) => {
-                        const isImg = att.type.startsWith("image/");
-                        return (
-                          <div
-                            key={att.id}
-                            className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50/40 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-900/40 group hover:border-emerald-300 dark:hover:border-emerald-800 transition-colors"
-                          >
-                            <div className="flex items-center gap-2.5 min-w-0">
-                              {isImg ? (
-                                <div
-                                  onClick={() => setPreviewImageAttachment(att)}
-                                  className="w-10 h-10 rounded-lg overflow-hidden bg-emerald-100 dark:bg-emerald-950 shrink-0 cursor-pointer border border-emerald-300 dark:border-emerald-800 hover:opacity-85 transition-opacity"
-                                >
-                                  <img
-                                    src={att.url}
-                                    alt={att.name}
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              ) : (
-                                <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
-                                  <FileText className="w-5 h-5" />
-                                </div>
-                              )}
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-1.5">
-                                  <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200">
-                                    Solução
-                                  </span>
-                                  <span className="text-[10px] text-slate-400">
-                                    {formatFileSize(att.size)}
-                                  </span>
-                                </div>
-                                <p
-                                  title={att.name}
-                                  className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate mt-0.5"
-                                >
-                                  {att.name}
-                                </p>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-1 shrink-0 ml-2">
-                              {isImg && (
-                                <button
-                                  type="button"
-                                  onClick={() => setPreviewImageAttachment(att)}
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
-                                  title="Visualizar Comprovante"
-                                >
-                                  <Eye className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                              <a
-                                href={att.url}
-                                download={att.name}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
-                                title="Baixar Comprovante"
-                              >
-                                <Download className="w-3.5 h-3.5" />
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveDetailAttachment(att.id, "resolution")}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-white dark:hover:bg-zinc-800 transition-colors"
-                                title="Remover Anexo"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      })}
+                  {selectedTask.resolution_attachments && selectedTask.resolution_attachments.length > 0 && (
+                    <div className="pt-3 border-t border-slate-100 dark:border-zinc-800">
+                      <AttachmentManager
+                        attachments={selectedTask.resolution_attachments || []}
+                        onChange={async (updated) => {
+                          if (onUpdateTaskFields) {
+                            await onUpdateTaskFields(selectedTask.id, { resolution_attachments: updated });
+                          }
+                        }}
+                        stage="resolution"
+                        label="Comprovantes & Links da Solução"
+                      />
                     </div>
                   )}
                 </div>
@@ -1274,79 +1126,206 @@ export function CentralQuadrant({
                   </div>
                 </div>
 
-                {/* Resolution Notes */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-3 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-emerald-500" />
-                      Resolução & Histórico da Demanda
-                    </h3>
-                    {selectedTask.status !== "COMPLETED" ? (
-                      <button
-                        onClick={() => onRequestResolution(selectedTask)}
-                        className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-medium transition-colors"
-                      >
-                        Concluir com Solução
-                      </button>
-                    ) : (
-                      <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Concluído
+                {/* Base de Soluções & Controle de Recorrência */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                        <BookOpen className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
+                          Base de Soluções & Recorrência
+                        </h3>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Resolução documentada e histórico de execuções reincidentes.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Recurrence counter badge */}
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 font-mono text-[11px] font-semibold">
+                        <Repeat className="w-3 h-3 text-indigo-500" />
+                        <span>{selectedTask.recurrence_count || 1}x ocorrências</span>
                       </span>
-                    )}
+
+                      {/* Register New Occurrence Button */}
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingRecurrence((prev) => !prev)}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-medium transition-colors"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Nova Ocorrência</span>
+                      </button>
+
+                      {selectedTask.status !== "COMPLETED" ? (
+                        <button
+                          onClick={() => onRequestResolution(selectedTask)}
+                          className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-medium transition-colors"
+                        >
+                          Concluir com Solução
+                        </button>
+                      ) : (
+                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Concluído
+                        </span>
+                      )}
+                    </div>
                   </div>
 
+                  {/* Form to Register Recurrence / Reincidence */}
+                  {isAddingRecurrence && (
+                    <div className="p-4 rounded-xl bg-zinc-900/90 border border-zinc-700/80 space-y-3 animate-fadeIn text-xs">
+                      <div className="flex items-center gap-1.5 font-semibold text-zinc-200">
+                        <Repeat className="w-3.5 h-3.5 text-indigo-400" />
+                        <span>Registrar Nova Execução no Mesmo Item (Sem Duplicar Base)</span>
+                      </div>
+
+                      <div className="space-y-2">
+                        <div>
+                          <label className="text-[11px] text-zinc-400 block mb-1">
+                            Notas / Contexto desta reincidência:
+                          </label>
+                          <textarea
+                            rows={2}
+                            value={recurrenceNotes}
+                            onChange={(e) => setRecurrenceNotes(e.target.value)}
+                            placeholder="Descreva onde ou por que a ocorrência se repetiu (ex: usuário reportou o mesmo erro no TOTVS)..."
+                            className="w-full text-xs p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 resize-none"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[11px] text-zinc-400 block mb-1">
+                            Método de conclusão alternativo (opcional se utilizou solução diferente):
+                          </label>
+                          <input
+                            type="text"
+                            value={recurrenceMethod}
+                            onChange={(e) => setRecurrenceMethod(e.target.value)}
+                            placeholder="Ex: Executado script PowerShell alternativo ao invés de reiniciar servidor..."
+                            className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+                          />
+                        </div>
+
+                        <label className="flex items-center gap-2 text-zinc-300 cursor-pointer pt-1">
+                          <input
+                            type="checkbox"
+                            checked={recurrenceReopen}
+                            onChange={(e) => setRecurrenceReopen(e.target.checked)}
+                            className="rounded border-zinc-700 text-indigo-600 focus:ring-0"
+                          />
+                          <span>Reabrir demanda para Em Andamento (trabalho ativo)</span>
+                        </label>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-1 border-t border-zinc-800">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingRecurrence(false);
+                            setRecurrenceNotes("");
+                            setRecurrenceMethod("");
+                          }}
+                          className="px-3 py-1 rounded text-xs text-zinc-400 hover:text-zinc-200"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isSubmittingRecurrence}
+                          onClick={handleSaveRecurrence}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-xs disabled:opacity-50 transition-all cursor-pointer"
+                        >
+                          {isSubmittingRecurrence ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Check className="w-3.5 h-3.5" />
+                          )}
+                          <span>Gravar Ocorrência no Histórico</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Primary Solution */}
                   {selectedTask.resolution_notes ? (
                     <div className="space-y-2">
+                      <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Solução Registrada na Base de Conhecimento:</span>
+                      </div>
                       <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
                         {selectedTask.resolution_notes}
                       </div>
-
-                      {selectedTask.resolution_attachments && selectedTask.resolution_attachments.length > 0 && (
-                        <div className="pt-1">
-                          <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 block mb-1.5 flex items-center gap-1">
-                            <Paperclip className="w-3 h-3" />
-                            Comprovantes da Solução ({selectedTask.resolution_attachments.length}):
-                          </span>
-                          <div className="flex flex-wrap gap-2">
-                            {selectedTask.resolution_attachments.map((att) => {
-                              const isImg = att.type.startsWith("image/");
-                              return (
-                                <div
-                                  key={att.id}
-                                  className="flex items-center gap-2 p-1.5 pr-2.5 rounded-lg bg-emerald-100/60 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-xs"
-                                >
-                                  {isImg ? (
-                                    <img
-                                      src={att.url}
-                                      alt={att.name}
-                                      onClick={() => setPreviewImageAttachment(att)}
-                                      className="w-6 h-6 rounded object-cover cursor-pointer hover:opacity-80 shrink-0"
-                                    />
-                                  ) : (
-                                    <FileText className="w-4 h-4 text-emerald-700 dark:text-emerald-300 shrink-0" />
-                                  )}
-                                  <span className="text-[11px] font-medium text-emerald-900 dark:text-emerald-100 max-w-[140px] truncate">
-                                    {att.name}
-                                  </span>
-                                  <a
-                                    href={att.url}
-                                    download={att.name}
-                                    className="text-emerald-700 dark:text-emerald-300 hover:text-emerald-900 transition-colors shrink-0"
-                                    title="Baixar comprovante"
-                                  >
-                                    <Download className="w-3 h-3" />
-                                  </a>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
                     </div>
                   ) : (
                     <p className="text-xs text-slate-400 dark:text-slate-500 italic">
                       Nenhuma anotação de resolução registrada até o momento.
                     </p>
+                  )}
+
+                  {/* Execution History Timeline */}
+                  {selectedTask.execution_history && selectedTask.execution_history.length > 0 && (
+                    <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
+                      <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block flex items-center gap-1.5">
+                        <Repeat className="w-3 h-3 text-indigo-500" />
+                        Histórico de Execuções e Reincidências ({selectedTask.execution_history.length}):
+                      </span>
+                      <div className="space-y-1.5">
+                        {selectedTask.execution_history.map((exec) => (
+                          <div
+                            key={exec.id}
+                            className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-xs space-y-1"
+                          >
+                            <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+                              <span className="text-indigo-400 font-semibold">
+                                Ocorrência em {format(parseISO(exec.date), "dd/MM/yyyy 'às' HH:mm")}
+                              </span>
+                              <span>Registrado por: {exec.registered_by || "Usuário"}</span>
+                            </div>
+                            {exec.notes && (
+                              <p className="text-slate-700 dark:text-slate-200 text-xs">
+                                {exec.notes}
+                              </p>
+                            )}
+                            {exec.method && (
+                              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-900/40">
+                                <strong>Método aplicado:</strong> {exec.method}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Alternative Resolution Methods */}
+                  {selectedTask.alternative_resolutions && selectedTask.alternative_resolutions.length > 0 && (
+                    <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
+                      <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block flex items-center gap-1.5">
+                        <Sparkles className="w-3 h-3 text-amber-500" />
+                        Métodos Alternativos de Resolução Catalogados:
+                      </span>
+                      <div className="space-y-1.5">
+                        {selectedTask.alternative_resolutions.map((alt) => (
+                          <div
+                            key={alt.id}
+                            className="p-2.5 rounded-xl bg-amber-950/20 border border-amber-800/40 text-xs space-y-0.5"
+                          >
+                            <div className="flex items-center justify-between text-[10px] font-mono text-amber-400">
+                              <span className="font-semibold">{alt.method}</span>
+                              <span>{format(parseISO(alt.date), "dd/MM/yyyy")}</span>
+                            </div>
+                            {alt.notes && (
+                              <p className="text-[11px] text-zinc-300 italic">{alt.notes}</p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </div>
               </>
