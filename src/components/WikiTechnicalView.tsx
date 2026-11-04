@@ -17,8 +17,9 @@ import {
   Lightbulb,
   CheckSquare,
   FileText,
+  Globe,
 } from "lucide-react";
-import { Task, YouTubeVideo } from "@/types";
+import { Task, YouTubeVideo, WebArticleResource } from "@/types";
 import { FormattedText } from "@/components/FormattedText";
 
 interface WikiTechnicalViewProps {
@@ -33,7 +34,7 @@ export function WikiTechnicalView({
   onBackToTasks,
 }: WikiTechnicalViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"all" | "videos" | "queries" | "resolutions">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "videos" | "articles" | "queries" | "resolutions">("all");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
 
   // Extract all unique YouTube videos with task context
@@ -47,6 +48,23 @@ export function WikiTechnicalView({
         if (!seenUrls.has(v.url)) {
           seenUrls.add(v.url);
           list.push({ video: v, task });
+        }
+      });
+    });
+    return list;
+  }, [tasks]);
+
+  // Extract all unique technical articles & documentation sites
+  const allArticles = useMemo(() => {
+    const list: { article: WebArticleResource; task: Task }[] = [];
+    const seenUrls = new Set<string>();
+
+    tasks.forEach((task) => {
+      const arts = task.learning_resources?.articles || [];
+      arts.forEach((a) => {
+        if (!seenUrls.has(a.url)) {
+          seenUrls.add(a.url);
+          list.push({ article: a, task });
         }
       });
     });
@@ -99,6 +117,20 @@ export function WikiTechnicalView({
       return matchCat && matchSearch;
     });
   }, [allVideos, selectedCategory, q]);
+
+  const filteredArticles = useMemo(() => {
+    return allArticles.filter(({ article, task }) => {
+      const matchCat = selectedCategory === "ALL" || task.category === selectedCategory;
+      const matchSearch =
+        !q ||
+        article.title.toLowerCase().includes(q) ||
+        (article.source && article.source.toLowerCase().includes(q)) ||
+        (article.snippet && article.snippet.toLowerCase().includes(q)) ||
+        task.title.toLowerCase().includes(q) ||
+        (task.category && task.category.toLowerCase().includes(q));
+      return matchCat && matchSearch;
+    });
+  }, [allArticles, selectedCategory, q]);
 
   const filteredQueries = useMemo(() => {
     return allQueries.filter(({ query, task }) => {
@@ -260,7 +292,19 @@ export function WikiTechnicalView({
                 : "bg-slate-50 dark:bg-[#16152a] text-slate-600 dark:text-slate-400 hover:text-white border border-slate-200 dark:border-zinc-800"
             }`}
           >
-            Todos ({filteredVideos.length + filteredQueries.length + filteredResolutions.length})
+            Todos ({filteredVideos.length + filteredArticles.length + filteredQueries.length + filteredResolutions.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("articles")}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all ${
+              activeTab === "articles"
+                ? "bg-sky-600 text-white shadow-sm"
+                : "bg-slate-50 dark:bg-[#16152a] text-slate-600 dark:text-slate-400 hover:text-white border border-slate-200 dark:border-zinc-800"
+            }`}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Sites & Artigos ({filteredArticles.length})</span>
           </button>
           <button
             type="button"
@@ -303,6 +347,82 @@ export function WikiTechnicalView({
 
       {/* 4. Main Content Sections */}
       <div className="space-y-6">
+        {/* SECTION: SITES & ARTIGOS TÉCNICOS */}
+        {(activeTab === "all" || activeTab === "articles") && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-sky-500 dark:text-sky-400 flex items-center gap-1.5">
+                <Globe className="w-4 h-4" />
+                Sites, Artigos & Documentações Técnicas ({filteredArticles.length})
+              </h3>
+            </div>
+
+            {filteredArticles.length === 0 ? (
+              activeTab === "articles" && (
+                <div className="py-12 text-center text-slate-400 space-y-2 bg-white dark:bg-[#141520] rounded-2xl border border-slate-200 dark:border-zinc-800">
+                  <Globe className="w-8 h-8 mx-auto opacity-30 text-sky-500" />
+                  <p className="text-xs">Nenhum artigo ou site técnico encontrado com os filtros atuais.</p>
+                </div>
+              )
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                {filteredArticles.map(({ article, task }, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 flex flex-col justify-between hover:border-sky-500/50 hover:shadow-md transition-all group"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="px-2 py-0.5 rounded-md bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400 text-[10px] font-bold uppercase tracking-wider border border-sky-200 dark:border-sky-900/50 flex items-center gap-1">
+                          <Globe className="w-3 h-3" />
+                          {article.source || "Artigo / Web"}
+                        </span>
+                        <a
+                          href={article.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-1 rounded-md text-slate-400 hover:text-sky-500 dark:hover:text-sky-400 transition-colors"
+                          title="Abrir em nova aba"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      </div>
+
+                      <a
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors line-clamp-2 block leading-snug"
+                      >
+                        {article.title}
+                      </a>
+
+                      {article.snippet && (
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                          {article.snippet}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="pt-2.5 mt-2.5 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px]">
+                      <span
+                        onClick={() => onSelectTask?.(task)}
+                        className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer truncate max-w-[180px]"
+                        title={`Origem: ${task.title}`}
+                      >
+                        📌 {task.title}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 shrink-0">
+                        {task.category}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* SECTION: YOUTUBE VIDEOS */}
         {(activeTab === "all" || activeTab === "videos") && (
           <div className="space-y-3">

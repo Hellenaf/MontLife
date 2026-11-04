@@ -29,8 +29,16 @@ export interface YouTubeVideo {
   channel: string;
 }
 
+export interface WebArticleResource {
+  title: string;
+  url: string;
+  source?: string;
+  snippet?: string;
+}
+
 export interface LearningResources {
   youtube_videos: YouTubeVideo[];
+  articles?: WebArticleResource[];
   search_queries: string[];
 }
 

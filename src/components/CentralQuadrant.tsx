@@ -39,9 +39,19 @@ import {
   Repeat,
   Ban,
   RotateCcw,
+  Globe,
 } from "lucide-react";
 import { AttachmentManager } from "@/components/AttachmentManager";
-import { Task, TaskAttachment, ValidationStep, TaskStatus, ItemType, AccountType, Priority } from "@/types";
+import {
+  Task,
+  TaskAttachment,
+  ValidationStep,
+  TaskStatus,
+  ItemType,
+  AccountType,
+  Priority,
+  WebArticleResource,
+} from "@/types";
 import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { getAllCategories } from "@/lib/categories";
@@ -172,6 +182,87 @@ export function CentralQuadrant({
   // Validation steps states in Details view
   const [newDetailStepText, setNewDetailStepText] = useState("");
   const [isAddingDetailStep, setIsAddingDetailStep] = useState(false);
+
+  // Article and Technical Site states
+  const [isAddingArticle, setIsAddingArticle] = useState(false);
+  const [newArticleTitle, setNewArticleTitle] = useState("");
+  const [newArticleUrl, setNewArticleUrl] = useState("");
+  const [newArticleSource, setNewArticleSource] = useState("");
+
+  const handleAddArticle = async () => {
+    if (!selectedTask || !newArticleUrl.trim()) return;
+    const cleanUrl = newArticleUrl.trim().startsWith("http")
+      ? newArticleUrl.trim()
+      : `https://${newArticleUrl.trim()}`;
+
+    let derivedSource = newArticleSource.trim();
+    if (!derivedSource) {
+      try {
+        derivedSource = new URL(cleanUrl).hostname.replace(/^www\./, "");
+      } catch {
+        derivedSource = "Site / Artigo";
+      }
+    }
+
+    const newArt: WebArticleResource = {
+      title: newArticleTitle.trim() || cleanUrl,
+      url: cleanUrl,
+      source: derivedSource,
+      snippet: "Artigo ou documentação técnica vinculada à demanda para consulta e aprendizado.",
+    };
+
+    const currentResources = selectedTask.learning_resources || { youtube_videos: [], search_queries: [] };
+    const updatedArticles = [...(currentResources.articles || []), newArt];
+    const updatedResources = {
+      ...currentResources,
+      articles: updatedArticles,
+    };
+
+    if (onUpdateTaskFields) {
+      await onUpdateTaskFields(selectedTask.id, {
+        learning_resources: updatedResources,
+      });
+    }
+
+    setNewArticleTitle("");
+    setNewArticleUrl("");
+    setNewArticleSource("");
+    setIsAddingArticle(false);
+  };
+
+  const displayArticles: WebArticleResource[] = React.useMemo(() => {
+    if (!selectedTask) return [];
+    const custom = selectedTask.learning_resources?.articles || [];
+    if (custom.length > 0) return custom;
+
+    const qList = selectedTask.learning_resources?.search_queries?.length
+      ? selectedTask.learning_resources.search_queries
+      : [selectedTask.title, selectedTask.category];
+
+    const generated: WebArticleResource[] = [];
+    for (const q of qList.slice(0, 3)) {
+      if (!q.trim()) continue;
+      generated.push({
+        title: `Documentação Oficial & Guias: ${q}`,
+        url: `https://www.google.com/search?q=${encodeURIComponent(q + " tutorial documentacao oficial")}`,
+        source: "Documentação & Web",
+        snippet: `Pesquisa direta por especificações técnicas e manuais oficiais sobre "${q}".`,
+      });
+      generated.push({
+        title: `Discussões Técnicas & Soluções: ${q}`,
+        url: `https://stackoverflow.com/search?q=${encodeURIComponent(q)}`,
+        source: "Stack Overflow",
+        snippet: `Casos práticos de implementação, tratamento de erros e respostas técnicas sobre "${q}".`,
+      });
+      generated.push({
+        title: `Artigos Especializados & Posts (Dev.to / Medium): ${q}`,
+        url: `https://dev.to/search?q=${encodeURIComponent(q)}`,
+        source: "Dev.to / Engenharia",
+        snippet: `Artigos aprofundados, arquitetura e boas práticas publicadas por especialistas sobre "${q}".`,
+      });
+    }
+    return generated;
+  }, [selectedTask]);
 
   // Recurrence states in Details view
   const [isAddingRecurrence, setIsAddingRecurrence] = useState(false);
@@ -603,51 +694,10 @@ export function CentralQuadrant({
                       )}
                     </div>
 
-                    {/* Item Type Selector */}
-                    {onUpdateItemType && (
-                      <div className="flex items-center bg-slate-100 dark:bg-[#0c0d13] p-1 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs">
-                        <button
-                          type="button"
-                          onClick={() => onUpdateItemType(selectedTask.id, "task")}
-                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                            (selectedTask.item_type || "task") === "task"
-                              ? "bg-white dark:bg-[#1a1b26] text-blue-600 dark:text-blue-400 shadow-sm"
-                              : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                          }`}
-                        >
-                          <ListTodo className="w-3.5 h-3.5" />
-                          Tarefa
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onUpdateItemType(selectedTask.id, "activity")}
-                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                            selectedTask.item_type === "activity"
-                              ? "bg-white dark:bg-[#1a1b26] text-purple-600 dark:text-purple-400 shadow-sm"
-                              : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                          }`}
-                        >
-                          <Activity className="w-3.5 h-3.5" />
-                          Atividade
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onUpdateItemType(selectedTask.id, "reminder")}
-                          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                            selectedTask.item_type === "reminder"
-                              ? "bg-white dark:bg-[#1a1b26] text-amber-600 dark:text-amber-400 shadow-sm"
-                              : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                          }`}
-                        >
-                          <Bell className="w-3.5 h-3.5" />
-                          Lembrete
-                        </button>
-                      </div>
-                    )}
-
-                    {/* Cancellation Action or Canceled Status Badge in Header */}
-                    <div className="flex items-center gap-2">
-                      {selectedTask.status === "CANCELED" ? (
+                    {/* Right-aligned Header Controls: Item Type Selector */}
+                    <div className="flex items-center gap-2.5 ml-auto flex-wrap">
+                      {/* Canceled Status Badge in Header if task is canceled */}
+                      {selectedTask.status === "CANCELED" && (
                         <div className="flex items-center gap-1.5">
                           <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
                             <Ban className="w-3.5 h-3.5" /> Cancelada
@@ -664,17 +714,49 @@ export function CentralQuadrant({
                             </button>
                           )}
                         </div>
-                      ) : selectedTask.status !== "COMPLETED" && onRequestCancelTask ? (
-                        <button
-                          type="button"
-                          onClick={() => onRequestCancelTask(selectedTask)}
-                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-zinc-800 hover:border-rose-300 dark:hover:border-rose-800 transition-colors"
-                          title="Cancelar esta demanda e informar o motivo"
-                        >
-                          <Ban className="w-3.5 h-3.5" />
-                          <span>Cancelar Demanda</span>
-                        </button>
-                      ) : null}
+                      )}
+
+                      {/* Item Type Selector (Tarefas, Atividades, Lembretes) - Pushed to the far right */}
+                      {onUpdateItemType && (
+                        <div className="flex items-center bg-slate-100 dark:bg-[#0c0d13] p-1 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs shadow-xs">
+                          <button
+                            type="button"
+                            onClick={() => onUpdateItemType(selectedTask.id, "task")}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                              (selectedTask.item_type || "task") === "task"
+                                ? "bg-white dark:bg-[#1a1b26] text-blue-600 dark:text-blue-400 shadow-sm"
+                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            }`}
+                          >
+                            <ListTodo className="w-3.5 h-3.5" />
+                            Tarefa
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onUpdateItemType(selectedTask.id, "activity")}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                              selectedTask.item_type === "activity"
+                                ? "bg-white dark:bg-[#1a1b26] text-purple-600 dark:text-purple-400 shadow-sm"
+                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            }`}
+                          >
+                            <Activity className="w-3.5 h-3.5" />
+                            Atividade
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => onUpdateItemType(selectedTask.id, "reminder")}
+                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all ${
+                              selectedTask.item_type === "reminder"
+                                ? "bg-white dark:bg-[#1a1b26] text-amber-600 dark:text-amber-400 shadow-sm"
+                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
+                            }`}
+                          >
+                            <Bell className="w-3.5 h-3.5" />
+                            Lembrete
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -1240,8 +1322,19 @@ export function CentralQuadrant({
                       ) : (
                         <div className="flex items-center gap-2">
                           <button
+                            type="button"
+                            onClick={() => onUpdateStatus(selectedTask.id, "COMPLETED")}
+                            className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"
+                            title="Concluir demanda diretamente (sem necessidade de preencher solução)"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>Concluir</span>
+                          </button>
+                          <button
+                            type="button"
                             onClick={() => onRequestResolution(selectedTask)}
                             className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-medium transition-colors"
+                            title="Concluir documentando procedimento ou solução (opcional)"
                           >
                             Concluir com Solução
                           </button>
@@ -1419,9 +1512,196 @@ export function CentralQuadrant({
           </div>
         )}
 
-        {/* TAB 3: ESTUDO & TUTORIAIS */}
+        {/* TAB 3: ESTUDO & TUTORIAIS (SITES, ARTIGOS E VÍDEOS) */}
         {activeTab === "study" && (
-          <div className="max-w-4xl mx-auto space-y-4">
+          <div className="max-w-4xl mx-auto space-y-5">
+            {/* 1. SEÇÃO DE SITES, ARTIGOS TÉCNICOS & DOCUMENTAÇÕES */}
+            <div className="p-6 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3 flex-wrap gap-2">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800">
+                    <Globe className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                      Sites, Artigos Técnicos & Documentações Oficiais
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Materiais de apoio, guias de engenharia e referências técnicas com foco na demanda.
+                    </p>
+                  </div>
+                </div>
+
+                {selectedTask && (
+                  <button
+                    type="button"
+                    onClick={() => setIsAddingArticle((prev) => !prev)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 dark:bg-sky-950/50 dark:hover:bg-sky-900/50 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 text-xs font-semibold transition-all active:scale-95"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Adicionar Site / Artigo</span>
+                  </button>
+                )}
+              </div>
+
+              {/* Form to add custom article / documentation link */}
+              {isAddingArticle && (
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-3 animate-in fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-sky-500" />
+                      Vincular Novo Artigo, Documentação ou Site de Estudo
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingArticle(false)}
+                      className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                        URL do Artigo ou Site *
+                      </label>
+                      <input
+                        type="url"
+                        placeholder="https://learn.microsoft.com/... ou https://dev.to/..."
+                        value={newArticleUrl}
+                        onChange={(e) => setNewArticleUrl(e.target.value)}
+                        className="w-full h-8 px-3 text-xs rounded-lg bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white outline-none focus:border-sky-500"
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                        Título do Artigo / Descrição Curta
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Guia Oficial de Migração e Arquitetura..."
+                        value={newArticleTitle}
+                        onChange={(e) => setNewArticleTitle(e.target.value)}
+                        className="w-full h-8 px-3 text-xs rounded-lg bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white outline-none focus:border-sky-500"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <input
+                      type="text"
+                      placeholder="Fonte / Autor (opcional, ex: Microsoft Learn, MDN, Medium)"
+                      value={newArticleSource}
+                      onChange={(e) => setNewArticleSource(e.target.value)}
+                      className="w-64 h-8 px-3 text-xs rounded-lg bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white outline-none focus:border-sky-500"
+                    />
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingArticle(false)}
+                        className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleAddArticle}
+                        disabled={!newArticleUrl.trim()}
+                        className="px-4 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-40"
+                      >
+                        Salvar Artigo
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Articles & Sites Grid */}
+              {displayArticles.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+                  {displayArticles.map((art, idx) => (
+                    <a
+                      key={idx}
+                      href={art.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="group flex flex-col justify-between p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-[#111218] hover:border-sky-400 dark:hover:border-sky-500/50 hover:bg-white dark:hover:bg-[#161822] transition-all shadow-xs hover:shadow-md space-y-2.5"
+                    >
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200/80 dark:border-sky-800/80 truncate max-w-[140px]">
+                            {art.source || "Artigo & Documentação"}
+                          </span>
+                          <ExternalLink className="w-3.5 h-3.5 text-slate-400 group-hover:text-sky-500 transition-colors shrink-0" />
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-sky-600 dark:group-hover:text-sky-400 transition-colors leading-snug">
+                          {art.title}
+                        </h4>
+                        {art.snippet && (
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                            {art.snippet}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="pt-2 border-t border-slate-200/60 dark:border-zinc-800/80 flex items-center justify-between text-[11px]">
+                        <span className="text-slate-400 dark:text-zinc-500 truncate max-w-[160px]">
+                          {art.url.replace(/^https?:\/\//, "")}
+                        </span>
+                        <span className="text-sky-600 dark:text-sky-400 font-semibold flex items-center gap-1 group-hover:underline">
+                          Abrir site
+                        </span>
+                      </div>
+                    </a>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-8 text-center text-slate-400 dark:text-slate-500 space-y-1">
+                  <Globe className="w-7 h-7 mx-auto opacity-30 text-sky-500" />
+                  <p className="text-xs">Nenhum artigo adicionado. Clique no botão acima para vincular artigos e sites de estudo.</p>
+                </div>
+              )}
+
+              {/* Direct Quick Research Chips */}
+              {selectedTask && (
+                <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center gap-2 flex-wrap text-xs">
+                  <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
+                    Pesquisar diretamente:
+                  </span>
+                  <a
+                    href={`https://www.google.com/search?q=${encodeURIComponent(
+                      `${selectedTask.title} documentacao artigo tutorial`
+                    )}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-colors"
+                  >
+                    Google Web <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                  <a
+                    href={`https://stackoverflow.com/search?q=${encodeURIComponent(selectedTask.title)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-950/40 hover:bg-orange-100 dark:hover:bg-orange-900/40 text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/60 text-[11px] font-medium transition-colors"
+                  >
+                    Stack Overflow <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                  <a
+                    href={`https://dev.to/search?q=${encodeURIComponent(selectedTask.title)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-colors"
+                  >
+                    Dev.to <ExternalLink className="w-2.5 h-2.5" />
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* 2. SEÇÃO DE VÍDEOS & TUTORIAIS DO YOUTUBE */}
             <div className="p-6 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                 <div className="flex items-center gap-2.5">
@@ -1430,10 +1710,10 @@ export function CentralQuadrant({
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                      Curadoria Automática de Aprendizado (YouTube)
+                      Curadoria de Aprendizado em Vídeo (YouTube)
                     </h3>
                     <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Vídeos e tutoriais selecionados para a demanda atual.
+                      Vídeos e tutoriais audiovisuais selecionados para a demanda.
                     </p>
                   </div>
                 </div>
@@ -1441,7 +1721,7 @@ export function CentralQuadrant({
 
               {selectedTask?.learning_resources?.youtube_videos &&
               selectedTask.learning_resources.youtube_videos.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                   {selectedTask.learning_resources.youtube_videos.map((vid, idx) => (
                     <a
                       key={idx}
@@ -1473,8 +1753,8 @@ export function CentralQuadrant({
                   ))}
                 </div>
               ) : (
-                <div className="py-12 text-center text-slate-400 dark:text-slate-500 space-y-2">
-                  <BookOpen className="w-8 h-8 mx-auto opacity-30 text-rose-500" />
+                <div className="py-8 text-center text-slate-400 dark:text-slate-500 space-y-1">
+                  <BookOpen className="w-7 h-7 mx-auto opacity-30 text-rose-500" />
                   <p className="text-xs">Selecione uma demanda para visualizar os tutoriais relacionados.</p>
                 </div>
               )}

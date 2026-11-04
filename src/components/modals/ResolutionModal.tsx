@@ -144,16 +144,20 @@ export function ResolutionModal({
 
           {/* Solution notes text area */}
           <div className="space-y-1.5">
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-              <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
-              Como a demanda foi resolvida? (Procedimento Técnico & Solução):
-            </label>
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Procedimento Técnico & Solução:</span>
+              </label>
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+                Opcional
+              </span>
+            </div>
             <textarea
-              required
               rows={4}
               value={resolutionNotes}
               onChange={(e) => setResolutionNotes(e.target.value)}
-              placeholder="Descreva detalhadamente o passo a passo da solução aplicada, comandos executados, ajustes realizados ou alinhamentos feitos. Isso ajudará em futuras reincidências..."
+              placeholder="Descreva a solução aplicada se desejar salvar na base de conhecimento (opcional). Se preferir, pode deixar em branco e concluir diretamente..."
               className="w-full text-xs p-3 rounded-2xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all resize-none"
             />
           </div>
@@ -182,18 +186,23 @@ export function ResolutionModal({
           <button
             type="submit"
             form="resolution-form"
-            disabled={isSubmitting || !resolutionNotes.trim()}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md shadow-emerald-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98]"
+            disabled={isSubmitting}
+            className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-md shadow-emerald-600/20 disabled:opacity-50 transition-all active:scale-[0.98]"
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Registrando...</span>
+                <span>Concluindo...</span>
+              </>
+            ) : resolutionNotes.trim() ? (
+              <>
+                <Check className="w-4 h-4" />
+                <span>Concluir e Salvar na Wiki</span>
               </>
             ) : (
               <>
                 <Check className="w-4 h-4" />
-                <span>Concluir e Salvar na Wiki</span>
+                <span>Concluir Demanda</span>
               </>
             )}
           </button>

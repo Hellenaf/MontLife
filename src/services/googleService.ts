@@ -1,5 +1,5 @@
 import { google } from "googleapis";
-import { AccountType, Task, YouTubeVideo, LearningResources } from "@/types";
+import { AccountType, Task, YouTubeVideo, WebArticleResource, LearningResources } from "@/types";
 import { formatGoogleTaskTitle } from "@/lib/sla";
 
 export function getOAuth2Client() {
@@ -243,8 +243,33 @@ export async function fetchYouTubeResources(queries: string[]): Promise<Learning
     }
   }
 
+  // Curated technical articles and reference sites
+  const articles: WebArticleResource[] = [];
+  for (const q of queries.slice(0, 3)) {
+    if (!q.trim()) continue;
+    articles.push({
+      title: `Artigos & Documentações Técnicas: ${q}`,
+      url: `https://www.google.com/search?q=${encodeURIComponent(q + " artigo tutorial documentacao")}`,
+      source: "Artigos & Web",
+      snippet: `Compilado de documentações oficiais, posts de engenharia e artigos técnicos focados em ${q}.`,
+    });
+    articles.push({
+      title: `Soluções & Casos no Stack Overflow: ${q}`,
+      url: `https://stackoverflow.com/search?q=${encodeURIComponent(q)}`,
+      source: "Stack Overflow",
+      snippet: `Discussões técnicas, soluções de erros e casos práticos validados pela comunidade sobre ${q}.`,
+    });
+    articles.push({
+      title: `Guias Práticos da Comunidade (Dev.to / Medium): ${q}`,
+      url: `https://dev.to/search?q=${encodeURIComponent(q)}`,
+      source: "Dev.to / Artigos",
+      snippet: `Artigos práticos, tutoriais de ponta a ponta e melhores práticas sobre ${q}.`,
+    });
+  }
+
   return {
     youtube_videos: videos,
+    articles,
     search_queries: queries.filter((q) => q.trim().length > 0),
   };
 }

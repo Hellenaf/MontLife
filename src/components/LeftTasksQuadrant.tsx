@@ -334,7 +334,7 @@ export function LeftTasksQuadrant({
               if (isCanceled || isCompleted) {
                 onUpdateStatus(task.id, "TODO");
               } else {
-                onRequestResolution(task);
+                onUpdateStatus(task.id, "COMPLETED");
               }
             }}
             title={
