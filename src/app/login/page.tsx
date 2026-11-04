@@ -4,6 +4,7 @@ import React from "react";
 import { ArrowRight, ShieldCheck, RefreshCw, Layers, Sun, Moon } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "@/context/ThemeContext";
+import { MontLifeLogo } from "@/components/MontLifeLogo";
 
 export default function LoginPage() {
   const { theme, toggleTheme } = useTheme();
@@ -22,9 +23,7 @@ export default function LoginPage() {
       {/* Top Navbar */}
       <header className="w-full max-w-5xl flex items-center justify-between py-2 relative z-10">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-indigo-600 dark:bg-indigo-500 text-white font-black text-sm flex items-center justify-center shadow-sm">
-            M
-          </div>
+          <MontLifeLogo size="sm" />
           <span className="font-bold text-sm tracking-wide text-slate-900 dark:text-white">
             MontLife
           </span>

@@ -19,6 +19,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import { ConnectedAccount, Task, AccountType } from "@/types";
+import { MontLifeLogo } from "@/components/MontLifeLogo";
 
 interface SidebarNavProps {
   accounts: ConnectedAccount[];
@@ -71,9 +72,7 @@ export function SidebarNav({
     <aside className="w-60 xl:w-64 h-full flex flex-col bg-[#0b0a17] border-r border-[#1e1c36] text-slate-200 shrink-0 select-none transition-all duration-200">
       {/* 1. Brand Logo & Title (MontLife) */}
       <div className="h-16 px-5 flex items-center gap-3 border-b border-[#1e1c36]/80 shrink-0">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 flex items-center justify-center font-black text-white text-base shadow-lg shadow-purple-600/30">
-          M
-        </div>
+        <MontLifeLogo size="md" />
         <div className="min-w-0">
           <div className="flex items-center gap-1.5">
             <span className="font-bold text-base tracking-tight text-white">

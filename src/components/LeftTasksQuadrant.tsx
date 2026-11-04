@@ -222,6 +222,62 @@ export function LeftTasksQuadrant({
     }
   };
 
+  const getKanbanStageBadge = (status: TaskStatus) => {
+    switch (status) {
+      case "IN_PROGRESS":
+        return (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-indigo-500/15 text-indigo-500 dark:text-indigo-300 border border-indigo-500/30 tracking-tight"
+            title="Etapa no Kanban: Em Andamento"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+            Em Andamento
+          </span>
+        );
+      case "WAITING":
+        return (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30 tracking-tight"
+            title="Etapa no Kanban: Aguardando / Validação"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Aguardando
+          </span>
+        );
+      case "COMPLETED":
+        return (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 border border-emerald-500/30 tracking-tight"
+            title="Etapa no Kanban: Concluído"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Concluído
+          </span>
+        );
+      case "TRIAGE":
+        return (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-purple-500/15 text-purple-600 dark:text-purple-300 border border-purple-500/30 tracking-tight"
+            title="Etapa no Kanban: Triagem Inicial"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+            Triagem
+          </span>
+        );
+      case "TODO":
+      default:
+        return (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-slate-500/10 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-300 dark:border-zinc-700/60 tracking-tight"
+            title="Etapa no Kanban: A Fazer"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-zinc-400" />
+            A Fazer
+          </span>
+        );
+    }
+  };
+
   const renderTaskCard = (task: Task, isCompletedCard: boolean = false) => {
     const isSelected = selectedTaskId === task.id;
     const isCompleted = task.status === "COMPLETED";
@@ -291,6 +347,9 @@ export function LeftTasksQuadrant({
                 >
                   {task.category}
                 </span>
+
+                {/* Subtle Kanban Stage Indicator */}
+                {getKanbanStageBadge(task.status)}
               </div>
 
               {overdue && (

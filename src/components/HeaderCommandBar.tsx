@@ -41,6 +41,7 @@ import {
   ItemType,
   ValidationStep,
 } from "@/types";
+import { MontLifeLogo } from "@/components/MontLifeLogo";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { format, parseISO, isPast, isSameDay, differenceInHours } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -313,15 +314,8 @@ export function HeaderCommandBar({
     <>
       <header className="h-16 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-4 sm:px-6 flex items-center justify-between shadow-sm transition-colors duration-200 z-30">
       {/* Brand & Identity (visible on mobile where sidebar is hidden) */}
-      <div className="flex items-center gap-2.5 shrink-0 lg:hidden">
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center font-black text-sm text-white shadow-sm">
-          M
-        </div>
-        <div>
-          <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white">
-            MontLife
-          </span>
-        </div>
+      <div className="flex items-center gap-2 shrink-0 lg:hidden">
+        <MontLifeLogo size="sm" showText={true} />
       </div>
 
       {/* Center Command Bar + Nova Demanda */}
