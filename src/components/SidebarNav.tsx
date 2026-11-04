@@ -304,7 +304,7 @@ export function SidebarNav({
           type="button"
           onClick={onOpenAccountsModal}
           className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-white/[0.03] hover:bg-white/[0.08] border border-white/5 transition-all shadow-xs group cursor-pointer"
-          title="Vincular Contas Google, Microsoft Reminder e Preferências"
+          title="Vincular Contas Google e Preferências"
         >
           <div className="w-7 h-7 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 group-hover:scale-105 transition-transform shrink-0">
             <Settings className="w-4 h-4" />

@@ -160,21 +160,6 @@ export default function MontOpsDashboard() {
       } else if (params.get("oauth_error")) {
         setOauthFeedback("Erro na autenticação com o Google. Tente novamente.");
         window.history.replaceState({}, document.title, window.location.pathname);
-      } else if (params.get("microsoft_success")) {
-        const count = params.get("imported") || "0";
-        setOauthFeedback(
-          `Samsung Reminder conectado com sucesso! ${count} lembretes importados.`
-        );
-        window.history.replaceState({}, document.title, window.location.pathname);
-        loadAccounts().then(() => loadTasks());
-      } else if (params.get("microsoft_oauth_missing")) {
-        setOauthFeedback(
-          "Integração Samsung Reminder: configure a chave MICROSOFT_CLIENT_ID para sincronizar com sua conta Microsoft."
-        );
-        window.history.replaceState({}, document.title, window.location.pathname);
-      } else if (params.get("microsoft_error")) {
-        setOauthFeedback("Não foi possível conectar a conta Microsoft para o Samsung Reminder.");
-        window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
   }, [loadAccounts, loadTasks]);

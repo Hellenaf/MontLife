@@ -171,7 +171,7 @@ export function CentralQuadrant({
   // Google Calendar View States (Mês | Semana | Dia | Programação)
   const [calendarViewMode, setCalendarViewMode] = useState<"week" | "month">("week");
   const [calendarDate, setCalendarDate] = useState<Date>(new Date());
-  const [calendarSourceFilter, setCalendarSourceFilter] = useState<"all" | "work" | "personal" | "agenda" | "samsung">("all");
+  const [calendarSourceFilter, setCalendarSourceFilter] = useState<"all" | "work" | "personal" | "agenda" | "reminder">("all");
   const [previewTask, setPreviewTask] = useState<Task | null>(null);
 
   // Attachment states (lightbox preview and detail upload)
@@ -313,7 +313,7 @@ export function CentralQuadrant({
     if (calendarSourceFilter === "work") return t.account_type === "work";
     if (calendarSourceFilter === "personal") return t.account_type === "personal";
     if (calendarSourceFilter === "agenda") return t.item_type === "activity" || t.tags?.includes("google-agenda");
-    if (calendarSourceFilter === "samsung") return t.item_type === "reminder" || t.tags?.includes("samsung-reminder");
+    if (calendarSourceFilter === "reminder") return t.item_type === "reminder";
     return true;
   });
 
@@ -540,12 +540,12 @@ export function CentralQuadrant({
         icon: <Activity className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />,
       };
     }
-    if (task.item_type === "reminder" || task.tags?.includes("samsung-reminder")) {
+    if (task.item_type === "reminder") {
       return {
         accent: "#e37400", // Google Tangerine Orange
         pillBg: "bg-[#e37400] text-white hover:bg-[#c96600]",
         cardBg: "bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 border-l-4 border-l-[#e37400] border-slate-200 dark:border-zinc-800",
-        sourceName: "Samsung Reminder",
+        sourceName: "Lembretes",
         badgeBg: "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200",
         icon: <Bell className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />,
       };
@@ -1560,7 +1560,7 @@ export function CentralQuadrant({
                       </label>
                       <input
                         type="url"
-                        placeholder="https://learn.microsoft.com/... ou https://dev.to/..."
+                        placeholder="https://developer.mozilla.org/... ou https://dev.to/..."
                         value={newArticleUrl}
                         onChange={(e) => setNewArticleUrl(e.target.value)}
                         className="w-full h-8 px-3 text-xs rounded-lg bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white outline-none focus:border-sky-500"

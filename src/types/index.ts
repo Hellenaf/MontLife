@@ -1,5 +1,5 @@
 export type AccountType = "work" | "personal";
-export type ConnectedAccountId = AccountType | "microsoft" | "samsung";
+export type ConnectedAccountId = AccountType;
 
 export type ItemType = "task" | "activity" | "reminder";
 
