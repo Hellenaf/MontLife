@@ -11,6 +11,7 @@ import { ExtendDeadlineModal } from "@/components/modals/ExtendDeadlineModal";
 import { AccountsModal } from "@/components/modals/AccountsModal";
 import { NewTaskModal } from "@/components/modals/NewTaskModal";
 import { ClassifyAccountModal } from "@/components/modals/ClassifyAccountModal";
+import { CancelTaskModal } from "@/components/modals/CancelTaskModal";
 import { AgendaDoDiaView } from "@/components/AgendaDoDiaView";
 import { WikiTechnicalView } from "@/components/WikiTechnicalView";
 import { ReportsView } from "@/components/ReportsView";
@@ -37,6 +38,9 @@ export default function MontOpsDashboard() {
 
   const [isExtendModalOpen, setIsExtendModalOpen] = useState(false);
   const [taskForExtend, setTaskForExtend] = useState<Task | null>(null);
+
+  const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
+  const [taskForCancel, setTaskForCancel] = useState<Task | null>(null);
 
   const [isAccountsModalOpen, setIsAccountsModalOpen] = useState(false);
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
@@ -233,6 +237,14 @@ export default function MontOpsDashboard() {
     } catch (err) {
       console.error("Failed to update status:", err);
     }
+  };
+
+  const handleCancelTask = async (taskId: string, cancelReason: string) => {
+    await handleUpdateStatus(taskId, "CANCELED", undefined, cancelReason);
+  };
+
+  const handleReopenTask = async (taskId: string) => {
+    await handleUpdateStatus(taskId, "TODO");
   };
 
   const handleUpdateItemType = async (taskId: string, itemType: ItemType) => {
@@ -456,6 +468,10 @@ export default function MontOpsDashboard() {
                 setNewTaskInitialText("");
                 setIsNewTaskModalOpen(true);
               }}
+              onRequestCancelTask={(task) => {
+                setTaskForCancel(task);
+                setIsCancelModalOpen(true);
+              }}
             />
           </main>
         ) : activeNav === "relatorios" ? (
@@ -487,6 +503,10 @@ export default function MontOpsDashboard() {
                 setTaskForExtend(task);
                 setIsExtendModalOpen(true);
               }}
+              onRequestCancelTask={(task) => {
+                setTaskForCancel(task);
+                setIsCancelModalOpen(true);
+              }}
               onDeleteTask={handleDeleteTask}
               onRequestNewTask={() => {
                 setNewTaskInitialText("");
@@ -509,6 +529,11 @@ export default function MontOpsDashboard() {
                 setTaskForExtend(task);
                 setIsExtendModalOpen(true);
               }}
+              onRequestCancelTask={(task) => {
+                setTaskForCancel(task);
+                setIsCancelModalOpen(true);
+              }}
+              onReopenTask={handleReopenTask}
               onUpdateStatus={handleUpdateStatus}
               onUpdateItemType={handleUpdateItemType}
               onUpdateTaskFields={handleUpdateTaskFields}
@@ -584,6 +609,18 @@ export default function MontOpsDashboard() {
         email={classifyEmail}
         onClassified={handleClassified}
         onClose={() => setIsClassifyModalOpen(false)}
+      />
+
+      <CancelTaskModal
+        task={taskForCancel}
+        isOpen={isCancelModalOpen}
+        onClose={() => {
+          setIsCancelModalOpen(false);
+          setTaskForCancel(null);
+        }}
+        onConfirm={async (taskId, reason) => {
+          await handleCancelTask(taskId, reason);
+        }}
       />
     </div>
   );

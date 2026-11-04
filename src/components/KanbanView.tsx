@@ -18,6 +18,7 @@ import {
   User,
   Layers,
   GripVertical,
+  Ban,
 } from "lucide-react";
 import { Task, TaskStatus, Priority, AccountType } from "@/types";
 import { format, isPast, isToday, parseISO } from "date-fns";
@@ -28,6 +29,7 @@ interface KanbanViewProps {
   onSelectTask: (task: Task) => void;
   onUpdateStatus: (taskId: string, newStatus: TaskStatus) => void;
   onOpenNewTaskModal: (initialStatus?: TaskStatus) => void;
+  onRequestCancelTask?: (task: Task) => void;
 }
 
 interface ColumnDef {
@@ -74,6 +76,7 @@ export function KanbanView({
   onSelectTask,
   onUpdateStatus,
   onOpenNewTaskModal,
+  onRequestCancelTask,
 }: KanbanViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [accountFilter, setAccountFilter] = useState<"all" | AccountType>("all");
@@ -430,6 +433,17 @@ export function KanbanView({
                             onClick={(e) => e.stopPropagation()}
                             className="flex items-center gap-1 opacity-50 group-hover:opacity-100 transition-opacity"
                           >
+                            {onRequestCancelTask && (
+                              <button
+                                type="button"
+                                onClick={() => onRequestCancelTask(task)}
+                                className="p-1 rounded bg-zinc-800/80 hover:bg-rose-950/60 hover:text-rose-400 text-zinc-400 transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer"
+                                title="Cancelar esta demanda"
+                              >
+                                <Ban className="w-2.5 h-2.5" />
+                              </button>
+                            )}
+
                             {task.status !== "COMPLETED" && (
                               <button
                                 type="button"

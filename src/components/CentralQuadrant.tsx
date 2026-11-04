@@ -37,6 +37,8 @@ import {
   Image as ImageIcon,
   Loader2,
   Repeat,
+  Ban,
+  RotateCcw,
 } from "lucide-react";
 import { AttachmentManager } from "@/components/AttachmentManager";
 import { Task, TaskAttachment, ValidationStep, TaskStatus, ItemType, AccountType, Priority } from "@/types";
@@ -78,6 +80,8 @@ interface CentralQuadrantProps {
   allTasks: Task[];
   onRequestResolution: (task: Task) => void;
   onRequestExtendDeadline: (task: Task) => void;
+  onRequestCancelTask?: (task: Task) => void;
+  onReopenTask?: (taskId: string) => void;
   onUpdateStatus: (taskId: string, status: TaskStatus) => void;
   onUpdateItemType?: (taskId: string, itemType: ItemType) => void;
   onUpdateTaskFields?: (taskId: string, fields: Partial<Task>) => Promise<void> | void;
@@ -109,6 +113,8 @@ export function CentralQuadrant({
   allTasks,
   onRequestResolution,
   onRequestExtendDeadline,
+  onRequestCancelTask,
+  onReopenTask,
   onUpdateStatus,
   onUpdateItemType,
   onUpdateTaskFields,
@@ -638,7 +644,70 @@ export function CentralQuadrant({
                         </button>
                       </div>
                     )}
+
+                    {/* Cancellation Action or Canceled Status Badge in Header */}
+                    <div className="flex items-center gap-2">
+                      {selectedTask.status === "CANCELED" ? (
+                        <div className="flex items-center gap-1.5">
+                          <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
+                            <Ban className="w-3.5 h-3.5" /> Cancelada
+                          </span>
+                          {onReopenTask && (
+                            <button
+                              type="button"
+                              onClick={() => onReopenTask(selectedTask.id)}
+                              className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors flex items-center gap-1 shadow-xs"
+                              title="Reabrir demanda cancelada"
+                            >
+                              <RotateCcw className="w-3 h-3 text-indigo-500" />
+                              Reabrir
+                            </button>
+                          )}
+                        </div>
+                      ) : selectedTask.status !== "COMPLETED" && onRequestCancelTask ? (
+                        <button
+                          type="button"
+                          onClick={() => onRequestCancelTask(selectedTask)}
+                          className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 border border-slate-200 dark:border-zinc-800 hover:border-rose-300 dark:hover:border-rose-800 transition-colors"
+                          title="Cancelar esta demanda e informar o motivo"
+                        >
+                          <Ban className="w-3.5 h-3.5" />
+                          <span>Cancelar Demanda</span>
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
+
+                  {/* Banner if Task is Canceled */}
+                  {selectedTask.status === "CANCELED" && (
+                    <div className="p-4 rounded-2xl bg-rose-50/90 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 space-y-2.5 animate-in fade-in">
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-bold text-xs sm:text-sm">
+                          <Ban className="w-4 h-4 shrink-0" />
+                          <span>Esta demanda foi cancelada</span>
+                        </div>
+                        {onReopenTask && (
+                          <button
+                            type="button"
+                            onClick={() => onReopenTask(selectedTask.id)}
+                            className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/40 text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 active:scale-95"
+                            title="Reativar e mover de volta para A Fazer"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5" />
+                            Reabrir Demanda
+                          </button>
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-700 dark:text-slate-300 bg-white/90 dark:bg-black/40 p-3 rounded-xl border border-rose-100 dark:border-rose-900/40 space-y-1">
+                        <span className="font-semibold text-rose-600 dark:text-rose-400 text-[11px] uppercase tracking-wide block">
+                          Motivo / Justificativa do Cancelamento:
+                        </span>
+                        <p className="whitespace-pre-wrap leading-relaxed">
+                          {selectedTask.cancel_reason || "Cancelada pelo usuário."}
+                        </p>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Title & Description */}
                   <div className="space-y-3">
@@ -1160,17 +1229,34 @@ export function CentralQuadrant({
                         <span>Nova Ocorrência</span>
                       </button>
 
-                      {selectedTask.status !== "COMPLETED" ? (
-                        <button
-                          onClick={() => onRequestResolution(selectedTask)}
-                          className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-medium transition-colors"
-                        >
-                          Concluir com Solução
-                        </button>
-                      ) : (
+                      {selectedTask.status === "COMPLETED" ? (
                         <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                           <CheckCircle2 className="w-3.5 h-3.5" /> Concluído
                         </span>
+                      ) : selectedTask.status === "CANCELED" ? (
+                        <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
+                          <Ban className="w-3.5 h-3.5" /> Demanda Cancelada
+                        </span>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => onRequestResolution(selectedTask)}
+                            className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-medium transition-colors"
+                          >
+                            Concluir com Solução
+                          </button>
+                          {onRequestCancelTask && (
+                            <button
+                              type="button"
+                              onClick={() => onRequestCancelTask(selectedTask)}
+                              className="px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-medium transition-colors flex items-center gap-1"
+                              title="Cancelar esta demanda e informar motivo"
+                            >
+                              <Ban className="w-3 h-3" />
+                              Cancelar Demanda
+                            </button>
+                          )}
+                        </div>
                       )}
                     </div>
                   </div>

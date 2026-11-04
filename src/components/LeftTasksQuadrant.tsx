@@ -20,6 +20,8 @@ import {
   RefreshCw,
   Tag,
   Loader2,
+  Ban,
+  RotateCcw,
 } from "lucide-react";
 import { Task, TaskStatus, Priority, AccountType, ItemType } from "@/types";
 import { isTaskOverdue } from "@/lib/sla";
@@ -39,6 +41,7 @@ interface LeftTasksQuadrantProps {
   ) => void;
   onRequestResolution: (task: Task) => void;
   onRequestExtendDeadline: (task: Task) => void;
+  onRequestCancelTask?: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
   onRequestNewTask?: () => void;
   onRefreshTasks?: () => Promise<void> | void;
@@ -53,6 +56,7 @@ export function LeftTasksQuadrant({
   onUpdateStatus,
   onRequestResolution,
   onRequestExtendDeadline,
+  onRequestCancelTask,
   onDeleteTask,
   onRequestNewTask,
   onRefreshTasks,
@@ -72,6 +76,7 @@ export function LeftTasksQuadrant({
   const [selectedTagFilter, setSelectedTagFilter] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isCompletedExpanded, setIsCompletedExpanded] = useState(false);
+  const [isCanceledExpanded, setIsCanceledExpanded] = useState(false);
   const [isCategorizing, setIsCategorizing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -177,9 +182,12 @@ export function LeftTasksQuadrant({
     return true;
   });
 
-  // Split into Active tasks and Completed tasks
-  const activeTasks = filteredTasks.filter((t) => t.status !== "COMPLETED");
+  // Split into Active tasks, Completed tasks and Canceled tasks
+  const activeTasks = filteredTasks.filter(
+    (t) => t.status !== "COMPLETED" && t.status !== "CANCELED"
+  );
   const completedTasks = filteredTasks.filter((t) => t.status === "COMPLETED");
+  const canceledTasks = filteredTasks.filter((t) => t.status === "CANCELED");
 
   const getPriorityStyle = (p: Priority) => {
     switch (p) {
@@ -264,6 +272,16 @@ export function LeftTasksQuadrant({
             Triagem
           </span>
         );
+      case "CANCELED":
+        return (
+          <span
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 tracking-tight"
+            title="Etapa: Cancelada"
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+            Cancelada
+          </span>
+        );
       case "TODO":
       default:
         return (
@@ -281,7 +299,8 @@ export function LeftTasksQuadrant({
   const renderTaskCard = (task: Task, isCompletedCard: boolean = false) => {
     const isSelected = selectedTaskId === task.id;
     const isCompleted = task.status === "COMPLETED";
-    const overdue = !isCompleted && isTaskOverdue(task.current_due_date, task.status);
+    const isCanceled = task.status === "CANCELED";
+    const overdue = !isCompleted && !isCanceled && isTaskOverdue(task.current_due_date, task.status);
 
     let dueFormatted = "";
     try {
@@ -299,31 +318,45 @@ export function LeftTasksQuadrant({
         className={`group relative p-3 rounded-2xl border transition-all cursor-pointer ${
           isSelected
             ? "bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-500 dark:border-indigo-500/70 shadow-sm ring-1 ring-indigo-500/20"
+            : isCanceled
+            ? "bg-rose-50/30 dark:bg-[#151014] border-rose-200/60 dark:border-rose-950/40 opacity-75 hover:opacity-100"
             : isCompleted
             ? "bg-slate-50/70 dark:bg-[#111218] border-slate-200/80 dark:border-zinc-800/80 opacity-70 hover:opacity-100"
             : "bg-white dark:bg-[#141520] border-slate-200 dark:border-zinc-800/90 hover:border-slate-300 dark:hover:border-zinc-700 shadow-sm"
         }`}
       >
         <div className="flex items-start gap-2.5">
-          {/* Circular Google Tasks-style checkbox */}
+          {/* Circular status button */}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              if (isCompleted) {
+              if (isCanceled || isCompleted) {
                 onUpdateStatus(task.id, "TODO");
               } else {
                 onRequestResolution(task);
               }
             }}
-            title={isCompleted ? "Reabrir tarefa" : "Concluir tarefa"}
+            title={
+              isCanceled
+                ? "Reabrir demanda cancelada"
+                : isCompleted
+                ? "Reabrir tarefa"
+                : "Concluir tarefa"
+            }
             className={`mt-0.5 w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all ${
-              isCompleted
+              isCanceled
+                ? "bg-rose-500 text-white shadow-sm"
+                : isCompleted
                 ? "bg-emerald-500 text-white shadow-sm"
                 : "border-2 border-slate-300 dark:border-zinc-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-transparent hover:text-emerald-500"
             }`}
           >
-            <Check className="w-3 h-3" />
+            {isCanceled ? (
+              <Ban className="w-3 h-3" />
+            ) : (
+              <Check className="w-3 h-3" />
+            )}
           </button>
 
           {/* Main Task Content */}
@@ -365,14 +398,23 @@ export function LeftTasksQuadrant({
               className={`text-xs font-semibold leading-snug line-clamp-2 ${
                 isCompleted
                   ? "line-through text-slate-400 dark:text-zinc-500 font-normal"
+                  : isCanceled
+                  ? "line-through text-rose-500/80 dark:text-rose-400/80 font-normal"
                   : "text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
               } transition-colors`}
             >
               {task.title}
             </h4>
 
+            {/* Display cancel reason if canceled */}
+            {isCanceled && task.cancel_reason && (
+              <p className="text-[11px] text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 px-2 py-1 rounded-md border border-rose-100 dark:border-rose-900/40 line-clamp-2 mt-1">
+                <span className="font-semibold">Motivo:</span> {task.cancel_reason}
+              </p>
+            )}
+
             {/* Optional task description snippet */}
-            {task.description && (
+            {!isCanceled && task.description && (
               <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1 mt-1 font-normal">
                 {task.description.replace(/\*\*/g, "")}
               </p>
@@ -457,9 +499,9 @@ export function LeftTasksQuadrant({
         <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-[#161722] p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
           <button
             onClick={() => setAccountFilter("all")}
-            className={`py-1 text-xs font-semibold rounded-lg transition-all ${
+            className={`py-1 text-xs font-semibold rounded-lg flex items-center justify-center transition-all ${
               accountFilter === "all"
-                ? "bg-white dark:bg-[#202230] text-slate-900 dark:white shadow-sm"
+                ? "bg-white dark:bg-[#202230] text-slate-900 dark:text-white shadow-sm"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
           >
@@ -704,6 +746,39 @@ export function LeftTasksQuadrant({
                 {isCompletedExpanded && (
                   <div className="mt-2 space-y-2 animate-in fade-in duration-150">
                     {completedTasks.map((task) => renderTaskCard(task, true))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Collapsible Canceled Tasks Section */}
+            {canceledTasks.length > 0 && (
+              <div className="pt-2 border-t border-slate-200 dark:border-zinc-800/80 mt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsCanceledExpanded(!isCanceledExpanded)}
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-all shadow-sm"
+                >
+                  <div className="flex items-center gap-2">
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 text-rose-500 transition-transform duration-200 ${
+                        isCanceledExpanded ? "" : "-rotate-90"
+                      }`}
+                    />
+                    <Ban className="w-3.5 h-3.5 text-rose-500" />
+                    <span>Canceladas</span>
+                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                      {canceledTasks.length}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">
+                    {isCanceledExpanded ? "Ocultar" : "Mostrar"}
+                  </span>
+                </button>
+
+                {isCanceledExpanded && (
+                  <div className="mt-2 space-y-2 animate-in fade-in duration-150">
+                    {canceledTasks.map((task) => renderTaskCard(task, true))}
                   </div>
                 )}
               </div>
