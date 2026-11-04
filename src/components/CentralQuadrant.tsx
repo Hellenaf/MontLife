@@ -1323,20 +1323,12 @@ export function CentralQuadrant({
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
-                            onClick={() => onUpdateStatus(selectedTask.id, "COMPLETED")}
-                            className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition-colors flex items-center gap-1.5"
-                            title="Concluir demanda diretamente (sem necessidade de preencher solução)"
+                            onClick={() => onRequestResolution(selectedTask)}
+                            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition-colors"
+                            title="Concluir demanda (preenchimento de solução opcional)"
                           >
                             <Check className="w-3.5 h-3.5" />
                             <span>Concluir</span>
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onRequestResolution(selectedTask)}
-                            className="px-3 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-xs font-medium transition-colors"
-                            title="Concluir documentando procedimento ou solução (opcional)"
-                          >
-                            Concluir com Solução
                           </button>
                           {onRequestCancelTask && (
                             <button
