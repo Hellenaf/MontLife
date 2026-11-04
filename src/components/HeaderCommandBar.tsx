@@ -28,7 +28,9 @@ import {
   Moon,
   CheckSquare,
   Trash2,
+  Repeat,
 } from "lucide-react";
+import { findSimilarTasks } from "@/lib/taskDeduplication";
 import {
   GeminiTriageResponse,
   SimilarResolution,
@@ -99,6 +101,18 @@ export function HeaderCommandBar({
   const [isAddingHeaderStep, setIsAddingHeaderStep] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+
+  // Deduplication state in AI Confirmation modal
+  const [isSimilarityDismissed, setIsSimilarityDismissed] = useState(false);
+  const [isRegisteringRecurrence, setIsRegisteringRecurrence] = useState(false);
+
+  const similarMatches = useMemo(() => {
+    const textToCheck = editTitle.trim() || input.trim();
+    if (!textToCheck || !tasks || tasks.length === 0) return [];
+    return findSimilarTasks(textToCheck, editDescription, tasks, 0.38);
+  }, [editTitle, input, editDescription, tasks]);
+
+  const topSimilar = !isSimilarityDismissed && similarMatches.length > 0 ? similarMatches[0] : null;
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
@@ -191,11 +205,12 @@ export function HeaderCommandBar({
     if (!input.trim() || isProcessing) return;
 
     setIsProcessing(true);
+    setIsSimilarityDismissed(false);
     try {
       const res = await fetch("/api/triage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ raw_input: input }),
+        body: JSON.stringify({ raw_input: input, force_fresh_ai: true }),
       });
 
       const data = await res.json();
@@ -293,6 +308,7 @@ export function HeaderCommandBar({
         setLearningResources(null);
         setInput("");
         setPreferredType("auto");
+        setIsSimilarityDismissed(false);
       }
     } catch (err) {
       console.error("Failed to create task:", err);
@@ -305,6 +321,7 @@ export function HeaderCommandBar({
     setTriageData(null);
     setSimilarResolutions([]);
     setLearningResources(null);
+    setIsSimilarityDismissed(false);
   };
 
   const workAcc = accounts.find((a) => a.id === "work");
@@ -603,6 +620,113 @@ export function HeaderCommandBar({
 
             {/* Scrollable Body */}
             <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-3.5 custom-scrollbar">
+              {/* Smart Deduplication Alert Banner */}
+              {topSimilar && (
+                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-600/40 text-xs space-y-2.5 animate-in fade-in duration-200 shadow-sm">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-xs uppercase tracking-wide">
+                      <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
+                      <span>
+                        {topSimilar.isExactMatch
+                          ? "Demanda Idêntica Já Existente Detectada"
+                          : `Demanda Similar Encontrada (${Math.round(topSimilar.similarityScore * 100)}% de similaridade)`}
+                      </span>
+                    </div>
+                    <span
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold border ${
+                        topSimilar.task.status === "COMPLETED"
+                          ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                          : "bg-amber-50 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700"
+                      }`}
+                    >
+                      {topSimilar.task.status === "COMPLETED" ? "✓ Já Concluída" : "⏳ Em Aberto"}
+                    </span>
+                  </div>
+
+                  <div className="space-y-1.5 bg-white/80 dark:bg-zinc-900/60 p-3 rounded-xl border border-amber-100 dark:border-zinc-800">
+                    <p className="font-bold text-slate-900 dark:text-zinc-100 text-xs">
+                      {topSimilar.task.title}
+                    </p>
+                    {topSimilar.task.description && (
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
+                        {topSimilar.task.description}
+                      </p>
+                    )}
+
+                    {topSimilar.hasPreviousResolution && topSimilar.previousResolutionNotes && (
+                      <div className="p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[11px] text-slate-700 dark:text-zinc-300 mt-1">
+                        <span className="text-emerald-700 dark:text-emerald-400 font-bold block mb-0.5">
+                          ✓ Resolução / Procedimento Anterior:
+                        </span>
+                        <span className="line-clamp-2 italic">{topSimilar.previousResolutionNotes}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center flex-wrap gap-2 pt-1 border-t border-amber-200/60 dark:border-amber-900/40">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (onSelectTask) {
+                          onSelectTask(topSimilar.task);
+                        }
+                        handleDiscardTriage();
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 text-xs font-semibold transition-all cursor-pointer shadow-xs"
+                    >
+                      <ArrowRight className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Ver Demanda Existente</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={isRegisteringRecurrence}
+                      onClick={async () => {
+                        setIsRegisteringRecurrence(true);
+                        try {
+                          const res = await fetch(`/api/tasks/${topSimilar.task.id}/recurrence`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              notes: `Nova ocorrência registrada via comando IA: "${input}"`,
+                              method: topSimilar.previousResolutionNotes || undefined,
+                              reopen_status: topSimilar.task.status === "COMPLETED" ? undefined : topSimilar.task.status,
+                            }),
+                          });
+                          const data = await res.json();
+                          if (data.success && data.task) {
+                            if (onSelectTask) onSelectTask(data.task);
+                            handleDiscardTriage();
+                          }
+                        } catch (err) {
+                          console.error("Erro ao registrar reincidência:", err);
+                        } finally {
+                          setIsRegisteringRecurrence(false);
+                        }
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                    >
+                      {isRegisteringRecurrence ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Repeat className="w-3.5 h-3.5" />
+                      )}
+                      <span>Registrar como Reincidência (+1x)</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsSimilarityDismissed(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer ml-auto"
+                      title="Criar como uma nova demanda independente sem vincular à anterior"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Criar Demanda Independente</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Classification selector */}
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
                 <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">

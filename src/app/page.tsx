@@ -379,7 +379,11 @@ export default function MontOpsDashboard() {
           tasks={tasks}
           availableCategories={allCategories}
           onTaskCreated={handleTaskCreated}
-          onSelectTask={(task) => setSelectedTaskId(task.id)}
+          onSelectTask={(task) => {
+            setSelectedTaskId(task.id);
+            setActiveNav("tarefas");
+            setCentralActiveTab("details");
+          }}
           onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
           onOpenReportModal={() => setActiveNav("relatorios")}
           onOpenNewTaskModal={(prefill) => {
@@ -537,7 +541,11 @@ export default function MontOpsDashboard() {
               onUpdateStatus={handleUpdateStatus}
               onUpdateItemType={handleUpdateItemType}
               onUpdateTaskFields={handleUpdateTaskFields}
-              onSelectTask={(task) => setSelectedTaskId(task.id)}
+              onSelectTask={(task) => {
+            setSelectedTaskId(task.id);
+            setActiveNav("tarefas");
+            setCentralActiveTab("details");
+          }}
               onOpenNewTaskModal={() => setIsNewTaskModalOpen(true)}
               activeTab={centralActiveTab}
               onTabChange={setCentralActiveTab}

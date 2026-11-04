@@ -90,22 +90,22 @@ export function NewTaskModal({
   const [aiSuggestions, setAiSuggestions] = useState<GeminiTriageResponse | null>(null);
 
   // Deduplication & Recurrence detection state
-  const [ignoredSimilarityId, setIgnoredSimilarityId] = useState<string | null>(null);
+  const [isSimilarityDismissed, setIsSimilarityDismissed] = useState(false);
   const [isRegisteringRecurrence, setIsRegisteringRecurrence] = useState(false);
 
   const similarMatches = useMemo(() => {
     if (!title.trim() || !existingTasks || existingTasks.length === 0) return [];
-    return findSimilarTasks(title, description, existingTasks, 0.45);
+    return findSimilarTasks(title, description, existingTasks, 0.38);
   }, [title, description, existingTasks]);
 
   const topSimilar =
-    similarMatches.length > 0 && similarMatches[0].task.id !== ignoredSimilarityId
+    !isSimilarityDismissed && similarMatches.length > 0
       ? similarMatches[0]
       : null;
 
   useEffect(() => {
     if (isOpen) {
-      setIgnoredSimilarityId(null);
+      setIsSimilarityDismissed(false);
       if (initialText) {
         if (initialText.includes("\n") || initialText.length > 60) {
           setDescription(initialText);
@@ -131,7 +131,7 @@ export function NewTaskModal({
       setValidationSteps([]);
       setNewStepText("");
       setIsAddingStep(false);
-      setIgnoredSimilarityId(null);
+      setIsSimilarityDismissed(false);
     }
   }, [isOpen, initialText, initialType]);
 
@@ -179,7 +179,7 @@ export function NewTaskModal({
       const res = await fetch("/api/triage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ raw_input: textToAnalyze }),
+        body: JSON.stringify({ raw_input: textToAnalyze, force_fresh_ai: true }),
       });
       const data = await res.json();
       if (data.success && data.triage) {
@@ -325,28 +325,48 @@ export function NewTaskModal({
         >
           {/* Smart Deduplication Alert Banner */}
           {topSimilar && (
-            <div className="p-3.5 rounded-xl bg-amber-950/30 border border-amber-600/40 text-xs space-y-2 animate-fadeIn">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-amber-400 font-semibold text-[11px] uppercase tracking-wide">
-                  <Lightbulb className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>Demanda Similar Encontrada ({Math.round(topSimilar.similarityScore * 100)}% match)</span>
+            <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-600/40 text-xs space-y-2.5 animate-in fade-in duration-200 shadow-sm">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-xs uppercase tracking-wide">
+                  <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>
+                    {topSimilar.isExactMatch
+                      ? "Demanda Idêntica Já Existente Detectada"
+                      : `Demanda Similar Encontrada (${Math.round(topSimilar.similarityScore * 100)}% de similaridade)`}
+                  </span>
                 </div>
-                <span className="text-[10px] font-mono text-zinc-400 bg-zinc-900/80 px-1.5 py-0.5 rounded border border-zinc-800">
-                  {topSimilar.task.status === "COMPLETED" ? "Concluída" : "Em Aberto"}
+                <span
+                  className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold border ${
+                    topSimilar.task.status === "COMPLETED"
+                      ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
+                      : "bg-amber-50 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700"
+                  }`}
+                >
+                  {topSimilar.task.status === "COMPLETED" ? "✓ Já Concluída" : "⏳ Em Aberto"}
                 </span>
               </div>
 
-              <div className="space-y-1">
-                <p className="font-semibold text-zinc-200">{topSimilar.task.title}</p>
+              <div className="space-y-1.5 bg-white/80 dark:bg-zinc-900/60 p-3 rounded-xl border border-amber-100 dark:border-zinc-800">
+                <p className="font-bold text-slate-900 dark:text-zinc-100 text-xs">
+                  {topSimilar.task.title}
+                </p>
+                {topSimilar.task.description && (
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
+                    {topSimilar.task.description}
+                  </p>
+                )}
+
                 {topSimilar.hasPreviousResolution && topSimilar.previousResolutionNotes && (
-                  <div className="p-2 rounded-lg bg-zinc-900/90 border border-zinc-800 text-[11px] text-zinc-300">
-                    <span className="text-emerald-400 font-medium block">✓ Solução Anterior Registrada:</span>
+                  <div className="p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[11px] text-slate-700 dark:text-zinc-300 mt-1">
+                    <span className="text-emerald-700 dark:text-emerald-400 font-bold block mb-0.5">
+                      ✓ Resolução / Procedimento Anterior:
+                    </span>
                     <span className="line-clamp-2 italic">{topSimilar.previousResolutionNotes}</span>
                   </div>
                 )}
               </div>
 
-              <div className="flex items-center flex-wrap gap-2 pt-1 border-t border-amber-900/30">
+              <div className="flex items-center flex-wrap gap-2 pt-1 border-t border-amber-200/60 dark:border-amber-900/40">
                 <button
                   type="button"
                   onClick={() => {
@@ -355,9 +375,9 @@ export function NewTaskModal({
                     }
                     onClose();
                   }}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-[11px] font-medium transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 text-xs font-semibold transition-all cursor-pointer shadow-xs"
                 >
-                  <ArrowRight className="w-3 h-3 text-indigo-400" />
+                  <ArrowRight className="w-3.5 h-3.5 text-indigo-500" />
                   <span>Ver Demanda Existente</span>
                 </button>
 
@@ -388,22 +408,24 @@ export function NewTaskModal({
                       setIsRegisteringRecurrence(false);
                     }
                   }}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-medium shadow-xs transition-all cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50"
                 >
                   {isRegisteringRecurrence ? (
-                    <Loader2 className="w-3 h-3 animate-spin" />
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   ) : (
-                    <Repeat className="w-3 h-3" />
+                    <Repeat className="w-3.5 h-3.5" />
                   )}
                   <span>Registrar como Reincidência (+1x)</span>
                 </button>
 
                 <button
                   type="button"
-                  onClick={() => setIgnoredSimilarityId(topSimilar.task.id)}
-                  className="text-[11px] text-zinc-400 hover:text-zinc-200 ml-auto cursor-pointer"
+                  onClick={() => setIsSimilarityDismissed(true)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer ml-auto"
+                  title="Criar como uma nova demanda independente sem vincular à anterior"
                 >
-                  Continuar Criando Nova
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Criar Demanda Independente</span>
                 </button>
               </div>
             </div>
