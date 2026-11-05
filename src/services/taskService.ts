@@ -32,15 +32,32 @@ const DEFAULT_ACCOUNTS: ConnectedAccount[] = [
 let memoryTasks: Task[] = [];
 let memoryAccounts: ConnectedAccount[] = [...DEFAULT_ACCOUNTS];
 
-export async function getTasksFromDb(): Promise<Task[]> {
+export async function getTasksFromDb(userId?: string): Promise<Task[]> {
   const db = getFirestoreDb();
   if (!db) {
+    if (userId) {
+      return memoryTasks.filter((t) => !t.user_id || t.user_id === userId);
+    }
     return memoryTasks;
   }
 
   try {
-    const snapshot = await db.collection("tasks").orderBy("created_at", "desc").get();
-    if (snapshot.empty) {
+    let snapshot;
+    if (userId) {
+      snapshot = await db.collection("tasks").where("user_id", "==", userId).get();
+      // If user has no tasks yet, check if there are legacy tasks without user_id only for the primary owner
+      if (snapshot.empty && (userId === "primary" || userId.includes("hellen"))) {
+        const legacySnap = await db.collection("tasks").orderBy("created_at", "desc").get();
+        const legacyDocs = legacySnap.docs.filter((d) => !d.data().user_id);
+        if (legacyDocs.length > 0) {
+          snapshot = { docs: legacyDocs, empty: false } as any;
+        }
+      }
+    } else {
+      snapshot = await db.collection("tasks").orderBy("created_at", "desc").get();
+    }
+
+    if (!snapshot || snapshot.empty) {
       return [];
     }
 
@@ -55,15 +72,25 @@ export async function getTasksFromDb(): Promise<Task[]> {
       tasks.push(data);
     }
 
+    // Sort descending by created_at
+    tasks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
     return tasks;
   } catch (err) {
     console.warn("Firestore read failed, falling back to in-memory tasks:", err);
+    if (userId) {
+      return memoryTasks.filter((t) => !t.user_id || t.user_id === userId);
+    }
     return memoryTasks;
   }
 }
 
-export async function saveTaskToDb(task: Task): Promise<Task> {
+export async function saveTaskToDb(task: Task, userId?: string): Promise<Task> {
   const db = getFirestoreDb();
+  if (userId) {
+    task.user_id = userId;
+  }
+
   if (!db) {
     const idx = memoryTasks.findIndex((t) => t.id === task.id);
     if (idx >= 0) {
@@ -89,7 +116,7 @@ export async function saveTaskToDb(task: Task): Promise<Task> {
   }
 }
 
-export async function deleteTaskFromDb(taskId: string): Promise<boolean> {
+export async function deleteTaskFromDb(taskId: string, userId?: string): Promise<boolean> {
   const db = getFirestoreDb();
   memoryTasks = memoryTasks.filter((t) => t.id !== taskId);
 
@@ -106,9 +133,10 @@ export async function deleteTaskFromDb(taskId: string): Promise<boolean> {
 
 export async function findSimilarCompletedTasks(
   searchTags: string[],
-  queryText: string
+  queryText: string,
+  userId?: string
 ): Promise<SimilarResolution[]> {
-  const tasks = await getTasksFromDb();
+  const tasks = await getTasksFromDb(userId);
   const completed = tasks.filter((t) => t.status === "COMPLETED" && t.resolution_notes);
 
   const lowerQuery = queryText.toLowerCase();
@@ -147,9 +175,10 @@ export async function updateTaskStatus(
   newStatus: TaskStatus,
   resolutionNotes?: string | null,
   cancelReason?: string | null,
-  resolutionAttachments?: import("@/types").TaskAttachment[]
+  resolutionAttachments?: import("@/types").TaskAttachment[],
+  userId?: string
 ): Promise<Task | null> {
-  const tasks = await getTasksFromDb();
+  const tasks = await getTasksFromDb(userId);
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return null;
 
@@ -172,7 +201,7 @@ export async function updateTaskStatus(
     task.cancel_reason = cancelReason || "Cancelada pelo usuário.";
   }
 
-  await saveTaskToDb(task);
+  await saveTaskToDb(task, userId);
   return task;
 }
 
@@ -183,9 +212,10 @@ export async function registerExecutionRecurrence(
     method?: string;
     registeredBy?: string;
     reopenStatus?: TaskStatus;
-  }
+  },
+  userId?: string
 ): Promise<Task | null> {
-  const tasks = await getTasksFromDb();
+  const tasks = await getTasksFromDb(userId);
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return null;
 
@@ -227,12 +257,12 @@ export async function registerExecutionRecurrence(
     }
   }
 
-  await saveTaskToDb(task);
+  await saveTaskToDb(task, userId);
   return task;
 }
 
-export async function findDirectDbMatchForTriage(rawInput: string): Promise<Task | null> {
-  const tasks = await getTasksFromDb();
+export async function findDirectDbMatchForTriage(rawInput: string, userId?: string): Promise<Task | null> {
+  const tasks = await getTasksFromDb(userId);
   const cleanInput = rawInput.toLowerCase().trim();
   if (!cleanInput) return null;
 
@@ -254,9 +284,10 @@ export async function findDirectDbMatchForTriage(rawInput: string): Promise<Task
 export async function extendTaskDeadline(
   taskId: string,
   newDueDateIso: string,
-  reason: string
+  reason: string,
+  userId?: string
 ): Promise<Task | null> {
-  const tasks = await getTasksFromDb();
+  const tasks = await getTasksFromDb(userId);
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return null;
 
@@ -275,11 +306,11 @@ export async function extendTaskDeadline(
     reason: reason || "Adiamento solicitado.",
   });
 
-  await saveTaskToDb(task);
+  await saveTaskToDb(task, userId);
   return task;
 }
 
-export async function getConnectedAccounts(): Promise<ConnectedAccount[]> {
+export async function getConnectedAccounts(userId?: string): Promise<ConnectedAccount[]> {
   const db = getFirestoreDb();
   if (!db) {
     return memoryAccounts.map((acc) => ({
@@ -289,13 +320,31 @@ export async function getConnectedAccounts(): Promise<ConnectedAccount[]> {
   }
 
   try {
-    const snapshot = await db.collection("connected_accounts").get();
+    const colRef = userId
+      ? db.collection("users").doc(userId).collection("accounts")
+      : db.collection("connected_accounts");
+
+    const snapshot = await colRef.get();
     if (snapshot.empty) {
+      if (userId) {
+        const legacySnap = await db.collection("connected_accounts").get();
+        if (!legacySnap.empty) {
+          return legacySnap.docs.map((doc) => {
+            const data = doc.data() as ConnectedAccount;
+            return {
+              ...data,
+              is_connected: Boolean(data.access_token || data.refresh_token),
+            };
+          });
+        }
+      }
+
       return [
         { id: "work", email: "", default_tasklist_id: "@default", last_sync_at: null, is_connected: false },
         { id: "personal", email: "", default_tasklist_id: "@default", last_sync_at: null, is_connected: false },
       ];
     }
+
     return snapshot.docs.map((doc) => {
       const data = doc.data() as ConnectedAccount;
       const isActuallyConnected = Boolean(data.access_token || data.refresh_token);
@@ -310,8 +359,12 @@ export async function getConnectedAccounts(): Promise<ConnectedAccount[]> {
   }
 }
 
-export async function saveConnectedAccount(account: ConnectedAccount): Promise<ConnectedAccount> {
+export async function saveConnectedAccount(account: ConnectedAccount, userId?: string): Promise<ConnectedAccount> {
   const db = getFirestoreDb();
+  if (userId) {
+    account.user_id = userId;
+  }
+
   const idx = memoryAccounts.findIndex((a) => a.id === account.id);
   if (idx >= 0) {
     memoryAccounts[idx] = account;
@@ -322,7 +375,11 @@ export async function saveConnectedAccount(account: ConnectedAccount): Promise<C
   if (!db) return account;
 
   try {
-    await db.collection("connected_accounts").doc(account.id).set(account, { merge: true });
+    const docRef = userId
+      ? db.collection("users").doc(userId).collection("accounts").doc(account.id)
+      : db.collection("connected_accounts").doc(account.id);
+
+    await docRef.set(account, { merge: true });
     return account;
   } catch (err) {
     console.warn("Firestore save account failed:", err);

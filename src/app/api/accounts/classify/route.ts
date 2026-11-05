@@ -8,12 +8,14 @@ import {
 import { categorizeTaskWithAI } from "@/services/geminiService";
 import { AccountType, Task } from "@/types";
 import { stripGoogleTaskPrefix } from "@/lib/sla";
+import { getSessionUser } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
     const type: AccountType = body.type === "personal" ? "personal" : "work";
 
+    const session = await getSessionUser(req);
     const pendingData = await getPendingAuth();
 
     if (!pendingData) {
@@ -23,24 +25,28 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const userId = session?.userId || pendingData.userId;
     const { email, access_token, refresh_token, expiry_date } = pendingData;
 
-    // 1. Save classified account to connected_accounts collection
-    const saved = await saveConnectedAccount({
-      id: type,
-      email: email || `${type}@gmail.com`,
-      access_token: access_token || undefined,
-      refresh_token: refresh_token || undefined,
-      expiry_date: expiry_date || undefined,
-      default_tasklist_id: "@default",
-      last_sync_at: new Date().toISOString(),
-      is_connected: true,
-    });
+    // 1. Save classified account to connected_accounts collection scoped by userId
+    const saved = await saveConnectedAccount(
+      {
+        id: type,
+        email: email || `${type}@gmail.com`,
+        access_token: access_token || undefined,
+        refresh_token: refresh_token || undefined,
+        expiry_date: expiry_date || undefined,
+        default_tasklist_id: "@default",
+        last_sync_at: new Date().toISOString(),
+        is_connected: true,
+      },
+      userId
+    );
 
     // Clear pending state
     await clearPendingAuth();
 
-    // 2. Automatically sync real Google Tasks into MontLife
+    // 2. Automatically sync real Google Tasks into MontLife for this user
     let importedCount = 0;
     if (access_token || refresh_token) {
       try {
@@ -49,12 +55,12 @@ export async function POST(req: NextRequest) {
           refresh_token: refresh_token || undefined,
         });
 
-        const currentTasks = await getTasksFromDb();
+        const currentTasks = await getTasksFromDb(userId);
 
         // Clean up legacy seed tasks
         for (const t of currentTasks) {
           if (t.id.startsWith("seed-task-")) {
-            await deleteTaskFromDb(t.id);
+            await deleteTaskFromDb(t.id, userId);
           }
         }
 
@@ -73,6 +79,7 @@ export async function POST(req: NextRequest) {
 
             const newTask: Task = {
               id: `gt-imported-${item.id}`,
+              user_id: userId,
               raw_input: cleanTitle,
               title: cleanTitle,
               description: item.notes || "",
@@ -97,7 +104,7 @@ export async function POST(req: NextRequest) {
               met_original_sla: isCompleted ? true : null,
             };
 
-            await saveTaskToDb(newTask);
+            await saveTaskToDb(newTask, userId);
             importedCount++;
           }
         }
@@ -116,7 +123,7 @@ export async function POST(req: NextRequest) {
   } catch (error: unknown) {
     console.error("POST /api/accounts/classify error:", error);
     return NextResponse.json(
-      { success: false, error: "Falha ao classificar conta" },
+      { success: false, error: "Falha ao classificar e vincular conta" },
       { status: 500 }
     );
   }

@@ -32,6 +32,12 @@ interface SidebarNavProps {
   onSelectAccountFilter?: (filter: "all" | AccountType) => void;
   onLogout?: () => void;
   completedTasksCount?: number;
+  currentUser?: {
+    userId: string;
+    email: string;
+    name: string;
+    picture?: string;
+  } | null;
 }
 
 export function SidebarNav({
@@ -45,9 +51,25 @@ export function SidebarNav({
   onSelectAccountFilter,
   onLogout,
   completedTasksCount = 0,
+  currentUser,
 }: SidebarNavProps) {
   const workAcc = accounts.find((a) => a.id === "work");
   const personalAcc = accounts.find((a) => a.id === "personal");
+
+  // Display user information
+  const displayName = currentUser?.name || "Hellen Ferreira";
+  const displayEmail =
+    currentUser?.email ||
+    workAcc?.email ||
+    personalAcc?.email ||
+    "hellen@montlife.com";
+
+  const userInitials = displayName
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((w) => w[0].toUpperCase())
+    .join("") || "ML";
 
   // Operational metrics
   const totalTasks = tasks.length;
@@ -321,22 +343,37 @@ export function SidebarNav({
         {/* Perfil do Usuário com botão direto de Sair */}
         <div className="p-2.5 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white text-xs font-bold border border-purple-400/40 shrink-0 shadow-sm">
-              HF
-            </div>
+            {currentUser?.picture ? (
+              <img
+                src={currentUser.picture}
+                alt={displayName}
+                className="w-8 h-8 rounded-full border border-purple-400/40 shrink-0 shadow-sm object-cover"
+              />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-500 flex items-center justify-center text-white text-xs font-bold border border-purple-400/40 shrink-0 shadow-sm">
+                {userInitials}
+              </div>
+            )}
             <div className="min-w-0">
               <span className="text-xs font-bold text-white block truncate">
-                Hellen Ferreira
+                {displayName}
               </span>
               <span className="text-[10px] text-purple-300/60 block truncate">
-                {workAcc?.email || personalAcc?.email || "hellen@montlife.com"}
+                {displayEmail}
               </span>
             </div>
           </div>
 
           <button
             type="button"
-            onClick={handleLogout}
+            onClick={async () => {
+              try {
+                await fetch("/api/auth/logout", { method: "POST" });
+              } catch (e) {
+                console.warn("Logout error:", e);
+              }
+              handleLogout();
+            }}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold text-rose-400 hover:text-white hover:bg-rose-500/20 border border-rose-500/20 hover:border-rose-500/40 transition-all shrink-0 active:scale-95 cursor-pointer"
             title="Sair para a tela de login"
           >

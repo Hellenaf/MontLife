@@ -7,14 +7,17 @@ import {
   deleteTaskFromDb,
 } from "@/services/taskService";
 import { syncTaskToGoogle } from "@/services/googleService";
+import { getSessionUser } from "@/lib/session";
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSessionUser(req);
+    const userId = session?.userId;
     const { id } = await context.params;
-    const tasks = await getTasksFromDb();
+    const tasks = await getTasksFromDb(userId);
     const task = tasks.find((t) => t.id === id);
 
     if (!task) {
@@ -33,6 +36,8 @@ export async function PATCH(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSessionUser(req);
+    const userId = session?.userId;
     const { id } = await context.params;
     const body = await req.json();
     const action = body.action;
@@ -45,20 +50,22 @@ export async function PATCH(
         body.status,
         body.resolution_notes,
         body.cancel_reason,
-        body.resolution_attachments
+        body.resolution_attachments,
+        userId
       );
     } else if (action === "extend_deadline") {
       updatedTask = await extendTaskDeadline(
         id,
         body.new_due_date,
-        body.reason
+        body.reason,
+        userId
       );
     } else {
-      const tasks = await getTasksFromDb();
+      const tasks = await getTasksFromDb(userId);
       const existing = tasks.find((t) => t.id === id);
       if (existing) {
         const merged = { ...existing, ...body };
-        updatedTask = await saveTaskToDb(merged);
+        updatedTask = await saveTaskToDb(merged, userId);
       }
     }
 
@@ -81,8 +88,10 @@ export async function DELETE(
   context: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await getSessionUser(req);
+    const userId = session?.userId;
     const { id } = await context.params;
-    await deleteTaskFromDb(id);
+    await deleteTaskFromDb(id, userId);
     return NextResponse.json({ success: true, message: "Tarefa excluída" });
   } catch (error: unknown) {
     console.error("DELETE /api/tasks/[id] error:", error);

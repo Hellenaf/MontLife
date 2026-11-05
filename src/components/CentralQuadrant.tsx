@@ -1348,15 +1348,15 @@ export function CentralQuadrant({
 
                   {/* Form to Register Recurrence / Reincidence */}
                   {isAddingRecurrence && (
-                    <div className="p-4 rounded-xl bg-zinc-900/90 border border-zinc-700/80 space-y-3 animate-fadeIn text-xs">
-                      <div className="flex items-center gap-1.5 font-semibold text-zinc-200">
-                        <Repeat className="w-3.5 h-3.5 text-indigo-400" />
+                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-700/80 space-y-3 animate-fadeIn text-xs text-slate-800 dark:text-zinc-200">
+                      <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-zinc-200">
+                        <Repeat className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                         <span>Registrar Nova Execução no Mesmo Item (Sem Duplicar Base)</span>
                       </div>
 
                       <div className="space-y-2">
                         <div>
-                          <label className="text-[11px] text-zinc-400 block mb-1">
+                          <label className="text-[11px] text-slate-600 dark:text-zinc-400 block mb-1">
                             Notas / Contexto desta reincidência:
                           </label>
                           <textarea
@@ -1364,12 +1364,12 @@ export function CentralQuadrant({
                             value={recurrenceNotes}
                             onChange={(e) => setRecurrenceNotes(e.target.value)}
                             placeholder="Descreva onde ou por que a ocorrência se repetiu (ex: usuário reportou o mesmo erro no TOTVS)..."
-                            className="w-full text-xs p-2 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 resize-none"
+                            className="w-full text-xs p-2 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 resize-none"
                           />
                         </div>
 
                         <div>
-                          <label className="text-[11px] text-zinc-400 block mb-1">
+                          <label className="text-[11px] text-slate-600 dark:text-zinc-400 block mb-1">
                             Método de conclusão alternativo (opcional se utilizou solução diferente):
                           </label>
                           <input
@@ -1377,22 +1377,22 @@ export function CentralQuadrant({
                             value={recurrenceMethod}
                             onChange={(e) => setRecurrenceMethod(e.target.value)}
                             placeholder="Ex: Executado script PowerShell alternativo ao invés de reiniciar servidor..."
-                            className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+                            className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
                           />
                         </div>
 
-                        <label className="flex items-center gap-2 text-zinc-300 cursor-pointer pt-1">
+                        <label className="flex items-center gap-2 text-slate-700 dark:text-zinc-300 cursor-pointer pt-1">
                           <input
                             type="checkbox"
                             checked={recurrenceReopen}
                             onChange={(e) => setRecurrenceReopen(e.target.checked)}
-                            className="rounded border-zinc-700 text-indigo-600 focus:ring-0"
+                            className="rounded border-slate-300 dark:border-zinc-700 text-indigo-600 focus:ring-0"
                           />
                           <span>Reabrir demanda para Em Andamento (trabalho ativo)</span>
                         </label>
                       </div>
 
-                      <div className="flex items-center justify-end gap-2 pt-1 border-t border-zinc-800">
+                      <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-200 dark:border-zinc-800">
                         <button
                           type="button"
                           onClick={() => {
@@ -1400,7 +1400,7 @@ export function CentralQuadrant({
                             setRecurrenceNotes("");
                             setRecurrenceMethod("");
                           }}
-                          className="px-3 py-1 rounded text-xs text-zinc-400 hover:text-zinc-200"
+                          className="px-3 py-1 rounded text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200"
                         >
                           Cancelar
                         </button>

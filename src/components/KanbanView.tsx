@@ -47,32 +47,32 @@ const COLUMNS: ColumnDef[] = [
     title: "A Fazer & Triagem",
     statuses: ["TODO", "TRIAGE"],
     accentColor: "border-slate-400 dark:border-zinc-500",
-    badgeBg: "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700/60",
-    headerBg: "bg-slate-100/70 dark:bg-zinc-950/40",
+    badgeBg: "bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700/60 shadow-xs",
+    headerBg: "bg-slate-200/70 dark:bg-zinc-950/40",
   },
   {
     id: "in_progress",
     title: "Em Andamento",
     statuses: ["IN_PROGRESS"],
-    accentColor: "border-indigo-500",
-    badgeBg: "bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60",
-    headerBg: "bg-indigo-50/40 dark:bg-indigo-950/20",
+    accentColor: "border-blue-500 dark:border-indigo-500",
+    badgeBg: "bg-white dark:bg-indigo-950 text-blue-700 dark:text-indigo-300 border border-blue-200 dark:border-indigo-800/60 shadow-xs",
+    headerBg: "bg-blue-100/60 dark:bg-indigo-950/20",
   },
   {
     id: "waiting",
     title: "Aguardando / Validação",
     statuses: ["WAITING"],
     accentColor: "border-amber-500",
-    badgeBg: "bg-amber-50 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60",
-    headerBg: "bg-amber-50/40 dark:bg-amber-950/20",
+    badgeBg: "bg-white dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 shadow-xs",
+    headerBg: "bg-amber-100/60 dark:bg-amber-950/20",
   },
   {
     id: "completed",
     title: "Concluído",
     statuses: ["COMPLETED"],
     accentColor: "border-emerald-500",
-    badgeBg: "bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60",
-    headerBg: "bg-emerald-50/40 dark:bg-emerald-950/20",
+    badgeBg: "bg-white dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 shadow-xs",
+    headerBg: "bg-emerald-100/60 dark:bg-emerald-950/20",
   },
 ];
 
@@ -296,18 +296,18 @@ export function KanbanView({
                   handleDropOnColumn(taskId, col);
                 }
               }}
-              className={`flex flex-col rounded-2xl bg-slate-100/70 dark:bg-[#0b0c10] border transition-all duration-200 overflow-hidden min-w-[280px] shadow-xs ${
+              className={`flex flex-col rounded-2xl bg-slate-100/90 dark:bg-[#0b0c10] border transition-all duration-200 overflow-hidden min-w-[280px] shadow-xs ${
                 isOverThisCol
                   ? "border-indigo-500 ring-2 ring-indigo-500/50 bg-indigo-50/50 dark:bg-[#10121d]"
-                  : "border-slate-200 dark:border-zinc-800/80"
+                  : "border-slate-200/90 dark:border-zinc-800/80"
               }`}
             >
               {/* Column Header */}
               <div
-                className={`p-3 border-b border-slate-200 dark:border-zinc-800/80 flex items-center justify-between border-t-2 ${col.accentColor} ${col.headerBg}`}
+                className={`p-3 border-b border-slate-200/90 dark:border-zinc-800/80 flex items-center justify-between border-t-2 ${col.accentColor} ${col.headerBg}`}
               >
                 <div className="flex items-center gap-2 min-w-0">
-                  <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 truncate">
+                  <span className="text-xs font-bold text-slate-900 dark:text-zinc-100 truncate">
                     {col.title}
                   </span>
                   <span

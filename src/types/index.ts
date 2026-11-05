@@ -74,8 +74,17 @@ export interface AlternativeResolution {
   notes: string;
 }
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  name: string;
+  picture?: string;
+  role?: string;
+}
+
 export interface Task {
   id: string;
+  user_id?: string;
   raw_input: string;
   title: string;
   description: string;
@@ -108,6 +117,7 @@ export interface Task {
 
 export interface ConnectedAccount {
   id: ConnectedAccountId;
+  user_id?: string;
   email: string;
   access_token?: string;
   refresh_token?: string;

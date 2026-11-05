@@ -1,12 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getTasksFromDb, saveTaskToDb } from "@/services/taskService";
 import { categorizeTaskWithAI } from "@/services/geminiService";
 import { fetchYouTubeResources } from "@/services/googleService";
 import { aiCache } from "@/lib/aiCache";
+import { getSessionUser } from "@/lib/session";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    const tasks = await getTasksFromDb();
+    const session = await getSessionUser(req);
+    const userId = session?.userId;
+
+    const tasks = await getTasksFromDb(userId);
     let updatedCount = 0;
     let tokensSaved = 0;
 
@@ -55,21 +59,21 @@ export async function POST() {
       }
 
       if (hasChanges) {
-        await saveTaskToDb(task);
+        await saveTaskToDb(task, userId);
         updatedCount++;
       }
     }
 
     return NextResponse.json({
       success: true,
-      message: `Categorização concluída. ${updatedCount} tarefas atualizadas com categorias autônomas e tags.`,
+      message: `${updatedCount} tarefas re-categorizadas com sucesso pela IA.`,
       updated_count: updatedCount,
-      tokens_saved_estimate: tokensSaved,
+      tokens_saved: tokensSaved,
     });
   } catch (error: unknown) {
     console.error("POST /api/tasks/ai-categorize error:", error);
     return NextResponse.json(
-      { success: false, error: "Falha na auto-categorização das tarefas" },
+      { success: false, error: "Erro ao processar categorização por IA" },
       { status: 500 }
     );
   }

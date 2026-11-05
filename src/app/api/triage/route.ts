@@ -5,10 +5,13 @@ import { fetchYouTubeResources } from "@/services/googleService";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { aiCache } from "@/lib/aiCache";
 import { findSimilarTasks } from "@/lib/taskDeduplication";
+import { getSessionUser } from "@/lib/session";
 import { GeminiTriageResponse } from "@/types";
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getSessionUser(req);
+    const userId = session?.userId;
     const { raw_input, force_fresh_ai } = await req.json();
 
     if (!raw_input || typeof raw_input !== "string" || raw_input.trim() === "") {
@@ -40,7 +43,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 2. High-precision semantic deduplication & similarity scan against database
-    const allDbTasks = await getTasksFromDb();
+    const allDbTasks = await getTasksFromDb(userId);
     const similarTasks = findSimilarTasks(
       triage.refined_title || cleanInput,
       triage.structured_description || "",
@@ -51,7 +54,8 @@ export async function POST(req: NextRequest) {
     // 3. Similar past resolved problems for knowledge base suggestions
     const similarResolutions = await findSimilarCompletedTasks(
       triage.search_tags || [],
-      cleanInput
+      cleanInput,
+      userId
     );
 
     // 4. Curate learning resources / documentation & YouTube

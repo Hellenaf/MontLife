@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTasksFromDb, saveTaskToDb } from "@/services/taskService";
 import { syncTaskToGoogle } from "@/services/googleService";
 import { calculateSlaDueDate } from "@/lib/sla";
+import { getSessionUser } from "@/lib/session";
 import { Task } from "@/types";
 
 export async function GET(req: NextRequest) {
   try {
+    const session = await getSessionUser(req);
+    const userId = session?.userId;
+
     const { searchParams } = new URL(req.url);
     const accountType = searchParams.get("account_type");
     const itemType = searchParams.get("item_type");
@@ -13,7 +17,7 @@ export async function GET(req: NextRequest) {
     const priority = searchParams.get("priority");
     const query = searchParams.get("q")?.toLowerCase();
 
-    let tasks = await getTasksFromDb();
+    let tasks = await getTasksFromDb(userId);
 
     if (accountType && accountType !== "all") {
       tasks = tasks.filter((t) => t.account_type === accountType);
@@ -53,6 +57,8 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getSessionUser(req);
+    const userId = session?.userId;
     const body = await req.json();
 
     const priority = body.priority || "P3";
@@ -60,6 +66,7 @@ export async function POST(req: NextRequest) {
 
     const newTask: Task = {
       id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      user_id: userId,
       raw_input: body.raw_input || body.title,
       title: body.title,
       description: body.description || "",
@@ -96,7 +103,7 @@ export async function POST(req: NextRequest) {
       newTask.google_task_id = gTaskId;
     }
 
-    const saved = await saveTaskToDb(newTask);
+    const saved = await saveTaskToDb(newTask, userId);
     return NextResponse.json({ success: true, task: saved }, { status: 201 });
   } catch (error: unknown) {
     console.error("POST /api/tasks error:", error);

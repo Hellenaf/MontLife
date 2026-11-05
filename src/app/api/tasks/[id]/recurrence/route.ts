@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { registerExecutionRecurrence } from "@/services/taskService";
+import { getSessionUser } from "@/lib/session";
 import { TaskStatus } from "@/types";
 
 export async function POST(
@@ -8,16 +9,22 @@ export async function POST(
 ) {
   try {
     const { id } = await params;
+    const session = await getSessionUser(req);
+    const userId = session?.userId;
     const body = await req.json();
 
     const { notes, method, registered_by, reopen_status } = body;
 
-    const updatedTask = await registerExecutionRecurrence(id, {
-      notes,
-      method,
-      registeredBy: registered_by,
-      reopenStatus: reopen_status as TaskStatus | undefined,
-    });
+    const updatedTask = await registerExecutionRecurrence(
+      id,
+      {
+        notes,
+        method,
+        registeredBy: registered_by || session?.name || "Usuário",
+        reopenStatus: reopen_status as TaskStatus | undefined,
+      },
+      userId
+    );
 
     if (!updatedTask) {
       return NextResponse.json(
@@ -39,4 +46,3 @@ export async function POST(
     );
   }
 }
-

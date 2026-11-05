@@ -49,6 +49,12 @@ export default function MontOpsDashboard() {
   const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [newTaskInitialText, setNewTaskInitialText] = useState("");
   const [oauthFeedback, setOauthFeedback] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<{
+    userId: string;
+    email: string;
+    name: string;
+    picture?: string;
+  } | null>(null);
 
   // Optimistic initial hydration from local cache
   useEffect(() => {
@@ -109,6 +115,18 @@ export default function MontOpsDashboard() {
     }
   }, []);
 
+  const loadUser = useCallback(async () => {
+    try {
+      const res = await fetch("/api/auth/me");
+      const data = await res.json();
+      if (data.success && data.user) {
+        setCurrentUser(data.user);
+      }
+    } catch {
+      // not logged in or guest
+    }
+  }, []);
+
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" });
@@ -123,7 +141,8 @@ export default function MontOpsDashboard() {
   useEffect(() => {
     loadTasks();
     loadAccounts();
-  }, [loadTasks, loadAccounts]);
+    loadUser();
+  }, [loadTasks, loadAccounts, loadUser]);
 
   // Listen to OAuth redirect query params & prompt classification
   useEffect(() => {
@@ -353,6 +372,7 @@ export default function MontOpsDashboard() {
           onSelectAccountFilter={(filter) => setAccountFilter(filter)}
           onLogout={handleLogout}
           completedTasksCount={tasks.filter((t) => t.status === "COMPLETED").length}
+          currentUser={currentUser}
         />
       </div>
 

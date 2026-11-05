@@ -1,6 +1,7 @@
 import { getFirestoreDb } from "@/lib/firebaseAdmin";
 
-interface PendingAuth {
+export interface PendingAuth {
+  userId?: string;
   email: string;
   access_token: string | null;
   refresh_token: string | null;
@@ -48,4 +49,3 @@ export async function clearPendingAuth(): Promise<void> {
     }
   }
 }
-

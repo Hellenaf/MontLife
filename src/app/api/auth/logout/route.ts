@@ -1,19 +1,26 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getConnectedAccounts, saveConnectedAccount } from "@/services/taskService";
+import { getSessionUser, clearSessionCookie } from "@/lib/session";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    const accounts = await getConnectedAccounts();
+    const session = await getSessionUser(req);
+    const userId = session?.userId;
 
-    // Reset tokens for current accounts so user is logged out
-    for (const acc of accounts) {
-      if (acc.is_connected) {
-        await saveConnectedAccount({
-          ...acc,
-          access_token: undefined,
-          refresh_token: undefined,
-          is_connected: false,
-        });
+    if (userId) {
+      const accounts = await getConnectedAccounts(userId);
+      for (const acc of accounts) {
+        if (acc.is_connected) {
+          await saveConnectedAccount(
+            {
+              ...acc,
+              access_token: undefined,
+              refresh_token: undefined,
+              is_connected: false,
+            },
+            userId
+          );
+        }
       }
     }
 
@@ -22,8 +29,7 @@ export async function POST() {
       message: "Sessão encerrada com sucesso.",
     });
 
-    // Clear session cookies
-    response.cookies.delete("montlife_session");
+    clearSessionCookie(response);
     response.cookies.delete("token");
 
     return response;
@@ -32,4 +38,3 @@ export async function POST() {
     return NextResponse.json({ success: false, error: "Falha ao deslogar" }, { status: 500 });
   }
 }
-

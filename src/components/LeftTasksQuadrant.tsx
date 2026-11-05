@@ -501,8 +501,8 @@ export function LeftTasksQuadrant({
             onClick={() => setAccountFilter("all")}
             className={`py-1 text-xs font-semibold rounded-lg flex items-center justify-center transition-all ${
               accountFilter === "all"
-                ? "bg-white dark:bg-[#202230] text-slate-900 dark:text-white shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-slate-100 shadow-sm border border-slate-200/60 dark:border-zinc-700"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
             }`}
           >
             Todas

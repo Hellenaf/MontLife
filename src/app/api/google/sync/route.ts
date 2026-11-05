@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import {
   getConnectedAccounts,
   getTasksFromDb,
@@ -14,20 +14,23 @@ import {
 import { categorizeTaskWithAI } from "@/services/geminiService";
 import { Task, AccountType } from "@/types";
 import { stripGoogleTaskPrefix } from "@/lib/sla";
+import { getSessionUser } from "@/lib/session";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    const accounts = await getConnectedAccounts();
-    const tasks = await getTasksFromDb();
+    const session = await getSessionUser(req);
+    const userId = session?.userId;
+
+    const accounts = await getConnectedAccounts(userId);
+    const tasks = await getTasksFromDb(userId);
     let importedCount = 0;
     let updatedCount = 0;
     let purgedGcalCount = 0;
 
     // 1. Cleanup rule: Remove any legacy imported calendar events (gcal-*)
-    // The user explicitly stated: Google Calendar events should NOT come into the site.
     for (const t of tasks) {
       if (t.id.startsWith("gcal-") && !t.raw_input.startsWith("[MontLife]")) {
-        await deleteTaskFromDb(t.id);
+        await deleteTaskFromDb(t.id, userId);
         purgedGcalCount++;
       }
     }
@@ -58,6 +61,7 @@ export async function POST() {
 
               const newTask: Task = {
                 id: `gt-imported-${item.id}`,
+                user_id: userId,
                 raw_input: cleanTitle,
                 title: cleanTitle,
                 description: item.notes || "",
@@ -82,7 +86,7 @@ export async function POST() {
                 met_original_sla: isCompleted ? true : null,
               };
 
-              await saveTaskToDb(newTask);
+              await saveTaskToDb(newTask, userId);
               importedCount++;
             } else {
               const isGeneric =
@@ -115,7 +119,7 @@ export async function POST() {
               }
 
               if (hasChanged) {
-                await saveTaskToDb(existing);
+                await saveTaskToDb(existing, userId);
                 updatedCount++;
               }
             }
@@ -133,7 +137,7 @@ export async function POST() {
               });
               if (calEventId && calEventId !== task.google_calendar_event_id) {
                 task.google_calendar_event_id = calEventId;
-                await saveTaskToDb(task);
+                await saveTaskToDb(task, userId);
               }
             } catch (err) {
               console.warn("Failed pushing task to calendar:", err);
@@ -144,10 +148,13 @@ export async function POST() {
         }
       }
 
-      await saveConnectedAccount({
-        ...acc,
-        last_sync_at: new Date().toISOString(),
-      });
+      await saveConnectedAccount(
+        {
+          ...acc,
+          last_sync_at: new Date().toISOString(),
+        },
+        userId
+      );
     }
 
     return NextResponse.json({
