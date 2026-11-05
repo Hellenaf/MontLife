@@ -218,11 +218,11 @@ export function KanbanView({
   const [draggedOverColId, setDraggedOverColId] = useState<string | null>(null);
 
   // Strict mutual exclusion helpers
-  const isWorkTask = (t: Task) =>
-    t.account_type === "work" ||
-    t.account_type?.toLowerCase() === "trabalho" ||
-    Boolean(t.account_email?.toLowerCase().includes("notredame")) ||
-    Boolean(t.account_email?.toLowerCase().includes("haferreira"));
+  const isWorkTask = (t: Task) => {
+    if (t.transferred_to === "personal") return false;
+    if (t.manually_assigned && (t.account_type === "personal" || t.account_type === "Pessoal")) return false;
+    return true;
+  };
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {

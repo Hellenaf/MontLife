@@ -23,6 +23,7 @@ import {
   Ban,
   RotateCcw,
   AlertTriangle,
+  ArrowRightLeft,
 } from "lucide-react";
 import { Task, TaskStatus, Priority, AccountType, ItemType, ConnectedAccount } from "@/types";
 import { isTaskOverdue } from "@/lib/sla";
@@ -45,6 +46,7 @@ interface LeftTasksQuadrantProps {
   onRequestExtendDeadline: (task: Task) => void;
   onRequestCancelTask?: (task: Task) => void;
   onDeleteTask: (taskId: string) => void;
+  onTransferTask?: (task: Task, target: "work" | "personal") => void;
   onRequestNewTask?: () => void;
   onRefreshTasks?: () => Promise<void> | void;
   accountFilter?: "all" | AccountType;
@@ -61,6 +63,7 @@ export function LeftTasksQuadrant({
   onRequestExtendDeadline,
   onRequestCancelTask,
   onDeleteTask,
+  onTransferTask,
   onRequestNewTask,
   onRefreshTasks,
   accountFilter: propAccountFilter,
@@ -84,18 +87,13 @@ export function LeftTasksQuadrant({
     }
   }, [activeMenuTaskId]);
 
-  const isWorkTask = (t: Task) =>
-    t.account_type === "work" ||
-    t.account_type?.toLowerCase() === "trabalho" ||
-    Boolean(t.account_email?.toLowerCase().includes("notredame")) ||
-    Boolean(t.account_email?.toLowerCase().includes("haferreira"));
+  const isWorkTask = (t: Task) => {
+    if (t.transferred_to === "personal") return false;
+    if (t.manually_assigned && (t.account_type === "personal" || t.account_type === "Pessoal")) return false;
+    return true;
+  };
 
-  const isPersonalTask = (t: Task) =>
-    !isWorkTask(t) &&
-    (t.account_type === "personal" ||
-      t.account_type?.toLowerCase() === "pessoal" ||
-      Boolean(t.account_email?.toLowerCase().includes("hellenalvesferreira")) ||
-      Boolean(t.account_email?.toLowerCase().includes("hellenaf")));
+  const isPersonalTask = (t: Task) => !isWorkTask(t);
 
   // Helper to match task against context filter (account_type, account_email, or specific ID)
   const isTaskMatchingFilter = (task: Task, filter: "all" | string): boolean => {
@@ -622,6 +620,24 @@ export function LeftTasksQuadrant({
               >
                 <Ban className="w-3.5 h-3.5 text-amber-500" />
                 <span>Cancelar demanda</span>
+              </button>
+            )}
+
+            {onTransferTask && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveMenuTaskId(null);
+                  const target = isWorkTask(task) ? "personal" : "work";
+                  onTransferTask(task, target);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-purple-50 hover:text-purple-700 dark:hover:bg-purple-950/40 dark:hover:text-purple-300 transition-colors"
+              >
+                <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-500" />
+                <span>
+                  {isWorkTask(task) ? "Transferir para Pessoal" : "Transferir para Trabalho"}
+                </span>
               </button>
             )}
 

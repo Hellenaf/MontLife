@@ -130,6 +130,8 @@ export interface Task {
   recurrence_count?: number;
   execution_history?: ExecutionRecord[];
   alternative_resolutions?: AlternativeResolution[];
+  transferred_to?: "work" | "personal" | string;
+  manually_assigned?: boolean;
 }
 
 export interface ConnectedAccount {

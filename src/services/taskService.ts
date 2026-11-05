@@ -42,75 +42,26 @@ export function isHellenUser(userId?: string | null, email?: string | null): boo
 
 /**
  * Detects if a task belongs to work (Notre Dame, TOTVS, ERP, school, IT support, etc.)
+ * All current existing demands are work demands belonging to haferreira@notredamecampinas.net.br,
+ * UNLESS explicitly transferred to personal by the user.
  */
 export function isWorkDemand(task: Partial<Task>): boolean {
-  const email = (task.account_email || "").toLowerCase().trim();
-  const type = (task.account_type || "").toLowerCase().trim();
-  const text = `${task.title || ""} ${task.description || ""} ${task.category || ""} ${(task.tags || []).join(" ")}`.toLowerCase();
+  // If explicitly transferred or manually assigned to personal
+  if (
+    task.transferred_to === "personal" ||
+    (task.manually_assigned && (task.account_type === "personal" || task.account_type === "Pessoal"))
+  ) {
+    return false;
+  }
 
-  // Explicit Notre Dame email
-  if (email.includes("notredame") || email.includes("haferreira")) return true;
-
-  // Work-related categories
-  const workCategories = [
-    "sistemas erp",
-    "bi & analytics",
-    "gestão educacional",
-    "gestao educacional",
-    "gestão de ativos & ti",
-    "gestao de ativos & ti",
-    "gestão de ativos",
-    "infraestrutura de ti",
-    "suporte ti",
-    "hardware & periféricos",
-    "contratos ti",
-    "gestão & contratos",
-    "gestao & contratos",
-  ];
-  if (workCategories.some((cat) => text.includes(cat))) return true;
-
-  // Work keywords (Notre Dame / School / ERP / TI)
-  const workKeywords = [
-    "totvs",
-    "notre dame",
-    "notredame",
-    "rm ",
-    "rm,",
-    "rm-",
-    "classapp",
-    "papeleta",
-    "middle school",
-    "chromebook",
-    "pergamum",
-    "capela",
-    "tesouraria",
-    "secretaria",
-    "matrícula",
-    "matricula",
-    "professor",
-    "aluno",
-    "docente",
-    "pedagógico",
-    "pedagogico",
-    "power bi",
-    "dashboard",
-    "erp escolar",
-    "gestão acadêmica",
-    "gestao academica",
-    "boletim",
-    "diário",
-    "diario",
-  ];
-  if (workKeywords.some((kw) => text.includes(kw))) return true;
-
-  // Work account type
-  if (type === "work" || type.includes("trab") || type.includes("notre")) return true;
-
-  return false;
+  // All current existing demands belong to Trabalho
+  return true;
 }
 
 /**
- * Returns strict partition for Hellen's tasks: Work vs Personal
+ * Returns strict partition for Hellen's tasks: Work vs Personal.
+ * All current existing demands belong 100% to Trabalho (haferreira@notredamecampinas.net.br),
+ * unless explicitly transferred to personal by the user.
  */
 export function partitionHellenTask(data: Partial<Task>): {
   targetAccountType: string;
@@ -127,6 +78,56 @@ export function partitionHellenTask(data: Partial<Task>): {
     targetAccountType: "Pessoal",
     targetAccountEmail: HELLEN_PRIMARY_EMAIL,
   };
+}
+
+/**
+ * Transfers a single demand between accounts/workspaces (e.g. Trabalho <-> Pessoal)
+ */
+export async function transferTaskAccount(
+  taskId: string,
+  targetAccount: "work" | "personal" | string,
+  targetEmail?: string,
+  userId?: string
+): Promise<Task | null> {
+  const isHellen = !userId || isHellenUser(userId);
+  const targetUserId = isHellen ? HELLEN_MASTER_ID : (userId || "primary_workspace");
+  const db = getFirestoreDb();
+
+  const isWork = targetAccount === "work" || targetAccount.toLowerCase().includes("trab");
+  const newType = isWork ? "Trabalho" : "Pessoal";
+  const newEmail =
+    targetEmail || (isWork ? "haferreira@notredamecampinas.net.br" : HELLEN_PRIMARY_EMAIL);
+
+  const updatePayload: Partial<Task> = {
+    account_type: newType,
+    account_email: newEmail,
+    transferred_to: isWork ? "work" : "personal",
+    manually_assigned: true,
+  };
+
+  // Update in memory
+  const memIdx = memoryTasks.findIndex((t) => t.id === taskId);
+  if (memIdx >= 0) {
+    memoryTasks[memIdx] = {
+      ...memoryTasks[memIdx],
+      ...updatePayload,
+    };
+  }
+
+  if (db) {
+    try {
+      const docRef = db.collection("tasks").doc(taskId);
+      await docRef.set(updatePayload, { merge: true });
+      const snap = await docRef.get();
+      if (snap.exists) {
+        return snap.data() as Task;
+      }
+    } catch (err) {
+      console.warn("Failed to transfer task in Firestore:", err);
+    }
+  }
+
+  return memIdx >= 0 ? memoryTasks[memIdx] : null;
 }
 
 /**

@@ -47,11 +47,11 @@ export function RightKpiQuadrant({
     const activitiesCount = tasks.filter((t) => t.item_type === "activity").length;
     const remindersCount = tasks.filter((t) => t.item_type === "reminder").length;
 
-    const isWork = (t: Task) =>
-      t.account_type === "work" ||
-      t.account_type?.toLowerCase() === "trabalho" ||
-      Boolean(t.account_email?.toLowerCase().includes("notredame")) ||
-      Boolean(t.account_email?.toLowerCase().includes("haferreira"));
+    const isWork = (t: Task) => {
+      if (t.transferred_to === "personal") return false;
+      if (t.manually_assigned && (t.account_type === "personal" || t.account_type === "Pessoal")) return false;
+      return true;
+    };
 
     const workTasks = tasks.filter(isWork);
     const personalTasks = tasks.filter((t) => !isWork(t));

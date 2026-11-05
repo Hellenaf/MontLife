@@ -3,6 +3,7 @@ import {
   getTasksFromDb,
   updateTaskStatus,
   extendTaskDeadline,
+  transferTaskAccount,
   saveTaskToDb,
   deleteTaskFromDb,
 } from "@/services/taskService";
@@ -57,6 +58,13 @@ export async function PATCH(
         id,
         body.new_due_date,
         body.reason,
+        userId
+      );
+    } else if (action === "transfer_account") {
+      updatedTask = await transferTaskAccount(
+        id,
+        body.target_account || body.account_type,
+        body.target_email || body.account_email,
         userId
       );
     } else {

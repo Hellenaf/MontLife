@@ -320,6 +320,53 @@ export default function MontOpsDashboard() {
     }
   };
 
+  const handleTransferTask = async (
+    task: Task,
+    targetAccount: "work" | "personal" | string
+  ) => {
+    const isWork = targetAccount === "work" || targetAccount.toLowerCase().includes("trab");
+    const targetEmail = isWork
+      ? "haferreira@notredamecampinas.net.br"
+      : "hellenalvesferreira.s2@gmail.com";
+    const targetType = isWork ? "Trabalho" : "Pessoal";
+
+    // Optimistic local update
+    setTasks((prev) =>
+      prev.map((t) =>
+        t.id === task.id
+          ? {
+              ...t,
+              account_type: targetType,
+              account_email: targetEmail,
+              transferred_to: isWork ? "work" : "personal",
+              manually_assigned: true,
+            }
+          : t
+      )
+    );
+
+    try {
+      const res = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "transfer_account",
+          target_account: isWork ? "work" : "personal",
+          account_type: targetType,
+          account_email: targetEmail,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.task) {
+        setTasks((prev) =>
+          prev.map((t) => (t.id === task.id ? data.task : t))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to transfer task:", err);
+    }
+  };
+
   const handleConfirmResolution = async (
     resolutionNotes: string,
     resolutionAttachments?: TaskAttachment[]
@@ -555,6 +602,7 @@ export default function MontOpsDashboard() {
                   setIsCancelModalOpen(true);
                 }}
                 onDeleteTask={handleDeleteTask}
+                onTransferTask={handleTransferTask}
                 onRequestNewTask={() => {
                   setNewTaskInitialText("");
                   setIsNewTaskModalOpen(true);
@@ -586,6 +634,7 @@ export default function MontOpsDashboard() {
                 onUpdateStatus={handleUpdateStatus}
                 onUpdateItemType={handleUpdateItemType}
                 onUpdateTaskFields={handleUpdateTaskFields}
+                onTransferTask={handleTransferTask}
                 onSelectTask={(task) => {
                   setSelectedTaskId(task.id);
                   setActiveNav("tarefas");

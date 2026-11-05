@@ -78,20 +78,13 @@ export function SidebarNav({
 
   // Helper to identify Work vs Personal with strict mutual exclusion
   const isWorkTask = (t: Task): boolean => {
-    const email = (t.account_email || "").toLowerCase().trim();
-    const type = (t.account_type || "").toLowerCase().trim();
-    if (email.includes("notredame") || email.includes("haferreira")) return true;
-    if (type === "work" || type === "trabalho" || type.includes("notre") || type.includes("trab")) return true;
-    return false;
+    if (t.transferred_to === "personal") return false;
+    if (t.manually_assigned && (t.account_type === "personal" || t.account_type === "Pessoal")) return false;
+    return true;
   };
 
   const isPersonalTask = (t: Task): boolean => {
-    if (isWorkTask(t)) return false; // Strictly mutually exclusive: work demands never bleed into personal!
-    const email = (t.account_email || "").toLowerCase().trim();
-    const type = (t.account_type || "").toLowerCase().trim();
-    if (email.includes("hellenalvesferreira") || email.includes("hellenaf")) return true;
-    if (type === "personal" || type === "pessoal" || type.includes("pess")) return true;
-    return false;
+    return !isWorkTask(t);
   };
 
   // Helper to match task against workspace

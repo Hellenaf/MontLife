@@ -41,6 +41,7 @@ import {
   RotateCcw,
   Globe,
   Mail,
+  ArrowRightLeft,
 } from "lucide-react";
 import { AttachmentManager } from "@/components/AttachmentManager";
 import {
@@ -96,6 +97,7 @@ interface CentralQuadrantProps {
   onUpdateStatus: (taskId: string, status: TaskStatus) => void;
   onUpdateItemType?: (taskId: string, itemType: ItemType) => void;
   onUpdateTaskFields?: (taskId: string, fields: Partial<Task>) => Promise<void> | void;
+  onTransferTask?: (task: Task, targetAccount: "work" | "personal" | string) => void;
   onSelectTask?: (task: Task) => void;
   onOpenNewTaskModal?: () => void;
   activeTab?: "details" | "study";
@@ -130,6 +132,7 @@ export function CentralQuadrant({
   onUpdateStatus,
   onUpdateItemType,
   onUpdateTaskFields,
+  onTransferTask,
   onSelectTask,
   onOpenNewTaskModal,
   activeTab: propActiveTab,
@@ -310,11 +313,11 @@ export function CentralQuadrant({
     return () => clearInterval(timer);
   }, []);
 
-  const isWorkItem = (t: Task) =>
-    t.account_type === "work" ||
-    t.account_type?.toLowerCase().includes("trab") ||
-    Boolean(t.account_email?.toLowerCase().includes("notredame")) ||
-    Boolean(t.account_email?.toLowerCase().includes("haferreira"));
+  const isWorkItem = (t: Task) => {
+    if (t.transferred_to === "personal") return false;
+    if (t.manually_assigned && (t.account_type === "personal" || t.account_type === "Pessoal")) return false;
+    return true;
+  };
 
   // Filter tasks for calendar based on calendar source
   const calendarTasks = allTasks.filter((t) => {
@@ -684,6 +687,17 @@ export function CentralQuadrant({
                             <Mail className="w-3 h-3 text-blue-500" />
                             haferreira@notredamecampinas.net.br
                           </span>
+                          {onTransferTask && (
+                            <button
+                              type="button"
+                              onClick={() => onTransferTask(selectedTask, "personal")}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:hover:bg-purple-900/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 transition-all cursor-pointer shadow-xs ml-0.5"
+                              title="Transferir esta demanda para a conta Pessoal (hellenalvesferreira.s2@gmail.com)"
+                            >
+                              <ArrowRightLeft className="w-3 h-3 text-purple-600 dark:text-purple-400" />
+                              <span>Transferir p/ Pessoal</span>
+                            </button>
+                          )}
                         </div>
                       ) : (
                         <div className="flex items-center gap-1.5 flex-wrap">
@@ -694,6 +708,17 @@ export function CentralQuadrant({
                             <Mail className="w-3 h-3 text-purple-500" />
                             hellenalvesferreira.s2@gmail.com
                           </span>
+                          {onTransferTask && (
+                            <button
+                              type="button"
+                              onClick={() => onTransferTask(selectedTask, "work")}
+                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-all cursor-pointer shadow-xs ml-0.5"
+                              title="Transferir esta demanda para a conta de Trabalho (haferreira@notredamecampinas.net.br)"
+                            >
+                              <ArrowRightLeft className="w-3 h-3 text-blue-600 dark:text-blue-400" />
+                              <span>Transferir p/ Trabalho</span>
+                            </button>
+                          )}
                         </div>
                       )}
 
