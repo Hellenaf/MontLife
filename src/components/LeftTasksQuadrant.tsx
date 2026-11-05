@@ -159,10 +159,10 @@ export function LeftTasksQuadrant({
     }
   };
 
-  // Trigger Google Tasks full sync
+  // Trigger full demand consolidation
   const handleSyncGoogleTasks = async () => {
     setIsSyncing(true);
-    setStatusMessage("Sincronizando tarefas (2024 até hoje)...");
+    setStatusMessage("Consolidando demandas...");
     try {
       const res = await fetch("/api/google/sync", {
         method: "POST",
@@ -171,13 +171,13 @@ export function LeftTasksQuadrant({
       });
       const data = await res.json();
       if (data.success) {
-        setStatusMessage(`Sincronizado! +${data.imported_count || 0} novas tarefas.`);
+        setStatusMessage(`Demandas atualizadas e consolidadas!`);
         if (onRefreshTasks) await onRefreshTasks();
       } else {
-        setStatusMessage("Erro ao sincronizar tarefas.");
+        setStatusMessage("Erro ao consolidar demandas.");
       }
     } catch {
-      setStatusMessage("Falha na sincronização.");
+      setStatusMessage("Falha na consolidação.");
     } finally {
       setIsSyncing(false);
       setTimeout(() => setStatusMessage(null), 4000);
@@ -603,7 +603,7 @@ export function LeftTasksQuadrant({
             type="button"
             onClick={handleSyncGoogleTasks}
             disabled={isSyncing}
-            title="Sincronizar Google Tasks (todo o histórico de 2024 até hoje)"
+            title="Consolidar e Atualizar Demandas (Nativo MontLife)"
             className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#161722] hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-zinc-800 flex items-center justify-center shrink-0 transition-all active:scale-95 disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-indigo-500" : ""}`} />

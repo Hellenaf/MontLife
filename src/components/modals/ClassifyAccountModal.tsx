@@ -249,11 +249,11 @@ export function ClassifyAccountModal({
             {isLoading ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Configurando e Sincronizando...</span>
+                <span>Configurando Espaço...</span>
               </>
             ) : (
               <>
-                <span>Confirmar e Sincronizar Tarefas</span>
+                <span>Confirmar e Ativar Espaço</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}

@@ -60,11 +60,11 @@ export function AccountsModal({
       const data = await res.json();
       if (data.success) {
         setSyncFeedback(
-          `Sincronização concluída com sucesso! ${data.imported_count || 0} novas demandas importadas.`
+          "Demandas consolidadas com sucesso no armazenamento nativo MontLife!"
         );
         await onRefreshAccounts();
       } else {
-        setSyncFeedback("Erro ao sincronizar. Verifique se as contas estão ativas.");
+        setSyncFeedback("Erro ao consolidar. Verifique se as contas estão ativas.");
       }
     } catch (err) {
       console.error(err);
@@ -321,12 +321,12 @@ export function AccountsModal({
                   <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-200/60 dark:border-white/5">
                     <span>
                       {acc.last_sync_at
-                        ? `Último sync: ${format(parseISO(acc.last_sync_at), "dd/MM HH:mm", {
+                        ? `Última consolidação: ${format(parseISO(acc.last_sync_at), "dd/MM HH:mm", {
                             locale: ptBR,
                           })}`
-                        : "Sincronização pendente"}
+                        : "Consolidação pendente"}
                     </span>
-                    <span className="font-mono text-[10px]">Google Tasks API</span>
+                    <span className="font-mono text-[10px]">Armazenamento Nativo MontLife</span>
                   </div>
                 </div>
               );
@@ -343,7 +343,7 @@ export function AccountsModal({
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md shadow-purple-600/30 transition-all disabled:opacity-40 cursor-pointer active:scale-95"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-            <span>{isSyncing ? "Sincronizando..." : "Sincronizar Todas as Contas"}</span>
+            <span>{isSyncing ? "Consolidando..." : "Consolidar e Atualizar Demandas"}</span>
           </button>
 
           <button

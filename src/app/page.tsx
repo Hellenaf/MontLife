@@ -192,7 +192,7 @@ export default function MontOpsDashboard() {
       } else if (params.get("oauth_success")) {
         const type = params.get("oauth_success");
         setOauthFeedback(
-          `Conta vinculada com sucesso! Sincronizando dados com o Google Tasks...`
+          `Conta vinculada com sucesso! Consolidando demandas no armazenamento nativo...`
         );
         window.history.replaceState({}, document.title, window.location.pathname);
         loadAccounts().then(() => loadTasks()).then(() => loadUser());
@@ -232,7 +232,7 @@ export default function MontOpsDashboard() {
   const handleClassified = async (label: string, importedCount: number) => {
     setIsClassifyModalOpen(false);
     setOauthFeedback(
-      `Espaço "${label}" configurado com sucesso! ${importedCount} tarefas reais do Google Tasks importadas.`
+      `Espaço "${label}" configurado com sucesso! Armazenamento 100% nativo ativado.`
     );
     await loadAccounts();
     await loadTasks();
@@ -437,7 +437,7 @@ export default function MontOpsDashboard() {
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
               <p>
-                <strong>Nenhuma conta Google vinculada.</strong> Conecte suas contas para sincronizar tarefas reais do Google Tasks.
+                <strong>Nenhuma conta Google vinculada.</strong> Conecte suas contas para associar seus espaços de trabalho e autenticar com segurança.
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">

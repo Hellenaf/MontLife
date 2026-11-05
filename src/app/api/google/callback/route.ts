@@ -7,11 +7,12 @@ import {
   linkEmailToMasterUser,
   getConnectedAccounts,
   saveConnectedAccount,
-  getTasksFromDb,
-  saveTaskToDb,
+  consolidateHellenWorkspace,
+  isHellenEmail,
+  HELLEN_MASTER_ID,
+  HELLEN_PRIMARY_EMAIL,
+  HELLEN_LINKED_EMAILS,
 } from "@/services/taskService";
-import { Task } from "@/types";
-import { stripGoogleTaskPrefix } from "@/lib/sla";
 import { getAppBaseUrl } from "@/lib/urlUtils";
 import { setSessionCookie, getSessionUser, UserSession } from "@/lib/session";
 import { google } from "googleapis";
@@ -19,7 +20,6 @@ import { google } from "googleapis";
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
-  const state = searchParams.get("state") || "login";
   const baseUrl = getAppBaseUrl(req);
 
   if (!code) {
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     const { tokens } = await oauth2Client.getToken(code);
     oauth2Client.setCredentials(tokens);
 
-    // 1. Retrieve user details from Google
+    // 1. Retrieve user details from Google OAuth (SSO)
     const oauth2 = google.oauth2({ version: "v2", auth: oauth2Client });
     const userInfo = await oauth2.userinfo.get();
     const email = (userInfo.data.email || "").toLowerCase().trim();
@@ -45,14 +45,29 @@ export async function GET(req: NextRequest) {
 
     // 2. Cross-Account Master Profile Recognition
     const activeSession = await getSessionUser(req);
+    const isHellen = isHellenEmail(email) || (activeSession?.userId && isHellenEmail(activeSession.email));
     let masterUserId: string;
 
-    if (activeSession?.userId) {
-      // User is ALREADY authenticated and linking another Google account to their Master Profile
+    if (isHellen) {
+      masterUserId = HELLEN_MASTER_ID;
+      await createOrUpdateMasterUser({
+        id: HELLEN_MASTER_ID,
+        primary_email: HELLEN_PRIMARY_EMAIL,
+        linked_emails: [...HELLEN_LINKED_EMAILS],
+        name: "Hellen Ferreira",
+        picture: picture || undefined,
+        role: "owner",
+      });
+      // Consolidate all demands from Notre Dame, Git, and Pessoal accounts
+      consolidateHellenWorkspace(HELLEN_MASTER_ID).catch((err) =>
+        console.warn("Background consolidation on login failed:", err)
+      );
+    } else if (activeSession?.userId) {
+      // User is already authenticated and linking another account to their Master Profile
       masterUserId = activeSession.userId;
       await linkEmailToMasterUser(masterUserId, email);
     } else {
-      // User is logging in from scratch: check if any Master Profile contains this email
+      // Check if any Master Profile contains this email
       const existingMaster = await findMasterUserByEmail(email);
 
       if (existingMaster) {
@@ -81,13 +96,13 @@ export async function GET(req: NextRequest) {
     const session: UserSession = {
       userId: masterUserId,
       email,
-      name,
+      name: isHellen ? "Hellen Ferreira" : name,
       picture,
-      role: "member",
+      role: isHellen ? "owner" : "member",
       createdAt: new Date().toISOString(),
     };
 
-    // 3. Check if this specific email is already classified under this Master Profile
+    // 3. Check if account is already classified
     const existingAccounts = await getConnectedAccounts(masterUserId);
     const matchedAccount = existingAccounts.find(
       (a) => a.email.toLowerCase() === email && a.label
@@ -96,79 +111,28 @@ export async function GET(req: NextRequest) {
     const accountId =
       matchedAccount?.id || `acc_${email.replace(/[^a-z0-9_-]/g, "_")}`;
 
-    // If account was already classified in the past (e.g. existing user logging in)
-    if (matchedAccount && matchedAccount.label) {
+    // If account was already classified in the past or belongs to Hellen
+    if (isHellen || (matchedAccount && matchedAccount.label)) {
+      const label =
+        matchedAccount?.label ||
+        (email.includes("notredame") ? "Trabalho (Notre Dame)" : "Pessoal");
+
       await saveConnectedAccount(
         {
-          ...matchedAccount,
+          id: accountId,
+          user_id: masterUserId,
           email,
-          access_token: tokens.access_token || matchedAccount.access_token,
-          refresh_token: tokens.refresh_token || matchedAccount.refresh_token,
-          expiry_date: tokens.expiry_date || matchedAccount.expiry_date,
-          default_tasklist_id: matchedAccount.default_tasklist_id || "@default",
+          label,
+          color: email.includes("notredame") ? "blue" : "purple",
+          access_token: tokens.access_token || matchedAccount?.access_token,
+          refresh_token: tokens.refresh_token || matchedAccount?.refresh_token,
+          expiry_date: tokens.expiry_date || matchedAccount?.expiry_date,
+          default_tasklist_id: "@default",
           last_sync_at: new Date().toISOString(),
           is_connected: true,
         },
         masterUserId
       );
-
-      // Perform background task sync for this account
-      try {
-        const tasksApi = google.tasks({ version: "v1", auth: oauth2Client });
-        const res = await tasksApi.tasks.list({
-          tasklist: "@default",
-          showCompleted: true,
-          showHidden: true,
-        });
-
-        const items = res.data.items || [];
-        const currentTasks = await getTasksFromDb(masterUserId);
-
-        for (const item of items) {
-          if (!item.id || !item.title) continue;
-          const cleanTitle = stripGoogleTaskPrefix(item.title);
-          const existing = currentTasks.find((t) => t.google_task_id === item.id);
-
-          if (!existing) {
-            const isCompleted = item.status === "completed";
-            const taskDate = item.updated || item.completed || item.due || new Date().toISOString();
-            const dueDate = item.due || taskDate;
-
-            const newTask: Task = {
-              id: `gt-imported-${item.id}`,
-              user_id: masterUserId,
-              raw_input: cleanTitle,
-              title: cleanTitle,
-              description: item.notes || "",
-              account_type: matchedAccount.label,
-              item_type: "task",
-              category: "Geral",
-              tags: ["google-tasks"],
-              priority: "P3",
-              status: isCompleted ? "COMPLETED" : "TODO",
-              created_at: taskDate,
-              started_at: null,
-              completed_at: isCompleted ? item.completed || taskDate : null,
-              original_due_date: dueDate,
-              current_due_date: dueDate,
-              extension_count: 0,
-              deadline_extensions: [],
-              resolution_notes: null,
-              cancel_reason: null,
-              google_task_id: item.id,
-              google_calendar_event_id: null,
-              learning_resources: {
-                youtube_videos: [],
-                search_queries: [],
-              },
-              met_original_sla: isCompleted ? true : null,
-            };
-            await saveTaskToDb(newTask, masterUserId);
-          }
-        }
-      } catch (syncErr) {
-        console.warn("Auto-sync on login failed:", syncErr);
-      }
 
       const redirectRes = NextResponse.redirect(
         `${baseUrl}/?login_success=true&email=${encodeURIComponent(email)}`
@@ -177,7 +141,7 @@ export async function GET(req: NextRequest) {
       return redirectRes;
     }
 
-    // 4. If account is NEW or has no label: Save pending auth and prompt categorization modal
+    // 4. If account is NEW: Save pending auth and prompt categorization modal
     const ticketId = await savePendingAuth({
       userId: masterUserId,
       email,

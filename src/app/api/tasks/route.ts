@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTasksFromDb, saveTaskToDb } from "@/services/taskService";
-import { syncTaskToGoogle } from "@/services/googleService";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { getSessionUser } from "@/lib/session";
 import { Task } from "@/types";
@@ -97,12 +96,7 @@ export async function POST(req: NextRequest) {
       validation_steps: body.validation_steps || [],
     };
 
-    // Sync with Google Tasks if configured
-    const gTaskId = await syncTaskToGoogle(newTask);
-    if (gTaskId) {
-      newTask.google_task_id = gTaskId;
-    }
-
+    // Save directly to native Cloud Firestore
     const saved = await saveTaskToDb(newTask, userId);
     return NextResponse.json({ success: true, task: saved }, { status: 201 });
   } catch (error: unknown) {

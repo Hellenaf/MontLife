@@ -144,7 +144,7 @@ export function ExtendDeadlineModal({
           <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900/50 flex items-start gap-2.5 text-xs text-amber-800 dark:text-amber-300">
             <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
             <span>
-              A nova data será sincronizada com o Google Tasks, preservando o histórico de adiamentos.
+              A nova data será registrada no banco de dados, preservando o histórico de adiamentos e auditoria de SLA.
             </span>
           </div>
 

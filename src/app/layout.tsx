@@ -3,9 +3,9 @@ import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
 
 export const metadata: Metadata = {
-  title: "MontLife — Central de Demandas & Google Tasks",
+  title: "MontLife — Central de Inteligência Operacional & Gestão de Demandas",
   description:
-    "Plataforma de gestão integrada para chamados de TI, suporte ao usuário, rotinas institucionais e tarefas pessoais com sincronização Google Tasks.",
+    "Plataforma de gestão integrada para chamados de TI, suporte ao usuário, rotinas institucionais e tarefas pessoais com armazenamento 100% nativo na nuvem.",
   icons: {
     icon: [
       { url: "/icon.svg?v=2", type: "image/svg+xml" },

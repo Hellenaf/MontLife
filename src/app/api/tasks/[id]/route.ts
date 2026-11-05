@@ -6,7 +6,6 @@ import {
   saveTaskToDb,
   deleteTaskFromDb,
 } from "@/services/taskService";
-import { syncTaskToGoogle } from "@/services/googleService";
 import { getSessionUser } from "@/lib/session";
 
 export async function GET(
@@ -72,9 +71,6 @@ export async function PATCH(
     if (!updatedTask) {
       return NextResponse.json({ success: false, error: "Tarefa não encontrada" }, { status: 404 });
     }
-
-    // Mirror updates to Google Tasks
-    await syncTaskToGoogle(updatedTask);
 
     return NextResponse.json({ success: true, task: updatedTask });
   } catch (error: unknown) {

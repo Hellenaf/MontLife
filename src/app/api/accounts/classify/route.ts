@@ -2,17 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getPendingAuth, clearPendingAuth } from "@/lib/pendingAuth";
 import {
   saveConnectedAccount,
-  getTasksFromDb,
-  saveTaskToDb,
   linkEmailToMasterUser,
+  consolidateHellenWorkspace,
+  isHellenEmail,
+  isHellenUser,
 } from "@/services/taskService";
-import {
-  fetchAllGoogleTasksFromAccount,
-  fetchYouTubeResources,
-} from "@/services/googleService";
-import { categorizeTaskWithAI } from "@/services/geminiService";
-import { Task } from "@/types";
-import { stripGoogleTaskPrefix } from "@/lib/sla";
 import { getSessionUser } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
@@ -66,7 +60,7 @@ export async function POST(req: NextRequest) {
         expiry_date,
         default_tasklist_id: "@default",
         last_sync_at: new Date().toISOString(),
-        is_connected: Boolean(access_token || refresh_token),
+        is_connected: Boolean(access_token || refresh_token || email),
       },
       userId
     );
@@ -81,71 +75,18 @@ export async function POST(req: NextRequest) {
       await clearPendingAuth(ticketId);
     }
 
-    // 2. Automatically sync Google Tasks into MontLife for this account
-    let importedCount = 0;
-    if (access_token || refresh_token) {
-      try {
-        const items = await fetchAllGoogleTasksFromAccount({
-          access_token,
-          refresh_token,
-        });
-
-        const currentTasks = await getTasksFromDb(userId);
-
-        for (const item of items) {
-          if (!item.id || !item.title) continue;
-
-          const existing = currentTasks.find((t) => t.google_task_id === item.id);
-          if (!existing) {
-            const cleanTitle = stripGoogleTaskPrefix(item.title);
-            const aiData = await categorizeTaskWithAI(cleanTitle, item.notes, rawLabel);
-            const yt = await fetchYouTubeResources(aiData.learning_queries);
-
-            const isCompleted = item.status === "completed";
-            const taskDate = item.updated || item.completed || item.due || new Date().toISOString();
-            const dueDate = item.due || taskDate;
-
-            const newTask: Task = {
-              id: `gt-imported-${item.id}`,
-              user_id: userId,
-              raw_input: cleanTitle,
-              title: cleanTitle,
-              description: item.notes || "",
-              account_type: rawLabel,
-              item_type: aiData.item_type || "task",
-              category: aiData.category,
-              tags: aiData.tags.length > 0 ? aiData.tags : [item.taskListName || "Google Tasks"],
-              priority: aiData.priority || "P3",
-              status: isCompleted ? "COMPLETED" : "TODO",
-              created_at: taskDate,
-              started_at: null,
-              completed_at: isCompleted ? item.completed || taskDate : null,
-              original_due_date: dueDate,
-              current_due_date: dueDate,
-              extension_count: 0,
-              deadline_extensions: [],
-              resolution_notes: null,
-              cancel_reason: null,
-              google_task_id: item.id,
-              google_calendar_event_id: null,
-              learning_resources: yt,
-              met_original_sla: isCompleted ? true : null,
-            };
-
-            await saveTaskToDb(newTask, userId);
-            importedCount++;
-          }
-        }
-      } catch (syncErr) {
-        console.warn("Initial sync after classification failed:", syncErr);
-      }
+    // If Hellen, trigger background consolidation
+    if (isHellenUser(userId) || isHellenEmail(email)) {
+      consolidateHellenWorkspace(userId).catch((err) =>
+        console.warn("Background consolidation on classify failed:", err)
+      );
     }
 
     return NextResponse.json({
       success: true,
-      message: `Conta categorizada como "${rawLabel}" com sucesso.`,
+      message: `Espaço "${rawLabel}" ativado com sucesso. Armazenamento 100% nativo no MontLife.`,
       account: saved,
-      imported_count: importedCount,
+      imported_count: 0,
     });
   } catch (error: unknown) {
     console.error("POST /api/accounts/classify error:", error);

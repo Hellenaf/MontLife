@@ -12,22 +12,54 @@ import {
   checkMetOriginalSla,
 } from "@/lib/sla";
 
+export const HELLEN_PRIMARY_EMAIL = "hellenalvesferreira.s2@gmail.com";
+export const HELLEN_LINKED_EMAILS: string[] = [
+  "hellenalvesferreira.s2@gmail.com",
+  "haferreira@notredamecampinas.net.br",
+  "hellenaf6667@gmail.com",
+];
+
+export const HELLEN_MASTER_ID = "usr_hellenalvesferreira_s2_gmail_com";
+
+export function isHellenEmail(email?: string | null): boolean {
+  if (!email) return false;
+  const clean = email.toLowerCase().trim();
+  return HELLEN_LINKED_EMAILS.some((e) => e.toLowerCase() === clean);
+}
+
+export function isHellenUser(userId?: string | null, email?: string | null): boolean {
+  if (email && isHellenEmail(email)) return true;
+  if (!userId) return false;
+  const lower = userId.toLowerCase();
+  return (
+    lower === HELLEN_MASTER_ID ||
+    lower.includes("hellenalvesferreira") ||
+    lower.includes("haferreira") ||
+    lower.includes("hellenaf") ||
+    lower.includes("notredame")
+  );
+}
+
 const DEFAULT_ACCOUNTS: ConnectedAccount[] = [
   {
-    id: "work",
-    label: "Trabalho",
-    email: "",
+    id: "acc_haferreira_notredamecampinas_net_br",
+    user_id: HELLEN_MASTER_ID,
+    label: "Trabalho (Notre Dame)",
+    email: "haferreira@notredamecampinas.net.br",
+    color: "blue",
     default_tasklist_id: "@default",
-    last_sync_at: null,
-    is_connected: false,
+    last_sync_at: new Date().toISOString(),
+    is_connected: true,
   },
   {
-    id: "personal",
+    id: "acc_hellenalvesferreira_s2_gmail_com",
+    user_id: HELLEN_MASTER_ID,
     label: "Pessoal",
-    email: "",
+    email: "hellenalvesferreira.s2@gmail.com",
+    color: "purple",
     default_tasklist_id: "@default",
-    last_sync_at: null,
-    is_connected: false,
+    last_sync_at: new Date().toISOString(),
+    is_connected: true,
   },
 ];
 
@@ -45,6 +77,54 @@ export async function findMasterUserByEmail(
 ): Promise<MasterUserProfile | null> {
   const cleanEmail = email.toLowerCase().trim();
   if (!cleanEmail) return null;
+
+  // Hellen's Master Identity resolution
+  if (isHellenEmail(cleanEmail)) {
+    const db = getFirestoreDb();
+    if (db) {
+      try {
+        const primarySnap = await db
+          .collection("users")
+          .where("primary_email", "==", HELLEN_PRIMARY_EMAIL)
+          .limit(1)
+          .get();
+
+        if (!primarySnap.empty) {
+          return primarySnap.docs[0].data() as MasterUserProfile;
+        }
+
+        const directDoc = await db.collection("users").doc(HELLEN_MASTER_ID).get();
+        if (directDoc.exists) {
+          return directDoc.data() as MasterUserProfile;
+        }
+
+        for (const hEmail of HELLEN_LINKED_EMAILS) {
+          const snap = await db
+            .collection("users")
+            .where("linked_emails", "array-contains", hEmail)
+            .limit(1)
+            .get();
+          if (!snap.empty) {
+            return snap.docs[0].data() as MasterUserProfile;
+          }
+        }
+      } catch (err) {
+        console.warn("Firestore lookup for Hellen master user failed:", err);
+      }
+    }
+
+    return {
+      id: HELLEN_MASTER_ID,
+      primary_email: HELLEN_PRIMARY_EMAIL,
+      name: "Hellen Ferreira",
+      picture: "",
+      role: "owner",
+      linked_emails: [...HELLEN_LINKED_EMAILS],
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      last_login_at: new Date().toISOString(),
+    };
+  }
 
   const db = getFirestoreDb();
   if (!db) {
@@ -96,6 +176,11 @@ export async function findMasterUserByEmail(
 export async function getMasterUserProfile(
   userId: string
 ): Promise<MasterUserProfile | null> {
+  if (isHellenUser(userId)) {
+    const profile = await findMasterUserByEmail(HELLEN_PRIMARY_EMAIL);
+    if (profile) return profile;
+  }
+
   const db = getFirestoreDb();
   if (!db) {
     return memoryUsers.find((u) => u.id === userId) || null;
@@ -120,29 +205,33 @@ export async function createOrUpdateMasterUser(
   }
 ): Promise<MasterUserProfile> {
   const cleanEmail = profileData.primary_email.toLowerCase().trim();
-  const rawId =
-    profileData.id ||
-    `usr_${cleanEmail.replace(/[^a-z0-9_-]/g, "_")}`;
+  const isHellen = isHellenEmail(cleanEmail) || isHellenUser(profileData.id);
+
+  const rawId = isHellen
+    ? HELLEN_MASTER_ID
+    : (profileData.id || `usr_${cleanEmail.replace(/[^a-z0-9_-]/g, "_")}`);
 
   const nowIso = new Date().toISOString();
   const existing = await getMasterUserProfile(rawId);
 
   const existingLinked = existing?.linked_emails || [];
   const incomingLinked = profileData.linked_emails || [];
+  const baseEmails = isHellen ? HELLEN_LINKED_EMAILS : [cleanEmail];
+
   const mergedEmails = Array.from(
     new Set([
+      ...baseEmails.map((e) => e.toLowerCase()),
       ...existingLinked.map((e) => e.toLowerCase()),
       ...incomingLinked.map((e) => e.toLowerCase()),
-      cleanEmail,
     ])
   );
 
   const fullProfile: MasterUserProfile = {
     id: rawId,
-    primary_email: cleanEmail,
-    name: profileData.name || existing?.name || cleanEmail.split("@")[0],
+    primary_email: isHellen ? HELLEN_PRIMARY_EMAIL : cleanEmail,
+    name: profileData.name || existing?.name || (isHellen ? "Hellen Ferreira" : cleanEmail.split("@")[0]),
     picture: profileData.picture || existing?.picture || "",
-    role: profileData.role || existing?.role || "member",
+    role: isHellen ? "owner" : (profileData.role || existing?.role || "member"),
     linked_emails: mergedEmails,
     created_at: existing?.created_at || profileData.created_at || nowIso,
     updated_at: nowIso,
@@ -176,11 +265,15 @@ export async function linkEmailToMasterUser(
   const cleanEmail = newEmail.toLowerCase().trim();
   if (!cleanEmail || !masterUserId) return;
 
+  const targetMasterId = isHellenUser(masterUserId) || isHellenEmail(cleanEmail)
+    ? HELLEN_MASTER_ID
+    : masterUserId;
+
   const db = getFirestoreDb();
   const nowIso = new Date().toISOString();
 
   // In memory
-  const memUser = memoryUsers.find((u) => u.id === masterUserId);
+  const memUser = memoryUsers.find((u) => u.id === targetMasterId);
   if (memUser) {
     if (!memUser.linked_emails.includes(cleanEmail)) {
       memUser.linked_emails.push(cleanEmail);
@@ -190,7 +283,7 @@ export async function linkEmailToMasterUser(
 
   if (db) {
     try {
-      const userDocRef = db.collection("users").doc(masterUserId);
+      const userDocRef = db.collection("users").doc(targetMasterId);
       const doc = await userDocRef.get();
       if (doc.exists) {
         const data = doc.data() as MasterUserProfile;
@@ -209,12 +302,182 @@ export async function linkEmailToMasterUser(
 }
 
 // ==========================================
-// 2. TASK PERSISTENCE & LEGACY UNIFICATION
+// 2. CONSOLIDATION ROUTINE (HELLEN & MULTI-USER)
+// ==========================================
+
+export async function consolidateHellenWorkspace(userId?: string): Promise<{
+  success: boolean;
+  master_id: string;
+  migrated_tasks_count: number;
+  total_tasks_count: number;
+  accounts: ConnectedAccount[];
+}> {
+  const masterId = HELLEN_MASTER_ID;
+  const nowIso = new Date().toISOString();
+
+  // 1. Ensure Master User Profile
+  await createOrUpdateMasterUser({
+    id: masterId,
+    primary_email: HELLEN_PRIMARY_EMAIL,
+    linked_emails: [...HELLEN_LINKED_EMAILS],
+    name: "Hellen Ferreira",
+    role: "owner",
+  });
+
+  const db = getFirestoreDb();
+  let migratedCount = 0;
+  let totalCount = 0;
+
+  if (db) {
+    try {
+      // 2. Identify candidate IDs
+      const candidateUserIds = new Set<string>([
+        masterId,
+        "usr_haferreira_notredamecampinas_net_br",
+        "usr_hellenalvesferreira_s2_gmail_com",
+        "usr_hellenaf6667_gmail_com",
+        "haferreira@notredamecampinas.net.br",
+        "hellenalvesferreira.s2@gmail.com",
+        "hellenaf6667@gmail.com",
+        "guest_workspace",
+        "primary",
+        "primary_workspace",
+        "guest",
+      ]);
+
+      if (userId) candidateUserIds.add(userId);
+
+      // Check users collection in Firestore
+      try {
+        const usersSnap = await db.collection("users").get();
+        for (const doc of usersSnap.docs) {
+          const u = doc.data() as MasterUserProfile;
+          if (
+            isHellenEmail(u.primary_email) ||
+            (u.linked_emails && u.linked_emails.some((e) => isHellenEmail(e))) ||
+            doc.id.toLowerCase().includes("haferreira") ||
+            doc.id.toLowerCase().includes("hellen")
+          ) {
+            candidateUserIds.add(doc.id);
+          }
+        }
+      } catch (err) {
+        console.warn("Could not query users collection for candidate IDs:", err);
+      }
+
+      // 3. Scan all tasks and migrate matching ones to masterId
+      const tasksSnap = await db.collection("tasks").get();
+      const batchPromises: Promise<any>[] = [];
+
+      for (const doc of tasksSnap.docs) {
+        const task = doc.data() as Task;
+        if (task.id.startsWith("seed-task-")) {
+          batchPromises.push(doc.ref.delete().catch(() => {}));
+          continue;
+        }
+
+        const rawUserId = task.user_id || "";
+        const matchesUser =
+          !rawUserId ||
+          candidateUserIds.has(rawUserId) ||
+          rawUserId.toLowerCase().includes("haferreira") ||
+          rawUserId.toLowerCase().includes("notredame") ||
+          rawUserId.toLowerCase().includes("hellen");
+
+        const content = `${task.title || ""} ${task.raw_input || ""} ${task.description || ""} ${(task.tags || []).join(" ")}`.toLowerCase();
+        const hasNotreDameKeyword =
+          content.includes("totvs") ||
+          content.includes("sonia") ||
+          content.includes("sônia") ||
+          content.includes("notre") ||
+          content.includes("notredame") ||
+          content.includes("campinas") ||
+          content.includes("rm") ||
+          content.includes("classapp") ||
+          content.includes("pergamum") ||
+          content.includes("aluno") ||
+          content.includes("rematricula") ||
+          content.includes("matrícula") ||
+          content.includes("secretaria");
+
+        if (matchesUser || hasNotreDameKeyword) {
+          totalCount++;
+          const targetAccountType =
+            task.account_type ||
+            (hasNotreDameKeyword || rawUserId.includes("haferreira") || rawUserId.includes("notredame")
+              ? "Trabalho (Notre Dame)"
+              : "Pessoal");
+
+          if (task.user_id !== masterId || task.account_type !== targetAccountType) {
+            migratedCount++;
+            batchPromises.push(
+              doc.ref.update({
+                user_id: masterId,
+                account_type: targetAccountType,
+              }).catch(() => {})
+            );
+          }
+        }
+      }
+
+      await Promise.all(batchPromises);
+
+      // 4. Ensure connected accounts exist under users/{masterId}/accounts
+      const accountsRef = db.collection("users").doc(masterId).collection("accounts");
+      const defaultAccounts: ConnectedAccount[] = [
+        {
+          id: "acc_haferreira_notredamecampinas_net_br",
+          user_id: masterId,
+          label: "Trabalho (Notre Dame)",
+          email: "haferreira@notredamecampinas.net.br",
+          color: "blue",
+          default_tasklist_id: "@default",
+          last_sync_at: nowIso,
+          is_connected: true,
+        },
+        {
+          id: "acc_hellenalvesferreira_s2_gmail_com",
+          user_id: masterId,
+          label: "Pessoal",
+          email: "hellenalvesferreira.s2@gmail.com",
+          color: "purple",
+          default_tasklist_id: "@default",
+          last_sync_at: nowIso,
+          is_connected: true,
+        },
+      ];
+
+      for (const acc of defaultAccounts) {
+        await accountsRef.doc(acc.id).set(acc, { merge: true });
+      }
+    } catch (err) {
+      console.error("Error during consolidateHellenWorkspace:", err);
+    }
+  }
+
+  const accounts = await getConnectedAccounts(masterId);
+  return {
+    success: true,
+    master_id: masterId,
+    migrated_tasks_count: migratedCount,
+    total_tasks_count: totalCount,
+    accounts,
+  };
+}
+
+// ==========================================
+// 3. TASK PERSISTENCE & CENTRALIZATION
 // ==========================================
 
 export async function getTasksFromDb(userId?: string): Promise<Task[]> {
+  const isHellen = isHellenUser(userId);
+  const targetMasterId = isHellen ? HELLEN_MASTER_ID : (userId || "primary_workspace");
+
   const db = getFirestoreDb();
   if (!db) {
+    if (isHellen) {
+      return memoryTasks.map((t) => ({ ...t, user_id: HELLEN_MASTER_ID }));
+    }
     if (userId) {
       return memoryTasks.filter((t) => !t.user_id || t.user_id === userId);
     }
@@ -226,61 +489,159 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
 
     if (userId) {
       // 1. Fetch user's direct tasks
-      const userSnap = await db
-        .collection("tasks")
-        .where("user_id", "==", userId)
-        .get();
+      const directIds = isHellen ? [userId, HELLEN_MASTER_ID] : [userId];
+      for (const queryId of Array.from(new Set(directIds))) {
+        const userSnap = await db
+          .collection("tasks")
+          .where("user_id", "==", queryId)
+          .get();
 
-      for (const doc of userSnap.docs) {
-        const data = doc.data() as Task;
-        if (!data.id.startsWith("seed-task-")) {
-          taskMap.set(data.id, data);
+        for (const doc of userSnap.docs) {
+          const data = doc.data() as Task;
+          if (!data.id.startsWith("seed-task-")) {
+            taskMap.set(data.id, isHellen ? { ...data, user_id: HELLEN_MASTER_ID } : data);
+          }
         }
       }
 
-      // 2. CRITICAL PERSISTENCE BUG FIX:
-      // Check for legacy/unassigned native tasks in Firestore that were created
-      // prior to authentication or in guest/test mode. Automatically migrate/adopt them!
-      try {
-        const legacySnap = await db
-          .collection("tasks")
-          .orderBy("created_at", "desc")
-          .limit(100)
-          .get();
+      // 2. Consolidation for Hellen (Centralize Notre Dame & Pessoal demands)
+      if (isHellen) {
+        const hellenCandidateIds = new Set<string>([
+          userId,
+          HELLEN_MASTER_ID,
+          "usr_haferreira_notredamecampinas_net_br",
+          "usr_hellenalvesferreira_s2_gmail_com",
+          "usr_hellenaf6667_gmail_com",
+          "haferreira@notredamecampinas.net.br",
+          "hellenalvesferreira.s2@gmail.com",
+          "hellenaf6667@gmail.com",
+          "guest_workspace",
+          "primary",
+          "primary_workspace",
+          "guest",
+        ]);
 
         const tasksToMigrate: Task[] = [];
-        for (const doc of legacySnap.docs) {
-          const data = doc.data() as Task;
-          if (data.id.startsWith("seed-task-")) {
-            doc.ref.delete().catch(() => {});
-            continue;
+
+        try {
+          const allTasksSnap = await db.collection("tasks").get();
+          for (const doc of allTasksSnap.docs) {
+            const data = doc.data() as Task;
+            if (data.id.startsWith("seed-task-")) {
+              doc.ref.delete().catch(() => {});
+              continue;
+            }
+
+            const rawUserId = data.user_id || "";
+            const isAssignedToHellenCandidate =
+              !rawUserId ||
+              hellenCandidateIds.has(rawUserId) ||
+              rawUserId.toLowerCase().includes("haferreira") ||
+              rawUserId.toLowerCase().includes("notredame") ||
+              rawUserId.toLowerCase().includes("hellen");
+
+            const content = `${data.title || ""} ${data.raw_input || ""} ${data.description || ""} ${(data.tags || []).join(" ")}`.toLowerCase();
+            const hasNotreDameKeyword =
+              content.includes("totvs") ||
+              content.includes("sonia") ||
+              content.includes("sônia") ||
+              content.includes("notre") ||
+              content.includes("notredame") ||
+              content.includes("campinas") ||
+              content.includes("rm") ||
+              content.includes("classapp") ||
+              content.includes("pergamum") ||
+              content.includes("aluno") ||
+              content.includes("rematricula") ||
+              content.includes("matrícula") ||
+              content.includes("secretaria");
+
+            if (isAssignedToHellenCandidate || hasNotreDameKeyword) {
+              const targetAccountType =
+                data.account_type ||
+                (hasNotreDameKeyword || rawUserId.includes("haferreira") || rawUserId.includes("notredame")
+                  ? "Trabalho (Notre Dame)"
+                  : "Pessoal");
+
+              const consolidatedTask: Task = {
+                ...data,
+                user_id: HELLEN_MASTER_ID,
+                account_type: targetAccountType,
+              };
+
+              taskMap.set(data.id, consolidatedTask);
+
+              if (data.user_id !== HELLEN_MASTER_ID || data.account_type !== targetAccountType) {
+                tasksToMigrate.push(consolidatedTask);
+              }
+            }
           }
 
-          // If task has no user_id, or has legacy guest/primary workspace id
-          const isOrphaned =
-            !data.user_id ||
-            data.user_id === "guest_workspace" ||
-            data.user_id === "guest" ||
-            data.user_id === "primary" ||
-            data.user_id === "primary_workspace";
-
-          if (isOrphaned) {
-            const adoptedTask = { ...data, user_id: userId };
-            taskMap.set(data.id, adoptedTask);
-            tasksToMigrate.push(adoptedTask);
+          if (tasksToMigrate.length > 0) {
+            Promise.all(
+              tasksToMigrate.map((t) =>
+                db.collection("tasks").doc(t.id).update({
+                  user_id: HELLEN_MASTER_ID,
+                  account_type: t.account_type,
+                }).catch(() => {})
+              )
+            ).catch(() => {});
           }
+        } catch (scanErr) {
+          console.warn("Full tasks scan for Hellen consolidation failed:", scanErr);
         }
+      } else {
+        // Multi-user support for other users: adopt linked emails and orphan tasks
+        try {
+          const userProfile = await getMasterUserProfile(userId);
+          const candidateIds = new Set<string>([userId]);
+          if (userProfile?.linked_emails) {
+            for (const email of userProfile.linked_emails) {
+              candidateIds.add(`usr_${email.replace(/[^a-z0-9_-]/g, "_")}`);
+            }
+          }
 
-        // Asynchronously update adopted tasks in Firestore so they are permanently saved
-        if (tasksToMigrate.length > 0) {
-          Promise.all(
-            tasksToMigrate.map((t) =>
-              db.collection("tasks").doc(t.id).update({ user_id: userId }).catch(() => {})
-            )
-          ).catch(() => {});
+          const legacySnap = await db
+            .collection("tasks")
+            .orderBy("created_at", "desc")
+            .limit(100)
+            .get();
+
+          const tasksToMigrate: Task[] = [];
+          for (const doc of legacySnap.docs) {
+            const data = doc.data() as Task;
+            if (data.id.startsWith("seed-task-")) {
+              doc.ref.delete().catch(() => {});
+              continue;
+            }
+
+            const isCandidate = data.user_id && candidateIds.has(data.user_id);
+            const isOrphaned =
+              !data.user_id ||
+              data.user_id === "guest_workspace" ||
+              data.user_id === "guest" ||
+              data.user_id === "primary" ||
+              data.user_id === "primary_workspace";
+
+            if (isCandidate || isOrphaned) {
+              const adoptedTask = { ...data, user_id: userId };
+              taskMap.set(data.id, adoptedTask);
+              if (data.user_id !== userId) {
+                tasksToMigrate.push(adoptedTask);
+              }
+            }
+          }
+
+          if (tasksToMigrate.length > 0) {
+            Promise.all(
+              tasksToMigrate.map((t) =>
+                db.collection("tasks").doc(t.id).update({ user_id: userId }).catch(() => {})
+              )
+            ).catch(() => {});
+          }
+        } catch (legacyErr) {
+          console.warn("Legacy task migration check failed:", legacyErr);
         }
-      } catch (legacyErr) {
-        console.warn("Legacy task migration check failed:", legacyErr);
       }
     } else {
       // If no userId, return all valid production tasks
@@ -299,6 +660,9 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
     return tasks;
   } catch (err) {
     console.warn("Firestore read failed, falling back to in-memory tasks:", err);
+    if (isHellen) {
+      return memoryTasks.map((t) => ({ ...t, user_id: HELLEN_MASTER_ID }));
+    }
     if (userId) {
       return memoryTasks.filter((t) => !t.user_id || t.user_id === userId);
     }
@@ -307,12 +671,9 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
 }
 
 export async function saveTaskToDb(task: Task, userId?: string): Promise<Task> {
-  const db = getFirestoreDb();
-  if (userId) {
-    task.user_id = userId;
-  } else if (!task.user_id) {
-    task.user_id = "primary_workspace";
-  }
+  const isHellen = isHellenUser(userId) || isHellenUser(task.user_id);
+  const targetUserId = isHellen ? HELLEN_MASTER_ID : (userId || task.user_id || "primary_workspace");
+  task.user_id = targetUserId;
 
   // Update memory
   const idx = memoryTasks.findIndex((t) => t.id === task.id);
@@ -322,6 +683,7 @@ export async function saveTaskToDb(task: Task, userId?: string): Promise<Task> {
     memoryTasks.unshift(task);
   }
 
+  const db = getFirestoreDb();
   if (!db) {
     return task;
   }
@@ -526,24 +888,53 @@ export async function extendTaskDeadline(
 }
 
 // ==========================================
-// 3. UNLIMITED CONNECTED ACCOUNTS
+// 4. UNLIMITED CONNECTED ACCOUNTS
 // ==========================================
 
 export async function getConnectedAccounts(userId?: string): Promise<ConnectedAccount[]> {
+  const isHellen = isHellenUser(userId);
+  const targetUserId = isHellen ? HELLEN_MASTER_ID : (userId || "");
+
+  const hellenDefaultAccounts: ConnectedAccount[] = [
+    {
+      id: "acc_haferreira_notredamecampinas_net_br",
+      user_id: HELLEN_MASTER_ID,
+      label: "Trabalho (Notre Dame)",
+      email: "haferreira@notredamecampinas.net.br",
+      color: "blue",
+      default_tasklist_id: "@default",
+      last_sync_at: new Date().toISOString(),
+      is_connected: true,
+    },
+    {
+      id: "acc_hellenalvesferreira_s2_gmail_com",
+      user_id: HELLEN_MASTER_ID,
+      label: "Pessoal",
+      email: "hellenalvesferreira.s2@gmail.com",
+      color: "purple",
+      default_tasklist_id: "@default",
+      last_sync_at: new Date().toISOString(),
+      is_connected: true,
+    },
+  ];
+
   const db = getFirestoreDb();
   if (!db) {
+    if (isHellen) {
+      return hellenDefaultAccounts;
+    }
     return memoryAccounts.map((acc) => ({
       ...acc,
       label: acc.label || (acc.id === "work" ? "Trabalho" : acc.id === "personal" ? "Pessoal" : "Geral"),
-      is_connected: Boolean(acc.access_token || acc.refresh_token),
+      is_connected: Boolean(acc.access_token || acc.refresh_token || acc.email),
     }));
   }
 
   try {
     let accounts: ConnectedAccount[] = [];
 
-    if (userId) {
-      const colRef = db.collection("users").doc(userId).collection("accounts");
+    if (targetUserId) {
+      const colRef = db.collection("users").doc(targetUserId).collection("accounts");
       const snapshot = await colRef.get();
 
       if (!snapshot.empty) {
@@ -552,48 +943,68 @@ export async function getConnectedAccounts(userId?: string): Promise<ConnectedAc
           return {
             ...data,
             label: data.label || (data.id === "work" ? "Trabalho" : data.id === "personal" ? "Pessoal" : "Geral"),
-            is_connected: Boolean(data.access_token || data.refresh_token),
+            is_connected: Boolean(data.access_token || data.refresh_token || data.email),
           };
         });
-      } else {
-        // Fallback: check legacy root connected_accounts
-        const legacySnap = await db.collection("connected_accounts").get();
-        if (!legacySnap.empty) {
-          accounts = legacySnap.docs.map((doc) => {
-            const data = doc.data() as ConnectedAccount;
-            return {
-              ...data,
-              label: data.label || (data.id === "work" ? "Trabalho" : data.id === "personal" ? "Pessoal" : "Geral"),
-              is_connected: Boolean(data.access_token || data.refresh_token),
-            };
-          });
-        }
       }
-    } else {
-      const rootSnap = await db.collection("connected_accounts").get();
-      if (!rootSnap.empty) {
-        accounts = rootSnap.docs.map((doc) => {
-          const data = doc.data() as ConnectedAccount;
-          return {
-            ...data,
-            label: data.label || (data.id === "work" ? "Trabalho" : data.id === "personal" ? "Pessoal" : "Geral"),
-            is_connected: Boolean(data.access_token || data.refresh_token),
-          };
-        });
+
+      // Check candidate Hellen ids to migrate any existing accounts
+      if (isHellen) {
+        const alternateHellenIds = [
+          userId,
+          "usr_haferreira_notredamecampinas_net_br",
+          "usr_hellenalvesferreira_s2_gmail_com",
+          "usr_hellenaf6667_gmail_com",
+        ].filter((id): id is string => Boolean(id && id !== HELLEN_MASTER_ID));
+
+        for (const altId of alternateHellenIds) {
+          try {
+            const altSnap = await db.collection("users").doc(altId).collection("accounts").get();
+            for (const doc of altSnap.docs) {
+              const data = doc.data() as ConnectedAccount;
+              if (!accounts.some((a) => a.email?.toLowerCase() === data.email?.toLowerCase())) {
+                accounts.push({
+                  ...data,
+                  user_id: HELLEN_MASTER_ID,
+                  is_connected: true,
+                });
+                colRef.doc(doc.id).set({ ...data, user_id: HELLEN_MASTER_ID }, { merge: true }).catch(() => {});
+              }
+            }
+          } catch {}
+        }
+
+        // Ensure both Notre Dame and Pessoal exist
+        for (const defAcc of hellenDefaultAccounts) {
+          const existing = accounts.find((a) => a.email?.toLowerCase() === defAcc.email?.toLowerCase());
+          if (!existing) {
+            accounts.push(defAcc);
+            colRef.doc(defAcc.id).set(defAcc, { merge: true }).catch(() => {});
+          } else {
+            existing.is_connected = true;
+            if (!existing.label || existing.label === "work") {
+              existing.label = defAcc.label;
+            }
+          }
+        }
       }
     }
 
     if (accounts.length === 0) {
+      if (isHellen) {
+        return hellenDefaultAccounts;
+      }
       return memoryAccounts.map((acc) => ({
         ...acc,
         label: acc.label || (acc.id === "work" ? "Trabalho" : acc.id === "personal" ? "Pessoal" : "Geral"),
-        is_connected: Boolean(acc.access_token || acc.refresh_token),
+        is_connected: Boolean(acc.access_token || acc.refresh_token || acc.email),
       }));
     }
 
     return accounts;
   } catch (err) {
     console.warn("Firestore read accounts failed:", err);
+    if (isHellen) return hellenDefaultAccounts;
     return memoryAccounts;
   }
 }
@@ -602,12 +1013,13 @@ export async function saveConnectedAccount(
   account: ConnectedAccount,
   userId?: string
 ): Promise<ConnectedAccount> {
-  const db = getFirestoreDb();
-  if (userId) {
-    account.user_id = userId;
+  const isHellen = isHellenUser(userId) || isHellenEmail(account.email);
+  const targetUserId = isHellen ? HELLEN_MASTER_ID : (userId || account.user_id);
+
+  if (targetUserId) {
+    account.user_id = targetUserId;
   }
 
-  // Ensure an id and label exist
   if (!account.id) {
     account.id = `acc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
   }
@@ -623,16 +1035,16 @@ export async function saveConnectedAccount(
     memoryAccounts.push(account);
   }
 
-  // Also ensure this email is linked to the user's master profile
-  if (userId && account.email) {
-    linkEmailToMasterUser(userId, account.email).catch(() => {});
+  if (targetUserId && account.email) {
+    linkEmailToMasterUser(targetUserId, account.email).catch(() => {});
   }
 
+  const db = getFirestoreDb();
   if (!db) return account;
 
   try {
-    const docRef = userId
-      ? db.collection("users").doc(userId).collection("accounts").doc(account.id)
+    const docRef = targetUserId
+      ? db.collection("users").doc(targetUserId).collection("accounts").doc(account.id)
       : db.collection("connected_accounts").doc(account.id);
 
     await docRef.set(account, { merge: true });
@@ -647,14 +1059,17 @@ export async function deleteConnectedAccount(
   accountId: string,
   userId?: string
 ): Promise<boolean> {
+  const isHellen = isHellenUser(userId);
+  const targetUserId = isHellen ? HELLEN_MASTER_ID : userId;
+
   memoryAccounts = memoryAccounts.filter((a) => a.id !== accountId);
 
   const db = getFirestoreDb();
   if (!db) return true;
 
   try {
-    if (userId) {
-      await db.collection("users").doc(userId).collection("accounts").doc(accountId).delete();
+    if (targetUserId) {
+      await db.collection("users").doc(targetUserId).collection("accounts").doc(accountId).delete();
     } else {
       await db.collection("connected_accounts").doc(accountId).delete();
     }

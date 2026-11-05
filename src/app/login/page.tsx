@@ -76,7 +76,7 @@ export default function LoginPage() {
               </h1>
 
               <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-normal">
-                Conecte seus chamados de TI, rotinas institucionais e projetos pessoais em um único ecossistema inteligente, integrado de ponta a ponta ao Google Tasks.
+                Conecte seus chamados de TI, rotinas institucionais e projetos pessoais em um único ecossistema inteligente, com armazenamento 100% nativo e seguro na nuvem.
               </p>
             </div>
 
@@ -99,10 +99,10 @@ export default function LoginPage() {
                   <RefreshCw className="w-4 h-4" />
                 </div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                  Sincronização Bidirecional
+                  Armazenamento 100% Nativo
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                  Espelhamento em tempo real com seu Google Tasks: status, notas e datas refletidos sem atrito.
+                  Persistência autônoma no Cloud Firestore: demandas, anexos, SLAs e histórico centralizados.
                 </p>
               </div>
 

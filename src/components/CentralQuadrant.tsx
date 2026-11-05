@@ -550,21 +550,21 @@ export function CentralQuadrant({
         icon: <Bell className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />,
       };
     }
-    if (task.account_type === "work") {
+    if (task.account_type === "work" || task.account_type?.toLowerCase().includes("trab")) {
       return {
-        accent: "#1a73e8", // Google Blue
+        accent: "#1a73e8", // Blue
         pillBg: "bg-[#1a73e8] text-white hover:bg-[#1557b0]",
         cardBg: "bg-blue-50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 border-l-4 border-l-[#1a73e8] border-slate-200 dark:border-zinc-800",
-        sourceName: "Google Tasks (Trabalho)",
+        sourceName: task.account_type || "Trabalho (Notre Dame)",
         badgeBg: "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200",
         icon: <Briefcase className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />,
       };
     }
     return {
-      accent: "#8e24aa", // Google Grape Purple
+      accent: "#8e24aa", // Grape Purple
       pillBg: "bg-[#8e24aa] text-white hover:bg-[#7b1fa2]",
       cardBg: "bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-100 border-l-4 border-l-[#8e24aa] border-slate-200 dark:border-zinc-800",
-      sourceName: "Google Tasks (Pessoal)",
+      sourceName: task.account_type || "Pessoal",
       badgeBg: "bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200",
       icon: <User className="w-3 h-3 text-purple-600 dark:text-purple-400 shrink-0" />,
     };
