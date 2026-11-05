@@ -100,6 +100,7 @@ interface CentralQuadrantProps {
   onOpenNewTaskModal?: () => void;
   activeTab?: "details" | "study";
   onTabChange?: (tab: "details" | "study") => void;
+  onBackToTasks?: () => void;
 }
 
 const CATEGORY_SUGGESTIONS = [
@@ -133,6 +134,7 @@ export function CentralQuadrant({
   onOpenNewTaskModal,
   activeTab: propActiveTab,
   onTabChange,
+  onBackToTasks,
 }: CentralQuadrantProps) {
   const [internalActiveTab, setInternalActiveTab] = useState<"details" | "study">("details");
   const activeTab = propActiveTab !== undefined ? propActiveTab : internalActiveTab;
@@ -596,8 +598,20 @@ export function CentralQuadrant({
   return (
     <main className="flex-1 h-full flex flex-col bg-slate-100/50 dark:bg-[#0c0d13] overflow-hidden transition-colors duration-200">
       {/* Top Tab Bar */}
-      <div className="h-12 border-b border-slate-200 dark:border-zinc-800/80 px-6 flex items-center justify-between shrink-0 bg-white dark:bg-[#101118]">
+      <div className="h-12 border-b border-slate-200 dark:border-zinc-800/80 px-3 sm:px-6 flex items-center justify-between shrink-0 bg-white dark:bg-[#101118]">
         <div className="flex items-center gap-1.5">
+          {onBackToTasks && (
+            <button
+              type="button"
+              onClick={onBackToTasks}
+              className="lg:hidden flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors mr-1"
+              title="Voltar para a lista de demandas"
+            >
+              <ChevronLeft className="w-4 h-4" />
+              <span>Lista</span>
+            </button>
+          )}
+
           <button
             onClick={() => setActiveTab("details")}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${

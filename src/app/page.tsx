@@ -18,7 +18,7 @@ import { ReportsView } from "@/components/ReportsView";
 import { KanbanView } from "@/components/KanbanView";
 import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
 import { getAllCategories } from "@/lib/categories";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, ListTodo, FileText, Calendar, TrendingUp, User, Plus } from "lucide-react";
 
 export default function MontOpsDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -27,6 +27,7 @@ export default function MontOpsDashboard() {
   const [activeNav, setActiveNav] = useState("tarefas");
   const [accountFilter, setAccountFilter] = useState<"all" | AccountType>("all");
   const [centralActiveTab, setCentralActiveTab] = useState<"details" | "study">("details");
+  const [mobileActiveView, setMobileActiveView] = useState<"tasks" | "details" | "kpi">("tasks");
 
   // Dynamically derive selected task from tasks array
   const selectedTask =
@@ -409,7 +410,7 @@ export default function MontOpsDashboard() {
       </div>
 
       {/* 2. Main Area (Header on top, then 3 columns below) */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 pb-16 lg:pb-0">
         {/* Header Command Bar */}
         <div className="no-print">
           <HeaderCommandBar
@@ -530,75 +531,177 @@ export default function MontOpsDashboard() {
         ) : (
           <div className="flex-1 flex overflow-hidden">
             {/* Quadrante Esquerdo: Minhas Tarefas */}
-            <LeftTasksQuadrant
-              tasks={tasks}
-              accounts={accounts}
-              selectedTaskId={selectedTask?.id || null}
-              onSelectTask={(task) => {
-                setSelectedTaskId(task.id);
-                setCentralActiveTab("details");
-              }}
-              onUpdateStatus={handleUpdateStatus}
-              onRequestResolution={(task) => {
-                setTaskForResolution(task);
-                setIsResolutionModalOpen(true);
-              }}
-              onRequestExtendDeadline={(task) => {
-                setTaskForExtend(task);
-                setIsExtendModalOpen(true);
-              }}
-              onRequestCancelTask={(task) => {
-                setTaskForCancel(task);
-                setIsCancelModalOpen(true);
-              }}
-              onDeleteTask={handleDeleteTask}
-              onRequestNewTask={() => {
-                setNewTaskInitialText("");
-                setIsNewTaskModalOpen(true);
-              }}
-              onRefreshTasks={loadTasks}
-              accountFilter={accountFilter}
-              onAccountFilterChange={setAccountFilter}
-            />
+            <div className={`${mobileActiveView === "tasks" ? "flex" : "hidden"} lg:flex h-full w-full lg:w-auto shrink-0`}>
+              <LeftTasksQuadrant
+                tasks={tasks}
+                accounts={accounts}
+                selectedTaskId={selectedTask?.id || null}
+                onSelectTask={(task) => {
+                  setSelectedTaskId(task.id);
+                  setCentralActiveTab("details");
+                  setMobileActiveView("details");
+                }}
+                onUpdateStatus={handleUpdateStatus}
+                onRequestResolution={(task) => {
+                  setTaskForResolution(task);
+                  setIsResolutionModalOpen(true);
+                }}
+                onRequestExtendDeadline={(task) => {
+                  setTaskForExtend(task);
+                  setIsExtendModalOpen(true);
+                }}
+                onRequestCancelTask={(task) => {
+                  setTaskForCancel(task);
+                  setIsCancelModalOpen(true);
+                }}
+                onDeleteTask={handleDeleteTask}
+                onRequestNewTask={() => {
+                  setNewTaskInitialText("");
+                  setIsNewTaskModalOpen(true);
+                }}
+                onRefreshTasks={loadTasks}
+                accountFilter={accountFilter}
+                onAccountFilterChange={setAccountFilter}
+              />
+            </div>
 
             {/* Quadrante Central: Detalhes da Demanda (sem duplicação de agenda) */}
-            <CentralQuadrant
-              selectedTask={selectedTask}
-              allTasks={tasks}
-              onRequestResolution={(task) => {
-                setTaskForResolution(task);
-                setIsResolutionModalOpen(true);
-              }}
-              onRequestExtendDeadline={(task) => {
-                setTaskForExtend(task);
-                setIsExtendModalOpen(true);
-              }}
-              onRequestCancelTask={(task) => {
-                setTaskForCancel(task);
-                setIsCancelModalOpen(true);
-              }}
-              onReopenTask={handleReopenTask}
-              onUpdateStatus={handleUpdateStatus}
-              onUpdateItemType={handleUpdateItemType}
-              onUpdateTaskFields={handleUpdateTaskFields}
-              onSelectTask={(task) => {
-            setSelectedTaskId(task.id);
-            setActiveNav("tarefas");
-            setCentralActiveTab("details");
-          }}
-              onOpenNewTaskModal={() => setIsNewTaskModalOpen(true)}
-              activeTab={centralActiveTab}
-              onTabChange={setCentralActiveTab}
-            />
+            <div className={`${mobileActiveView === "details" ? "flex" : "hidden"} lg:flex flex-1 h-full min-w-0`}>
+              <CentralQuadrant
+                selectedTask={selectedTask}
+                allTasks={tasks}
+                onRequestResolution={(task) => {
+                  setTaskForResolution(task);
+                  setIsResolutionModalOpen(true);
+                }}
+                onRequestExtendDeadline={(task) => {
+                  setTaskForExtend(task);
+                  setIsExtendModalOpen(true);
+                }}
+                onRequestCancelTask={(task) => {
+                  setTaskForCancel(task);
+                  setIsCancelModalOpen(true);
+                }}
+                onReopenTask={handleReopenTask}
+                onUpdateStatus={handleUpdateStatus}
+                onUpdateItemType={handleUpdateItemType}
+                onUpdateTaskFields={handleUpdateTaskFields}
+                onSelectTask={(task) => {
+                  setSelectedTaskId(task.id);
+                  setActiveNav("tarefas");
+                  setCentralActiveTab("details");
+                }}
+                onOpenNewTaskModal={() => setIsNewTaskModalOpen(true)}
+                activeTab={centralActiveTab}
+                onTabChange={setCentralActiveTab}
+                onBackToTasks={() => setMobileActiveView("tasks")}
+              />
+            </div>
 
             {/* Quadrante Direito: Métricas & Desempenho + Resumo Anual */}
-            <RightKpiQuadrant
-              tasks={tasks}
-              onOpenReportModal={() => setActiveNav("relatorios")}
-            />
+            <div className={`${mobileActiveView === "kpi" ? "flex" : "hidden"} lg:flex h-full w-full lg:w-auto shrink-0`}>
+              <RightKpiQuadrant
+                tasks={tasks}
+                onOpenReportModal={() => setActiveNav("relatorios")}
+              />
+            </div>
           </div>
         )}
       </div>
+
+      {/* Mobile Floating Action Button (FAB) */}
+      <button
+        type="button"
+        onClick={() => {
+          setNewTaskInitialText("");
+          setIsNewTaskModalOpen(true);
+        }}
+        className="lg:hidden fixed bottom-20 right-4 w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-xl shadow-purple-600/40 flex items-center justify-center z-40 active:scale-90 transition-transform"
+        aria-label="Adicionar nova demanda"
+        title="Nova Demanda"
+      >
+        <Plus className="w-6 h-6 stroke-[2.5]" />
+      </button>
+
+      {/* Mobile Bottom Navigation Bar (Fixed for PWA on Phones) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 dark:bg-[#10111a]/95 backdrop-blur-lg border-t border-slate-200 dark:border-zinc-800/80 px-2 flex items-center justify-around z-40 pb-safe">
+        <button
+          type="button"
+          onClick={() => {
+            setActiveNav("tarefas");
+            setMobileActiveView("tasks");
+          }}
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all ${
+            activeNav === "tarefas" && mobileActiveView === "tasks"
+              ? "text-purple-600 dark:text-purple-400 font-bold"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          <div className="relative">
+            <ListTodo className="w-5 h-5" />
+            {tasks.filter((t) => t.status !== "COMPLETED" && t.status !== "CANCELED").length > 0 && (
+              <span className="absolute -top-1 -right-2 px-1 text-[9px] font-bold rounded-full bg-purple-600 text-white">
+                {tasks.filter((t) => t.status !== "COMPLETED" && t.status !== "CANCELED").length}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px]">Demandas</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveNav("tarefas");
+            setMobileActiveView("details");
+          }}
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all ${
+            activeNav === "tarefas" && mobileActiveView === "details"
+              ? "text-purple-600 dark:text-purple-400 font-bold"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          <FileText className="w-5 h-5" />
+          <span className="text-[10px]">Detalhes</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveNav("agenda")}
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all ${
+            activeNav === "agenda"
+              ? "text-purple-600 dark:text-purple-400 font-bold"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          <Calendar className="w-5 h-5" />
+          <span className="text-[10px]">Agenda</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setActiveNav("tarefas");
+            setMobileActiveView("kpi");
+          }}
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all ${
+            activeNav === "tarefas" && mobileActiveView === "kpi"
+              ? "text-purple-600 dark:text-purple-400 font-bold"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          <TrendingUp className="w-5 h-5" />
+          <span className="text-[10px]">Métricas</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setIsAccountsModalOpen(true)}
+          className="flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all"
+        >
+          <User className="w-5 h-5" />
+          <span className="text-[10px]">Contas</span>
+        </button>
+      </nav>
 
       {/* Modais do Sistema */}
       <ResolutionModal

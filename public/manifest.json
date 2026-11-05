@@ -1,0 +1,30 @@
+{
+  "name": "MontLife — Central de Inteligência Operacional",
+  "short_name": "MontLife",
+  "description": "Plataforma de gestão integrada para chamados de TI, suporte ao usuário, rotinas institucionais e tarefas pessoais com armazenamento 100% nativo na nuvem.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090A0F",
+  "theme_color": "#090A0F",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "sizes": "32x32",
+      "type": "image/png"
+    }
+  ],
+  "categories": ["productivity", "utilities", "business"]
+}
+

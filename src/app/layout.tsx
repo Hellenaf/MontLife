@@ -1,11 +1,26 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/context/ThemeContext";
+
+export const viewport: Viewport = {
+  themeColor: "#090A0F",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "MontLife — Central de Inteligência Operacional & Gestão de Demandas",
   description:
     "Plataforma de gestão integrada para chamados de TI, suporte ao usuário, rotinas institucionais e tarefas pessoais com armazenamento 100% nativo na nuvem.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "MontLife",
+  },
   icons: {
     icon: [
       { url: "/icon.svg?v=2", type: "image/svg+xml" },
@@ -29,6 +44,9 @@ export default function RootLayout({
         <link rel="alternate icon" href="/icon.png?v=2" type="image/png" />
         <link rel="shortcut icon" href="/favicon.ico?v=2" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
+        <link rel="manifest" href="/manifest.json" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body className="antialiased min-h-screen transition-colors duration-200">
         <ThemeProvider>

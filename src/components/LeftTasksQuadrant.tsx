@@ -578,7 +578,7 @@ export function LeftTasksQuadrant({
   };
 
   return (
-    <aside className="w-[340px] xl:w-[380px] h-full flex flex-col border-r border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
+    <aside className="w-full lg:w-[340px] xl:w-[380px] h-full flex flex-col border-r border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
       {/* Top Filter & Search Bar */}
       <div className="p-3.5 border-b border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-[#101118] space-y-2.5 shrink-0">
         {/* Dynamic Context Selector */}

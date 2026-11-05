@@ -101,7 +101,7 @@ export function RightKpiQuadrant({
   }, [tasks]);
 
   return (
-    <aside className="w-[300px] xl:w-[330px] h-full flex flex-col border-l border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
+    <aside className="w-full lg:w-[300px] xl:w-[330px] h-full flex flex-col border-l border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
       {/* Header */}
       <div className="h-12 border-b border-slate-200 dark:border-zinc-800/80 px-5 flex items-center justify-between shrink-0 bg-white dark:bg-[#101118]">
         <div className="flex items-center gap-2">
