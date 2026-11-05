@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GeminiTriageResponse, TaskCategory, Priority, AccountType, ItemType } from "@/types";
+import { aiCache } from "@/lib/aiCache";
 
 const SYSTEM_PROMPT = `Você é o assistente inteligente de organização, triagem e produtividade autônoma do MontLife.
 O MontLife é uma plataforma universal de produtividade projetada para qualquer usuário e equipe (profissionais de TI, gestores, analistas, engenheiros, educadores, profissionais liberais e uso pessoal).
@@ -103,6 +104,26 @@ const RESPONSE_SCHEMA = {
     "search_tags",
     "learning_queries",
   ],
+};
+
+// Ultra-lightweight micro prompt for fast categorization (~80 tokens vs ~1500 tokens)
+const MICRO_CATEGORIZATION_PROMPT = `Você é um categorizador veloz do MontLife.
+Dado um título e notas de uma tarefa, determine objetivamente:
+1. category: Categoria profissional curta (ex: 'Sistemas ERP', 'TI & Suporte', 'RH & DP', 'Finanças & Contas', 'Secretaria Acadêmica', 'Comunicação', 'Biblioteca', 'Projetos', 'Estudos', 'Saúde & Bem-estar', 'Vida Pessoal').
+2. tags: Array com 1 a 3 tags contextuais.
+3. item_type: 'task', 'activity' ou 'reminder'.
+4. priority: 'P1', 'P2', 'P3' ou 'P4'.
+Retorne estritamente o JSON especificado.`;
+
+const MICRO_CATEGORIZATION_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    category: { type: Type.STRING },
+    tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+    priority: { type: Type.STRING, enum: ["P1", "P2", "P3", "P4"] },
+    item_type: { type: Type.STRING, enum: ["task", "activity", "reminder"] },
+  },
+  required: ["category", "tags", "priority", "item_type"],
 };
 
 /**
@@ -666,10 +687,22 @@ export async function triageInputWithGemini(
   rawInput: string,
   apiKey?: string
 ): Promise<GeminiTriageResponse> {
-  const key = apiKey || process.env.GEMINI_API_KEY;
+  const cleanInput = (rawInput || "").trim();
+  if (!cleanInput) {
+    return fallbackTriage("");
+  }
 
+  // 1. Check persistent AI Cache (0 TOKENS)
+  const cached = await aiCache.getAsync<GeminiTriageResponse>(cleanInput);
+  if (cached) {
+    return cached.data;
+  }
+
+  const key = apiKey || process.env.GEMINI_API_KEY;
   if (!key || key === "sua_chave_da_gemini_api") {
-    return fallbackTriage(rawInput);
+    const fallback = fallbackTriage(cleanInput);
+    aiCache.set(cleanInput, fallback, 0);
+    return fallback;
   }
 
   try {
@@ -678,49 +711,55 @@ export async function triageInputWithGemini(
 
 Analise o texto a seguir, crie um título profissional, estruture a descrição, extraia o prazo exato se mencionado (ou null se nenhum prazo foi informado), e gere etapas de validação para a finalização da demanda:
 
-"${rawInput}"`;
+"${cleanInput}"`;
 
     const ai = new GoogleGenAI({ apiKey: key });
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "gemini-2.0-flash",
       contents: promptWithContext,
       config: {
         systemInstruction: SYSTEM_PROMPT,
         responseMimeType: "application/json",
         responseSchema: RESPONSE_SCHEMA,
         temperature: 0.2,
+        maxOutputTokens: 750,
       },
     });
 
     const text = typeof response.text === "function" ? (response.text as any)() : response.text;
     if (!text) {
-      return fallbackTriage(rawInput);
+      const fallback = fallbackTriage(cleanInput);
+      aiCache.set(cleanInput, fallback, 0);
+      return fallback;
     }
 
     const parsed = JSON.parse(text) as GeminiTriageResponse;
     if (!parsed.item_type) {
-      parsed.item_type = fallbackTriage(rawInput).item_type;
+      parsed.item_type = fallbackTriage(cleanInput).item_type;
     }
     if (!parsed.category) {
-      parsed.category = fallbackTriage(rawInput).category;
+      parsed.category = fallbackTriage(cleanInput).category;
     }
     if (!parsed.validation_steps || parsed.validation_steps.length === 0) {
-      parsed.validation_steps = fallbackTriage(rawInput).validation_steps;
+      parsed.validation_steps = fallbackTriage(cleanInput).validation_steps;
     }
-    // If Gemini didn't find a deadline but regex did, use heuristic fallback
     if (!parsed.extracted_due_date_iso) {
-      parsed.extracted_due_date_iso = extractDeadlinesHeuristic(rawInput);
+      parsed.extracted_due_date_iso = extractDeadlinesHeuristic(cleanInput);
     }
 
+    aiCache.set(cleanInput, parsed, 420);
     return parsed;
   } catch (error) {
     console.warn("Gemini API call failed, using autonomous heuristic classifier:", error);
-    return fallbackTriage(rawInput);
+    const fallback = fallbackTriage(cleanInput);
+    aiCache.set(cleanInput, fallback, 0);
+    return fallback;
   }
 }
 
 /**
  * Autonomously categorizes and tags any task with AI.
+ * Uses a 3-layer hybrid architecture: Heuristic (0 tokens) -> Cache (0 tokens) -> Micro-prompt (~80 tokens).
  */
 export async function categorizeTaskWithAI(
   title: string,
@@ -734,53 +773,100 @@ export async function categorizeTaskWithAI(
   item_type: ItemType;
   learning_queries: string[];
 }> {
-  const key = apiKey || process.env.GEMINI_API_KEY;
+  const cleanTitle = (title || "").trim();
+  const cleanNotes = (notes || "").trim();
 
-  if (key && key !== "sua_chave_da_gemini_api") {
+  // 1. FAST PATH (0 TOKENS): High-Precision Domain Heuristic
+  const heuristic = classifyTaskHeuristic(cleanTitle, cleanNotes, accountTypeHint);
+  const isGeneric =
+    heuristic.category === "Operações & Geral" ||
+    heuristic.category === "Suporte & Demandas" ||
+    heuristic.category === "Vida Pessoal";
+
+  // If heuristic recognized a specific domain (TOTVS, RH, Financeiro, Biblioteca, Secretaria, etc.),
+  // return immediately with ZERO token cost!
+  if (!isGeneric && heuristic.tags.length > 0) {
+    return {
+      category: heuristic.category,
+      tags: heuristic.tags,
+      priority: heuristic.priority,
+      item_type: heuristic.item_type,
+      learning_queries: heuristic.learning_queries,
+    };
+  }
+
+  // 2. CACHE PATH (0 TOKENS): Check Persistent AI Cache
+  const cacheKey = `cat:${cleanTitle}:${cleanNotes.slice(0, 40)}:${accountTypeHint || ""}`;
+  const cached = await aiCache.getAsync<any>(cacheKey);
+  if (cached) {
+    return cached.data;
+  }
+
+  // 3. SHORT OR TRIVIAL TITLES (0 TOKENS): Skip LLM calls
+  if (cleanTitle.length <= 4 || /^(ok|teste|tarefa|item|\d+)$/i.test(cleanTitle)) {
+    const trivialResult = {
+      category: heuristic.category,
+      tags: heuristic.tags.length > 0 ? heuristic.tags : ["Geral"],
+      priority: heuristic.priority,
+      item_type: heuristic.item_type,
+      learning_queries: heuristic.learning_queries,
+    };
+    aiCache.set(cacheKey, trivialResult, 0);
+    return trivialResult;
+  }
+
+  // 4. MICRO-PROMPT LLM PATH (~80 TOKENS vs ~1500 tokens):
+  const key = apiKey || process.env.GEMINI_API_KEY;
+  if (key && key !== "sua_chave_da_gemini_api" && key.length > 10) {
     try {
       const ai = new GoogleGenAI({ apiKey: key });
-      const prompt = `Analise este título e notas de tarefa e gere a melhor categoria profissional dinâmica e tags:
-Título: ${title}
-Notas: ${notes}
-Contexto: ${accountTypeHint || "work"}`;
+      const prompt = `Título: ${cleanTitle}\nNotas: ${cleanNotes.slice(0, 100)}\nContexto: ${accountTypeHint || "work"}`;
 
       const response = await ai.models.generateContent({
-        model: "gemini-3.8-flash",
+        model: "gemini-2.0-flash",
         contents: prompt,
         config: {
-          systemInstruction: SYSTEM_PROMPT,
+          systemInstruction: MICRO_CATEGORIZATION_PROMPT,
           responseMimeType: "application/json",
-          responseSchema: RESPONSE_SCHEMA,
-          temperature: 0.2,
+          responseSchema: MICRO_CATEGORIZATION_SCHEMA,
+          temperature: 0.1,
+          maxOutputTokens: 90,
         },
       });
 
       const text = typeof response.text === "function" ? (response.text as any)() : response.text;
       if (text) {
-        const parsed = JSON.parse(text) as GeminiTriageResponse;
-        if (parsed.category && parsed.search_tags?.length > 0) {
-          return {
+        const parsed = JSON.parse(text);
+        if (parsed.category) {
+          const result = {
             category: parsed.category,
-            tags: parsed.search_tags,
-            priority: parsed.priority || "P3",
-            item_type: parsed.item_type || "task",
-            learning_queries: parsed.learning_queries || [],
+            tags: Array.isArray(parsed.tags) && parsed.tags.length > 0 ? parsed.tags : heuristic.tags,
+            priority: (parsed.priority as Priority) || heuristic.priority,
+            item_type: (parsed.item_type as ItemType) || heuristic.item_type,
+            learning_queries: [
+              `${parsed.category} tutorial`,
+              `Como organizar ${cleanTitle.slice(0, 30)}`,
+            ],
           };
+          aiCache.set(cacheKey, result, 75);
+          return result;
         }
       }
     } catch {
-      // Use high-precision heuristic fallback
+      // Fallback seamlessly to heuristic
     }
   }
 
-  const h = classifyTaskHeuristic(title, notes, accountTypeHint);
-  return {
-    category: h.category,
-    tags: h.tags,
-    priority: h.priority,
-    item_type: h.item_type,
-    learning_queries: h.learning_queries,
+  // 5. Fallback Heuristic
+  const fallbackResult = {
+    category: heuristic.category,
+    tags: heuristic.tags.length > 0 ? heuristic.tags : ["Geral"],
+    priority: heuristic.priority,
+    item_type: heuristic.item_type,
+    learning_queries: heuristic.learning_queries,
   };
+  aiCache.set(cacheKey, fallbackResult, 0);
+  return fallbackResult;
 }
 
 export async function generateExecutiveSummary(

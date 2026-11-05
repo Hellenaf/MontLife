@@ -14,9 +14,23 @@ export async function POST(req: NextRequest) {
     let updatedCount = 0;
     let tokensSaved = 0;
 
-    for (const task of tasks) {
+    // Filter to ONLY process tasks that genuinely need categorization (generic or missing tags)
+    // Skips already established categories to prevent redundant token burning
+    const tasksToProcess = tasks.filter((t) => {
+      const isGeneric =
+        !t.category ||
+        t.category === "Geral" ||
+        t.category === "Operações & Geral" ||
+        t.category === "Suporte & Demandas" ||
+        !t.tags ||
+        t.tags.length === 0 ||
+        (t.tags.length === 1 && t.tags[0].includes("google-task"));
+      return isGeneric;
+    });
+
+    for (const task of tasksToProcess) {
       const cacheKey = `cat:${task.title}:${task.description || ""}:${task.account_type}`;
-      const cached = aiCache.get<any>(cacheKey);
+      const cached = await aiCache.getAsync<any>(cacheKey);
 
       let aiData;
       if (cached) {
@@ -28,7 +42,7 @@ export async function POST(req: NextRequest) {
           task.description,
           task.account_type
         );
-        aiCache.set(cacheKey, aiData, 300);
+        aiCache.set(cacheKey, aiData, 75);
       }
 
       let hasChanges = false;
@@ -66,14 +80,15 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: `${updatedCount} tarefas re-categorizadas com sucesso pela IA.`,
       updated_count: updatedCount,
-      tokens_saved: tokensSaved,
+      evaluated_count: tasksToProcess.length,
+      tokens_saved_estimate: tokensSaved,
+      message: `${updatedCount} tarefas refinadas com sucesso.`,
     });
   } catch (error: unknown) {
     console.error("POST /api/tasks/ai-categorize error:", error);
     return NextResponse.json(
-      { success: false, error: "Erro ao processar categorização por IA" },
+      { success: false, error: "Falha ao categorizar tarefas com IA" },
       { status: 500 }
     );
   }
