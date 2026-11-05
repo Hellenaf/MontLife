@@ -326,103 +326,104 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
 
   const db = getFirestoreDb();
   let migratedCount = 0;
-  let totalCount = 0;
+  const taskMap = new Map<string, Task>();
 
   if (db) {
     try {
-      // 2. Identify candidate IDs
-      const candidateUserIds = new Set<string>([
-        masterId,
-        "usr_haferreira_notredamecampinas_net_br",
-        "usr_hellenalvesferreira_s2_gmail_com",
-        "usr_hellenaf6667_gmail_com",
-        "haferreira@notredamecampinas.net.br",
-        "hellenalvesferreira.s2@gmail.com",
-        "hellenaf6667@gmail.com",
-        "guest_workspace",
-        "primary",
-        "primary_workspace",
-        "guest",
-      ]);
-
-      if (userId) candidateUserIds.add(userId);
-
-      // Check users collection in Firestore
-      try {
-        const usersSnap = await db.collection("users").get();
-        for (const doc of usersSnap.docs) {
-          const u = doc.data() as MasterUserProfile;
-          if (
-            isHellenEmail(u.primary_email) ||
-            (u.linked_emails && u.linked_emails.some((e) => isHellenEmail(e))) ||
-            doc.id.toLowerCase().includes("haferreira") ||
-            doc.id.toLowerCase().includes("hellen")
-          ) {
-            candidateUserIds.add(doc.id);
-          }
-        }
-      } catch (err) {
-        console.warn("Could not query users collection for candidate IDs:", err);
-      }
-
-      // 3. Scan all tasks and migrate matching ones to masterId
-      const tasksSnap = await db.collection("tasks").get();
       const batchPromises: Promise<any>[] = [];
 
+      // 2. Fetch ALL root tasks from 'tasks' collection without ANY filtering
+      const tasksSnap = await db.collection("tasks").get();
+
       for (const doc of tasksSnap.docs) {
-        const task = doc.data() as Task;
-        if (task.id.startsWith("seed-task-")) {
-          batchPromises.push(doc.ref.delete().catch(() => {}));
-          continue;
+        const data = doc.data() as Task;
+        const taskId = data.id || doc.id;
+
+        const targetAccountType =
+          data.account_type ||
+          ((data.title && data.title.toLowerCase().includes("totvs")) ||
+           (data.title && data.title.toLowerCase().includes("notre")) ||
+           (data.title && data.title.toLowerCase().includes("rm"))
+            ? "Trabalho (Notre Dame)"
+            : "Pessoal");
+
+        const consolidatedTask: Task = {
+          ...data,
+          id: taskId,
+          user_id: masterId,
+          account_type: targetAccountType,
+        };
+
+        taskMap.set(taskId, consolidatedTask);
+
+        if (data.user_id !== masterId) {
+          migratedCount++;
+          batchPromises.push(
+            doc.ref.update({
+              user_id: masterId,
+              account_type: targetAccountType,
+            }).catch(() => {})
+          );
         }
+      }
 
-        const rawUserId = task.user_id || "";
-        const matchesUser =
-          !rawUserId ||
-          candidateUserIds.has(rawUserId) ||
-          rawUserId.toLowerCase().includes("haferreira") ||
-          rawUserId.toLowerCase().includes("notredame") ||
-          rawUserId.toLowerCase().includes("hellen");
-
-        const content = `${task.title || ""} ${task.raw_input || ""} ${task.description || ""} ${(task.tags || []).join(" ")}`.toLowerCase();
-        const hasNotreDameKeyword =
-          content.includes("totvs") ||
-          content.includes("sonia") ||
-          content.includes("sônia") ||
-          content.includes("notre") ||
-          content.includes("notredame") ||
-          content.includes("campinas") ||
-          content.includes("rm") ||
-          content.includes("classapp") ||
-          content.includes("pergamum") ||
-          content.includes("aluno") ||
-          content.includes("rematricula") ||
-          content.includes("matrícula") ||
-          content.includes("secretaria");
-
-        if (matchesUser || hasNotreDameKeyword) {
-          totalCount++;
-          const targetAccountType =
-            task.account_type ||
-            (hasNotreDameKeyword || rawUserId.includes("haferreira") || rawUserId.includes("notredame")
-              ? "Trabalho (Notre Dame)"
-              : "Pessoal");
-
-          if (task.user_id !== masterId || task.account_type !== targetAccountType) {
+      // 3. Check collectionGroup('tasks') for any tasks in subcollections
+      try {
+        const groupSnap = await db.collectionGroup("tasks").get();
+        for (const doc of groupSnap.docs) {
+          const data = doc.data() as Task;
+          const taskId = data.id || doc.id;
+          if (!taskMap.has(taskId)) {
+            const consolidatedTask: Task = {
+              ...data,
+              id: taskId,
+              user_id: masterId,
+              account_type: data.account_type || "Trabalho (Notre Dame)",
+            };
+            taskMap.set(taskId, consolidatedTask);
             migratedCount++;
             batchPromises.push(
-              doc.ref.update({
-                user_id: masterId,
-                account_type: targetAccountType,
-              }).catch(() => {})
+              db.collection("tasks").doc(taskId).set(consolidatedTask, { merge: true }).catch(() => {})
             );
           }
         }
+      } catch (gErr) {
+        console.warn("CollectionGroup scan in consolidate failed:", gErr);
+      }
+
+      // 4. Scan any alternate collections (tarefas, demands, chamados, items)
+      try {
+        const rootCols = await db.listCollections();
+        for (const col of rootCols) {
+          const cId = col.id.toLowerCase();
+          if (["tarefas", "demands", "chamados", "items", "atividades"].includes(cId)) {
+            const snap = await col.get();
+            for (const doc of snap.docs) {
+              const data = doc.data() as Task;
+              const taskId = data.id || doc.id;
+              if (!taskMap.has(taskId)) {
+                const consolidatedTask: Task = {
+                  ...data,
+                  id: taskId,
+                  user_id: masterId,
+                  account_type: data.account_type || "Trabalho (Notre Dame)",
+                };
+                taskMap.set(taskId, consolidatedTask);
+                migratedCount++;
+                batchPromises.push(
+                  db.collection("tasks").doc(taskId).set(consolidatedTask, { merge: true }).catch(() => {})
+                );
+              }
+            }
+          }
+        }
+      } catch (colErr) {
+        console.warn("listCollections scan in consolidate failed:", colErr);
       }
 
       await Promise.all(batchPromises);
 
-      // 4. Ensure connected accounts exist under users/{masterId}/accounts
+      // 5. Ensure connected accounts exist under users/{masterId}/accounts
       const accountsRef = db.collection("users").doc(masterId).collection("accounts");
       const defaultAccounts: ConnectedAccount[] = [
         {
@@ -460,7 +461,7 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
     success: true,
     master_id: masterId,
     migrated_tasks_count: migratedCount,
-    total_tasks_count: totalCount,
+    total_tasks_count: taskMap.size,
     accounts,
   };
 }
@@ -470,7 +471,7 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
 // ==========================================
 
 export async function getTasksFromDb(userId?: string): Promise<Task[]> {
-  const isHellen = isHellenUser(userId);
+  const isHellen = !userId || isHellenUser(userId);
   const targetMasterId = isHellen ? HELLEN_MASTER_ID : (userId || "primary_workspace");
 
   const db = getFirestoreDb();
@@ -487,170 +488,139 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
   try {
     const taskMap = new Map<string, Task>();
 
-    if (userId) {
-      // 1. Fetch user's direct tasks
-      const directIds = isHellen ? [userId, HELLEN_MASTER_ID] : [userId];
-      for (const queryId of Array.from(new Set(directIds))) {
-        const userSnap = await db
-          .collection("tasks")
-          .where("user_id", "==", queryId)
-          .get();
+    if (isHellen) {
+      // 1. ALL documents from tasks collection - complete uninhibited ingestion
+      const allTasksSnap = await db.collection("tasks").get();
+      const tasksToMigrate: Task[] = [];
 
-        for (const doc of userSnap.docs) {
-          const data = doc.data() as Task;
-          if (!data.id.startsWith("seed-task-")) {
-            taskMap.set(data.id, isHellen ? { ...data, user_id: HELLEN_MASTER_ID } : data);
-          }
+      for (const doc of allTasksSnap.docs) {
+        const data = doc.data() as Task;
+        const taskId = data.id || doc.id;
+
+        const targetAccountType =
+          data.account_type ||
+          ((data.title && data.title.toLowerCase().includes("totvs")) ||
+           (data.title && data.title.toLowerCase().includes("notre")) ||
+           (data.title && data.title.toLowerCase().includes("rm"))
+            ? "Trabalho (Notre Dame)"
+            : "Pessoal");
+
+        const consolidatedTask: Task = {
+          ...data,
+          id: taskId,
+          user_id: HELLEN_MASTER_ID,
+          account_type: targetAccountType,
+        };
+
+        taskMap.set(taskId, consolidatedTask);
+
+        if (data.user_id !== HELLEN_MASTER_ID) {
+          tasksToMigrate.push(consolidatedTask);
         }
       }
 
-      // 2. Consolidation for Hellen (Centralize Notre Dame & Pessoal demands)
-      if (isHellen) {
-        const hellenCandidateIds = new Set<string>([
-          userId,
-          HELLEN_MASTER_ID,
-          "usr_haferreira_notredamecampinas_net_br",
-          "usr_hellenalvesferreira_s2_gmail_com",
-          "usr_hellenaf6667_gmail_com",
-          "haferreira@notredamecampinas.net.br",
-          "hellenalvesferreira.s2@gmail.com",
-          "hellenaf6667@gmail.com",
-          "guest_workspace",
-          "primary",
-          "primary_workspace",
-          "guest",
-        ]);
+      // 2. CollectionGroup for any subcollection tasks
+      try {
+        const groupSnap = await db.collectionGroup("tasks").get();
+        for (const doc of groupSnap.docs) {
+          const data = doc.data() as Task;
+          const taskId = data.id || doc.id;
+          if (!taskMap.has(taskId)) {
+            const consolidatedTask: Task = {
+              ...data,
+              id: taskId,
+              user_id: HELLEN_MASTER_ID,
+              account_type: data.account_type || "Trabalho (Notre Dame)",
+            };
+            taskMap.set(taskId, consolidatedTask);
+            tasksToMigrate.push(consolidatedTask);
+          }
+        }
+      } catch (gErr) {
+        console.warn("CollectionGroup read in getTasksFromDb failed:", gErr);
+      }
 
-        const tasksToMigrate: Task[] = [];
-
-        try {
-          const allTasksSnap = await db.collection("tasks").get();
-          for (const doc of allTasksSnap.docs) {
-            const data = doc.data() as Task;
-            if (data.id.startsWith("seed-task-")) {
-              doc.ref.delete().catch(() => {});
-              continue;
-            }
-
-            const rawUserId = data.user_id || "";
-            const isAssignedToHellenCandidate =
-              !rawUserId ||
-              hellenCandidateIds.has(rawUserId) ||
-              rawUserId.toLowerCase().includes("haferreira") ||
-              rawUserId.toLowerCase().includes("notredame") ||
-              rawUserId.toLowerCase().includes("hellen");
-
-            const content = `${data.title || ""} ${data.raw_input || ""} ${data.description || ""} ${(data.tags || []).join(" ")}`.toLowerCase();
-            const hasNotreDameKeyword =
-              content.includes("totvs") ||
-              content.includes("sonia") ||
-              content.includes("sônia") ||
-              content.includes("notre") ||
-              content.includes("notredame") ||
-              content.includes("campinas") ||
-              content.includes("rm") ||
-              content.includes("classapp") ||
-              content.includes("pergamum") ||
-              content.includes("aluno") ||
-              content.includes("rematricula") ||
-              content.includes("matrícula") ||
-              content.includes("secretaria");
-
-            if (isAssignedToHellenCandidate || hasNotreDameKeyword) {
-              const targetAccountType =
-                data.account_type ||
-                (hasNotreDameKeyword || rawUserId.includes("haferreira") || rawUserId.includes("notredame")
-                  ? "Trabalho (Notre Dame)"
-                  : "Pessoal");
-
-              const consolidatedTask: Task = {
-                ...data,
-                user_id: HELLEN_MASTER_ID,
-                account_type: targetAccountType,
-              };
-
-              taskMap.set(data.id, consolidatedTask);
-
-              if (data.user_id !== HELLEN_MASTER_ID || data.account_type !== targetAccountType) {
+      // 3. Scan other collections if any
+      try {
+        const rootCols = await db.listCollections();
+        for (const col of rootCols) {
+          const cId = col.id.toLowerCase();
+          if (["tarefas", "demands", "chamados", "items", "atividades"].includes(cId)) {
+            const snap = await col.get();
+            for (const doc of snap.docs) {
+              const data = doc.data() as Task;
+              const taskId = data.id || doc.id;
+              if (!taskMap.has(taskId)) {
+                const consolidatedTask: Task = {
+                  ...data,
+                  id: taskId,
+                  user_id: HELLEN_MASTER_ID,
+                  account_type: data.account_type || "Trabalho (Notre Dame)",
+                };
+                taskMap.set(taskId, consolidatedTask);
                 tasksToMigrate.push(consolidatedTask);
               }
             }
           }
-
-          if (tasksToMigrate.length > 0) {
-            Promise.all(
-              tasksToMigrate.map((t) =>
-                db.collection("tasks").doc(t.id).update({
-                  user_id: HELLEN_MASTER_ID,
-                  account_type: t.account_type,
-                }).catch(() => {})
-              )
-            ).catch(() => {});
-          }
-        } catch (scanErr) {
-          console.warn("Full tasks scan for Hellen consolidation failed:", scanErr);
         }
-      } else {
-        // Multi-user support for other users: adopt linked emails and orphan tasks
-        try {
-          const userProfile = await getMasterUserProfile(userId);
-          const candidateIds = new Set<string>([userId]);
-          if (userProfile?.linked_emails) {
-            for (const email of userProfile.linked_emails) {
-              candidateIds.add(`usr_${email.replace(/[^a-z0-9_-]/g, "_")}`);
-            }
-          }
+      } catch (colErr) {
+        console.warn("listCollections scan in getTasksFromDb failed:", colErr);
+      }
 
-          const legacySnap = await db
-            .collection("tasks")
-            .orderBy("created_at", "desc")
-            .limit(100)
-            .get();
-
-          const tasksToMigrate: Task[] = [];
-          for (const doc of legacySnap.docs) {
-            const data = doc.data() as Task;
-            if (data.id.startsWith("seed-task-")) {
-              doc.ref.delete().catch(() => {});
-              continue;
-            }
-
-            const isCandidate = data.user_id && candidateIds.has(data.user_id);
-            const isOrphaned =
-              !data.user_id ||
-              data.user_id === "guest_workspace" ||
-              data.user_id === "guest" ||
-              data.user_id === "primary" ||
-              data.user_id === "primary_workspace";
-
-            if (isCandidate || isOrphaned) {
-              const adoptedTask = { ...data, user_id: userId };
-              taskMap.set(data.id, adoptedTask);
-              if (data.user_id !== userId) {
-                tasksToMigrate.push(adoptedTask);
-              }
-            }
-          }
-
-          if (tasksToMigrate.length > 0) {
-            Promise.all(
-              tasksToMigrate.map((t) =>
-                db.collection("tasks").doc(t.id).update({ user_id: userId }).catch(() => {})
-              )
-            ).catch(() => {});
-          }
-        } catch (legacyErr) {
-          console.warn("Legacy task migration check failed:", legacyErr);
-        }
+      // Asynchronously update all tasks in Firestore to permanently belong to HELLEN_MASTER_ID
+      if (tasksToMigrate.length > 0) {
+        Promise.all(
+          tasksToMigrate.map((t) =>
+            db.collection("tasks").doc(t.id).set(t, { merge: true }).catch(() => {})
+          )
+        ).catch(() => {});
       }
     } else {
-      // If no userId, return all valid production tasks
-      const snapshot = await db.collection("tasks").orderBy("created_at", "desc").get();
-      for (const doc of snapshot.docs) {
-        const data = doc.data() as Task;
-        if (!data.id.startsWith("seed-task-")) {
-          taskMap.set(data.id, data);
+      // General multi-user lookup for other users
+      try {
+        const userProfile = await getMasterUserProfile(userId);
+        const candidateIds = new Set<string>([userId]);
+        if (userProfile?.linked_emails) {
+          for (const email of userProfile.linked_emails) {
+            candidateIds.add(`usr_${email.replace(/[^a-z0-9_-]/g, "_")}`);
+          }
         }
+
+        const legacySnap = await db
+          .collection("tasks")
+          .orderBy("created_at", "desc")
+          .limit(200)
+          .get();
+
+        const tasksToMigrate: Task[] = [];
+        for (const doc of legacySnap.docs) {
+          const data = doc.data() as Task;
+          const isCandidate = data.user_id && candidateIds.has(data.user_id);
+          const isOrphaned =
+            !data.user_id ||
+            data.user_id === "guest_workspace" ||
+            data.user_id === "guest" ||
+            data.user_id === "primary" ||
+            data.user_id === "primary_workspace";
+
+          if (isCandidate || isOrphaned) {
+            const adoptedTask = { ...data, user_id: userId };
+            taskMap.set(data.id, adoptedTask);
+            if (data.user_id !== userId) {
+              tasksToMigrate.push(adoptedTask);
+            }
+          }
+        }
+
+        if (tasksToMigrate.length > 0) {
+          Promise.all(
+            tasksToMigrate.map((t) =>
+              db.collection("tasks").doc(t.id).update({ user_id: userId }).catch(() => {})
+            )
+          ).catch(() => {});
+        }
+      } catch (legacyErr) {
+        console.warn("Legacy task migration check failed:", legacyErr);
       }
     }
 
