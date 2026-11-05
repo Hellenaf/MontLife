@@ -40,7 +40,6 @@ import {
   Ban,
   RotateCcw,
   Globe,
-  Mail,
   ArrowRightLeft,
 } from "lucide-react";
 import { AttachmentManager } from "@/components/AttachmentManager";
@@ -683,16 +682,12 @@ export function CentralQuadrant({
                           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20">
                             <Briefcase className="w-3.5 h-3.5" /> Trabalho
                           </span>
-                          <span className="flex items-center gap-1 text-[11px] font-mono text-blue-700 dark:text-blue-300 bg-blue-50/60 dark:bg-blue-950/40 px-2 py-0.5 rounded-md border border-blue-200/60 dark:border-blue-800/50">
-                            <Mail className="w-3 h-3 text-blue-500" />
-                            haferreira@notredamecampinas.net.br
-                          </span>
                           {onTransferTask && (
                             <button
                               type="button"
                               onClick={() => onTransferTask(selectedTask, "personal")}
                               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:hover:bg-purple-900/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 transition-all cursor-pointer shadow-xs ml-0.5"
-                              title="Transferir esta demanda para a conta Pessoal (hellenalvesferreira.s2@gmail.com)"
+                              title="Transferir esta demanda para a conta Pessoal"
                             >
                               <ArrowRightLeft className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                               <span>Transferir p/ Pessoal</span>
@@ -704,16 +699,12 @@ export function CentralQuadrant({
                           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20">
                             <User className="w-3.5 h-3.5" /> Pessoal
                           </span>
-                          <span className="flex items-center gap-1 text-[11px] font-mono text-purple-700 dark:text-purple-300 bg-purple-50/60 dark:bg-purple-950/40 px-2 py-0.5 rounded-md border border-purple-200/60 dark:border-purple-800/50">
-                            <Mail className="w-3 h-3 text-purple-500" />
-                            hellenalvesferreira.s2@gmail.com
-                          </span>
                           {onTransferTask && (
                             <button
                               type="button"
                               onClick={() => onTransferTask(selectedTask, "work")}
                               className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-all cursor-pointer shadow-xs ml-0.5"
-                              title="Transferir esta demanda para a conta de Trabalho (haferreira@notredamecampinas.net.br)"
+                              title="Transferir esta demanda para a conta de Trabalho"
                             >
                               <ArrowRightLeft className="w-3 h-3 text-blue-600 dark:text-blue-400" />
                               <span>Transferir p/ Trabalho</span>

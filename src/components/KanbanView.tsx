@@ -794,22 +794,6 @@ export function KanbanView({
             </div>
           );
         })}
-
-        {/* Ghost Card to Add New Column directly at the end */}
-        <div
-          onClick={() => setIsAddModalOpen(true)}
-          className="flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-slate-300 dark:border-zinc-800 hover:border-indigo-500 dark:hover:border-indigo-500/80 bg-slate-50/50 hover:bg-indigo-50/40 dark:bg-zinc-950/20 dark:hover:bg-indigo-950/20 w-[240px] shrink-0 p-6 text-center cursor-pointer transition-all group shadow-xs"
-        >
-          <div className="w-10 h-10 rounded-full bg-slate-100 dark:bg-zinc-800 group-hover:bg-indigo-600 group-hover:text-white text-slate-400 dark:text-zinc-500 flex items-center justify-center mb-2.5 transition-colors shadow-xs">
-            <Plus className="w-5 h-5" />
-          </div>
-          <span className="text-xs font-bold text-slate-700 dark:text-zinc-300 group-hover:text-indigo-600 dark:group-hover:text-indigo-400">
-            Adicionar Seção
-          </span>
-          <p className="text-[10px] text-slate-400 dark:text-zinc-500 mt-1 max-w-[180px]">
-            Crie uma nova coluna personalizada para seu fluxo
-          </p>
-        </div>
       </div>
 
       {/* Modal: Adicionar Nova Seção */}
