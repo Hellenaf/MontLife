@@ -40,6 +40,7 @@ import {
   Ban,
   RotateCcw,
   Globe,
+  Mail,
 } from "lucide-react";
 import { AttachmentManager } from "@/components/AttachmentManager";
 import {
@@ -310,8 +311,20 @@ export function CentralQuadrant({
   // Filter tasks for calendar based on calendar source
   const calendarTasks = allTasks.filter((t) => {
     if (calendarSourceFilter === "all") return true;
-    if (calendarSourceFilter === "work") return t.account_type === "work";
-    if (calendarSourceFilter === "personal") return t.account_type === "personal";
+    if (calendarSourceFilter === "work") {
+      return (
+        t.account_type === "work" ||
+        t.account_type?.toLowerCase().includes("trab") ||
+        Boolean(t.account_email?.toLowerCase().includes("notredame"))
+      );
+    }
+    if (calendarSourceFilter === "personal") {
+      return (
+        t.account_type === "personal" ||
+        t.account_type?.toLowerCase().includes("pess") ||
+        Boolean(t.account_email?.toLowerCase().includes("hellen"))
+      );
+    }
     if (calendarSourceFilter === "agenda") return t.item_type === "activity" || t.tags?.includes("google-agenda");
     if (calendarSourceFilter === "reminder") return t.item_type === "reminder";
     return true;
@@ -550,12 +563,16 @@ export function CentralQuadrant({
         icon: <Bell className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />,
       };
     }
-    if (task.account_type === "work" || task.account_type?.toLowerCase().includes("trab")) {
+    if (
+      task.account_type === "work" ||
+      task.account_type?.toLowerCase().includes("trab") ||
+      Boolean(task.account_email?.toLowerCase().includes("notredame"))
+    ) {
       return {
         accent: "#1a73e8", // Blue
         pillBg: "bg-[#1a73e8] text-white hover:bg-[#1557b0]",
         cardBg: "bg-blue-50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 border-l-4 border-l-[#1a73e8] border-slate-200 dark:border-zinc-800",
-        sourceName: task.account_type || "Trabalho (Notre Dame)",
+        sourceName: "Trabalho (Notre Dame)",
         badgeBg: "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200",
         icon: <Briefcase className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />,
       };
@@ -564,7 +581,7 @@ export function CentralQuadrant({
       accent: "#8e24aa", // Grape Purple
       pillBg: "bg-[#8e24aa] text-white hover:bg-[#7b1fa2]",
       cardBg: "bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-100 border-l-4 border-l-[#8e24aa] border-slate-200 dark:border-zinc-800",
-      sourceName: task.account_type || "Pessoal",
+      sourceName: "Pessoal",
       badgeBg: "bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200",
       icon: <User className="w-3 h-3 text-purple-600 dark:text-purple-400 shrink-0" />,
     };
@@ -641,14 +658,32 @@ export function CentralQuadrant({
                   {/* Top Bar with Context + Category Editor + Type Switcher */}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      {selectedTask.account_type === "work" ? (
-                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20">
-                          <Briefcase className="w-3.5 h-3.5" /> Trabalho
-                        </span>
+                      {selectedTask.account_type === "work" ||
+                      selectedTask.account_type?.toLowerCase().includes("trab") ||
+                      Boolean(selectedTask.account_email?.toLowerCase().includes("notredame")) ? (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20">
+                            <Briefcase className="w-3.5 h-3.5" /> Trabalho
+                          </span>
+                          {selectedTask.account_email && (
+                            <span className="flex items-center gap-1 text-[11px] font-mono text-blue-700 dark:text-blue-300 bg-blue-50/60 dark:bg-blue-950/40 px-2 py-0.5 rounded-md border border-blue-200/60 dark:border-blue-800/50">
+                              <Mail className="w-3 h-3 text-blue-500" />
+                              {selectedTask.account_email}
+                            </span>
+                          )}
+                        </div>
                       ) : (
-                        <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20">
-                          <User className="w-3.5 h-3.5" /> Pessoal
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20">
+                            <User className="w-3.5 h-3.5" /> Pessoal
+                          </span>
+                          {selectedTask.account_email && (
+                            <span className="flex items-center gap-1 text-[11px] font-mono text-purple-700 dark:text-purple-300 bg-purple-50/60 dark:bg-purple-950/40 px-2 py-0.5 rounded-md border border-purple-200/60 dark:border-purple-800/50">
+                              <Mail className="w-3 h-3 text-purple-500" />
+                              {selectedTask.account_email}
+                            </span>
+                          )}
+                        </div>
                       )}
 
                       {/* Interactive Editable Category (Single Unified Combobox) */}

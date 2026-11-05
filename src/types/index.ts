@@ -75,7 +75,8 @@ export interface AlternativeResolution {
 }
 
 export interface MasterUserProfile {
-  id: string; // Master unique user ID, e.g. usr_104829...
+  id: string; // Master unique user ID (master_uid), e.g. usr_104829...
+  master_uid?: string; // Explicit alias for master unique user ID
   primary_email: string;
   name: string;
   picture?: string;
@@ -97,7 +98,10 @@ export interface UserProfile {
 
 export interface Task {
   id: string;
-  user_id?: string;
+  owner_uid?: string; // Master UID (primary ownership & isolation key)
+  user_id?: string; // Compatibility alias (mirrors owner_uid)
+  account_email?: string; // Specific context email (e.g. work or personal)
+  account_id?: string; // Linked account ID
   raw_input: string;
   title: string;
   description: string;

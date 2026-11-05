@@ -255,10 +255,16 @@ export function NewTaskModal({
 
       let finalDueDateIso = dueDate ? new Date(dueDate).toISOString() : calculateSlaDueDate(priority);
 
+      const resolvedAccountEmail =
+        accountType === "work"
+          ? "haferreira@notredamecampinas.net.br"
+          : "hellenalvesferreira.s2@gmail.com";
+
       const payload = {
         title: title.trim(),
         description: description.trim(),
         account_type: accountType,
+        account_email: resolvedAccountEmail,
         item_type: itemType,
         category,
         priority,

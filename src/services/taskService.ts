@@ -40,6 +40,36 @@ export function isHellenUser(userId?: string | null, email?: string | null): boo
   );
 }
 
+/**
+ * Resolves context email for a task based on explicit parameter, account_type, or defaults.
+ */
+export function resolveTaskAccountEmail(
+  accountType?: string,
+  explicitEmail?: string,
+  isHellenMatch: boolean = true
+): string {
+  if (explicitEmail && explicitEmail.includes("@")) {
+    return explicitEmail.toLowerCase().trim();
+  }
+  const at = (accountType || "").toLowerCase();
+  if (
+    at.includes("notre") ||
+    at.includes("trab") ||
+    at.includes("work") ||
+    at.includes("escola") ||
+    at.includes("ti")
+  ) {
+    return "haferreira@notredamecampinas.net.br";
+  }
+  if (at.includes("pess") || at.includes("pers") || at.includes("vida")) {
+    return HELLEN_PRIMARY_EMAIL;
+  }
+  if (isHellenMatch) {
+    return "haferreira@notredamecampinas.net.br";
+  }
+  return "";
+}
+
 const DEFAULT_ACCOUNTS: ConnectedAccount[] = [
   {
     id: "acc_haferreira_notredamecampinas_net_br",
@@ -347,20 +377,28 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
             ? "Trabalho (Notre Dame)"
             : "Pessoal");
 
+        const targetAccountEmail =
+          data.account_email ||
+          resolveTaskAccountEmail(targetAccountType, undefined, true);
+
         const consolidatedTask: Task = {
           ...data,
           id: taskId,
+          owner_uid: masterId,
           user_id: masterId,
+          account_email: targetAccountEmail,
           account_type: targetAccountType,
         };
 
         taskMap.set(taskId, consolidatedTask);
 
-        if (data.user_id !== masterId) {
+        if (data.user_id !== masterId || data.owner_uid !== masterId || !data.account_email) {
           migratedCount++;
           batchPromises.push(
             doc.ref.update({
+              owner_uid: masterId,
               user_id: masterId,
+              account_email: targetAccountEmail,
               account_type: targetAccountType,
             }).catch(() => {})
           );
@@ -374,11 +412,15 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
           const data = doc.data() as Task;
           const taskId = data.id || doc.id;
           if (!taskMap.has(taskId)) {
+            const accType = data.account_type || "Trabalho (Notre Dame)";
+            const accEmail = data.account_email || resolveTaskAccountEmail(accType, undefined, true);
             const consolidatedTask: Task = {
               ...data,
               id: taskId,
+              owner_uid: masterId,
               user_id: masterId,
-              account_type: data.account_type || "Trabalho (Notre Dame)",
+              account_email: accEmail,
+              account_type: accType,
             };
             taskMap.set(taskId, consolidatedTask);
             migratedCount++;
@@ -402,11 +444,15 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
               const data = doc.data() as Task;
               const taskId = data.id || doc.id;
               if (!taskMap.has(taskId)) {
+                const accType = data.account_type || "Trabalho (Notre Dame)";
+                const accEmail = data.account_email || resolveTaskAccountEmail(accType, undefined, true);
                 const consolidatedTask: Task = {
                   ...data,
                   id: taskId,
+                  owner_uid: masterId,
                   user_id: masterId,
-                  account_type: data.account_type || "Trabalho (Notre Dame)",
+                  account_email: accEmail,
+                  account_type: accType,
                 };
                 taskMap.set(taskId, consolidatedTask);
                 migratedCount++;
@@ -505,16 +551,22 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
             ? "Trabalho (Notre Dame)"
             : "Pessoal");
 
+        const targetAccountEmail =
+          data.account_email ||
+          resolveTaskAccountEmail(targetAccountType, undefined, true);
+
         const consolidatedTask: Task = {
           ...data,
           id: taskId,
+          owner_uid: HELLEN_MASTER_ID,
           user_id: HELLEN_MASTER_ID,
+          account_email: targetAccountEmail,
           account_type: targetAccountType,
         };
 
         taskMap.set(taskId, consolidatedTask);
 
-        if (data.user_id !== HELLEN_MASTER_ID) {
+        if (data.user_id !== HELLEN_MASTER_ID || data.owner_uid !== HELLEN_MASTER_ID || !data.account_email) {
           tasksToMigrate.push(consolidatedTask);
         }
       }
@@ -526,11 +578,15 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
           const data = doc.data() as Task;
           const taskId = data.id || doc.id;
           if (!taskMap.has(taskId)) {
+            const accType = data.account_type || "Trabalho (Notre Dame)";
+            const accEmail = data.account_email || resolveTaskAccountEmail(accType, undefined, true);
             const consolidatedTask: Task = {
               ...data,
               id: taskId,
+              owner_uid: HELLEN_MASTER_ID,
               user_id: HELLEN_MASTER_ID,
-              account_type: data.account_type || "Trabalho (Notre Dame)",
+              account_email: accEmail,
+              account_type: accType,
             };
             taskMap.set(taskId, consolidatedTask);
             tasksToMigrate.push(consolidatedTask);
@@ -551,11 +607,15 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
               const data = doc.data() as Task;
               const taskId = data.id || doc.id;
               if (!taskMap.has(taskId)) {
+                const accType = data.account_type || "Trabalho (Notre Dame)";
+                const accEmail = data.account_email || resolveTaskAccountEmail(accType, undefined, true);
                 const consolidatedTask: Task = {
                   ...data,
                   id: taskId,
+                  owner_uid: HELLEN_MASTER_ID,
                   user_id: HELLEN_MASTER_ID,
-                  account_type: data.account_type || "Trabalho (Notre Dame)",
+                  account_email: accEmail,
+                  account_type: accType,
                 };
                 taskMap.set(taskId, consolidatedTask);
                 tasksToMigrate.push(consolidatedTask);
@@ -604,9 +664,15 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
             data.user_id === "primary_workspace";
 
           if (isCandidate || isOrphaned) {
-            const adoptedTask = { ...data, user_id: userId };
+            const accEmail = data.account_email || (userProfile?.primary_email || "");
+            const adoptedTask: Task = {
+              ...data,
+              owner_uid: userId,
+              user_id: userId,
+              account_email: accEmail,
+            };
             taskMap.set(data.id, adoptedTask);
-            if (data.user_id !== userId) {
+            if (data.user_id !== userId || !data.owner_uid) {
               tasksToMigrate.push(adoptedTask);
             }
           }
@@ -615,7 +681,11 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
         if (tasksToMigrate.length > 0) {
           Promise.all(
             tasksToMigrate.map((t) =>
-              db.collection("tasks").doc(t.id).update({ user_id: userId }).catch(() => {})
+              db.collection("tasks").doc(t.id).update({
+                owner_uid: userId,
+                user_id: userId,
+                account_email: t.account_email,
+              }).catch(() => {})
             )
           ).catch(() => {});
         }
@@ -631,19 +701,29 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
   } catch (err) {
     console.warn("Firestore read failed, falling back to in-memory tasks:", err);
     if (isHellen) {
-      return memoryTasks.map((t) => ({ ...t, user_id: HELLEN_MASTER_ID }));
+      return memoryTasks.map((t) => ({
+        ...t,
+        owner_uid: HELLEN_MASTER_ID,
+        user_id: HELLEN_MASTER_ID,
+        account_email: t.account_email || resolveTaskAccountEmail(t.account_type, undefined, true),
+      }));
     }
     if (userId) {
-      return memoryTasks.filter((t) => !t.user_id || t.user_id === userId);
+      return memoryTasks.filter((t) => !t.user_id || t.user_id === userId || t.owner_uid === userId);
     }
     return memoryTasks;
   }
 }
 
 export async function saveTaskToDb(task: Task, userId?: string): Promise<Task> {
-  const isHellen = isHellenUser(userId) || isHellenUser(task.user_id);
-  const targetUserId = isHellen ? HELLEN_MASTER_ID : (userId || task.user_id || "primary_workspace");
+  const isHellen = isHellenUser(userId) || isHellenUser(task.user_id) || isHellenUser(task.owner_uid);
+  const targetUserId = isHellen ? HELLEN_MASTER_ID : (userId || task.owner_uid || task.user_id || "primary_workspace");
   task.user_id = targetUserId;
+  task.owner_uid = targetUserId;
+
+  if (!task.account_email) {
+    task.account_email = resolveTaskAccountEmail(task.account_type, undefined, isHellen);
+  }
 
   // Update memory
   const idx = memoryTasks.findIndex((t) => t.id === task.id);
@@ -665,6 +745,119 @@ export async function saveTaskToDb(task: Task, userId?: string): Promise<Task> {
     console.warn("Firestore write failed, saving to in-memory:", err);
     return task;
   }
+}
+
+/**
+ * Safely unlinks a secondary account with transactional migration of all demands.
+ * Guarantees zero data loss before removing the secondary account link.
+ */
+export async function migrateAndUnlinkAccount(
+  masterUid: string,
+  emailToUnlink: string,
+  targetEmail?: string
+): Promise<{
+  success: boolean;
+  message: string;
+  migrated_tasks_count: number;
+  unlinked_email: string;
+  target_email: string;
+}> {
+  const cleanUnlink = emailToUnlink.toLowerCase().trim();
+  const db = getFirestoreDb();
+  const nowIso = new Date().toISOString();
+
+  // 1. Get Master Profile
+  const masterProfile = await getMasterUserProfile(masterUid);
+  const primaryEmail = (masterProfile?.primary_email || HELLEN_PRIMARY_EMAIL).toLowerCase().trim();
+
+  if (cleanUnlink === primaryEmail) {
+    throw new Error("Não é possível desvincular a Conta Mestre (e-mail principal).");
+  }
+
+  const cleanTarget = (targetEmail || primaryEmail).toLowerCase().trim();
+
+  // Find target account label
+  const accounts = await getConnectedAccounts(masterUid);
+  const targetAcc = accounts.find((a) => a.email.toLowerCase() === cleanTarget);
+  const targetLabel = targetAcc?.label || (cleanTarget === primaryEmail ? "Pessoal" : "Geral");
+
+  let migratedCount = 0;
+
+  if (db) {
+    // 2. Query all tasks belonging to masterUid that have account_email == cleanUnlink
+    const tasksSnap = await db.collection("tasks").get();
+    const batch = db.batch();
+
+    for (const doc of tasksSnap.docs) {
+      const data = doc.data() as Task;
+      const isOwnedByMaster =
+        data.owner_uid === masterUid ||
+        data.user_id === masterUid ||
+        isHellenUser(masterUid);
+
+      const taskEmail = (data.account_email || "").toLowerCase().trim();
+      const matchesUnlink =
+        taskEmail === cleanUnlink ||
+        (!taskEmail && data.account_type && cleanUnlink.includes("notredame") && data.account_type.toLowerCase().includes("notre"));
+
+      if (isOwnedByMaster && matchesUnlink) {
+        migratedCount++;
+        batch.update(doc.ref, {
+          account_email: cleanTarget,
+          account_type: targetLabel,
+          owner_uid: masterUid,
+          user_id: masterUid,
+        });
+      }
+    }
+
+    // 3. Remove cleanUnlink from linked_emails in users/{masterUid}
+    const userRef = db.collection("users").doc(masterUid);
+    const userDoc = await userRef.get();
+    if (userDoc.exists) {
+      const uData = userDoc.data() as MasterUserProfile;
+      const updatedLinked = (uData.linked_emails || []).filter(
+        (e) => e.toLowerCase() !== cleanUnlink
+      );
+      batch.update(userRef, {
+        linked_emails: updatedLinked,
+        updated_at: nowIso,
+      });
+    }
+
+    // 4. Remove account document from users/{masterUid}/accounts
+    const accountsSnap = await db.collection("users").doc(masterUid).collection("accounts").get();
+    for (const accDoc of accountsSnap.docs) {
+      const accData = accDoc.data() as ConnectedAccount;
+      if (accData.email.toLowerCase() === cleanUnlink) {
+        batch.delete(accDoc.ref);
+      }
+    }
+
+    await batch.commit();
+  }
+
+  // Also update in-memory cache
+  memoryTasks = memoryTasks.map((t) => {
+    if (t.account_email?.toLowerCase() === cleanUnlink) {
+      return {
+        ...t,
+        account_email: cleanTarget,
+        account_type: targetLabel,
+      };
+    }
+    return t;
+  });
+
+  memoryAccounts = memoryAccounts.filter((a) => a.email.toLowerCase() !== cleanUnlink);
+
+  return {
+    success: true,
+    message: `${migratedCount} demandas transferidas com sucesso para ${cleanTarget}. Conta ${cleanUnlink} desvinculada com segurança.`,
+    migrated_tasks_count: migratedCount,
+    unlinked_email: cleanUnlink,
+    target_email: cleanTarget,
+  };
 }
 
 export async function deleteTaskFromDb(taskId: string, userId?: string): Promise<boolean> {

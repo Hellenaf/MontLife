@@ -95,10 +95,14 @@ export async function GET(req: NextRequest) {
     // Prepare unified session object
     const session: UserSession = {
       userId: masterUserId,
+      masterUid: masterUserId,
       email,
+      primaryEmail: isHellen ? HELLEN_PRIMARY_EMAIL : email,
+      activeAccountEmail: email,
       name: isHellen ? "Hellen Ferreira" : name,
       picture,
       role: isHellen ? "owner" : "member",
+      linkedEmails: isHellen ? [...HELLEN_LINKED_EMAILS] : [email],
       createdAt: new Date().toISOString(),
     };
 

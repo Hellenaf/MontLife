@@ -11,6 +11,7 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url);
     const accountType = searchParams.get("account_type");
+    const accountEmail = searchParams.get("account_email");
     const itemType = searchParams.get("item_type");
     const status = searchParams.get("status");
     const priority = searchParams.get("priority");
@@ -18,7 +19,9 @@ export async function GET(req: NextRequest) {
 
     let tasks = await getTasksFromDb(userId);
 
-    if (accountType && accountType !== "all") {
+    if (accountEmail && accountEmail !== "all") {
+      tasks = tasks.filter((t) => t.account_email?.toLowerCase() === accountEmail.toLowerCase());
+    } else if (accountType && accountType !== "all") {
       tasks = tasks.filter((t) => t.account_type === accountType);
     }
 
@@ -65,7 +68,10 @@ export async function POST(req: NextRequest) {
 
     const newTask: Task = {
       id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      owner_uid: userId,
       user_id: userId,
+      account_email: body.account_email,
+      account_id: body.account_id,
       raw_input: body.raw_input || body.title,
       title: body.title,
       description: body.description || "",

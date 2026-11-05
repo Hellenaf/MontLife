@@ -72,36 +72,72 @@ export function LeftTasksQuadrant({
     onAccountFilterChange?.(filter);
   };
 
-  // Derive dynamic list of workspaces/accounts from connected accounts and task tags
+  // Helper to match task against context filter (account_type, account_email, or specific ID)
+  const isTaskMatchingFilter = (task: Task, filter: "all" | string): boolean => {
+    if (!filter || filter === "all") return true;
+    const f = filter.toLowerCase().trim();
+    const taskType = (task.account_type || "").toLowerCase().trim();
+    const taskEmail = (task.account_email || "").toLowerCase().trim();
+
+    if (f === "work" || f === "trabalho") {
+      if (taskType === "work" || taskType === "trabalho") return true;
+      if (taskEmail.includes("notredame") || taskEmail.includes("work")) return true;
+      return false;
+    }
+
+    if (f === "personal" || f === "pessoal") {
+      if (taskType === "personal" || taskType === "pessoal") return true;
+      if (taskEmail.includes("hellenalvesferreira") || taskEmail.includes("hellenaf")) return true;
+      return false;
+    }
+
+    if (taskEmail && taskEmail === f) return true;
+    if (taskType === f) return true;
+    if (task.account_id && task.account_id.toLowerCase() === f) return true;
+
+    return false;
+  };
+
+  const isWorkTask = (t: Task) =>
+    t.account_type === "work" ||
+    t.account_type?.toLowerCase() === "trabalho" ||
+    Boolean(t.account_email?.toLowerCase().includes("notredame"));
+
+  const isPersonalTask = (t: Task) =>
+    t.account_type === "personal" ||
+    t.account_type?.toLowerCase() === "pessoal" ||
+    Boolean(t.account_email?.toLowerCase().includes("hellenalvesferreira")) ||
+    Boolean(t.account_email?.toLowerCase().includes("hellenaf"));
+
+  // Derive dynamic list of workspaces/accounts from connected accounts
   const dynamicAccounts = useMemo(() => {
-    const list: { id: string; label: string }[] = [];
-    const seen = new Set<string>();
+    const list: { id: string; label: string; email?: string }[] = [
+      { id: "work", label: "Trabalho", email: "haferreira@notredamecampinas.net.br" },
+      { id: "personal", label: "Pessoal", email: "hellenalvesferreira.s2@gmail.com" },
+    ];
 
     if (accounts && accounts.length > 0) {
       for (const acc of accounts) {
-        if (acc.is_connected && acc.label && !seen.has(acc.label.toLowerCase())) {
-          seen.add(acc.label.toLowerCase());
-          list.push({ id: acc.label, label: acc.label });
+        if (!acc.email) continue;
+        const emailLower = acc.email.toLowerCase();
+        if (
+          emailLower.includes("notredame") ||
+          emailLower.includes("hellenalvesferreira")
+        ) {
+          continue;
+        }
+        if (!list.some((a) => a.email?.toLowerCase() === emailLower)) {
+          list.push({
+            id: emailLower,
+            label: acc.label || emailLower.split("@")[0],
+            email: acc.email,
+          });
         }
       }
     }
 
-    for (const t of tasks) {
-      if (t.account_type && !seen.has(t.account_type.toLowerCase())) {
-        seen.add(t.account_type.toLowerCase());
-        list.push({ id: t.account_type, label: t.account_type });
-      }
-    }
-
-    if (list.length === 0) {
-      return [
-        { id: "work", label: "Trabalho" },
-        { id: "personal", label: "Pessoal" },
-      ];
-    }
-
     return list;
-  }, [accounts, tasks]);
+  }, [accounts]);
   const [itemTypeFilter, setItemTypeFilter] = useState<"ALL" | ItemType>("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | TaskStatus>("ALL");
   const [priorityFilter, setPriorityFilter] = useState<"ALL" | Priority>("ALL");
@@ -186,7 +222,7 @@ export function LeftTasksQuadrant({
 
   // Filter tasks
   const filteredTasks = tasks.filter((task) => {
-    if (accountFilter !== "all" && task.account_type !== accountFilter) {
+    if (accountFilter !== "all" && !isTaskMatchingFilter(task, accountFilter)) {
       return false;
     }
     if (itemTypeFilter !== "ALL" && (task.item_type || "task") !== itemTypeFilter) {
@@ -210,7 +246,8 @@ export function LeftTasksQuadrant({
       const matchDesc = task.description.toLowerCase().includes(q);
       const matchCat = task.category.toLowerCase().includes(q);
       const matchTag = task.tags?.some((t) => t.toLowerCase().includes(q));
-      if (!matchTitle && !matchDesc && !matchCat && !matchTag) return false;
+      const matchEmail = (task.account_email || "").toLowerCase().includes(q);
+      if (!matchTitle && !matchDesc && !matchCat && !matchTag && !matchEmail) return false;
     }
     return true;
   });
@@ -475,24 +512,34 @@ export function LeftTasksQuadrant({
               </span>
 
               <div className="flex items-center gap-1.5">
-                <span className="flex items-center gap-1 text-[10px] font-medium text-slate-600 dark:text-slate-300">
-                  {task.account_type === "work" ? (
-                    <>
-                      <Briefcase className="w-2.5 h-2.5 text-blue-500" />
-                      <span>Trabalho</span>
-                    </>
-                  ) : task.account_type === "personal" ? (
-                    <>
-                      <User className="w-2.5 h-2.5 text-purple-500" />
-                      <span>Pessoal</span>
-                    </>
-                  ) : (
-                    <>
-                      <Tag className="w-2.5 h-2.5 text-indigo-500" />
-                      <span>{task.account_type || "Geral"}</span>
-                    </>
-                  )}
-                </span>
+                {isWorkTask(task) ? (
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200/70 dark:border-blue-800/60"
+                    title={task.account_email || "Conta de Trabalho (Notre Dame)"}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500 shrink-0" />
+                    <Briefcase className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
+                    <span>Trabalho</span>
+                  </span>
+                ) : isPersonalTask(task) ? (
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200/70 dark:border-purple-800/60"
+                    title={task.account_email || "Conta Pessoal (Mestre)"}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-purple-500 shrink-0" />
+                    <User className="w-2.5 h-2.5 text-purple-600 dark:text-purple-400" />
+                    <span>Pessoal</span>
+                  </span>
+                ) : (
+                  <span
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 dark:bg-zinc-800 dark:text-zinc-300 border border-slate-200 dark:border-zinc-700"
+                    title={task.account_email || task.account_type || "Outra Conta"}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                    <Tag className="w-2.5 h-2.5 text-slate-500" />
+                    <span>{task.account_type || "Geral"}</span>
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -546,21 +593,21 @@ export function LeftTasksQuadrant({
             Todas ({tasks.length})
           </button>
           {dynamicAccounts.map((acc) => {
-            const count = tasks.filter(
-              (t) =>
-                t.account_type?.toLowerCase() === acc.id.toLowerCase() ||
-                t.account_type?.toLowerCase() === acc.label.toLowerCase()
-            ).length;
+            const count = tasks.filter((t) => isTaskMatchingFilter(t, acc.id)).length;
             const isSelected =
               accountFilter.toLowerCase() === acc.id.toLowerCase() ||
               accountFilter.toLowerCase() === acc.label.toLowerCase();
+
+            const isWork = acc.id === "work" || acc.label === "Trabalho";
 
             return (
               <button
                 key={acc.id}
                 onClick={() => setAccountFilter(acc.id as any)}
                 className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 shrink-0 transition-all ${isSelected
-                    ? "bg-purple-600 text-white shadow-sm"
+                    ? isWork
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "bg-purple-600 text-white shadow-sm"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
               >

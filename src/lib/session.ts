@@ -2,8 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 
 export interface UserSession {
-  userId: string;
-  email: string;
+  userId: string; // The master_uid / owner_uid
+  masterUid?: string; // Explicit alias for master_uid
+  email: string; // The email used in current login
+  primaryEmail?: string; // Master account primary email
+  activeAccountEmail?: string; // Context email for active workspace
   name: string;
   picture?: string;
   role?: string;
@@ -17,6 +20,9 @@ const SESSION_COOKIE_NAME = "montlife_session";
  * Creates a base64-encoded signed session payload
  */
 export function serializeSession(session: UserSession): string {
+  if (!session.masterUid) {
+    session.masterUid = session.userId;
+  }
   return Buffer.from(JSON.stringify(session)).toString("base64");
 }
 
@@ -29,6 +35,9 @@ export function deserializeSession(token?: string | null): UserSession | null {
     const json = Buffer.from(token, "base64").toString("utf-8");
     const data = JSON.parse(json) as UserSession;
     if (data && data.userId && data.email) {
+      if (!data.masterUid) {
+        data.masterUid = data.userId;
+      }
       return data;
     }
     return null;
