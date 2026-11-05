@@ -354,7 +354,7 @@ export default function MontOpsDashboard() {
   return (
     <div className="w-screen h-screen overflow-hidden flex bg-slate-50 dark:bg-[#090A0F] text-slate-800 dark:text-slate-100 transition-colors duration-200">
       {/* 1. Sidebar Nav (Far Left, from the mockup) */}
-      <div className="hidden lg:flex h-full">
+      <div className="hidden lg:flex h-full no-print">
         <SidebarNav
           accounts={accounts}
           tasks={tasks}
@@ -379,27 +379,29 @@ export default function MontOpsDashboard() {
       {/* 2. Main Area (Header on top, then 3 columns below) */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
         {/* Header Command Bar */}
-        <HeaderCommandBar
-          accounts={accounts}
-          tasks={tasks}
-          availableCategories={allCategories}
-          onTaskCreated={handleTaskCreated}
-          onSelectTask={(task) => {
-            setSelectedTaskId(task.id);
-            setActiveNav("tarefas");
-            setCentralActiveTab("details");
-          }}
-          onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
-          onOpenReportModal={() => setActiveNav("relatorios")}
-          onOpenNewTaskModal={(prefill) => {
-            setNewTaskInitialText(prefill || "");
-            setIsNewTaskModalOpen(true);
-          }}
-        />
+        <div className="no-print">
+          <HeaderCommandBar
+            accounts={accounts}
+            tasks={tasks}
+            availableCategories={allCategories}
+            onTaskCreated={handleTaskCreated}
+            onSelectTask={(task) => {
+              setSelectedTaskId(task.id);
+              setActiveNav("tarefas");
+              setCentralActiveTab("details");
+            }}
+            onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
+            onOpenReportModal={() => setActiveNav("relatorios")}
+            onOpenNewTaskModal={(prefill) => {
+              setNewTaskInitialText(prefill || "");
+              setIsNewTaskModalOpen(true);
+            }}
+          />
+        </div>
 
         {/* Banner if no account is connected */}
         {!hasConnectedAccount && accountsLoaded && accounts.length > 0 && (
-          <div className="bg-indigo-50 dark:bg-indigo-950/60 border-b border-indigo-200 dark:border-indigo-800 px-4 py-2 flex items-center justify-between text-xs text-indigo-900 dark:text-indigo-200 shrink-0">
+          <div className="no-print bg-indigo-50 dark:bg-indigo-950/60 border-b border-indigo-200 dark:border-indigo-800 px-4 py-2 flex items-center justify-between text-xs text-indigo-900 dark:text-indigo-200 shrink-0">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
               <p>

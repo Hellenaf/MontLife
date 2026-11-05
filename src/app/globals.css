@@ -55,18 +55,42 @@ body {
   background: rgba(99, 102, 241, 0.5);
 }
 
-/* Print Styles for Executive & Activity Report */
+/* Print Styles for Presentation-Grade Executive Report */
 @media print {
-  body {
-    background: #ffffff !important;
-    color: #111827 !important;
-    overflow: visible !important;
-    height: auto !important;
-    width: auto !important;
+  @page {
+    size: A4 portrait;
+    margin: 10mm 12mm 12mm 12mm;
   }
 
-  .no-print {
+  *, *:before, *:after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    overflow: visible !important;
+    height: auto !important;
+    width: 100% !important;
+    font-size: 10pt !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+  }
+
+  /* Completely hide all non-report interface elements */
+  .no-print,
+  nav,
+  aside,
+  header {
     display: none !important;
+  }
+
+  /* Ensure containers do not crop or scroll */
+  div, main, section {
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
   }
 
   #printable-report {
@@ -76,22 +100,47 @@ body {
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
-    color: #111827 !important;
+    color: #0f172a !important;
     border: none !important;
     box-shadow: none !important;
   }
 
-  .print-clean-bg {
-    background: #f9fafb !important;
-    border: 1px solid #e5e7eb !important;
-    color: #111827 !important;
+  .print-only {
+    display: block !important;
   }
 
-  .print-text-dark {
-    color: #111827 !important;
+  .screen-only {
+    display: none !important;
   }
 
-  .print-text-muted {
-    color: #4b5563 !important;
+  /* Page break rules for clean presentation */
+  .page-break-avoid,
+  .print-avoid-break,
+  tr,
+  .kpi-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .page-break-before {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+
+  /* Tables in print */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+
+  th {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-bottom: 2px solid #cbd5e1 !important;
+    font-weight: 700 !important;
+  }
+
+  td {
+    border-bottom: 1px solid #e2e8f0 !important;
   }
 }
