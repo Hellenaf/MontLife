@@ -369,17 +369,14 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
         const data = doc.data() as Task;
         const taskId = data.id || doc.id;
 
-        const targetAccountType =
-          data.account_type ||
-          ((data.title && data.title.toLowerCase().includes("totvs")) ||
-           (data.title && data.title.toLowerCase().includes("notre")) ||
-           (data.title && data.title.toLowerCase().includes("rm"))
-            ? "Trabalho (Notre Dame)"
-            : "Pessoal");
+        const isExplicitPersonal =
+          Boolean(data.account_type && (data.account_type.toLowerCase().includes("pess") || data.account_type.toLowerCase().includes("person"))) ||
+          Boolean(data.account_email && data.account_email.toLowerCase().includes("hellen"));
 
-        const targetAccountEmail =
-          data.account_email ||
-          resolveTaskAccountEmail(targetAccountType, undefined, true);
+        const targetAccountType = isExplicitPersonal ? "Pessoal" : (data.account_type || "Trabalho");
+        const targetAccountEmail = isExplicitPersonal
+          ? "hellenalvesferreira.s2@gmail.com"
+          : (data.account_email || "haferreira@notredamecampinas.net.br");
 
         const consolidatedTask: Task = {
           ...data,
@@ -543,17 +540,14 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
         const data = doc.data() as Task;
         const taskId = data.id || doc.id;
 
-        const targetAccountType =
-          data.account_type ||
-          ((data.title && data.title.toLowerCase().includes("totvs")) ||
-           (data.title && data.title.toLowerCase().includes("notre")) ||
-           (data.title && data.title.toLowerCase().includes("rm"))
-            ? "Trabalho (Notre Dame)"
-            : "Pessoal");
+        const isExplicitPersonal =
+          Boolean(data.account_type && (data.account_type.toLowerCase().includes("pess") || data.account_type.toLowerCase().includes("person"))) ||
+          Boolean(data.account_email && data.account_email.toLowerCase().includes("hellen"));
 
-        const targetAccountEmail =
-          data.account_email ||
-          resolveTaskAccountEmail(targetAccountType, undefined, true);
+        const targetAccountType = isExplicitPersonal ? "Pessoal" : (data.account_type || "Trabalho");
+        const targetAccountEmail = isExplicitPersonal
+          ? "hellenalvesferreira.s2@gmail.com"
+          : (data.account_email || "haferreira@notredamecampinas.net.br");
 
         const consolidatedTask: Task = {
           ...data,

@@ -76,6 +76,35 @@ export function SidebarNav({
   const completionPercentage =
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 100;
 
+  // Helper to match task against workspace
+  const isTaskInWorkspace = (t: Task, accId: string, label: string, email?: string) => {
+    const fId = (accId || "").toLowerCase();
+    const fLabel = (label || "").toLowerCase();
+    const fEmail = (email || "").toLowerCase();
+    const tType = (t.account_type || "").toLowerCase();
+    const tEmail = (t.account_email || "").toLowerCase();
+
+    // If Trabalho / Work
+    if (fId.includes("work") || fLabel.includes("trab") || fEmail.includes("notredame")) {
+      if (tType.includes("trab") || tType.includes("work") || tType.includes("notre")) return true;
+      if (tEmail.includes("notredame") || tEmail.includes("work")) return true;
+      if (!tType.includes("pess") && !tType.includes("person") && !tEmail.includes("hellen")) return true;
+      return false;
+    }
+
+    // If Pessoal / Personal
+    if (fId.includes("person") || fLabel.includes("pess") || fEmail.includes("hellen")) {
+      if (tType.includes("pess") || tType.includes("person")) return true;
+      if (tEmail.includes("hellen")) return true;
+      return false;
+    }
+
+    if (email && tEmail === fEmail) return true;
+    if (tType === fId || tType === fLabel) return true;
+
+    return false;
+  };
+
   // Derive dynamic list of workspaces from connected accounts
   const dynamicWorkspaces = React.useMemo(() => {
     const list: { id: string; label: string; email?: string; count: number }[] = [];
@@ -86,18 +115,14 @@ export function SidebarNav({
       const lbl = acc.label || (acc.id === "work" ? "Trabalho" : acc.id === "personal" ? "Pessoal" : "Geral");
       if (!seen.has(lbl.toLowerCase())) {
         seen.add(lbl.toLowerCase());
-        const count = tasks.filter(
-          (t) =>
-            t.account_type?.toLowerCase() === lbl.toLowerCase() ||
-            t.account_type?.toLowerCase() === acc.id.toLowerCase()
-        ).length;
+        const count = tasks.filter((t) => isTaskInWorkspace(t, acc.id, lbl, acc.email)).length;
         list.push({ id: lbl, label: lbl, email: acc.email, count });
       }
     }
 
     if (list.length === 0) {
-      const workCount = tasks.filter((t) => t.account_type === "work").length;
-      const personalCount = tasks.filter((t) => t.account_type === "personal").length;
+      const workCount = tasks.filter((t) => isTaskInWorkspace(t, "work", "Trabalho", "haferreira@notredamecampinas.net.br")).length;
+      const personalCount = tasks.filter((t) => isTaskInWorkspace(t, "personal", "Pessoal", "hellenalvesferreira.s2@gmail.com")).length;
       return [
         { id: "work", label: "Trabalho", count: workCount },
         { id: "personal", label: "Pessoal", count: personalCount },

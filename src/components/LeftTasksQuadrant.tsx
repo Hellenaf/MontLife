@@ -22,6 +22,7 @@ import {
   Loader2,
   Ban,
   RotateCcw,
+  AlertTriangle,
 } from "lucide-react";
 import { Task, TaskStatus, Priority, AccountType, ItemType, ConnectedAccount } from "@/types";
 import { isTaskOverdue } from "@/lib/sla";
@@ -71,6 +72,17 @@ export function LeftTasksQuadrant({
     setInternalAccountFilter(filter);
     onAccountFilterChange?.(filter);
   };
+
+  const [activeMenuTaskId, setActiveMenuTaskId] = useState<string | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
+
+  React.useEffect(() => {
+    const handleCloseMenu = () => setActiveMenuTaskId(null);
+    if (activeMenuTaskId) {
+      window.addEventListener("click", handleCloseMenu);
+      return () => window.removeEventListener("click", handleCloseMenu);
+    }
+  }, [activeMenuTaskId]);
 
   // Helper to match task against context filter (account_type, account_email, or specific ID)
   const isTaskMatchingFilter = (task: Task, filter: "all" | string): boolean => {
@@ -385,6 +397,11 @@ export function LeftTasksQuadrant({
       <div
         key={task.id}
         onClick={() => onSelectTask(task)}
+        onContextMenu={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          setActiveMenuTaskId((prev) => (prev === task.id ? null : task.id));
+        }}
         className={`group relative p-3 rounded-2xl border transition-all cursor-pointer ${isSelected
             ? "bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-500 dark:border-indigo-500/70 shadow-sm ring-1 ring-indigo-500/20"
             : isCanceled
@@ -453,12 +470,27 @@ export function LeftTasksQuadrant({
                 {getKanbanStageBadge(task.status)}
               </div>
 
-              {overdue && (
-                <span className="flex items-center gap-1 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
-                  <AlertCircle className="w-3 h-3" />
-                  Atrasada
-                </span>
-              )}
+              <div className="flex items-center gap-1 shrink-0">
+                {overdue && (
+                  <span className="flex items-center gap-1 text-[10px] font-semibold text-rose-600 dark:text-rose-400">
+                    <AlertCircle className="w-3 h-3" />
+                    Atrasada
+                  </span>
+                )}
+
+                {/* 3-dots Menu Button */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setActiveMenuTaskId((prev) => (prev === task.id ? null : task.id));
+                  }}
+                  title="Opções da demanda"
+                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                >
+                  <MoreVertical className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
 
             {/* Task Title */}
@@ -545,34 +577,71 @@ export function LeftTasksQuadrant({
           </div>
         </div>
 
-        {/* Quick Hover Action Bar */}
-        <div className="absolute right-2 top-2 hidden group-hover:flex items-center gap-0.5 bg-white/95 dark:bg-[#181926]/95 border border-slate-200 dark:border-zinc-700 rounded-lg p-0.5 shadow-sm">
-          {!isCompleted && (
+        {/* Context Dropdown Menu (via 3 dots or right click) */}
+        {activeMenuTaskId === task.id && (
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="absolute right-2 top-8 z-30 w-48 rounded-xl bg-white dark:bg-[#181926] border border-slate-200 dark:border-zinc-700 shadow-2xl py-1 animate-in fade-in zoom-in-95"
+          >
+            {!isCompleted && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveMenuTaskId(null);
+                  onRequestResolution(task);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 transition-colors"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Concluir com solução</span>
+              </button>
+            )}
+
             <button
-              onClick={() => onRequestResolution(task)}
-              title="Concluir com solução"
-              className="p-1 rounded-md text-slate-400 hover:text-emerald-600 dark:text-slate-500 dark:hover:text-emerald-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveMenuTaskId(null);
+                onRequestExtendDeadline(task);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-indigo-50 hover:text-indigo-700 dark:hover:bg-indigo-950/40 dark:hover:text-indigo-400 transition-colors"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" />
+              <Calendar className="w-3.5 h-3.5 text-indigo-500" />
+              <span>Adiar prazo</span>
             </button>
-          )}
 
-          <button
-            onClick={() => onRequestExtendDeadline(task)}
-            title="Adiar prazo"
-            className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-          >
-            <Calendar className="w-3.5 h-3.5" />
-          </button>
+            {onRequestCancelTask && !isCanceled && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setActiveMenuTaskId(null);
+                  onRequestCancelTask(task);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-950/40 dark:hover:text-amber-400 transition-colors"
+              >
+                <Ban className="w-3.5 h-3.5 text-amber-500" />
+                <span>Cancelar demanda</span>
+              </button>
+            )}
 
-          <button
-            onClick={() => onDeleteTask(task.id)}
-            title="Excluir"
-            className="p-1 rounded-md text-slate-400 hover:text-rose-500 dark:text-slate-500 dark:hover:text-rose-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
+            <div className="my-1 border-t border-slate-100 dark:border-zinc-800" />
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setActiveMenuTaskId(null);
+                setTaskToDelete(task);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+              <span>Excluir demanda...</span>
+            </button>
+          </div>
+        )}
       </div>
     );
   };
@@ -868,6 +937,63 @@ export function LeftTasksQuadrant({
           </>
         )}
       </div>
+
+      {/* Modal de Confirmação de Exclusão */}
+      {taskToDelete && (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-150"
+          onClick={(e) => {
+            e.stopPropagation();
+            setTaskToDelete(null);
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-2xl bg-white dark:bg-[#161724] border border-slate-200 dark:border-zinc-800 p-5 shadow-2xl space-y-4 animate-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="space-y-1.5 flex-1 min-w-0">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Confirmar Exclusão de Demanda
+                </h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Tem certeza que deseja excluir permanentemente esta demanda?
+                </p>
+                <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-zinc-800/80 p-2.5 rounded-lg border border-slate-200 dark:border-zinc-700/60 line-clamp-2">
+                  {taskToDelete.title}
+                </div>
+                <p className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">
+                  ⚠️ Esta ação removerá a demanda permanentemente do banco de dados e não pode ser desfeita.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+              <button
+                type="button"
+                onClick={() => setTaskToDelete(null)}
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const id = taskToDelete.id;
+                  setTaskToDelete(null);
+                  onDeleteTask(id);
+                }}
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-rose-600 hover:bg-rose-500 text-white shadow-sm transition-all cursor-pointer"
+              >
+                Sim, Excluir Demanda
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </aside>
   );
 }
