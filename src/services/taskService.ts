@@ -640,48 +640,29 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
           }
         }
 
-        const legacySnap = await db
+        // Query strictly by owner_uid (primary isolation key)
+        const ownerSnap = await db
           .collection("tasks")
-          .orderBy("created_at", "desc")
-          .limit(200)
+          .where("owner_uid", "==", userId)
           .get();
 
-        const tasksToMigrate: Task[] = [];
-        for (const doc of legacySnap.docs) {
+        for (const doc of ownerSnap.docs) {
           const data = doc.data() as Task;
-          const isCandidate = data.user_id && candidateIds.has(data.user_id);
-          const isOrphaned =
-            !data.user_id ||
-            data.user_id === "guest_workspace" ||
-            data.user_id === "guest" ||
-            data.user_id === "primary" ||
-            data.user_id === "primary_workspace";
-
-          if (isCandidate || isOrphaned) {
-            const accEmail = data.account_email || (userProfile?.primary_email || "");
-            const adoptedTask: Task = {
-              ...data,
-              owner_uid: userId,
-              user_id: userId,
-              account_email: accEmail,
-            };
-            taskMap.set(data.id, adoptedTask);
-            if (data.user_id !== userId || !data.owner_uid) {
-              tasksToMigrate.push(adoptedTask);
-            }
-          }
+          taskMap.set(data.id || doc.id, { ...data, id: data.id || doc.id });
         }
 
-        if (tasksToMigrate.length > 0) {
-          Promise.all(
-            tasksToMigrate.map((t) =>
-              db.collection("tasks").doc(t.id).update({
-                owner_uid: userId,
-                user_id: userId,
-                account_email: t.account_email,
-              }).catch(() => {})
-            )
-          ).catch(() => {});
+        // Query by user_id for backward compatibility
+        const userSnap = await db
+          .collection("tasks")
+          .where("user_id", "==", userId)
+          .get();
+
+        for (const doc of userSnap.docs) {
+          const data = doc.data() as Task;
+          const tId = data.id || doc.id;
+          if (!taskMap.has(tId)) {
+            taskMap.set(tId, { ...data, id: tId, owner_uid: userId });
+          }
         }
       } catch (legacyErr) {
         console.warn("Legacy task migration check failed:", legacyErr);
@@ -855,13 +836,25 @@ export async function migrateAndUnlinkAccount(
 }
 
 export async function deleteTaskFromDb(taskId: string, userId?: string): Promise<boolean> {
+  const isHellen = !userId || isHellenUser(userId);
+  const targetUserId = isHellen ? HELLEN_MASTER_ID : userId;
+
   const db = getFirestoreDb();
   memoryTasks = memoryTasks.filter((t) => t.id !== taskId);
 
   if (!db) return true;
 
   try {
-    await db.collection("tasks").doc(taskId).delete();
+    const docRef = db.collection("tasks").doc(taskId);
+    const doc = await docRef.get();
+    if (doc.exists) {
+      const data = doc.data() as Task;
+      if (!isHellen && data.owner_uid && data.owner_uid !== targetUserId && data.user_id !== targetUserId) {
+        console.warn(`Unauthorized delete attempt on task ${taskId} by user ${userId}`);
+        return false;
+      }
+      await docRef.delete();
+    }
     return true;
   } catch (err) {
     console.warn("Firestore delete failed:", err);
@@ -1151,11 +1144,22 @@ export async function getConnectedAccounts(userId?: string): Promise<ConnectedAc
       if (isHellen) {
         return hellenDefaultAccounts;
       }
-      return memoryAccounts.map((acc) => ({
-        ...acc,
-        label: acc.label || (acc.id === "work" ? "Trabalho" : acc.id === "personal" ? "Pessoal" : "Geral"),
-        is_connected: Boolean(acc.access_token || acc.refresh_token || acc.email),
-      }));
+      const userProfile = targetUserId ? await getMasterUserProfile(targetUserId) : null;
+      if (userProfile?.primary_email) {
+        const userDefaultAccount: ConnectedAccount = {
+          id: `acc_${userProfile.primary_email.replace(/[^a-z0-9_-]/g, "_")}`,
+          user_id: targetUserId,
+          label: "Principal",
+          email: userProfile.primary_email,
+          color: "purple",
+          last_sync_at: new Date().toISOString(),
+          is_connected: true,
+        };
+        const colRef = db.collection("users").doc(targetUserId).collection("accounts");
+        colRef.doc(userDefaultAccount.id).set(userDefaultAccount, { merge: true }).catch(() => {});
+        return [userDefaultAccount];
+      }
+      return [];
     }
 
     return accounts;
