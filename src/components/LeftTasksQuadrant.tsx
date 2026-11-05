@@ -84,24 +84,34 @@ export function LeftTasksQuadrant({
     }
   }, [activeMenuTaskId]);
 
+  const isWorkTask = (t: Task) =>
+    t.account_type === "work" ||
+    t.account_type?.toLowerCase() === "trabalho" ||
+    Boolean(t.account_email?.toLowerCase().includes("notredame")) ||
+    Boolean(t.account_email?.toLowerCase().includes("haferreira"));
+
+  const isPersonalTask = (t: Task) =>
+    !isWorkTask(t) &&
+    (t.account_type === "personal" ||
+      t.account_type?.toLowerCase() === "pessoal" ||
+      Boolean(t.account_email?.toLowerCase().includes("hellenalvesferreira")) ||
+      Boolean(t.account_email?.toLowerCase().includes("hellenaf")));
+
   // Helper to match task against context filter (account_type, account_email, or specific ID)
   const isTaskMatchingFilter = (task: Task, filter: "all" | string): boolean => {
     if (!filter || filter === "all") return true;
     const f = filter.toLowerCase().trim();
+
+    if (f === "work" || f === "trabalho" || f.includes("notredame") || f.includes("haferreira")) {
+      return isWorkTask(task);
+    }
+
+    if (f === "personal" || f === "pessoal" || f.includes("hellen")) {
+      return isPersonalTask(task);
+    }
+
     const taskType = (task.account_type || "").toLowerCase().trim();
     const taskEmail = (task.account_email || "").toLowerCase().trim();
-
-    if (f === "work" || f === "trabalho") {
-      if (taskType === "work" || taskType === "trabalho") return true;
-      if (taskEmail.includes("notredame") || taskEmail.includes("work")) return true;
-      return false;
-    }
-
-    if (f === "personal" || f === "pessoal") {
-      if (taskType === "personal" || taskType === "pessoal") return true;
-      if (taskEmail.includes("hellenalvesferreira") || taskEmail.includes("hellenaf")) return true;
-      return false;
-    }
 
     if (taskEmail && taskEmail === f) return true;
     if (taskType === f) return true;
@@ -109,17 +119,6 @@ export function LeftTasksQuadrant({
 
     return false;
   };
-
-  const isWorkTask = (t: Task) =>
-    t.account_type === "work" ||
-    t.account_type?.toLowerCase() === "trabalho" ||
-    Boolean(t.account_email?.toLowerCase().includes("notredame"));
-
-  const isPersonalTask = (t: Task) =>
-    t.account_type === "personal" ||
-    t.account_type?.toLowerCase() === "pessoal" ||
-    Boolean(t.account_email?.toLowerCase().includes("hellenalvesferreira")) ||
-    Boolean(t.account_email?.toLowerCase().includes("hellenaf"));
 
   // Derive dynamic list of workspaces/accounts from connected accounts
   const dynamicAccounts = useMemo(() => {

@@ -76,29 +76,42 @@ export function SidebarNav({
   const completionPercentage =
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 100;
 
+  // Helper to identify Work vs Personal with strict mutual exclusion
+  const isWorkTask = (t: Task): boolean => {
+    const email = (t.account_email || "").toLowerCase().trim();
+    const type = (t.account_type || "").toLowerCase().trim();
+    if (email.includes("notredame") || email.includes("haferreira")) return true;
+    if (type === "work" || type === "trabalho" || type.includes("notre") || type.includes("trab")) return true;
+    return false;
+  };
+
+  const isPersonalTask = (t: Task): boolean => {
+    if (isWorkTask(t)) return false; // Strictly mutually exclusive: work demands never bleed into personal!
+    const email = (t.account_email || "").toLowerCase().trim();
+    const type = (t.account_type || "").toLowerCase().trim();
+    if (email.includes("hellenalvesferreira") || email.includes("hellenaf")) return true;
+    if (type === "personal" || type === "pessoal" || type.includes("pess")) return true;
+    return false;
+  };
+
   // Helper to match task against workspace
   const isTaskInWorkspace = (t: Task, accId: string, label: string, email?: string) => {
     const fId = (accId || "").toLowerCase();
     const fLabel = (label || "").toLowerCase();
     const fEmail = (email || "").toLowerCase();
-    const tType = (t.account_type || "").toLowerCase();
-    const tEmail = (t.account_email || "").toLowerCase();
 
     // If Trabalho / Work
-    if (fId.includes("work") || fLabel.includes("trab") || fEmail.includes("notredame")) {
-      if (tType.includes("trab") || tType.includes("work") || tType.includes("notre")) return true;
-      if (tEmail.includes("notredame") || tEmail.includes("work")) return true;
-      if (!tType.includes("pess") && !tType.includes("person") && !tEmail.includes("hellen")) return true;
-      return false;
+    if (fId.includes("work") || fLabel.includes("trab") || fEmail.includes("notredame") || fEmail.includes("haferreira")) {
+      return isWorkTask(t);
     }
 
     // If Pessoal / Personal
     if (fId.includes("person") || fLabel.includes("pess") || fEmail.includes("hellen")) {
-      if (tType.includes("pess") || tType.includes("person")) return true;
-      if (tEmail.includes("hellen")) return true;
-      return false;
+      return isPersonalTask(t);
     }
 
+    const tEmail = (t.account_email || "").toLowerCase().trim();
+    const tType = (t.account_type || "").toLowerCase().trim();
     if (email && tEmail === fEmail) return true;
     if (tType === fId || tType === fLabel) return true;
 

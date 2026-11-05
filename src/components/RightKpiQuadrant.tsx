@@ -47,8 +47,14 @@ export function RightKpiQuadrant({
     const activitiesCount = tasks.filter((t) => t.item_type === "activity").length;
     const remindersCount = tasks.filter((t) => t.item_type === "reminder").length;
 
-    const workTasks = tasks.filter((t) => t.account_type === "work");
-    const personalTasks = tasks.filter((t) => t.account_type === "personal");
+    const isWork = (t: Task) =>
+      t.account_type === "work" ||
+      t.account_type?.toLowerCase() === "trabalho" ||
+      Boolean(t.account_email?.toLowerCase().includes("notredame")) ||
+      Boolean(t.account_email?.toLowerCase().includes("haferreira"));
+
+    const workTasks = tasks.filter(isWork);
+    const personalTasks = tasks.filter((t) => !isWork(t));
 
     const workPct = total > 0 ? Math.round((workTasks.length / total) * 100) : 0;
     const personalPct = total > 0 ? Math.round((personalTasks.length / total) * 100) : 0;

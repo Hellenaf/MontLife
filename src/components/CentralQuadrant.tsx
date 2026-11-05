@@ -310,21 +310,24 @@ export function CentralQuadrant({
     return () => clearInterval(timer);
   }, []);
 
+  const isWorkItem = (t: Task) =>
+    t.account_type === "work" ||
+    t.account_type?.toLowerCase().includes("trab") ||
+    Boolean(t.account_email?.toLowerCase().includes("notredame")) ||
+    Boolean(t.account_email?.toLowerCase().includes("haferreira"));
+
   // Filter tasks for calendar based on calendar source
   const calendarTasks = allTasks.filter((t) => {
     if (calendarSourceFilter === "all") return true;
     if (calendarSourceFilter === "work") {
-      return (
-        t.account_type === "work" ||
-        t.account_type?.toLowerCase().includes("trab") ||
-        Boolean(t.account_email?.toLowerCase().includes("notredame"))
-      );
+      return isWorkItem(t);
     }
     if (calendarSourceFilter === "personal") {
       return (
-        t.account_type === "personal" ||
-        t.account_type?.toLowerCase().includes("pess") ||
-        Boolean(t.account_email?.toLowerCase().includes("hellen"))
+        !isWorkItem(t) &&
+        (t.account_type === "personal" ||
+          t.account_type?.toLowerCase().includes("pess") ||
+          Boolean(t.account_email?.toLowerCase().includes("hellen")))
       );
     }
     if (calendarSourceFilter === "agenda") return t.item_type === "activity" || t.tags?.includes("google-agenda");
@@ -672,31 +675,25 @@ export function CentralQuadrant({
                   {/* Top Bar with Context + Category Editor + Type Switcher */}
                   <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                     <div className="flex items-center gap-2 flex-wrap">
-                      {selectedTask.account_type === "work" ||
-                      selectedTask.account_type?.toLowerCase().includes("trab") ||
-                      Boolean(selectedTask.account_email?.toLowerCase().includes("notredame")) ? (
+                      {isWorkItem(selectedTask) ? (
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20">
                             <Briefcase className="w-3.5 h-3.5" /> Trabalho
                           </span>
-                          {selectedTask.account_email && (
-                            <span className="flex items-center gap-1 text-[11px] font-mono text-blue-700 dark:text-blue-300 bg-blue-50/60 dark:bg-blue-950/40 px-2 py-0.5 rounded-md border border-blue-200/60 dark:border-blue-800/50">
-                              <Mail className="w-3 h-3 text-blue-500" />
-                              {selectedTask.account_email}
-                            </span>
-                          )}
+                          <span className="flex items-center gap-1 text-[11px] font-mono text-blue-700 dark:text-blue-300 bg-blue-50/60 dark:bg-blue-950/40 px-2 py-0.5 rounded-md border border-blue-200/60 dark:border-blue-800/50">
+                            <Mail className="w-3 h-3 text-blue-500" />
+                            haferreira@notredamecampinas.net.br
+                          </span>
                         </div>
                       ) : (
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20">
                             <User className="w-3.5 h-3.5" /> Pessoal
                           </span>
-                          {selectedTask.account_email && (
-                            <span className="flex items-center gap-1 text-[11px] font-mono text-purple-700 dark:text-purple-300 bg-purple-50/60 dark:bg-purple-950/40 px-2 py-0.5 rounded-md border border-purple-200/60 dark:border-purple-800/50">
-                              <Mail className="w-3 h-3 text-purple-500" />
-                              {selectedTask.account_email}
-                            </span>
-                          )}
+                          <span className="flex items-center gap-1 text-[11px] font-mono text-purple-700 dark:text-purple-300 bg-purple-50/60 dark:bg-purple-950/40 px-2 py-0.5 rounded-md border border-purple-200/60 dark:border-purple-800/50">
+                            <Mail className="w-3 h-3 text-purple-500" />
+                            hellenalvesferreira.s2@gmail.com
+                          </span>
                         </div>
                       )}
 

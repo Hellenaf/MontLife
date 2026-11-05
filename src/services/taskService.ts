@@ -41,6 +41,95 @@ export function isHellenUser(userId?: string | null, email?: string | null): boo
 }
 
 /**
+ * Detects if a task belongs to work (Notre Dame, TOTVS, ERP, school, IT support, etc.)
+ */
+export function isWorkDemand(task: Partial<Task>): boolean {
+  const email = (task.account_email || "").toLowerCase().trim();
+  const type = (task.account_type || "").toLowerCase().trim();
+  const text = `${task.title || ""} ${task.description || ""} ${task.category || ""} ${(task.tags || []).join(" ")}`.toLowerCase();
+
+  // Explicit Notre Dame email
+  if (email.includes("notredame") || email.includes("haferreira")) return true;
+
+  // Work-related categories
+  const workCategories = [
+    "sistemas erp",
+    "bi & analytics",
+    "gestão educacional",
+    "gestao educacional",
+    "gestão de ativos & ti",
+    "gestao de ativos & ti",
+    "gestão de ativos",
+    "infraestrutura de ti",
+    "suporte ti",
+    "hardware & periféricos",
+    "contratos ti",
+    "gestão & contratos",
+    "gestao & contratos",
+  ];
+  if (workCategories.some((cat) => text.includes(cat))) return true;
+
+  // Work keywords (Notre Dame / School / ERP / TI)
+  const workKeywords = [
+    "totvs",
+    "notre dame",
+    "notredame",
+    "rm ",
+    "rm,",
+    "rm-",
+    "classapp",
+    "papeleta",
+    "middle school",
+    "chromebook",
+    "pergamum",
+    "capela",
+    "tesouraria",
+    "secretaria",
+    "matrícula",
+    "matricula",
+    "professor",
+    "aluno",
+    "docente",
+    "pedagógico",
+    "pedagogico",
+    "power bi",
+    "dashboard",
+    "erp escolar",
+    "gestão acadêmica",
+    "gestao academica",
+    "boletim",
+    "diário",
+    "diario",
+  ];
+  if (workKeywords.some((kw) => text.includes(kw))) return true;
+
+  // Work account type
+  if (type === "work" || type.includes("trab") || type.includes("notre")) return true;
+
+  return false;
+}
+
+/**
+ * Returns strict partition for Hellen's tasks: Work vs Personal
+ */
+export function partitionHellenTask(data: Partial<Task>): {
+  targetAccountType: string;
+  targetAccountEmail: string;
+} {
+  const isWork = isWorkDemand(data);
+  if (isWork) {
+    return {
+      targetAccountType: "Trabalho",
+      targetAccountEmail: "haferreira@notredamecampinas.net.br",
+    };
+  }
+  return {
+    targetAccountType: "Pessoal",
+    targetAccountEmail: HELLEN_PRIMARY_EMAIL,
+  };
+}
+
+/**
  * Resolves context email for a task based on explicit parameter, account_type, or defaults.
  */
 export function resolveTaskAccountEmail(
@@ -369,14 +458,7 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
         const data = doc.data() as Task;
         const taskId = data.id || doc.id;
 
-        const isExplicitPersonal =
-          Boolean(data.account_type && (data.account_type.toLowerCase().includes("pess") || data.account_type.toLowerCase().includes("person"))) ||
-          Boolean(data.account_email && data.account_email.toLowerCase().includes("hellen"));
-
-        const targetAccountType = isExplicitPersonal ? "Pessoal" : (data.account_type || "Trabalho");
-        const targetAccountEmail = isExplicitPersonal
-          ? "hellenalvesferreira.s2@gmail.com"
-          : (data.account_email || "haferreira@notredamecampinas.net.br");
+        const { targetAccountType, targetAccountEmail } = partitionHellenTask(data);
 
         const consolidatedTask: Task = {
           ...data,
@@ -389,15 +471,15 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
 
         taskMap.set(taskId, consolidatedTask);
 
-        if (data.user_id !== masterId || data.owner_uid !== masterId || !data.account_email) {
+        if (
+          data.user_id !== masterId ||
+          data.owner_uid !== masterId ||
+          data.account_email !== targetAccountEmail ||
+          data.account_type !== targetAccountType
+        ) {
           migratedCount++;
           batchPromises.push(
-            doc.ref.update({
-              owner_uid: masterId,
-              user_id: masterId,
-              account_email: targetAccountEmail,
-              account_type: targetAccountType,
-            }).catch(() => {})
+            doc.ref.set(consolidatedTask, { merge: true }).catch(() => {})
           );
         }
       }
@@ -409,8 +491,7 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
           const data = doc.data() as Task;
           const taskId = data.id || doc.id;
           if (!taskMap.has(taskId)) {
-            const accType = data.account_type || "Trabalho (Notre Dame)";
-            const accEmail = data.account_email || resolveTaskAccountEmail(accType, undefined, true);
+            const { targetAccountType: accType, targetAccountEmail: accEmail } = partitionHellenTask(data);
             const consolidatedTask: Task = {
               ...data,
               id: taskId,
@@ -441,8 +522,7 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
               const data = doc.data() as Task;
               const taskId = data.id || doc.id;
               if (!taskMap.has(taskId)) {
-                const accType = data.account_type || "Trabalho (Notre Dame)";
-                const accEmail = data.account_email || resolveTaskAccountEmail(accType, undefined, true);
+                const { targetAccountType: accType, targetAccountEmail: accEmail } = partitionHellenTask(data);
                 const consolidatedTask: Task = {
                   ...data,
                   id: taskId,
@@ -540,14 +620,7 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
         const data = doc.data() as Task;
         const taskId = data.id || doc.id;
 
-        const isExplicitPersonal =
-          Boolean(data.account_type && (data.account_type.toLowerCase().includes("pess") || data.account_type.toLowerCase().includes("person"))) ||
-          Boolean(data.account_email && data.account_email.toLowerCase().includes("hellen"));
-
-        const targetAccountType = isExplicitPersonal ? "Pessoal" : (data.account_type || "Trabalho");
-        const targetAccountEmail = isExplicitPersonal
-          ? "hellenalvesferreira.s2@gmail.com"
-          : (data.account_email || "haferreira@notredamecampinas.net.br");
+        const { targetAccountType, targetAccountEmail } = partitionHellenTask(data);
 
         const consolidatedTask: Task = {
           ...data,
@@ -560,7 +633,12 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
 
         taskMap.set(taskId, consolidatedTask);
 
-        if (data.user_id !== HELLEN_MASTER_ID || data.owner_uid !== HELLEN_MASTER_ID || !data.account_email) {
+        if (
+          data.user_id !== HELLEN_MASTER_ID ||
+          data.owner_uid !== HELLEN_MASTER_ID ||
+          data.account_email !== targetAccountEmail ||
+          data.account_type !== targetAccountType
+        ) {
           tasksToMigrate.push(consolidatedTask);
         }
       }
@@ -572,8 +650,7 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
           const data = doc.data() as Task;
           const taskId = data.id || doc.id;
           if (!taskMap.has(taskId)) {
-            const accType = data.account_type || "Trabalho (Notre Dame)";
-            const accEmail = data.account_email || resolveTaskAccountEmail(accType, undefined, true);
+            const { targetAccountType: accType, targetAccountEmail: accEmail } = partitionHellenTask(data);
             const consolidatedTask: Task = {
               ...data,
               id: taskId,
@@ -601,8 +678,7 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
               const data = doc.data() as Task;
               const taskId = data.id || doc.id;
               if (!taskMap.has(taskId)) {
-                const accType = data.account_type || "Trabalho (Notre Dame)";
-                const accEmail = data.account_email || resolveTaskAccountEmail(accType, undefined, true);
+                const { targetAccountType: accType, targetAccountEmail: accEmail } = partitionHellenTask(data);
                 const consolidatedTask: Task = {
                   ...data,
                   id: taskId,
@@ -676,12 +752,16 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
   } catch (err) {
     console.warn("Firestore read failed, falling back to in-memory tasks:", err);
     if (isHellen) {
-      return memoryTasks.map((t) => ({
-        ...t,
-        owner_uid: HELLEN_MASTER_ID,
-        user_id: HELLEN_MASTER_ID,
-        account_email: t.account_email || resolveTaskAccountEmail(t.account_type, undefined, true),
-      }));
+      return memoryTasks.map((t) => {
+        const { targetAccountType, targetAccountEmail } = partitionHellenTask(t);
+        return {
+          ...t,
+          owner_uid: HELLEN_MASTER_ID,
+          user_id: HELLEN_MASTER_ID,
+          account_email: targetAccountEmail,
+          account_type: targetAccountType,
+        };
+      });
     }
     if (userId) {
       return memoryTasks.filter((t) => !t.user_id || t.user_id === userId || t.owner_uid === userId);
@@ -696,7 +776,13 @@ export async function saveTaskToDb(task: Task, userId?: string): Promise<Task> {
   task.user_id = targetUserId;
   task.owner_uid = targetUserId;
 
-  if (!task.account_email) {
+  if (isHellen) {
+    const { targetAccountType, targetAccountEmail } = partitionHellenTask(task);
+    if (!task.account_type) task.account_type = targetAccountType;
+    if (!task.account_email || (task.account_type === "Trabalho" && task.account_email.includes("hellen"))) {
+      task.account_email = targetAccountEmail;
+    }
+  } else if (!task.account_email) {
     task.account_email = resolveTaskAccountEmail(task.account_type, undefined, isHellen);
   }
 
