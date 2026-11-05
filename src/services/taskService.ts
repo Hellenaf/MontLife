@@ -41,6 +41,35 @@ export function isHellenUser(userId?: string | null, email?: string | null): boo
 }
 
 /**
+ * Strict data isolation check: verifies if a task belongs to Hellen's workspace.
+ * If owner_uid, user_id, or account_email belongs to another user, returns FALSE.
+ * Ensures zero data bleeding between Hellen and any other users.
+ */
+export function isHellenTask(data: Partial<Task>): boolean {
+  // 1. If owner_uid belongs explicitly to another user, IT IS NOT HELLEN'S!
+  if (data.owner_uid && !isHellenUser(data.owner_uid)) {
+    return false;
+  }
+  // 2. If user_id belongs explicitly to another user, IT IS NOT HELLEN'S!
+  if (data.user_id && !isHellenUser(data.user_id)) {
+    return false;
+  }
+  // 3. If account_email belongs explicitly to another user, IT IS NOT HELLEN'S!
+  if (data.account_email && !isHellenEmail(data.account_email)) {
+    return false;
+  }
+  // 4. If owner_uid or user_id or account_email matches Hellen
+  if (isHellenUser(data.owner_uid) || isHellenUser(data.user_id) || isHellenEmail(data.account_email)) {
+    return true;
+  }
+  // 5. Legacy orphaned tasks without an owner_uid
+  if (!data.owner_uid || data.owner_uid === "guest_workspace" || data.owner_uid === "primary_workspace") {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Detects if a task belongs to work (Notre Dame, TOTVS, ERP, school, IT support, etc.)
  * All current existing demands are work demands belonging to haferreira@notredamecampinas.net.br,
  * UNLESS explicitly transferred to personal by the user.
@@ -459,6 +488,11 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
         const data = doc.data() as Task;
         const taskId = data.id || doc.id;
 
+        // Strict isolation: skip tasks belonging to other users
+        if (!isHellenTask(data)) {
+          continue;
+        }
+
         const { targetAccountType, targetAccountEmail } = partitionHellenTask(data);
 
         const consolidatedTask: Task = {
@@ -491,6 +525,9 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
         for (const doc of groupSnap.docs) {
           const data = doc.data() as Task;
           const taskId = data.id || doc.id;
+          if (!isHellenTask(data)) {
+            continue;
+          }
           if (!taskMap.has(taskId)) {
             const { targetAccountType: accType, targetAccountEmail: accEmail } = partitionHellenTask(data);
             const consolidatedTask: Task = {
@@ -522,6 +559,9 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
             for (const doc of snap.docs) {
               const data = doc.data() as Task;
               const taskId = data.id || doc.id;
+              if (!isHellenTask(data)) {
+                continue;
+              }
               if (!taskMap.has(taskId)) {
                 const { targetAccountType: accType, targetAccountEmail: accEmail } = partitionHellenTask(data);
                 const consolidatedTask: Task = {
@@ -621,6 +661,11 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
         const data = doc.data() as Task;
         const taskId = data.id || doc.id;
 
+        // Strict isolation: skip tasks belonging to other users
+        if (!isHellenTask(data)) {
+          continue;
+        }
+
         const { targetAccountType, targetAccountEmail } = partitionHellenTask(data);
 
         const consolidatedTask: Task = {
@@ -650,6 +695,9 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
         for (const doc of groupSnap.docs) {
           const data = doc.data() as Task;
           const taskId = data.id || doc.id;
+          if (!isHellenTask(data)) {
+            continue;
+          }
           if (!taskMap.has(taskId)) {
             const { targetAccountType: accType, targetAccountEmail: accEmail } = partitionHellenTask(data);
             const consolidatedTask: Task = {
@@ -678,6 +726,9 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
             for (const doc of snap.docs) {
               const data = doc.data() as Task;
               const taskId = data.id || doc.id;
+              if (!isHellenTask(data)) {
+                continue;
+              }
               if (!taskMap.has(taskId)) {
                 const { targetAccountType: accType, targetAccountEmail: accEmail } = partitionHellenTask(data);
                 const consolidatedTask: Task = {
@@ -938,6 +989,10 @@ export async function deleteTaskFromDb(taskId: string, userId?: string): Promise
       const data = doc.data() as Task;
       if (!isHellen && data.owner_uid && data.owner_uid !== targetUserId && data.user_id !== targetUserId) {
         console.warn(`Unauthorized delete attempt on task ${taskId} by user ${userId}`);
+        return false;
+      }
+      if (isHellen && !isHellenTask(data)) {
+        console.warn(`Unauthorized delete attempt on other user's task ${taskId}`);
         return false;
       }
       await docRef.delete();
