@@ -22,7 +22,7 @@ export default function LoginPage() {
   const { theme, toggleTheme } = useTheme();
 
   return (
-    <div className="min-h-screen w-screen flex flex-col justify-between bg-slate-50 dark:bg-[#07080c] text-slate-900 dark:text-slate-100 selection:bg-indigo-500/20 transition-colors duration-200 overflow-x-hidden">
+    <div className="min-h-screen min-h-[100dvh] w-full flex flex-col justify-between bg-slate-50 dark:bg-[#07080c] text-slate-900 dark:text-slate-100 selection:bg-indigo-500/20 transition-colors duration-200 overflow-y-auto overflow-x-hidden">
       {/* Background radial gradients for subtle tech aura */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -left-40 w-96 h-96 rounded-full bg-indigo-500/10 dark:bg-indigo-600/15 blur-3xl" />
@@ -60,8 +60,8 @@ export default function LoginPage() {
       {/* Main Dual-Column Hero / Auth Container */}
       <main className="w-full max-w-7xl mx-auto px-4 sm:px-8 py-8 sm:py-12 my-auto relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
-          {/* Left Column: Brand, Value Proposition & Features */}
-          <div className="lg:col-span-7 space-y-8 text-center lg:text-left">
+          {/* Left Column: Brand, Value Proposition & Features (order-last on mobile so auth card is visible upfront) */}
+          <div className="lg:col-span-7 space-y-8 text-center lg:text-left order-last lg:order-first">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-white dark:bg-white/[0.04] border border-slate-200 dark:border-white/10 shadow-xs text-slate-700 dark:text-slate-200">
                 <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
@@ -148,8 +148,8 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Right Column: High-End Auth Card */}
-          <div className="lg:col-span-5 w-full max-w-md mx-auto">
+          {/* Right Column: High-End Auth Card (order-first on mobile for instant 1-tap Google login) */}
+          <div className="lg:col-span-5 w-full max-w-md mx-auto order-first lg:order-last">
             <div className="relative">
               {/* Outer decorative gradient glow */}
               <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-indigo-500/30 via-purple-500/30 to-pink-500/30 blur-xl opacity-75" />

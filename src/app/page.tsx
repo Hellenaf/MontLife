@@ -385,7 +385,7 @@ export default function MontOpsDashboard() {
   const allCategories = useMemo(() => getAllCategories(tasks), [tasks]);
 
   return (
-    <div className="w-screen h-screen overflow-hidden flex bg-slate-50 dark:bg-[#090A0F] text-slate-800 dark:text-slate-100 transition-colors duration-200">
+    <div className="w-full h-screen h-[100dvh] overflow-hidden flex bg-slate-50 dark:bg-[#090A0F] text-slate-800 dark:text-slate-100 transition-colors duration-200">
       {/* 1. Sidebar Nav (Far Left, from the mockup) */}
       <div className="hidden lg:flex h-full no-print">
         <SidebarNav
