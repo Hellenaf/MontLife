@@ -324,8 +324,7 @@ export function HeaderCommandBar({
     setIsSimilarityDismissed(false);
   };
 
-  const workAcc = accounts.find((a) => a.id === "work");
-  const personalAcc = accounts.find((a) => a.id === "personal");
+  const connectedAccountsCount = accounts.filter((a) => a.is_connected && a.email).length;
 
   return (
     <>
@@ -550,30 +549,25 @@ export function HeaderCommandBar({
         {/* Connected Accounts Status */}
         <button
           onClick={onOpenAccountsModal}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs transition-all ${
-            workAcc?.is_connected || personalAcc?.is_connected
-              ? "bg-slate-50 dark:bg-[#16152a] border-slate-200 dark:border-[#282647] text-slate-700 dark:text-slate-300 hover:border-slate-300 dark:hover:border-zinc-700"
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs transition-all cursor-pointer ${
+            connectedAccountsCount > 0
+              ? "bg-slate-50 dark:bg-[#16152a] border-slate-200 dark:border-[#282647] text-slate-700 dark:text-slate-300 hover:border-purple-400"
               : "bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100/60"
           }`}
-          title="Gerenciar Contas Google"
+          title="Gerenciar Contas Google Vinculadas"
         >
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                workAcc?.is_connected ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : "bg-slate-300 dark:bg-zinc-600"
-              }`}
-            />
-            <Briefcase className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
-          </div>
-          <span className="text-slate-300 dark:text-zinc-700">|</span>
-          <div className="flex items-center gap-1.5">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                personalAcc?.is_connected ? "bg-emerald-500 shadow-xs shadow-emerald-500/50" : "bg-slate-300 dark:bg-zinc-600"
-              }`}
-            />
-            <User className="w-3.5 h-3.5 text-purple-500 dark:text-purple-400" />
-          </div>
+          <span
+            className={`w-2 h-2 rounded-full ${
+              connectedAccountsCount > 0
+                ? "bg-emerald-500 shadow-xs shadow-emerald-500/50"
+                : "bg-slate-300 dark:bg-zinc-600"
+            }`}
+          />
+          <span className="font-semibold text-xs">
+            {connectedAccountsCount > 0
+              ? `${connectedAccountsCount} ${connectedAccountsCount === 1 ? "Conta Conectada" : "Contas Conectadas"}`
+              : "Vincular Google"}
+          </span>
         </button>
 
 

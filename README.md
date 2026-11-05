@@ -1,8 +1,8 @@
-# **Mont Ops (Mont Life)**
+# **Mont Life**
 > *Gestor da minha vida diária através das tarefas, atividades e lembretes.*
 > *Hub Central de Produtividade, Base de Conhecimento (Wiki Técnica) & Motor de Metrificação.*
 
-O **Mont Ops** é uma aplicação completa de inteligência operacional projetada para unificar fluxos de trabalho de TI escolar e vida pessoal, integrando a **API do Google Gemini** com *Structured Outputs*, sincronização bidirecional **Multi-Account** com **Google Tasks** e **Google Calendar**, curadoria automática de estudos com a **YouTube Data API v3** e persistência no **Cloud Firestore** com motor de auditoria de SLA e prestação de contas.
+O **Mont Life** é uma aplicação completa de inteligência operacional projetada para unificar fluxos de trabalho de TI escolar e vida pessoal, integrando a **API do Google Gemini** com *Structured Outputs*, sincronização bidirecional **Multi-Account** com **Google Tasks** e **Google Calendar**, curadoria automática de estudos com a **YouTube Data API v3** e persistência no **Cloud Firestore** com motor de auditoria de SLA e prestação de contas.
 
 ---
 
@@ -60,7 +60,7 @@ O **Mont Ops** é uma aplicação completa de inteligência operacional projetad
 
 ## **4. Ciclo de Vida e Sincronização Google Tasks**
 
-| Status no Mont Ops | Status no Google Tasks | Prefixo no Título | Ação do Sistema |
+| Status no Mont Life | Status no Google Tasks | Prefixo no Título | Ação do Sistema |
 | :--- | :--- | :--- | :--- |
 | `TRIAGE` | *(Não sincronizado)* | N/A | Aguardando confirmação no Card da IA |
 | `TODO` | `needsAction` | *(Sem prefixo)* | Tarefa agendada |

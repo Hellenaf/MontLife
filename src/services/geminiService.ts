@@ -786,7 +786,7 @@ Contexto: ${accountTypeHint || "work"}`;
 export async function generateExecutiveSummary(
   tasks: any[],
   periodLabel: string,
-  accountType: "work" | "personal",
+  accountType: AccountType,
   apiKey?: string
 ): Promise<string> {
   const completed = tasks.filter((t) => t.status === "COMPLETED");

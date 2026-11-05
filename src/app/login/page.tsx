@@ -205,22 +205,11 @@ export default function LoginPage() {
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/[0.02] border border-slate-200/70 dark:border-white/5 space-y-2 text-xs">
                   <div className="flex items-center gap-2 font-semibold text-slate-800 dark:text-slate-200">
                     <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                    <span>Separação de Contextos</span>
+                    <span>Múltiplas Contas & Espaços Ilimitados</span>
                   </div>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                    Após o login, você pode definir sua conta como <strong>Trabalho</strong> ou <strong>Pessoal</strong>, e conectar uma segunda conta Google para manter suas rotinas perfeitamente organizadas.
+                    Vincule quantas contas Google desejar ao seu <strong>Perfil Mestre</strong>. Suas tarefas nativas e sincronizadas são preservadas e unificadas de forma transparente.
                   </p>
-                </div>
-
-                {/* Guest Access Link */}
-                <div className="pt-1 text-center">
-                  <Link
-                    href="/?guest=true"
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors"
-                  >
-                    <span>Explorar modo demonstração</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
                 </div>
               </div>
             </div>

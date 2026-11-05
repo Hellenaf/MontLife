@@ -35,9 +35,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // 2. Iterate through ALL connected accounts (unlimited!)
     for (const acc of accounts) {
-      if (acc.is_connected && (acc.refresh_token || acc.access_token) && (acc.id === "work" || acc.id === "personal")) {
-        const accountType: AccountType = acc.id;
+      if (acc.is_connected && (acc.refresh_token || acc.access_token)) {
+        const accountType: AccountType = acc.label || acc.id;
         try {
           // Fetch Google Tasks items (task management only)
           const items = await fetchAllGoogleTasksFromAccount({
@@ -92,6 +93,7 @@ export async function POST(req: NextRequest) {
               const isGeneric =
                 existing.category === "Suporte TI" ||
                 existing.category === "Finanças & Pessoal" ||
+                existing.category === "Geral" ||
                 (existing.tags && existing.tags.length === 1 && existing.tags[0].includes("google-task"));
 
               const isCompleted = item.status === "completed";
@@ -125,9 +127,12 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // 2. Outbound-only sync: Push MontLife tasks with due dates TO Google Calendar
+          // 3. Outbound-only sync: Push MontLife tasks with due dates TO Google Calendar
           const montLifeTasksToPush = tasks.filter(
-            (t) => t.account_type === accountType && t.current_due_date && t.status !== "COMPLETED" && t.status !== "CANCELED"
+            (t) => (t.account_type === accountType || (!t.account_type && acc.id === "work")) &&
+              t.current_due_date &&
+              t.status !== "COMPLETED" &&
+              t.status !== "CANCELED"
           );
           for (const task of montLifeTasksToPush.slice(0, 10)) {
             try {
@@ -144,17 +149,17 @@ export async function POST(req: NextRequest) {
             }
           }
         } catch (syncErr) {
-          console.warn(`Sync failed for account ${acc.id}:`, syncErr);
+          console.warn(`Sync failed for account ${acc.id} (${acc.label}):`, syncErr);
         }
-      }
 
-      await saveConnectedAccount(
-        {
-          ...acc,
-          last_sync_at: new Date().toISOString(),
-        },
-        userId
-      );
+        await saveConnectedAccount(
+          {
+            ...acc,
+            last_sync_at: new Date().toISOString(),
+          },
+          userId
+        );
+      }
     }
 
     return NextResponse.json({

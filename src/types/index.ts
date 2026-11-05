@@ -1,5 +1,5 @@
-export type AccountType = "work" | "personal";
-export type ConnectedAccountId = AccountType;
+export type AccountType = "work" | "personal" | string;
+export type ConnectedAccountId = string;
 
 export type ItemType = "task" | "activity" | "reminder";
 
@@ -74,12 +74,25 @@ export interface AlternativeResolution {
   notes: string;
 }
 
+export interface MasterUserProfile {
+  id: string; // Master unique user ID, e.g. usr_104829...
+  primary_email: string;
+  name: string;
+  picture?: string;
+  linked_emails: string[]; // All Google emails linked to this master profile (in lowercase)
+  role?: string;
+  created_at: string;
+  updated_at: string;
+  last_login_at?: string;
+}
+
 export interface UserProfile {
   id: string;
   email: string;
   name: string;
   picture?: string;
   role?: string;
+  linked_emails?: string[];
 }
 
 export interface Task {
@@ -119,12 +132,15 @@ export interface ConnectedAccount {
   id: ConnectedAccountId;
   user_id?: string;
   email: string;
+  label?: string; // Flexible custom label (e.g. "Trabalho", "Pessoal", "Estudos", "Projetos", "Geral")
+  color?: string; // Optional custom color code or badge style
   access_token?: string;
   refresh_token?: string;
   expiry_date?: number;
   default_tasklist_id?: string;
   last_sync_at: string | null;
   is_connected: boolean;
+  created_at?: string;
 }
 
 export interface GeminiTriageResponse {

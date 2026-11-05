@@ -7,6 +7,7 @@ export interface UserSession {
   name: string;
   picture?: string;
   role?: string;
+  linkedEmails?: string[];
   createdAt: string;
 }
 

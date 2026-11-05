@@ -53,15 +53,11 @@ export function SidebarNav({
   completedTasksCount = 0,
   currentUser,
 }: SidebarNavProps) {
-  const workAcc = accounts.find((a) => a.id === "work");
-  const personalAcc = accounts.find((a) => a.id === "personal");
-
   // Display user information
   const displayName = currentUser?.name || "Hellen Ferreira";
   const displayEmail =
     currentUser?.email ||
-    workAcc?.email ||
-    personalAcc?.email ||
+    accounts.find((a) => a.email)?.email ||
     "hellen@montlife.com";
 
   const userInitials = displayName
@@ -77,10 +73,39 @@ export function SidebarNav({
     (t) => t.status !== "COMPLETED" && t.status !== "CANCELED"
   ).length;
   const completedTasks = tasks.filter((t) => t.status === "COMPLETED").length;
-  const workTasksCount = tasks.filter((t) => t.account_type === "work").length;
-  const personalTasksCount = tasks.filter((t) => t.account_type === "personal").length;
   const completionPercentage =
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 100;
+
+  // Derive dynamic list of workspaces from connected accounts
+  const dynamicWorkspaces = React.useMemo(() => {
+    const list: { id: string; label: string; email?: string; count: number }[] = [];
+    const seen = new Set<string>();
+
+    const connected = accounts.filter((a) => a.is_connected && a.email);
+    for (const acc of connected) {
+      const lbl = acc.label || (acc.id === "work" ? "Trabalho" : acc.id === "personal" ? "Pessoal" : "Geral");
+      if (!seen.has(lbl.toLowerCase())) {
+        seen.add(lbl.toLowerCase());
+        const count = tasks.filter(
+          (t) =>
+            t.account_type?.toLowerCase() === lbl.toLowerCase() ||
+            t.account_type?.toLowerCase() === acc.id.toLowerCase()
+        ).length;
+        list.push({ id: lbl, label: lbl, email: acc.email, count });
+      }
+    }
+
+    if (list.length === 0) {
+      const workCount = tasks.filter((t) => t.account_type === "work").length;
+      const personalCount = tasks.filter((t) => t.account_type === "personal").length;
+      return [
+        { id: "work", label: "Trabalho", count: workCount },
+        { id: "personal", label: "Pessoal", count: personalCount },
+      ];
+    }
+
+    return list;
+  }, [accounts, tasks]);
 
   const handleLogout = () => {
     if (onLogout) {
@@ -219,73 +244,62 @@ export function SidebarNav({
           </button>
         </div>
 
-        {/* 3. Espaços de Trabalho (Workspaces) */}
+        {/* 3. Espaços de Trabalho (Workspaces Dinâmicos) */}
         <div className="pt-2 border-t border-[#1e1c36]/60 space-y-1.5">
           <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-purple-300/60 flex items-center justify-between">
             <span>Espaços de Trabalho</span>
-            <Layers className="w-3 h-3 text-purple-400/50" />
+            <button
+              type="button"
+              onClick={onOpenAccountsModal}
+              className="text-[10px] text-purple-400 hover:text-white transition-colors"
+              title="Gerenciar Contas"
+            >
+              + Vincular
+            </button>
           </div>
 
-          {/* Corporativo / Trabalho */}
-          <button
-            type="button"
-            onClick={() => onSelectAccountFilter?.("work")}
-            className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all ${
-              selectedAccountFilter === "work"
-                ? "bg-blue-600/20 border-blue-500/50 text-white shadow-sm"
-                : "bg-white/[0.02] hover:bg-white/[0.05] border-white/5 text-slate-300"
-            }`}
-            title="Filtrar demandas corporativas de trabalho (TOTVS, relatórios, TI)"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-6 h-6 rounded-lg bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0">
-                <Briefcase className="w-3.5 h-3.5" />
-              </div>
-              <div className="text-left min-w-0">
-                <span className="text-xs font-semibold block truncate">Trabalho</span>
-                <span className="text-[9px] text-slate-400 block truncate">
-                  TOTVS RM & TI
+          {dynamicWorkspaces.map((ws) => {
+            const isSelected = selectedAccountFilter.toLowerCase() === ws.id.toLowerCase();
+            return (
+              <button
+                key={ws.id}
+                type="button"
+                onClick={() => onSelectAccountFilter?.(ws.id as any)}
+                className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all text-left ${
+                  isSelected
+                    ? "bg-purple-600/30 border-purple-500/60 text-white shadow-sm"
+                    : "bg-white/[0.02] hover:bg-white/[0.05] border-white/5 text-slate-300"
+                }`}
+                title={ws.email || ws.label}
+              >
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
+                    {ws.label.toLowerCase().includes("trab") ? (
+                      <Briefcase className="w-3.5 h-3.5 text-blue-400" />
+                    ) : (
+                      <User className="w-3.5 h-3.5 text-purple-400" />
+                    )}
+                  </div>
+                  <div className="text-left min-w-0">
+                    <span className="text-xs font-semibold block truncate">{ws.label}</span>
+                    <span className="text-[9px] text-slate-400 block truncate">
+                      {ws.email || "Workspace"}
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                  {ws.count}
                 </span>
-              </div>
-            </div>
-            <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-              {workTasksCount}
-            </span>
-          </button>
-
-          {/* Vida Pessoal */}
-          <button
-            type="button"
-            onClick={() => onSelectAccountFilter?.("personal")}
-            className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all ${
-              selectedAccountFilter === "personal"
-                ? "bg-purple-600/20 border-purple-500/50 text-white shadow-sm"
-                : "bg-white/[0.02] hover:bg-white/[0.05] border-white/5 text-slate-300"
-            }`}
-            title="Filtrar tarefas pessoais e rotinas"
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-6 h-6 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400 shrink-0">
-                <User className="w-3.5 h-3.5" />
-              </div>
-              <div className="text-left min-w-0">
-                <span className="text-xs font-semibold block truncate">Pessoal</span>
-                <span className="text-[9px] text-slate-400 block truncate">
-                  Rotinas & Estudos
-                </span>
-              </div>
-            </div>
-            <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
-              {personalTasksCount}
-            </span>
-          </button>
+              </button>
+            );
+          })}
 
           {/* Ver Todos */}
           {selectedAccountFilter !== "all" && (
             <button
               type="button"
               onClick={() => onSelectAccountFilter?.("all")}
-              className="w-full py-1 text-center text-[10px] font-semibold text-purple-400 hover:text-purple-300 hover:underline transition-colors"
+              className="w-full py-1 text-center text-[10px] font-semibold text-purple-400 hover:text-purple-300 hover:underline transition-colors cursor-pointer"
             >
               ← Mostrar todos os espaços ({totalTasks})
             </button>

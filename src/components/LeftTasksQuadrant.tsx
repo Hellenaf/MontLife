@@ -23,7 +23,7 @@ import {
   Ban,
   RotateCcw,
 } from "lucide-react";
-import { Task, TaskStatus, Priority, AccountType, ItemType } from "@/types";
+import { Task, TaskStatus, Priority, AccountType, ItemType, ConnectedAccount } from "@/types";
 import { isTaskOverdue } from "@/lib/sla";
 import { getAllCategories } from "@/lib/categories";
 import { format, parseISO } from "date-fns";
@@ -31,6 +31,7 @@ import { ptBR } from "date-fns/locale";
 
 interface LeftTasksQuadrantProps {
   tasks: Task[];
+  accounts?: ConnectedAccount[];
   selectedTaskId: string | null;
   onSelectTask: (task: Task) => void;
   onUpdateStatus: (
@@ -51,6 +52,7 @@ interface LeftTasksQuadrantProps {
 
 export function LeftTasksQuadrant({
   tasks,
+  accounts = [],
   selectedTaskId,
   onSelectTask,
   onUpdateStatus,
@@ -69,6 +71,37 @@ export function LeftTasksQuadrant({
     setInternalAccountFilter(filter);
     onAccountFilterChange?.(filter);
   };
+
+  // Derive dynamic list of workspaces/accounts from connected accounts and task tags
+  const dynamicAccounts = useMemo(() => {
+    const list: { id: string; label: string }[] = [];
+    const seen = new Set<string>();
+
+    if (accounts && accounts.length > 0) {
+      for (const acc of accounts) {
+        if (acc.is_connected && acc.label && !seen.has(acc.label.toLowerCase())) {
+          seen.add(acc.label.toLowerCase());
+          list.push({ id: acc.label, label: acc.label });
+        }
+      }
+    }
+
+    for (const t of tasks) {
+      if (t.account_type && !seen.has(t.account_type.toLowerCase())) {
+        seen.add(t.account_type.toLowerCase());
+        list.push({ id: t.account_type, label: t.account_type });
+      }
+    }
+
+    if (list.length === 0) {
+      return [
+        { id: "work", label: "Trabalho" },
+        { id: "personal", label: "Pessoal" },
+      ];
+    }
+
+    return list;
+  }, [accounts, tasks]);
   const [itemTypeFilter, setItemTypeFilter] = useState<"ALL" | ItemType>("ALL");
   const [statusFilter, setStatusFilter] = useState<"ALL" | TaskStatus>("ALL");
   const [priorityFilter, setPriorityFilter] = useState<"ALL" | Priority>("ALL");
@@ -315,15 +348,14 @@ export function LeftTasksQuadrant({
       <div
         key={task.id}
         onClick={() => onSelectTask(task)}
-        className={`group relative p-3 rounded-2xl border transition-all cursor-pointer ${
-          isSelected
+        className={`group relative p-3 rounded-2xl border transition-all cursor-pointer ${isSelected
             ? "bg-indigo-50/70 dark:bg-indigo-950/30 border-indigo-500 dark:border-indigo-500/70 shadow-sm ring-1 ring-indigo-500/20"
             : isCanceled
-            ? "bg-rose-50/30 dark:bg-[#151014] border-rose-200/60 dark:border-rose-950/40 opacity-75 hover:opacity-100"
-            : isCompleted
-            ? "bg-slate-50/70 dark:bg-[#111218] border-slate-200/80 dark:border-zinc-800/80 opacity-70 hover:opacity-100"
-            : "bg-white dark:bg-[#141520] border-slate-200 dark:border-zinc-800/90 hover:border-slate-300 dark:hover:border-zinc-700 shadow-sm"
-        }`}
+              ? "bg-rose-50/30 dark:bg-[#151014] border-rose-200/60 dark:border-rose-950/40 opacity-75 hover:opacity-100"
+              : isCompleted
+                ? "bg-slate-50/70 dark:bg-[#111218] border-slate-200/80 dark:border-zinc-800/80 opacity-70 hover:opacity-100"
+                : "bg-white dark:bg-[#141520] border-slate-200 dark:border-zinc-800/90 hover:border-slate-300 dark:hover:border-zinc-700 shadow-sm"
+          }`}
       >
         <div className="flex items-start gap-2.5">
           {/* Circular status button */}
@@ -341,16 +373,15 @@ export function LeftTasksQuadrant({
               isCanceled
                 ? "Reabrir demanda cancelada"
                 : isCompleted
-                ? "Reabrir tarefa"
-                : "Concluir tarefa"
+                  ? "Reabrir tarefa"
+                  : "Concluir tarefa"
             }
-            className={`mt-0.5 w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all ${
-              isCanceled
+            className={`mt-0.5 w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all ${isCanceled
                 ? "bg-rose-500 text-white shadow-sm"
                 : isCompleted
-                ? "bg-emerald-500 text-white shadow-sm"
-                : "border-2 border-slate-300 dark:border-zinc-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-transparent hover:text-emerald-500"
-            }`}
+                  ? "bg-emerald-500 text-white shadow-sm"
+                  : "border-2 border-slate-300 dark:border-zinc-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-transparent hover:text-emerald-500"
+              }`}
           >
             {isCanceled ? (
               <Ban className="w-3 h-3" />
@@ -395,13 +426,12 @@ export function LeftTasksQuadrant({
 
             {/* Task Title */}
             <h4
-              className={`text-xs font-semibold leading-snug line-clamp-2 ${
-                isCompleted
+              className={`text-xs font-semibold leading-snug line-clamp-2 ${isCompleted
                   ? "line-through text-slate-400 dark:text-zinc-500 font-normal"
                   : isCanceled
-                  ? "line-through text-rose-500/80 dark:text-rose-400/80 font-normal"
-                  : "text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
-              } transition-colors`}
+                    ? "line-through text-rose-500/80 dark:text-rose-400/80 font-normal"
+                    : "text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
+                } transition-colors`}
             >
               {task.title}
             </h4>
@@ -445,15 +475,24 @@ export function LeftTasksQuadrant({
               </span>
 
               <div className="flex items-center gap-1.5">
-                {task.account_type === "work" ? (
-                  <span className="flex items-center gap-0.5 text-blue-600 dark:text-blue-400 font-medium">
-                    <Briefcase className="w-2.5 h-2.5" /> Trabalho
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-0.5 text-purple-600 dark:text-purple-400 font-medium">
-                    <User className="w-2.5 h-2.5" /> Pessoal
-                  </span>
-                )}
+                <span className="flex items-center gap-1 text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                  {task.account_type === "work" ? (
+                    <>
+                      <Briefcase className="w-2.5 h-2.5 text-blue-500" />
+                      <span>Trabalho</span>
+                    </>
+                  ) : task.account_type === "personal" ? (
+                    <>
+                      <User className="w-2.5 h-2.5 text-purple-500" />
+                      <span>Pessoal</span>
+                    </>
+                  ) : (
+                    <>
+                      <Tag className="w-2.5 h-2.5 text-indigo-500" />
+                      <span>{task.account_type || "Geral"}</span>
+                    </>
+                  )}
+                </span>
               </div>
             </div>
           </div>
@@ -495,38 +534,41 @@ export function LeftTasksQuadrant({
     <aside className="w-[340px] xl:w-[380px] h-full flex flex-col border-r border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
       {/* Top Filter & Search Bar */}
       <div className="p-3.5 border-b border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-[#101118] space-y-2.5 shrink-0">
-        {/* Context Selector: Todas, Trabalho, Pessoal */}
-        <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-[#161722] p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
+        {/* Dynamic Context Selector */}
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#161722] p-1 rounded-xl border border-slate-200 dark:border-zinc-800 overflow-x-auto custom-scrollbar">
           <button
             onClick={() => setAccountFilter("all")}
-            className={`py-1 text-xs font-semibold rounded-lg flex items-center justify-center transition-all ${
-              accountFilter === "all"
+            className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center justify-center shrink-0 transition-all ${accountFilter === "all"
                 ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-slate-100 shadow-sm border border-slate-200/60 dark:border-zinc-700"
                 : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-            }`}
+              }`}
           >
-            Todas
+            Todas ({tasks.length})
           </button>
-          <button
-            onClick={() => setAccountFilter("work")}
-            className={`py-1 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${
-              accountFilter === "work"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Briefcase className="w-3 h-3" /> Trabalho
-          </button>
-          <button
-            onClick={() => setAccountFilter("personal")}
-            className={`py-1 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 transition-all ${
-              accountFilter === "personal"
-                ? "bg-purple-600 text-white shadow-sm"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <User className="w-3 h-3" /> Pessoal
-          </button>
+          {dynamicAccounts.map((acc) => {
+            const count = tasks.filter(
+              (t) =>
+                t.account_type?.toLowerCase() === acc.id.toLowerCase() ||
+                t.account_type?.toLowerCase() === acc.label.toLowerCase()
+            ).length;
+            const isSelected =
+              accountFilter.toLowerCase() === acc.id.toLowerCase() ||
+              accountFilter.toLowerCase() === acc.label.toLowerCase();
+
+            return (
+              <button
+                key={acc.id}
+                onClick={() => setAccountFilter(acc.id as any)}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 shrink-0 transition-all ${isSelected
+                    ? "bg-purple-600 text-white shadow-sm"
+                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+              >
+                <span>{acc.label}</span>
+                <span className="text-[10px] opacity-75">({count})</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Search Bar + AI Categorize + Sync Buttons */}
@@ -621,11 +663,10 @@ export function LeftTasksQuadrant({
                 key={t}
                 type="button"
                 onClick={() => setSelectedTagFilter(selectedTagFilter === t ? null : t)}
-                className={`px-1.5 py-0.5 rounded font-medium shrink-0 transition-colors ${
-                  selectedTagFilter === t
+                className={`px-1.5 py-0.5 rounded font-medium shrink-0 transition-colors ${selectedTagFilter === t
                     ? "bg-indigo-600 text-white"
                     : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-zinc-800"
-                }`}
+                  }`}
               >
                 #{t}
               </button>
@@ -644,41 +685,37 @@ export function LeftTasksQuadrant({
         <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-[11px]">
           <button
             onClick={() => setItemTypeFilter("ALL")}
-            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap transition-colors ${
-              itemTypeFilter === "ALL"
+            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap transition-colors ${itemTypeFilter === "ALL"
                 ? "bg-indigo-600 text-white"
                 : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             Todos
           </button>
           <button
             onClick={() => setItemTypeFilter("task")}
-            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${
-              itemTypeFilter === "task"
+            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${itemTypeFilter === "task"
                 ? "bg-blue-600 text-white"
                 : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             <ListTodo className="w-3 h-3" /> Tarefas
           </button>
           <button
             onClick={() => setItemTypeFilter("activity")}
-            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${
-              itemTypeFilter === "activity"
+            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${itemTypeFilter === "activity"
                 ? "bg-purple-600 text-white"
                 : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             <Activity className="w-3 h-3" /> Atividades
           </button>
           <button
             onClick={() => setItemTypeFilter("reminder")}
-            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${
-              itemTypeFilter === "reminder"
+            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${itemTypeFilter === "reminder"
                 ? "bg-amber-600 text-white"
                 : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
+              }`}
           >
             <Bell className="w-3 h-3" /> Lembretes
           </button>
@@ -729,9 +766,8 @@ export function LeftTasksQuadrant({
                 >
                   <div className="flex items-center gap-2">
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-indigo-500 transition-transform duration-200 ${
-                        isCompletedExpanded ? "" : "-rotate-90"
-                      }`}
+                      className={`w-3.5 h-3.5 text-indigo-500 transition-transform duration-200 ${isCompletedExpanded ? "" : "-rotate-90"
+                        }`}
                     />
                     <span>Concluídas</span>
                     <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400">
@@ -761,9 +797,8 @@ export function LeftTasksQuadrant({
                 >
                   <div className="flex items-center gap-2">
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-rose-500 transition-transform duration-200 ${
-                        isCanceledExpanded ? "" : "-rotate-90"
-                      }`}
+                      className={`w-3.5 h-3.5 text-rose-500 transition-transform duration-200 ${isCanceledExpanded ? "" : "-rotate-90"
+                        }`}
                     />
                     <Ban className="w-3.5 h-3.5 text-rose-500" />
                     <span>Canceladas</span>

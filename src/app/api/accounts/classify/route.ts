@@ -1,68 +1,96 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPendingAuth, clearPendingAuth } from "@/lib/pendingAuth";
-import { saveConnectedAccount, getTasksFromDb, saveTaskToDb, deleteTaskFromDb } from "@/services/taskService";
+import {
+  saveConnectedAccount,
+  getTasksFromDb,
+  saveTaskToDb,
+  linkEmailToMasterUser,
+} from "@/services/taskService";
 import {
   fetchAllGoogleTasksFromAccount,
   fetchYouTubeResources,
 } from "@/services/googleService";
 import { categorizeTaskWithAI } from "@/services/geminiService";
-import { AccountType, Task } from "@/types";
+import { Task } from "@/types";
 import { stripGoogleTaskPrefix } from "@/lib/sla";
 import { getSessionUser } from "@/lib/session";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const type: AccountType = body.type === "personal" ? "personal" : "work";
+    const rawLabel = (body.label || body.type || "Geral").trim();
+    const color = body.color || "indigo";
+    const ticketId = body.ticket || body.ticketId;
 
     const session = await getSessionUser(req);
-    const pendingData = await getPendingAuth();
+    const pendingData = await getPendingAuth(ticketId);
 
-    if (!pendingData) {
+    const email = (
+      body.email ||
+      pendingData?.email ||
+      session?.email ||
+      ""
+    ).toLowerCase().trim();
+
+    const userId = session?.userId || pendingData?.userId;
+
+    if (!userId) {
       return NextResponse.json(
-        { success: false, error: "Nenhuma autenticação pendente encontrada. Faça o login novamente." },
-        { status: 400 }
+        {
+          success: false,
+          error: "Sessão não identificada. Por favor, autentique-se novamente.",
+        },
+        { status: 401 }
       );
     }
 
-    const userId = session?.userId || pendingData.userId;
-    const { email, access_token, refresh_token, expiry_date } = pendingData;
+    const access_token = pendingData?.access_token || body.access_token || undefined;
+    const refresh_token = pendingData?.refresh_token || body.refresh_token || undefined;
+    const expiry_date = pendingData?.expiry_date || body.expiry_date || undefined;
 
-    // 1. Save classified account to connected_accounts collection scoped by userId
+    const accountId =
+      body.account_id ||
+      pendingData?.accountId ||
+      (email ? `acc_${email.replace(/[^a-z0-9_-]/g, "_")}` : `acc_${Date.now()}`);
+
+    // 1. Save classified account to users/{userId}/accounts
     const saved = await saveConnectedAccount(
       {
-        id: type,
-        email: email || `${type}@gmail.com`,
-        access_token: access_token || undefined,
-        refresh_token: refresh_token || undefined,
-        expiry_date: expiry_date || undefined,
+        id: accountId,
+        user_id: userId,
+        email: email || `${rawLabel.toLowerCase()}@gmail.com`,
+        label: rawLabel,
+        color,
+        access_token,
+        refresh_token,
+        expiry_date,
         default_tasklist_id: "@default",
         last_sync_at: new Date().toISOString(),
-        is_connected: true,
+        is_connected: Boolean(access_token || refresh_token),
       },
       userId
     );
 
-    // Clear pending state
-    await clearPendingAuth();
+    // Ensure email is linked to master profile
+    if (email) {
+      await linkEmailToMasterUser(userId, email);
+    }
 
-    // 2. Automatically sync real Google Tasks into MontLife for this user
+    // Clear pending ticket
+    if (ticketId) {
+      await clearPendingAuth(ticketId);
+    }
+
+    // 2. Automatically sync Google Tasks into MontLife for this account
     let importedCount = 0;
     if (access_token || refresh_token) {
       try {
         const items = await fetchAllGoogleTasksFromAccount({
-          access_token: access_token || undefined,
-          refresh_token: refresh_token || undefined,
+          access_token,
+          refresh_token,
         });
 
         const currentTasks = await getTasksFromDb(userId);
-
-        // Clean up legacy seed tasks
-        for (const t of currentTasks) {
-          if (t.id.startsWith("seed-task-")) {
-            await deleteTaskFromDb(t.id, userId);
-          }
-        }
 
         for (const item of items) {
           if (!item.id || !item.title) continue;
@@ -70,7 +98,7 @@ export async function POST(req: NextRequest) {
           const existing = currentTasks.find((t) => t.google_task_id === item.id);
           if (!existing) {
             const cleanTitle = stripGoogleTaskPrefix(item.title);
-            const aiData = await categorizeTaskWithAI(cleanTitle, item.notes, type);
+            const aiData = await categorizeTaskWithAI(cleanTitle, item.notes, rawLabel);
             const yt = await fetchYouTubeResources(aiData.learning_queries);
 
             const isCompleted = item.status === "completed";
@@ -83,7 +111,7 @@ export async function POST(req: NextRequest) {
               raw_input: cleanTitle,
               title: cleanTitle,
               description: item.notes || "",
-              account_type: type,
+              account_type: rawLabel,
               item_type: aiData.item_type || "task",
               category: aiData.category,
               tags: aiData.tags.length > 0 ? aiData.tags : [item.taskListName || "Google Tasks"],
@@ -91,7 +119,7 @@ export async function POST(req: NextRequest) {
               status: isCompleted ? "COMPLETED" : "TODO",
               created_at: taskDate,
               started_at: null,
-              completed_at: isCompleted ? (item.completed || taskDate) : null,
+              completed_at: isCompleted ? item.completed || taskDate : null,
               original_due_date: dueDate,
               current_due_date: dueDate,
               extension_count: 0,
@@ -109,21 +137,20 @@ export async function POST(req: NextRequest) {
           }
         }
       } catch (syncErr) {
-        console.warn("Auto-sync tasks in classify failed:", syncErr);
+        console.warn("Initial sync after classification failed:", syncErr);
       }
     }
 
     return NextResponse.json({
       success: true,
-      type,
+      message: `Conta categorizada como "${rawLabel}" com sucesso.`,
       account: saved,
       imported_count: importedCount,
-      message: `Conta configurada como ${type === "work" ? "Trabalho" : "Pessoal"} com sucesso.`,
     });
   } catch (error: unknown) {
     console.error("POST /api/accounts/classify error:", error);
     return NextResponse.json(
-      { success: false, error: "Falha ao classificar e vincular conta" },
+      { success: false, error: "Falha ao categorizar a conta." },
       { status: 500 }
     );
   }

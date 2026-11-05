@@ -10,19 +10,20 @@ export function getOAuth2Client() {
   return new google.auth.OAuth2(clientId, clientSecret, redirectUri);
 }
 
-export function getAuthUrl(accountType: string = "ask") {
+export function getAuthUrl(state: string = "ask", prompt: string = "select_account consent") {
   const oauth2Client = getOAuth2Client();
   const scopes = [
     "https://www.googleapis.com/auth/tasks",
     "https://www.googleapis.com/auth/calendar.events",
     "https://www.googleapis.com/auth/userinfo.email",
+    "https://www.googleapis.com/auth/userinfo.profile",
   ];
 
   return oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: scopes,
-    prompt: "consent",
-    state: accountType,
+    prompt,
+    state,
   });
 }
 
@@ -375,7 +376,7 @@ export async function syncTaskToGoogleCalendar(
         await calendarApi.events.delete({
           calendarId: "primary",
           eventId: task.google_calendar_event_id,
-        }).catch(() => {});
+        }).catch(() => { });
       }
       return null;
     }

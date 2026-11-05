@@ -5,17 +5,20 @@ import {
   X,
   Briefcase,
   User,
+  GraduationCap,
+  Rocket,
+  Bookmark,
   RefreshCw,
   ShieldCheck,
   CheckCircle,
   AlertCircle,
-  LogOut,
+  Trash2,
   Sparkles,
   PlusCircle,
-  Smartphone,
-  CheckSquare,
-  ChevronDown,
-  ChevronUp,
+  Edit2,
+  Check,
+  Loader2,
+  ExternalLink,
 } from "lucide-react";
 import { ConnectedAccount } from "@/types";
 import { format, parseISO } from "date-fns";
@@ -36,14 +39,14 @@ export function AccountsModal({
 }: AccountsModalProps) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
+  const [editingAccountId, setEditingAccountId] = useState<string | null>(null);
+  const [editingLabel, setEditingLabel] = useState("");
+  const [isSavingLabel, setIsSavingLabel] = useState(false);
 
   if (!isOpen) return null;
 
-  const workAccount = accounts.find((a) => a.id === "work");
-  const personalAccount = accounts.find((a) => a.id === "personal");
-
-  const hasAnyAccount = Boolean(workAccount?.is_connected || personalAccount?.is_connected);
-  const hasBothAccounts = Boolean(workAccount?.is_connected && personalAccount?.is_connected);
+  const connectedAccounts = accounts.filter((a) => a.is_connected && a.email);
+  const totalConnected = connectedAccounts.length;
 
   const handleSyncNow = async () => {
     setIsSyncing(true);
@@ -57,11 +60,11 @@ export function AccountsModal({
       const data = await res.json();
       if (data.success) {
         setSyncFeedback(
-          `Google Tasks & Agenda sincronizados! ${data.imported_count || 0} itens importados.`
+          `Sincronização concluída com sucesso! ${data.imported_count || 0} novas demandas importadas.`
         );
         await onRefreshAccounts();
       } else {
-        setSyncFeedback("Erro ao sincronizar. Verifique se a conta Google está conectada.");
+        setSyncFeedback("Erro ao sincronizar. Verifique se as contas estão ativas.");
       }
     } catch (err) {
       console.error(err);
@@ -71,263 +74,285 @@ export function AccountsModal({
     }
   };
 
-  const handleDisconnect = async (type: string) => {
-    const label = type === "work" ? "de Trabalho" : "Pessoal";
+  const handleDisconnect = async (acc: ConnectedAccount) => {
+    const label = acc.label || acc.email;
 
-    if (!confirm(`Deseja realmente desconectar a conta ${label}?`)) {
+    if (!confirm(`Deseja realmente desconectar a conta "${label}" (${acc.email})?`)) {
       return;
     }
 
     try {
-      await fetch("/api/accounts", {
+      const res = await fetch(`/api/accounts?id=${encodeURIComponent(acc.id)}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        await onRefreshAccounts();
+        setSyncFeedback(`Conta "${label}" desconectada.`);
+      }
+    } catch (err) {
+      console.error("Disconnect error:", err);
+      setSyncFeedback("Erro ao desconectar conta.");
+    }
+  };
+
+  const handleStartEdit = (acc: ConnectedAccount) => {
+    setEditingAccountId(acc.id);
+    setEditingLabel(acc.label || "");
+  };
+
+  const handleSaveLabel = async (acc: ConnectedAccount) => {
+    if (!editingLabel.trim()) return;
+    setIsSavingLabel(true);
+    try {
+      const res = await fetch("/api/accounts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          id: type,
-          email: "",
-          is_connected: false,
-          access_token: null,
-          refresh_token: null,
-          last_sync_at: null,
+          ...acc,
+          label: editingLabel.trim(),
         }),
       });
-      await onRefreshAccounts();
-      setSyncFeedback(`Conta ${label} desconectada com sucesso.`);
+      if (res.ok) {
+        await onRefreshAccounts();
+        setEditingAccountId(null);
+      }
     } catch (err) {
-      console.error("Disconnect error:", err);
+      console.error("Save label error:", err);
+    } finally {
+      setIsSavingLabel(false);
     }
+  };
+
+  const handleLinkNewAccount = () => {
+    window.location.href = "/api/google/auth?action=link";
+  };
+
+  const getAccountIcon = (label?: string) => {
+    const l = (label || "").toLowerCase();
+    if (l.includes("trab") || l.includes("work") || l.includes("empresa")) {
+      return <Briefcase className="w-4 h-4 text-blue-500" />;
+    }
+    if (l.includes("estud") || l.includes("faculd") || l.includes("curso")) {
+      return <GraduationCap className="w-4 h-4 text-emerald-500" />;
+    }
+    if (l.includes("proj")) {
+      return <Rocket className="w-4 h-4 text-amber-500" />;
+    }
+    if (l.includes("pess") || l.includes("vida")) {
+      return <User className="w-4 h-4 text-purple-500" />;
+    }
+    return <Bookmark className="w-4 h-4 text-indigo-500" />;
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all max-h-[90vh] flex flex-col">
+      <div className="relative w-full max-w-xl rounded-3xl bg-white dark:bg-[#141326] border border-slate-200 dark:border-[#282647] shadow-2xl overflow-hidden transition-all max-h-[90vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#101118] shrink-0">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#100f1f] shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800">
+            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
               <h3 className="text-sm font-bold text-slate-900 dark:text-white">
-                Contas Conectadas & Sincronização
+                Contas Google Vinculadas
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Google Tasks e Google Agenda.
+                Perfil Mestre com suporte a múltiplas contas ilimitadas
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Info Banner */}
+        {/* Master Profile Info Banner */}
         <div className="px-6 pt-4 shrink-0">
-          <div className="p-3 rounded-2xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-600 dark:text-slate-400 flex items-center gap-2.5">
-            <Sparkles className="w-4 h-4 text-indigo-500 shrink-0" />
-            <span>
-              {hasBothAccounts ? (
-                <strong className="text-emerald-600 dark:text-emerald-400">
-                  Suas contas de trabalho e pessoal estão conectadas!
-                </strong>
-              ) : hasAnyAccount ? (
-                <>
-                  Você já possui uma conta ativa. Adicionar uma segunda conta é <strong>opcional</strong>.
-                </>
-              ) : (
-                <>Conecte suas contas para sincronizar tarefas e compromissos reais.</>
-              )}
-            </span>
+          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/30 via-indigo-950/30 to-slate-900/40 border border-purple-500/20 text-xs text-slate-300 flex items-start gap-3">
+            <Sparkles className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <span className="font-semibold text-white block">
+                Vínculo Unificado (Perfil Mestre)
+              </span>
+              <p className="text-[11px] text-slate-300/80 leading-relaxed">
+                Todas as contas listadas abaixo respondem a um único perfil. Você pode fazer login com qualquer um dos e-mails vinculados e acessar todos os seus espaços simultaneamente.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Scrollable Content */}
-        <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
-          {/* Work Account Card */}
-          <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-                  <Briefcase className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                      Conta de Trabalho (Google)
-                    </h4>
-                    {!workAccount?.is_connected && personalAccount?.is_connected && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
-                        Opcional
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[220px]">
-                    {workAccount?.is_connected && workAccount.email
-                      ? workAccount.email
-                      : "Google Workspace / Escola (Não conectada)"}
-                  </p>
-                </div>
-              </div>
-
-              <span
-                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 ${
-                  workAccount?.is_connected
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30"
-                    : "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
-                }`}
-              >
-                {workAccount?.is_connected ? (
-                  <>
-                    <CheckCircle className="w-3 h-3 text-emerald-500" /> Conectada
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-3 h-3" /> Inativa
-                  </>
-                )}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/80 dark:border-zinc-800/80">
-              <span>
-                {workAccount?.is_connected && workAccount?.last_sync_at
-                  ? `Último sync: ${format(parseISO(workAccount.last_sync_at), "dd/MM HH:mm", {
-                      locale: ptBR,
-                    })}`
-                  : "Sincronização inativa"}
-              </span>
-
-              {workAccount?.is_connected ? (
-                <div className="flex items-center gap-2">
-                  <a
-                    href="/api/google/auth?type=work"
-                    className="px-3 py-1 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-medium hover:bg-slate-50 transition-colors"
-                  >
-                    Reconectar
-                  </a>
-                  <button
-                    onClick={() => handleDisconnect("work")}
-                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-                    title="Desconectar conta de trabalho"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <a
-                  href="/api/google/auth?type=work"
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  Vincular Trabalho
-                </a>
-              )}
-            </div>
-          </div>
-
-          {/* Personal Account Card */}
-          <div className="p-4 rounded-2xl bg-slate-50/60 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
-                  <User className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                      Conta Pessoal (Google)
-                    </h4>
-                    {!personalAccount?.is_connected && workAccount?.is_connected && (
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400">
-                        Opcional
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate max-w-[220px]">
-                    {personalAccount?.is_connected && personalAccount.email
-                      ? personalAccount.email
-                      : "Gmail Pessoal (Não conectada)"}
-                  </p>
-                </div>
-              </div>
-
-              <span
-                className={`px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 ${
-                  personalAccount?.is_connected
-                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30"
-                    : "bg-slate-100 text-slate-600 border border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700"
-                }`}
-              >
-                {personalAccount?.is_connected ? (
-                  <>
-                    <CheckCircle className="w-3 h-3 text-emerald-500" /> Conectada
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="w-3 h-3" /> Inativa
-                  </>
-                )}
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200/80 dark:border-zinc-800/80">
-              <span>
-                {personalAccount?.is_connected && personalAccount?.last_sync_at
-                  ? `Último sync: ${format(parseISO(personalAccount.last_sync_at), "dd/MM HH:mm", {
-                      locale: ptBR,
-                    })}`
-                  : "Sincronização inativa"}
-              </span>
-
-              {personalAccount?.is_connected ? (
-                <div className="flex items-center gap-2">
-                  <a
-                    href="/api/google/auth?type=personal"
-                    className="px-3 py-1 rounded-lg border border-slate-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-medium hover:bg-slate-50 transition-colors"
-                  >
-                    Reconectar
-                  </a>
-                  <button
-                    onClick={() => handleDisconnect("personal")}
-                    className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-                    title="Desconectar conta pessoal"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ) : (
-                <a
-                  href="/api/google/auth?type=personal"
-                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95"
-                >
-                  <PlusCircle className="w-3.5 h-3.5" />
-                  Vincular Pessoal
-                </a>
-              )}
-            </div>
-          </div>
-
-          {syncFeedback && (
-            <div className="p-3 rounded-2xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-xs text-indigo-700 dark:text-indigo-300 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 shrink-0 text-emerald-500" />
-              <span>{syncFeedback}</span>
-            </div>
-          )}
-
-          {/* Sync CTA */}
-          <div className="flex items-center justify-end pt-3 border-t border-slate-100 dark:border-zinc-800">
+        {/* Feedback message */}
+        {syncFeedback && (
+          <div className="mx-6 mt-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs flex items-center justify-between">
+            <span>{syncFeedback}</span>
             <button
-              onClick={handleSyncNow}
-              disabled={isSyncing || (!workAccount?.is_connected && !personalAccount?.is_connected)}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-40"
+              onClick={() => setSyncFeedback(null)}
+              className="text-purple-500 hover:text-purple-700"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
-              {isSyncing ? "Sincronizando..." : "Sincronizar Google Tasks & Agenda"}
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
+        )}
+
+        {/* Accounts List */}
+        <div className="p-6 space-y-3.5 overflow-y-auto custom-scrollbar flex-1">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              Contas Ativas ({totalConnected})
+            </span>
+
+            <button
+              type="button"
+              onClick={handleLinkNewAccount}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer active:scale-95"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>+ Vincular Outra Conta Google</span>
+            </button>
+          </div>
+
+          {connectedAccounts.length === 0 ? (
+            <div className="p-8 text-center rounded-2xl border border-dashed border-slate-200 dark:border-white/10 space-y-3">
+              <AlertCircle className="w-8 h-8 mx-auto text-amber-500 opacity-60" />
+              <div>
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Nenhuma conta Google conectada no momento
+                </p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Vincule suas contas do Google para sincronizar automaticamente tarefas e compromissos.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={handleLinkNewAccount}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md shadow-purple-600/30 transition-all cursor-pointer"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Vincular Minha Primeira Conta</span>
+              </button>
+            </div>
+          ) : (
+            connectedAccounts.map((acc) => {
+              const isEditing = editingAccountId === acc.id;
+
+              return (
+                <div
+                  key={acc.id}
+                  className="p-4 rounded-2xl bg-slate-50/70 dark:bg-[#18172e] border border-slate-200 dark:border-white/5 space-y-3 transition-all hover:border-purple-300 dark:hover:border-purple-500/30"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0 flex-1">
+                      <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                        {getAccountIcon(acc.label)}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        {isEditing ? (
+                          <div className="flex items-center gap-1.5 mb-1">
+                            <input
+                              type="text"
+                              value={editingLabel}
+                              onChange={(e) => setEditingLabel(e.target.value)}
+                              placeholder="Nome do rótulo..."
+                              className="h-7 px-2 text-xs font-bold rounded-lg bg-white dark:bg-[#121122] border border-purple-500 text-slate-900 dark:text-white focus:outline-none"
+                              autoFocus
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveLabel(acc)}
+                              disabled={isSavingLabel}
+                              className="p-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
+                              title="Salvar"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingAccountId(null)}
+                              className="p-1 rounded-lg bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-slate-300"
+                              title="Cancelar"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
+                              {acc.label || "Geral"}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleStartEdit(acc)}
+                              className="p-1 text-slate-400 hover:text-purple-500 rounded transition-colors"
+                              title="Renomear rótulo desta conta"
+                            >
+                              <Edit2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
+
+                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                          {acc.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30">
+                        <CheckCircle className="w-3 h-3 text-emerald-500" />
+                        <span>Conectada</span>
+                      </span>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDisconnect(acc)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                        title="Desconectar esta conta"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-200/60 dark:border-white/5">
+                    <span>
+                      {acc.last_sync_at
+                        ? `Último sync: ${format(parseISO(acc.last_sync_at), "dd/MM HH:mm", {
+                            locale: ptBR,
+                          })}`
+                        : "Sincronização pendente"}
+                    </span>
+                    <span className="font-mono text-[10px]">Google Tasks API</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-4 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#100f1f] flex items-center justify-between gap-3 shrink-0">
+          <button
+            type="button"
+            onClick={handleSyncNow}
+            disabled={isSyncing || connectedAccounts.length === 0}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md shadow-purple-600/30 transition-all disabled:opacity-40 cursor-pointer active:scale-95"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
+            <span>{isSyncing ? "Sincronizando..." : "Sincronizar Todas as Contas"}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+          >
+            Fechar
+          </button>
         </div>
       </div>
     </div>

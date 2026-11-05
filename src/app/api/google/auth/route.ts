@@ -4,16 +4,17 @@ import { getAppBaseUrl } from "@/lib/urlUtils";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
-  const accountType = searchParams.get("type") || "ask";
+  const action = searchParams.get("action") || searchParams.get("type") || "login";
   const baseUrl = getAppBaseUrl(req);
 
   const clientId = process.env.GOOGLE_CLIENT_ID;
   if (!clientId || clientId === "seu_client_id.apps.googleusercontent.com") {
     return NextResponse.redirect(
-      `${baseUrl}/?google_oauth_missing=true&account_type=${accountType}`
+      `${baseUrl}/?google_oauth_missing=true&action=${action}`
     );
   }
 
-  const authUrl = getAuthUrl(accountType);
+  // Always force account chooser when linking, or during login so users can pick any account
+  const authUrl = getAuthUrl(action, "select_account consent");
   return NextResponse.redirect(authUrl);
 }

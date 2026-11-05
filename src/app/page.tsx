@@ -46,7 +46,10 @@ export default function MontOpsDashboard() {
   const [isNewTaskModalOpen, setIsNewTaskModalOpen] = useState(false);
   const [isClassifyModalOpen, setIsClassifyModalOpen] = useState(false);
   const [classifyEmail, setClassifyEmail] = useState("");
+  const [classifyTicket, setClassifyTicket] = useState("");
+  const [classifyAccountId, setClassifyAccountId] = useState("");
   const [accountsLoaded, setAccountsLoaded] = useState(false);
+  const [userLoaded, setUserLoaded] = useState(false);
   const [newTaskInitialText, setNewTaskInitialText] = useState("");
   const [oauthFeedback, setOauthFeedback] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<{
@@ -121,9 +124,13 @@ export default function MontOpsDashboard() {
       const data = await res.json();
       if (data.success && data.user) {
         setCurrentUser(data.user);
+      } else {
+        setCurrentUser(null);
       }
     } catch {
-      // not logged in or guest
+      setCurrentUser(null);
+    } finally {
+      setUserLoaded(true);
     }
   }, []);
 
@@ -149,23 +156,46 @@ export default function MontOpsDashboard() {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
 
-      // 1. Post-OAuth Classification Prompt
+      // 1. Post-OAuth Classification Prompt (New account needs context label)
       if (params.get("prompt_classify") === "true") {
         const email = params.get("email") || "";
+        const ticket = params.get("ticket") || "";
+        const accId = params.get("acc_id") || "";
         setClassifyEmail(email);
+        setClassifyTicket(ticket);
+        setClassifyAccountId(accId);
         setIsClassifyModalOpen(true);
         window.history.replaceState({}, document.title, window.location.pathname);
         return;
       }
 
-      // 2. Direct OAuth Success
-      if (params.get("oauth_success")) {
-        const type = params.get("oauth_success");
+      // 2. Direct Transparent Login Success (Existing Master Profile)
+      if (params.get("login_success") === "true") {
+        const email = params.get("email") || "";
         setOauthFeedback(
-          `Conta ${type === "work" ? "de Trabalho" : "Pessoal"} vinculada com sucesso! Importando suas tarefas reais do Google Tasks...`
+          email
+            ? `Bem-vinda de volta! Perfil Mestre carregado (${email}).`
+            : "Bem-vinda ao MontLife! Seus dados e contas vinculadas foram carregados."
         );
         window.history.replaceState({}, document.title, window.location.pathname);
-        loadAccounts().then(() => loadTasks());
+        loadAccounts().then(() => loadTasks()).then(() => loadUser());
+        fetch("/api/google/sync", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: "{}",
+        })
+          .then((r) => r.json())
+          .then(() => {
+            loadTasks();
+            loadAccounts();
+          });
+      } else if (params.get("oauth_success")) {
+        const type = params.get("oauth_success");
+        setOauthFeedback(
+          `Conta vinculada com sucesso! Sincronizando dados com o Google Tasks...`
+        );
+        window.history.replaceState({}, document.title, window.location.pathname);
+        loadAccounts().then(() => loadTasks()).then(() => loadUser());
         fetch("/api/google/sync", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -181,30 +211,32 @@ export default function MontOpsDashboard() {
         window.history.replaceState({}, document.title, window.location.pathname);
       }
     }
-  }, [loadAccounts, loadTasks]);
+  }, [loadAccounts, loadTasks, loadUser]);
 
-  // Redirect to /login if user is unauthenticated and not in guest/classify mode
+  // Protect dashboard: redirect to /login only if user is definitively unauthenticated
   useEffect(() => {
-    if (typeof window !== "undefined" && accountsLoaded) {
+    if (typeof window !== "undefined" && userLoaded && accountsLoaded) {
       const params = new URLSearchParams(window.location.search);
-      const isGuest = params.get("guest") === "true";
       const isPrompting = params.get("prompt_classify") === "true" || isClassifyModalOpen;
-      const isOAuth = params.get("oauth_success") || params.get("oauth_error");
-      const hasConnected = accounts.some((a) => a.is_connected);
+      const isOAuth =
+        params.get("oauth_success") ||
+        params.get("login_success") ||
+        params.get("oauth_error");
 
-      if (!hasConnected && !isGuest && !isPrompting && !isOAuth) {
+      if (!currentUser && !isPrompting && !isOAuth) {
         window.location.href = "/login";
       }
     }
-  }, [accountsLoaded, accounts, isClassifyModalOpen]);
+  }, [userLoaded, accountsLoaded, currentUser, isClassifyModalOpen]);
 
-  const handleClassified = async (type: AccountType, importedCount: number) => {
+  const handleClassified = async (label: string, importedCount: number) => {
     setIsClassifyModalOpen(false);
     setOauthFeedback(
-      `Conta ${type === "work" ? "de Trabalho" : "Pessoal"} configurada com sucesso! ${importedCount} tarefas reais do Google Tasks importadas.`
+      `Espaço "${label}" configurado com sucesso! ${importedCount} tarefas reais do Google Tasks importadas.`
     );
     await loadAccounts();
     await loadTasks();
+    await loadUser();
   };
 
   // Handlers
@@ -400,22 +432,22 @@ export default function MontOpsDashboard() {
         </div>
 
         {/* Banner if no account is connected */}
-        {!hasConnectedAccount && accountsLoaded && accounts.length > 0 && (
-          <div className="no-print bg-indigo-50 dark:bg-indigo-950/60 border-b border-indigo-200 dark:border-indigo-800 px-4 py-2 flex items-center justify-between text-xs text-indigo-900 dark:text-indigo-200 shrink-0">
+        {!hasConnectedAccount && accountsLoaded && (
+          <div className="no-print bg-purple-50 dark:bg-purple-950/60 border-b border-purple-200 dark:border-purple-800 px-4 py-2 flex items-center justify-between text-xs text-purple-900 dark:text-purple-200 shrink-0">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
               <p>
-                <strong>Nenhuma conta vinculada.</strong> Conecte sua conta do Google para sincronizar suas tarefas reais do Google Tasks.
+                <strong>Nenhuma conta Google vinculada.</strong> Conecte suas contas para sincronizar tarefas reais do Google Tasks.
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <a
-                href="/login"
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-[11px] shadow-sm transition-all"
+              <button
+                type="button"
+                onClick={() => setIsAccountsModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-[11px] shadow-sm transition-all cursor-pointer"
               >
-                <ExternalLink className="w-3 h-3" />
-                Fazer Login com Google
-              </a>
+                + Vincular Conta Google
+              </button>
             </div>
           </div>
         )}
@@ -500,6 +532,7 @@ export default function MontOpsDashboard() {
             {/* Quadrante Esquerdo: Minhas Tarefas */}
             <LeftTasksQuadrant
               tasks={tasks}
+              accounts={accounts}
               selectedTaskId={selectedTask?.id || null}
               onSelectTask={(task) => {
                 setSelectedTaskId(task.id);
@@ -622,6 +655,8 @@ export default function MontOpsDashboard() {
       <ClassifyAccountModal
         isOpen={isClassifyModalOpen}
         email={classifyEmail}
+        ticketId={classifyTicket}
+        accountId={classifyAccountId}
         onClassified={handleClassified}
         onClose={() => setIsClassifyModalOpen(false)}
       />

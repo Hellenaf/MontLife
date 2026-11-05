@@ -5,6 +5,7 @@ import {
   SimilarResolution,
   ConnectedAccount,
   AccountType,
+  MasterUserProfile,
 } from "@/types";
 import {
   calculateSlaDueDate,
@@ -14,6 +15,7 @@ import {
 const DEFAULT_ACCOUNTS: ConnectedAccount[] = [
   {
     id: "work",
+    label: "Trabalho",
     email: "",
     default_tasklist_id: "@default",
     last_sync_at: null,
@@ -21,6 +23,7 @@ const DEFAULT_ACCOUNTS: ConnectedAccount[] = [
   },
   {
     id: "personal",
+    label: "Pessoal",
     email: "",
     default_tasklist_id: "@default",
     last_sync_at: null,
@@ -28,9 +31,186 @@ const DEFAULT_ACCOUNTS: ConnectedAccount[] = [
   },
 ];
 
-// Pure empty state in production
+// In-memory fallback cache
 let memoryTasks: Task[] = [];
 let memoryAccounts: ConnectedAccount[] = [...DEFAULT_ACCOUNTS];
+let memoryUsers: MasterUserProfile[] = [];
+
+// ==========================================
+// 1. MASTER USER & CROSS-ACCOUNT RECOGNITION
+// ==========================================
+
+export async function findMasterUserByEmail(
+  email: string
+): Promise<MasterUserProfile | null> {
+  const cleanEmail = email.toLowerCase().trim();
+  if (!cleanEmail) return null;
+
+  const db = getFirestoreDb();
+  if (!db) {
+    return (
+      memoryUsers.find(
+        (u) =>
+          u.primary_email.toLowerCase() === cleanEmail ||
+          u.linked_emails.map((e) => e.toLowerCase()).includes(cleanEmail)
+      ) || null
+    );
+  }
+
+  try {
+    // 1. Check if email is in linked_emails array
+    const linkedSnap = await db
+      .collection("users")
+      .where("linked_emails", "array-contains", cleanEmail)
+      .limit(1)
+      .get();
+
+    if (!linkedSnap.empty) {
+      return linkedSnap.docs[0].data() as MasterUserProfile;
+    }
+
+    // 2. Check primary_email field
+    const primarySnap = await db
+      .collection("users")
+      .where("primary_email", "==", cleanEmail)
+      .limit(1)
+      .get();
+
+    if (!primarySnap.empty) {
+      return primarySnap.docs[0].data() as MasterUserProfile;
+    }
+
+    return null;
+  } catch (err) {
+    console.warn("Failed to find master user by email in Firestore:", err);
+    return (
+      memoryUsers.find(
+        (u) =>
+          u.primary_email.toLowerCase() === cleanEmail ||
+          u.linked_emails.map((e) => e.toLowerCase()).includes(cleanEmail)
+      ) || null
+    );
+  }
+}
+
+export async function getMasterUserProfile(
+  userId: string
+): Promise<MasterUserProfile | null> {
+  const db = getFirestoreDb();
+  if (!db) {
+    return memoryUsers.find((u) => u.id === userId) || null;
+  }
+
+  try {
+    const doc = await db.collection("users").doc(userId).get();
+    if (doc.exists) {
+      return doc.data() as MasterUserProfile;
+    }
+    return null;
+  } catch (err) {
+    console.warn("Failed to read user profile from Firestore:", err);
+    return memoryUsers.find((u) => u.id === userId) || null;
+  }
+}
+
+export async function createOrUpdateMasterUser(
+  profileData: Partial<MasterUserProfile> & {
+    id?: string;
+    primary_email: string;
+  }
+): Promise<MasterUserProfile> {
+  const cleanEmail = profileData.primary_email.toLowerCase().trim();
+  const rawId =
+    profileData.id ||
+    `usr_${cleanEmail.replace(/[^a-z0-9_-]/g, "_")}`;
+
+  const nowIso = new Date().toISOString();
+  const existing = await getMasterUserProfile(rawId);
+
+  const existingLinked = existing?.linked_emails || [];
+  const incomingLinked = profileData.linked_emails || [];
+  const mergedEmails = Array.from(
+    new Set([
+      ...existingLinked.map((e) => e.toLowerCase()),
+      ...incomingLinked.map((e) => e.toLowerCase()),
+      cleanEmail,
+    ])
+  );
+
+  const fullProfile: MasterUserProfile = {
+    id: rawId,
+    primary_email: cleanEmail,
+    name: profileData.name || existing?.name || cleanEmail.split("@")[0],
+    picture: profileData.picture || existing?.picture || "",
+    role: profileData.role || existing?.role || "member",
+    linked_emails: mergedEmails,
+    created_at: existing?.created_at || profileData.created_at || nowIso,
+    updated_at: nowIso,
+    last_login_at: nowIso,
+  };
+
+  // Keep in-memory
+  const idx = memoryUsers.findIndex((u) => u.id === fullProfile.id);
+  if (idx >= 0) {
+    memoryUsers[idx] = fullProfile;
+  } else {
+    memoryUsers.push(fullProfile);
+  }
+
+  const db = getFirestoreDb();
+  if (db) {
+    try {
+      await db.collection("users").doc(fullProfile.id).set(fullProfile, { merge: true });
+    } catch (err) {
+      console.warn("Failed to write master user to Firestore:", err);
+    }
+  }
+
+  return fullProfile;
+}
+
+export async function linkEmailToMasterUser(
+  masterUserId: string,
+  newEmail: string
+): Promise<void> {
+  const cleanEmail = newEmail.toLowerCase().trim();
+  if (!cleanEmail || !masterUserId) return;
+
+  const db = getFirestoreDb();
+  const nowIso = new Date().toISOString();
+
+  // In memory
+  const memUser = memoryUsers.find((u) => u.id === masterUserId);
+  if (memUser) {
+    if (!memUser.linked_emails.includes(cleanEmail)) {
+      memUser.linked_emails.push(cleanEmail);
+      memUser.updated_at = nowIso;
+    }
+  }
+
+  if (db) {
+    try {
+      const userDocRef = db.collection("users").doc(masterUserId);
+      const doc = await userDocRef.get();
+      if (doc.exists) {
+        const data = doc.data() as MasterUserProfile;
+        const currentList = data.linked_emails || [data.primary_email];
+        if (!currentList.map((e) => e.toLowerCase()).includes(cleanEmail)) {
+          await userDocRef.update({
+            linked_emails: [...currentList, cleanEmail],
+            updated_at: nowIso,
+          });
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to link email to master user in Firestore:", err);
+    }
+  }
+}
+
+// ==========================================
+// 2. TASK PERSISTENCE & LEGACY UNIFICATION
+// ==========================================
 
 export async function getTasksFromDb(userId?: string): Promise<Task[]> {
   const db = getFirestoreDb();
@@ -42,37 +222,78 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
   }
 
   try {
-    let snapshot;
+    const taskMap = new Map<string, Task>();
+
     if (userId) {
-      snapshot = await db.collection("tasks").where("user_id", "==", userId).get();
-      // If user has no tasks yet, check if there are legacy tasks without user_id only for the primary owner
-      if (snapshot.empty && (userId === "primary" || userId.includes("hellen"))) {
-        const legacySnap = await db.collection("tasks").orderBy("created_at", "desc").get();
-        const legacyDocs = legacySnap.docs.filter((d) => !d.data().user_id);
-        if (legacyDocs.length > 0) {
-          snapshot = { docs: legacyDocs, empty: false } as any;
+      // 1. Fetch user's direct tasks
+      const userSnap = await db
+        .collection("tasks")
+        .where("user_id", "==", userId)
+        .get();
+
+      for (const doc of userSnap.docs) {
+        const data = doc.data() as Task;
+        if (!data.id.startsWith("seed-task-")) {
+          taskMap.set(data.id, data);
         }
       }
-    } else {
-      snapshot = await db.collection("tasks").orderBy("created_at", "desc").get();
-    }
 
-    if (!snapshot || snapshot.empty) {
-      return [];
-    }
+      // 2. CRITICAL PERSISTENCE BUG FIX:
+      // Check for legacy/unassigned native tasks in Firestore that were created
+      // prior to authentication or in guest/test mode. Automatically migrate/adopt them!
+      try {
+        const legacySnap = await db
+          .collection("tasks")
+          .orderBy("created_at", "desc")
+          .limit(100)
+          .get();
 
-    const tasks: Task[] = [];
-    for (const doc of snapshot.docs) {
-      const data = doc.data() as Task;
-      // Auto-purge any leftover legacy seed tasks from test mode
-      if (data.id.startsWith("seed-task-")) {
-        doc.ref.delete().catch(() => {});
-        continue;
+        const tasksToMigrate: Task[] = [];
+        for (const doc of legacySnap.docs) {
+          const data = doc.data() as Task;
+          if (data.id.startsWith("seed-task-")) {
+            doc.ref.delete().catch(() => {});
+            continue;
+          }
+
+          // If task has no user_id, or has legacy guest/primary workspace id
+          const isOrphaned =
+            !data.user_id ||
+            data.user_id === "guest_workspace" ||
+            data.user_id === "guest" ||
+            data.user_id === "primary" ||
+            data.user_id === "primary_workspace";
+
+          if (isOrphaned) {
+            const adoptedTask = { ...data, user_id: userId };
+            taskMap.set(data.id, adoptedTask);
+            tasksToMigrate.push(adoptedTask);
+          }
+        }
+
+        // Asynchronously update adopted tasks in Firestore so they are permanently saved
+        if (tasksToMigrate.length > 0) {
+          Promise.all(
+            tasksToMigrate.map((t) =>
+              db.collection("tasks").doc(t.id).update({ user_id: userId }).catch(() => {})
+            )
+          ).catch(() => {});
+        }
+      } catch (legacyErr) {
+        console.warn("Legacy task migration check failed:", legacyErr);
       }
-      tasks.push(data);
+    } else {
+      // If no userId, return all valid production tasks
+      const snapshot = await db.collection("tasks").orderBy("created_at", "desc").get();
+      for (const doc of snapshot.docs) {
+        const data = doc.data() as Task;
+        if (!data.id.startsWith("seed-task-")) {
+          taskMap.set(data.id, data);
+        }
+      }
     }
 
-    // Sort descending by created_at
+    const tasks = Array.from(taskMap.values());
     tasks.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
     return tasks;
@@ -89,15 +310,19 @@ export async function saveTaskToDb(task: Task, userId?: string): Promise<Task> {
   const db = getFirestoreDb();
   if (userId) {
     task.user_id = userId;
+  } else if (!task.user_id) {
+    task.user_id = "primary_workspace";
+  }
+
+  // Update memory
+  const idx = memoryTasks.findIndex((t) => t.id === task.id);
+  if (idx >= 0) {
+    memoryTasks[idx] = task;
+  } else {
+    memoryTasks.unshift(task);
   }
 
   if (!db) {
-    const idx = memoryTasks.findIndex((t) => t.id === task.id);
-    if (idx >= 0) {
-      memoryTasks[idx] = task;
-    } else {
-      memoryTasks.unshift(task);
-    }
     return task;
   }
 
@@ -106,12 +331,6 @@ export async function saveTaskToDb(task: Task, userId?: string): Promise<Task> {
     return task;
   } catch (err) {
     console.warn("Firestore write failed, saving to in-memory:", err);
-    const idx = memoryTasks.findIndex((t) => t.id === task.id);
-    if (idx >= 0) {
-      memoryTasks[idx] = task;
-    } else {
-      memoryTasks.unshift(task);
-    }
     return task;
   }
 }
@@ -226,7 +445,6 @@ export async function registerExecutionRecurrence(
     task.execution_history = [];
   }
 
-  // Record this execution in history
   task.execution_history.unshift({
     id: `exec-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
     date: nowIso,
@@ -235,7 +453,6 @@ export async function registerExecutionRecurrence(
     registered_by: params.registeredBy || "Usuário",
   });
 
-  // If a new alternative method was specified, record it
   if (params.method && params.method.trim().length > 0) {
     if (!task.alternative_resolutions) {
       task.alternative_resolutions = [];
@@ -248,7 +465,6 @@ export async function registerExecutionRecurrence(
     });
   }
 
-  // Update status if user wants to work on it again
   if (params.reopenStatus) {
     task.status = params.reopenStatus;
     if (params.reopenStatus === "IN_PROGRESS") {
@@ -270,7 +486,6 @@ export async function findDirectDbMatchForTriage(rawInput: string, userId?: stri
     const tTitle = (t.title || "").toLowerCase().trim();
     const tRaw = (t.raw_input || "").toLowerCase().trim();
 
-    // Exact match or highly distinct similarity
     if (tTitle === cleanInput || tRaw === cleanInput) {
       return t;
     }
@@ -310,66 +525,107 @@ export async function extendTaskDeadline(
   return task;
 }
 
+// ==========================================
+// 3. UNLIMITED CONNECTED ACCOUNTS
+// ==========================================
+
 export async function getConnectedAccounts(userId?: string): Promise<ConnectedAccount[]> {
   const db = getFirestoreDb();
   if (!db) {
     return memoryAccounts.map((acc) => ({
       ...acc,
+      label: acc.label || (acc.id === "work" ? "Trabalho" : acc.id === "personal" ? "Pessoal" : "Geral"),
       is_connected: Boolean(acc.access_token || acc.refresh_token),
     }));
   }
 
   try {
-    const colRef = userId
-      ? db.collection("users").doc(userId).collection("accounts")
-      : db.collection("connected_accounts");
+    let accounts: ConnectedAccount[] = [];
 
-    const snapshot = await colRef.get();
-    if (snapshot.empty) {
-      if (userId) {
+    if (userId) {
+      const colRef = db.collection("users").doc(userId).collection("accounts");
+      const snapshot = await colRef.get();
+
+      if (!snapshot.empty) {
+        accounts = snapshot.docs.map((doc) => {
+          const data = doc.data() as ConnectedAccount;
+          return {
+            ...data,
+            label: data.label || (data.id === "work" ? "Trabalho" : data.id === "personal" ? "Pessoal" : "Geral"),
+            is_connected: Boolean(data.access_token || data.refresh_token),
+          };
+        });
+      } else {
+        // Fallback: check legacy root connected_accounts
         const legacySnap = await db.collection("connected_accounts").get();
         if (!legacySnap.empty) {
-          return legacySnap.docs.map((doc) => {
+          accounts = legacySnap.docs.map((doc) => {
             const data = doc.data() as ConnectedAccount;
             return {
               ...data,
+              label: data.label || (data.id === "work" ? "Trabalho" : data.id === "personal" ? "Pessoal" : "Geral"),
               is_connected: Boolean(data.access_token || data.refresh_token),
             };
           });
         }
       }
-
-      return [
-        { id: "work", email: "", default_tasklist_id: "@default", last_sync_at: null, is_connected: false },
-        { id: "personal", email: "", default_tasklist_id: "@default", last_sync_at: null, is_connected: false },
-      ];
+    } else {
+      const rootSnap = await db.collection("connected_accounts").get();
+      if (!rootSnap.empty) {
+        accounts = rootSnap.docs.map((doc) => {
+          const data = doc.data() as ConnectedAccount;
+          return {
+            ...data,
+            label: data.label || (data.id === "work" ? "Trabalho" : data.id === "personal" ? "Pessoal" : "Geral"),
+            is_connected: Boolean(data.access_token || data.refresh_token),
+          };
+        });
+      }
     }
 
-    return snapshot.docs.map((doc) => {
-      const data = doc.data() as ConnectedAccount;
-      const isActuallyConnected = Boolean(data.access_token || data.refresh_token);
-      return {
-        ...data,
-        is_connected: isActuallyConnected,
-      };
-    });
+    if (accounts.length === 0) {
+      return memoryAccounts.map((acc) => ({
+        ...acc,
+        label: acc.label || (acc.id === "work" ? "Trabalho" : acc.id === "personal" ? "Pessoal" : "Geral"),
+        is_connected: Boolean(acc.access_token || acc.refresh_token),
+      }));
+    }
+
+    return accounts;
   } catch (err) {
     console.warn("Firestore read accounts failed:", err);
     return memoryAccounts;
   }
 }
 
-export async function saveConnectedAccount(account: ConnectedAccount, userId?: string): Promise<ConnectedAccount> {
+export async function saveConnectedAccount(
+  account: ConnectedAccount,
+  userId?: string
+): Promise<ConnectedAccount> {
   const db = getFirestoreDb();
   if (userId) {
     account.user_id = userId;
   }
 
+  // Ensure an id and label exist
+  if (!account.id) {
+    account.id = `acc_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+  }
+  if (!account.label) {
+    account.label = account.id === "work" ? "Trabalho" : account.id === "personal" ? "Pessoal" : "Geral";
+  }
+
+  // In memory
   const idx = memoryAccounts.findIndex((a) => a.id === account.id);
   if (idx >= 0) {
     memoryAccounts[idx] = account;
   } else {
     memoryAccounts.push(account);
+  }
+
+  // Also ensure this email is linked to the user's master profile
+  if (userId && account.email) {
+    linkEmailToMasterUser(userId, account.email).catch(() => {});
   }
 
   if (!db) return account;
@@ -384,5 +640,27 @@ export async function saveConnectedAccount(account: ConnectedAccount, userId?: s
   } catch (err) {
     console.warn("Firestore save account failed:", err);
     return account;
+  }
+}
+
+export async function deleteConnectedAccount(
+  accountId: string,
+  userId?: string
+): Promise<boolean> {
+  memoryAccounts = memoryAccounts.filter((a) => a.id !== accountId);
+
+  const db = getFirestoreDb();
+  if (!db) return true;
+
+  try {
+    if (userId) {
+      await db.collection("users").doc(userId).collection("accounts").doc(accountId).delete();
+    } else {
+      await db.collection("connected_accounts").doc(accountId).delete();
+    }
+    return true;
+  } catch (err) {
+    console.warn("Firestore delete account failed:", err);
+    return true;
   }
 }
