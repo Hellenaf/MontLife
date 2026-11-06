@@ -46,7 +46,7 @@ export function AnnualReportModal({
   onClose,
   tasks,
 }: AnnualReportModalProps) {
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedYear, setSelectedYear] = useState<number | "ALL">("ALL");
   const [selectedMonth, setSelectedMonth] = useState<number | "ALL">("ALL");
   const [scopeFilter, setScopeFilter] = useState<"work" | "personal" | "all">("work");
 
@@ -55,6 +55,41 @@ export function AnnualReportModal({
   const [aiSummary, setAiSummary] = useState<string | null>(null);
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "activities" | "ai_summary">("dashboard");
+
+  // Manager state
+  const [managerName, setManagerName] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("montlife_report_manager") || "Hellen Ferreira";
+    }
+    return "Hellen Ferreira";
+  });
+
+  const handleManagerNameChange = (name: string) => {
+    setManagerName(name);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("montlife_report_manager", name);
+    }
+  };
+
+  // Dynamically extract available years from all tasks
+  const availableYears = useMemo(() => {
+    const currentYr = new Date().getFullYear();
+    const yearSet = new Set<number>([currentYr, currentYr - 1]);
+    tasks.forEach((t) => {
+      const dateStr = t.created_at || t.original_due_date || t.current_due_date;
+      if (dateStr) {
+        try {
+          const y = getYear(parseISO(dateStr));
+          if (!isNaN(y) && y > 2000 && y < 2100) {
+            yearSet.add(y);
+          }
+        } catch {
+          // ignore invalid
+        }
+      }
+    });
+    return Array.from(yearSet).sort((a, b) => b - a);
+  }, [tasks]);
 
   // Month names
   const months = [
@@ -73,32 +108,60 @@ export function AnnualReportModal({
     { value: 11, label: "Dez" },
   ];
 
-  const selectedMonthLabel =
-    selectedMonth === "ALL"
+  const selectedMonthLabel = useMemo(() => {
+    if (selectedYear === "ALL") {
+      return selectedMonth === "ALL"
+        ? "Todos os Anos (Compilado Geral)"
+        : `${months.find((m) => m.value === selectedMonth)?.label} (Todos os Anos)`;
+    }
+    return selectedMonth === "ALL"
       ? `Ano Completo de ${selectedYear}`
       : `${months.find((m) => m.value === selectedMonth)?.label}/${selectedYear}`;
+  }, [selectedYear, selectedMonth]);
+
+  // Unified Work vs Personal task classifier
+  const isWorkTask = (t: Task) => {
+    if (t.transferred_to === "personal") return false;
+    if (t.transferred_to === "work") return true;
+    if (t.manually_assigned && (t.account_type === "personal" || t.account_type === "Pessoal")) return false;
+    const acc = (t.account_type || "").toLowerCase().trim();
+    const email = (t.account_email || "").toLowerCase().trim();
+    if (acc === "personal" || acc === "pessoal" || email.includes("hellen")) return false;
+    return true;
+  };
 
   // Filter tasks strictly according to scope (work vs personal vs all) and period
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
       // 1. Strict Scope isolation
-      if (scopeFilter !== "all" && t.account_type !== scopeFilter) {
+      if (scopeFilter === "work" && !isWorkTask(t)) {
+        return false;
+      }
+      if (scopeFilter === "personal" && isWorkTask(t)) {
         return false;
       }
 
       // 2. Year & Month period
-      try {
-        const d = parseISO(t.created_at);
-        const y = getYear(d);
-        if (y !== selectedYear) return false;
-        if (selectedMonth !== "ALL") {
-          const m = getMonth(d);
-          if (m !== selectedMonth) return false;
+      if (selectedYear !== "ALL" || selectedMonth !== "ALL") {
+        try {
+          const dateStr = t.created_at || t.original_due_date || t.current_due_date;
+          if (dateStr) {
+            const d = parseISO(dateStr);
+            if (!isNaN(d.getTime())) {
+              if (selectedYear !== "ALL" && getYear(d) !== selectedYear) return false;
+              if (selectedMonth !== "ALL" && getMonth(d) !== selectedMonth) return false;
+            } else if (selectedYear !== "ALL") {
+              return false;
+            }
+          } else if (selectedYear !== "ALL") {
+            return false;
+          }
+        } catch {
+          if (selectedYear !== "ALL") return false;
         }
-        return true;
-      } catch {
-        return true;
       }
+
+      return true;
     });
   }, [tasks, selectedYear, selectedMonth, scopeFilter]);
 
@@ -107,9 +170,9 @@ export function AnnualReportModal({
   const completed = filteredTasks.filter((t) => t.status === "COMPLETED");
   const completedCount = completed.length;
   
-  // In progress / pending (includes IN_PROGRESS, WAITING, and TODO)
+  // In progress / pending (all open non-completed non-canceled tasks)
   const inProgressList = filteredTasks.filter(
-    (t) => t.status === "IN_PROGRESS" || t.status === "WAITING" || t.status === "TODO"
+    (t) => t.status !== "COMPLETED" && t.status !== "CANCELED"
   );
   const inProgressCount = inProgressList.length;
   const activeRunningCount = filteredTasks.filter((t) => t.status === "IN_PROGRESS").length;
@@ -430,12 +493,15 @@ Relatório gerado via MontLife.`;
           <div className="flex items-center gap-2 overflow-x-auto">
             <select
               value={selectedYear}
-              onChange={(e) => setSelectedYear(Number(e.target.value))}
+              onChange={(e) => setSelectedYear(e.target.value === "ALL" ? "ALL" : Number(e.target.value))}
               className="h-8 px-2.5 rounded-lg bg-[#1A1829] border border-[#2E2B44] text-xs font-bold text-[#EAE9FC] focus:outline-none focus:border-[#9D8DF1]"
             >
-              <option value={2026}>2026</option>
-              <option value={2025}>2025</option>
-              <option value={2024}>2024</option>
+              <option value="ALL">Todos os Anos (Compilado Geral)</option>
+              {availableYears.map((yr) => (
+                <option key={yr} value={yr}>
+                  {yr}
+                </option>
+              ))}
             </select>
 
             <div className="flex items-center gap-0.5 bg-[#1A1829] p-0.5 rounded-lg border border-[#2E2B44] text-[11px]">

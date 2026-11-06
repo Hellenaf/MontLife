@@ -21,6 +21,7 @@ interface AttachmentManagerProps {
   stage?: "creation" | "resolution";
   readOnly?: boolean;
   label?: string;
+  onPreviewMedia?: (media: { url: string; title: string; type?: string; size?: number }) => void;
 }
 
 export function AttachmentManager({
@@ -29,6 +30,7 @@ export function AttachmentManager({
   stage = "creation",
   readOnly = false,
   label,
+  onPreviewMedia,
 }: AttachmentManagerProps) {
   const [isAddingLink, setIsAddingLink] = useState(false);
   const [linkUrl, setLinkUrl] = useState("");
@@ -227,14 +229,31 @@ export function AttachmentManager({
               att.is_external_link ||
               att.url?.startsWith("http://") ||
               att.url?.startsWith("https://");
-            const isImage = att.type?.startsWith("image/") && !isLink;
+            const isImage = (att.type?.startsWith("image/") || Boolean(att.url?.match(/\.(jpeg|jpg|png|gif|webp|svg)($|\?)/i))) && !isLink;
+            const isVideo = (att.type?.startsWith("video/") || Boolean(att.url?.match(/\.(mp4|webm|mov)($|\?)/i))) && !isLink;
+            const canPreviewInModal = (isImage || isVideo) && Boolean(onPreviewMedia);
+
+            const handleItemClick = (e: React.MouseEvent) => {
+              if (canPreviewInModal) {
+                e.preventDefault();
+                onPreviewMedia!({
+                  url: att.url,
+                  title: att.name,
+                  type: att.type,
+                  size: att.size,
+                });
+              }
+            };
 
             return (
               <div
                 key={att.id}
                 className="group relative flex items-center justify-between p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/80 hover:border-zinc-700/80 transition-all text-xs"
               >
-                <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div
+                  className={`flex items-center gap-2.5 min-w-0 flex-1 ${canPreviewInModal ? "cursor-pointer" : ""}`}
+                  onClick={handleItemClick}
+                >
                   {/* Icon or Thumbnail */}
                   {isLink ? (
                     <div className="w-7 h-7 rounded-md bg-indigo-950/60 border border-indigo-800/40 flex items-center justify-center shrink-0 text-indigo-400">
@@ -246,7 +265,7 @@ export function AttachmentManager({
                         <img
                           src={att.url}
                           alt={att.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                         />
                       ) : (
                         <ImageIcon className="w-3.5 h-3.5 text-zinc-400" />
@@ -261,17 +280,24 @@ export function AttachmentManager({
                   {/* Title & Metadata */}
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
-                      <a
-                        href={att.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-zinc-200 hover:text-white truncate hover:underline flex items-center gap-1"
-                      >
-                        <span className="truncate">{att.name}</span>
-                        {isLink && (
-                          <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-60 group-hover:opacity-100 text-indigo-400" />
-                        )}
-                      </a>
+                      {canPreviewInModal ? (
+                        <span className="font-medium text-zinc-200 hover:text-white truncate flex items-center gap-1">
+                          <span className="truncate">{att.name}</span>
+                        </span>
+                      ) : (
+                        <a
+                          href={att.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-zinc-200 hover:text-white truncate hover:underline flex items-center gap-1"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <span className="truncate">{att.name}</span>
+                          {isLink && (
+                            <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-60 group-hover:opacity-100 text-indigo-400" />
+                          )}
+                        </a>
+                      )}
                     </div>
                     <div className="text-[10px] text-zinc-500 font-mono flex items-center gap-1.5 mt-0.5">
                       {isLink ? (

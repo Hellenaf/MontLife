@@ -115,7 +115,8 @@ export function HeaderCommandBar({
   const topSimilar = !isSimilarityDismissed && similarMatches.length > 0 ? similarMatches[0] : null;
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    setCurrentTime(new Date());
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -406,15 +407,15 @@ export function HeaderCommandBar({
 
       {/* Right Navigation & Tools */}
       <div className="flex items-center gap-2 shrink-0">
-        {/* Clock & Date Widget (Matching mockup) */}
-        <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#16152a] border border-slate-200 dark:border-[#282647] text-xs text-slate-700 dark:text-slate-300 font-medium">
-          <Calendar className="w-3.5 h-3.5 text-purple-500" />
+        {/* Clock & Date Widget (Real-time seconds ticking) */}
+        <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#16152a] border border-slate-200 dark:border-[#282647] text-xs text-slate-700 dark:text-slate-300 font-medium shadow-xs">
+          <Clock className="w-3.5 h-3.5 text-purple-500 animate-pulse" />
           <span className="capitalize">
             {format(currentTime, "EEE, d 'de' MMM", { locale: ptBR })}
           </span>
           <span className="text-slate-300 dark:text-zinc-600">|</span>
-          <span className="font-bold font-mono text-purple-600 dark:text-purple-400">
-            {format(currentTime, "HH:mm")}
+          <span className="font-bold font-mono text-purple-600 dark:text-purple-400 tabular-nums">
+            {format(currentTime, "HH:mm:ss")}
           </span>
         </div>
 

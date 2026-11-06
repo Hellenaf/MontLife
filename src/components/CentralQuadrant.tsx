@@ -41,8 +41,10 @@ import {
   RotateCcw,
   Globe,
   ArrowRightLeft,
+  PlayCircle,
 } from "lucide-react";
 import { AttachmentManager } from "@/components/AttachmentManager";
+import { MediaLightboxModal, MediaItem } from "@/components/modals/MediaLightboxModal";
 import {
   Task,
   TaskAttachment,
@@ -179,8 +181,8 @@ export function CentralQuadrant({
   const [calendarSourceFilter, setCalendarSourceFilter] = useState<"all" | "work" | "personal" | "agenda" | "reminder">("all");
   const [previewTask, setPreviewTask] = useState<Task | null>(null);
 
-  // Attachment states (lightbox preview and detail upload)
-  const [previewImageAttachment, setPreviewImageAttachment] = useState<TaskAttachment | null>(null);
+  // Attachment & Media states (Lightbox popup preview and detail upload)
+  const [activeMediaItem, setActiveMediaItem] = useState<MediaItem | null>(null);
   const [isUploadingDetailFile, setIsUploadingDetailFile] = useState(false);
   const detailFileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -1188,6 +1190,7 @@ export function CentralQuadrant({
                     }}
                     stage="creation"
                     label="Arquivos & Links da Demanda (Criação)"
+                    onPreviewMedia={(media) => setActiveMediaItem(media)}
                   />
 
                   {selectedTask.resolution_attachments && selectedTask.resolution_attachments.length > 0 && (
@@ -1201,6 +1204,7 @@ export function CentralQuadrant({
                         }}
                         stage="resolution"
                         label="Comprovantes & Links da Solução"
+                        onPreviewMedia={(media) => setActiveMediaItem(media)}
                       />
                     </div>
                   )}
@@ -1777,12 +1781,17 @@ export function CentralQuadrant({
               selectedTask.learning_resources.youtube_videos.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
                   {selectedTask.learning_resources.youtube_videos.map((vid, idx) => (
-                    <a
+                    <div
                       key={idx}
-                      href={vid.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="group block rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden bg-slate-50/50 dark:bg-[#181926] hover:border-rose-400 dark:hover:border-rose-500/50 transition-all shadow-sm hover:shadow-md"
+                      onClick={() =>
+                        setActiveMediaItem({
+                          url: vid.url,
+                          title: vid.title,
+                          type: "video/youtube",
+                        })
+                      }
+                      className="group block rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden bg-slate-50/50 dark:bg-[#181926] hover:border-rose-400 dark:hover:border-rose-500/50 transition-all shadow-sm hover:shadow-md cursor-pointer"
+                      title="Clique para assistir ao tutorial no visualizador interno"
                     >
                       <div className="aspect-video w-full relative overflow-hidden bg-black/10">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -1791,6 +1800,11 @@ export function CentralQuadrant({
                           alt={vid.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                         />
+                        <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 flex items-center justify-center transition-colors">
+                          <div className="w-10 h-10 rounded-full bg-rose-600/90 group-hover:bg-rose-600 text-white flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                            <PlayCircle className="w-6 h-6" />
+                          </div>
+                        </div>
                       </div>
                       <div className="p-4 space-y-2">
                         <h4 className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 group-hover:text-rose-600 dark:group-hover:text-rose-400 transition-colors">
@@ -1799,11 +1813,11 @@ export function CentralQuadrant({
                         <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
                           <span>{vid.channel}</span>
                           <span className="flex items-center gap-1 text-rose-600 dark:text-rose-400 font-semibold">
-                            Assistir <ExternalLink className="w-3 h-3" />
+                            Assistir <PlayCircle className="w-3.5 h-3.5" />
                           </span>
                         </div>
                       </div>
-                    </a>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -1928,51 +1942,12 @@ export function CentralQuadrant({
         </div>
       )}
 
-      {/* Image Attachment Lightbox Modal */}
-      {previewImageAttachment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="relative max-w-4xl max-h-[92vh] flex flex-col rounded-2xl bg-[#141520] border border-zinc-800 shadow-2xl overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 bg-[#101118] shrink-0">
-              <div className="flex items-center gap-2 min-w-0 pr-4">
-                <ImageIcon className="w-4 h-4 text-indigo-400 shrink-0" />
-                <span className="text-xs font-semibold text-white truncate">
-                  {previewImageAttachment.name}
-                </span>
-                <span className="text-[10px] text-zinc-400 shrink-0">
-                  ({formatFileSize(previewImageAttachment.size)})
-                </span>
-              </div>
-
-              <div className="flex items-center gap-2 shrink-0">
-                <a
-                  href={previewImageAttachment.url}
-                  download={previewImageAttachment.name}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-colors"
-                >
-                  <Download className="w-3.5 h-3.5" /> Baixar
-                </a>
-                <button
-                  type="button"
-                  onClick={() => setPreviewImageAttachment(null)}
-                  className="p-1.5 rounded-lg text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            {/* Image viewer body */}
-            <div className="flex-1 overflow-auto p-4 flex items-center justify-center bg-black/40">
-              <img
-                src={previewImageAttachment.url}
-                alt={previewImageAttachment.name}
-                className="max-w-full max-h-[78vh] rounded-lg object-contain shadow-lg"
-              />
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Media Lightbox Modal (Images, Videos, Tutorials) */}
+      <MediaLightboxModal
+        isOpen={Boolean(activeMediaItem)}
+        onClose={() => setActiveMediaItem(null)}
+        media={activeMediaItem}
+      />
     </main>
   );
 }

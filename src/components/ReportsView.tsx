@@ -27,6 +27,8 @@ import {
   EyeOff,
   FileText,
   AlertCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Task, AccountType, ItemType } from "@/types";
 import { parseISO, getYear, getMonth, format } from "date-fns";
@@ -40,7 +42,8 @@ interface ReportsViewProps {
 }
 
 export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
-  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  // Period filter states: "ALL" represents "Todos os anos" (Compilado Geral)
+  const [selectedYear, setSelectedYear] = useState<number | "ALL">("ALL");
   const [selectedMonth, setSelectedMonth] = useState<number | "ALL">("ALL");
   const [scopeFilter, setScopeFilter] = useState<"work" | "personal" | "all">("work");
 
@@ -50,6 +53,51 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
   const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [activeTab, setActiveTab] = useState<"dashboard" | "activities" | "ai_summary">("dashboard");
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+
+  // Accordion state for activities list
+  const [expandedTaskIds, setExpandedTaskIds] = useState<Record<string, boolean>>({});
+
+  const toggleTaskExpand = (id: string) => {
+    setExpandedTaskIds((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
+  };
+
+  // Editable Manager / Gestor Responsável state (persisted in localStorage)
+  const [managerName, setManagerName] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("montlife_report_manager") || "Hellen Ferreira";
+    }
+    return "Hellen Ferreira";
+  });
+
+  const handleManagerNameChange = (name: string) => {
+    setManagerName(name);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("montlife_report_manager", name);
+    }
+  };
+
+  // Dynamically extract available years from all tasks
+  const availableYears = useMemo(() => {
+    const currentYr = new Date().getFullYear();
+    const yearSet = new Set<number>([currentYr, currentYr - 1]);
+    tasks.forEach((t) => {
+      const dateStr = t.created_at || t.original_due_date || t.current_due_date;
+      if (dateStr) {
+        try {
+          const y = getYear(parseISO(dateStr));
+          if (!isNaN(y) && y > 2000 && y < 2100) {
+            yearSet.add(y);
+          }
+        } catch {
+          // ignore invalid
+        }
+      }
+    });
+    return Array.from(yearSet).sort((a, b) => b - a);
+  }, [tasks]);
 
   // Month names
   const months = [
@@ -68,32 +116,60 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
     { value: 11, label: "Dez" },
   ];
 
-  const selectedMonthLabel =
-    selectedMonth === "ALL"
+  const selectedMonthLabel = useMemo(() => {
+    if (selectedYear === "ALL") {
+      return selectedMonth === "ALL"
+        ? "Todos os Anos (Compilado Geral)"
+        : `${months.find((m) => m.value === selectedMonth)?.label} (Todos os Anos)`;
+    }
+    return selectedMonth === "ALL"
       ? `Ano Completo de ${selectedYear}`
       : `${months.find((m) => m.value === selectedMonth)?.label}/${selectedYear}`;
+  }, [selectedYear, selectedMonth]);
+
+  // Unified Work vs Personal task classifier matching LeftTasksQuadrant
+  const isWorkTask = (t: Task) => {
+    if (t.transferred_to === "personal") return false;
+    if (t.transferred_to === "work") return true;
+    if (t.manually_assigned && (t.account_type === "personal" || t.account_type === "Pessoal")) return false;
+    const acc = (t.account_type || "").toLowerCase().trim();
+    const email = (t.account_email || "").toLowerCase().trim();
+    if (acc === "personal" || acc === "pessoal" || email.includes("hellen")) return false;
+    return true; // Default is corporate/work
+  };
 
   // Filter tasks strictly according to scope (work vs personal vs all) and period
   const filteredTasks = useMemo(() => {
     return tasks.filter((t) => {
       // 1. Strict Scope isolation
-      if (scopeFilter !== "all" && t.account_type !== scopeFilter) {
+      if (scopeFilter === "work" && !isWorkTask(t)) {
+        return false;
+      }
+      if (scopeFilter === "personal" && isWorkTask(t)) {
         return false;
       }
 
       // 2. Year & Month period
-      try {
-        const d = parseISO(t.created_at);
-        const y = getYear(d);
-        if (y !== selectedYear) return false;
-        if (selectedMonth !== "ALL") {
-          const m = getMonth(d);
-          if (m !== selectedMonth) return false;
+      if (selectedYear !== "ALL" || selectedMonth !== "ALL") {
+        try {
+          const dateStr = t.created_at || t.original_due_date || t.current_due_date;
+          if (dateStr) {
+            const d = parseISO(dateStr);
+            if (!isNaN(d.getTime())) {
+              if (selectedYear !== "ALL" && getYear(d) !== selectedYear) return false;
+              if (selectedMonth !== "ALL" && getMonth(d) !== selectedMonth) return false;
+            } else if (selectedYear !== "ALL") {
+              return false;
+            }
+          } else if (selectedYear !== "ALL") {
+            return false;
+          }
+        } catch {
+          if (selectedYear !== "ALL") return false;
         }
-        return true;
-      } catch {
-        return true;
       }
+
+      return true;
     });
   }, [tasks, selectedYear, selectedMonth, scopeFilter]);
 
@@ -102,14 +178,15 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
   const completed = filteredTasks.filter((t) => t.status === "COMPLETED");
   const completedCount = completed.length;
 
+  const canceledList = filteredTasks.filter((t) => t.status === "CANCELED");
+  const canceledCount = canceledList.length;
+
+  // In-progress accounts for all active open tasks (TRIAGE, TODO, IN_PROGRESS, WAITING)
   const inProgressList = filteredTasks.filter(
-    (t) => t.status === "IN_PROGRESS" || t.status === "WAITING" || t.status === "TODO"
+    (t) => t.status !== "COMPLETED" && t.status !== "CANCELED"
   );
   const inProgressCount = inProgressList.length;
   const activeRunningCount = filteredTasks.filter((t) => t.status === "IN_PROGRESS").length;
-
-  const canceledList = filteredTasks.filter((t) => t.status === "CANCELED");
-  const canceledCount = canceledList.length;
 
   const tasksCount = filteredTasks.filter((t) => (t.item_type || "task") === "task").length;
   const activitiesCount = filteredTasks.filter((t) => t.item_type === "activity").length;
@@ -173,7 +250,7 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
     const lines = [
       `MONTLIFE — RELATÓRIO OPERACIONAL DE ATIVIDADES`,
       `Período: ${selectedMonthLabel} | Contexto: ${scopeFilter === "work" ? "Trabalho" : scopeFilter === "personal" ? "Pessoal" : "Consolidado"}`,
-      `Gestor / Responsável: Hellen Ferreira`,
+      `Gestor / Responsável: ${managerName}`,
       `Data de Emissão: ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
       `--------------------------------------------------`,
       `INDICADORES PRINCIPAIS:`,
@@ -350,15 +427,15 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
             <span>{isGeneratingAi ? "Sintetizando..." : "Síntese com IA"}</span>
           </button>
 
-          {/* Export PDF Button */}
+          {/* Print / Generate Report Button */}
           <button
             type="button"
             onClick={handlePrint}
             className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-sm transition-all active:scale-95 cursor-pointer"
-            title="Imprimir ou Salvar Relatório Executivo como PDF"
+            title="Gerar e Imprimir Relatório Executivo (Visualização Limpa / PDF Nativo)"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Exportar PDF Executivo</span>
+            <span>Gerar Relatório</span>
           </button>
 
           {/* Copy to Email */}
@@ -450,14 +527,28 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
         {/* Year & Month Selector */}
         <div className="flex items-center gap-2 flex-wrap">
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
-            {[new Date().getFullYear() - 1, new Date().getFullYear()].map((yr) => (
+            {/* "Todos os Anos" (Compilado Geral) */}
+            <button
+              type="button"
+              onClick={() => setSelectedYear("ALL")}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                selectedYear === "ALL"
+                  ? "bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 font-bold shadow-xs"
+                  : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
+              }`}
+              title="Exibir histórico completo de todos os anos consolidados (Compilado Geral)"
+            >
+              Todos os Anos
+            </button>
+
+            {availableYears.map((yr) => (
               <button
                 key={yr}
                 type="button"
                 onClick={() => setSelectedYear(yr)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   selectedYear === yr
-                    ? "bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 shadow-xs"
+                    ? "bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 font-bold shadow-xs"
                     : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
                 }`}
               >
@@ -536,32 +627,32 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
           id="printable-report"
           className={`${
             isPreviewMode
-              ? "block bg-white text-slate-900 p-8 sm:p-12 rounded-3xl border border-slate-300 shadow-2xl space-y-8"
+              ? "block bg-white dark:bg-[#12131A] text-slate-900 dark:text-zinc-100 p-6 sm:p-10 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-2xl space-y-8 print:p-0 print:border-0 print:shadow-none print:bg-white print:text-black"
               : "hidden print:block text-black bg-white space-y-6"
           }`}
         >
           {/* Executive Header Banner */}
-          <div className="border-b-2 border-slate-800 pb-6 space-y-4">
+          <div className="border-b-2 border-slate-800 dark:border-zinc-700 print:border-black pb-6 space-y-4">
             <div className="flex items-start justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2.5">
                   <MontLifeLogo size="sm" />
-                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                  <span className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 print:text-slate-600">
                     MontLife Platform &bull; Governança Operacional
                   </span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-950 uppercase tracking-tight leading-tight">
+                <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white print:text-black uppercase tracking-tight leading-tight">
                   Relatório Executivo de Operações & Entregas
                 </h1>
-                <p className="text-xs sm:text-sm text-slate-600 font-medium">
+                <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 print:text-slate-700 font-medium">
                   Auditoria de Produtividade, Cumprimento de Metas de SLA & Síntese Técnica de Demandas
                 </p>
               </div>
 
               {/* Verified Seal */}
               <div className="text-right shrink-0">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 border border-slate-300 text-slate-800 text-[11px] font-bold">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 print:bg-slate-100 print:text-black print:border-slate-300 text-[11px] font-bold">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Documento Oficial Auditado</span>
                 </div>
               </div>
@@ -569,20 +660,20 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
 
             {/* Metadata 4-Box Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 text-xs">
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-500 block">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Período Auditado
                 </span>
-                <span className="font-bold text-slate-900 block mt-0.5">
+                <span className="font-bold text-slate-900 dark:text-white print:text-black block mt-0.5 truncate">
                   {selectedMonthLabel}
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-500 block">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Escopo Operacional
                 </span>
-                <span className="font-bold text-slate-900 block mt-0.5">
+                <span className="font-bold text-slate-900 dark:text-white print:text-black block mt-0.5 truncate">
                   {scopeFilter === "work"
                     ? "Corporativo (TOTVS RM & TI)"
                     : scopeFilter === "personal"
@@ -591,20 +682,25 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-500 block">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Gestor Responsável
                 </span>
-                <span className="font-bold text-slate-900 block mt-0.5">
-                  Hellen Ferreira
-                </span>
+                <input
+                  type="text"
+                  value={managerName}
+                  onChange={(e) => handleManagerNameChange(e.target.value)}
+                  className="font-bold text-slate-900 dark:text-white print:text-black bg-transparent border-b border-dashed border-slate-300 dark:border-zinc-700 focus:border-indigo-500 outline-none w-full mt-0.5 text-xs transition-colors"
+                  placeholder="Nome do Gestor"
+                  title="Clique para editar o Gestor Responsável"
+                />
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-                <span className="text-[10px] uppercase font-bold text-slate-500 block">
+              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200">
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Data de Emissão
                 </span>
-                <span className="font-bold text-slate-900 block mt-0.5">
+                <span className="font-bold text-slate-900 dark:text-white print:text-black block mt-0.5 truncate">
                   {format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                 </span>
               </div>
@@ -613,68 +709,68 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
 
           {/* Section 1: Executive KPI Scorecard */}
           <div className="space-y-3 page-break-avoid">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-400 print:text-slate-600 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-indigo-600" />
               1. Indicadores de Volume & Taxa de Conclusão
             </h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-1">
-                <span className="text-[11px] font-semibold text-slate-600 block">
+              <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
+                <span className="text-[11px] font-semibold text-slate-600 dark:text-zinc-400 print:text-slate-600 block">
                   Total de Demandas
                 </span>
-                <span className="text-2xl font-black font-mono text-slate-900 block">
+                <span className="text-2xl font-black font-mono text-slate-900 dark:text-white print:text-black block">
                   {total}
                 </span>
-                <span className="text-[10px] text-slate-500 block">
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   {tasksCount} tarefas &bull; {activitiesCount} atividades &bull; {remindersCount} lembretes
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200 space-y-1">
-                <span className="text-[11px] font-semibold text-emerald-800 block">
+              <div className="p-4 rounded-xl bg-emerald-50/70 dark:bg-emerald-950/25 border border-emerald-200 dark:border-emerald-900/40 print:bg-emerald-50 print:border-emerald-200 space-y-1">
+                <span className="text-[11px] font-semibold text-emerald-800 dark:text-emerald-300 print:text-emerald-800 block">
                   Entregas Concluídas
                 </span>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-black font-mono text-emerald-800">
+                  <span className="text-2xl font-black font-mono text-emerald-800 dark:text-emerald-300 print:text-emerald-800">
                     {completedCount}
                   </span>
-                  <span className="text-xs font-bold text-emerald-700 font-mono">
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 print:text-emerald-700 font-mono">
                     ({completedPct}%)
                   </span>
                 </div>
-                <span className="text-[10px] text-emerald-700 block">
+                <span className="text-[10px] text-emerald-700 dark:text-emerald-400 print:text-emerald-700 block">
                   Taxa global de resolução
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-amber-50/70 border border-amber-200 space-y-1">
-                <span className="text-[11px] font-semibold text-amber-800 block">
+              <div className="p-4 rounded-xl bg-amber-50/70 dark:bg-amber-950/25 border border-amber-200 dark:border-amber-900/40 print:bg-amber-50 print:border-amber-200 space-y-1">
+                <span className="text-[11px] font-semibold text-amber-800 dark:text-amber-300 print:text-amber-800 block">
                   Demandas em Andamento
                 </span>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-black font-mono text-amber-800">
+                  <span className="text-2xl font-black font-mono text-amber-800 dark:text-amber-300 print:text-amber-800">
                     {inProgressCount}
                   </span>
-                  <span className="text-xs font-bold text-amber-700 font-mono">
+                  <span className="text-xs font-bold text-amber-700 dark:text-amber-400 print:text-amber-700 font-mono">
                     ({inProgressPct}%)
                   </span>
                 </div>
-                <span className="text-[10px] text-amber-700 block">
+                <span className="text-[10px] text-amber-700 dark:text-amber-400 print:text-amber-700 block">
                   {activeRunningCount} em execução ativa
                 </span>
               </div>
 
-              <div className="p-4 rounded-xl bg-purple-50/70 border border-purple-200 space-y-1">
-                <span className="text-[11px] font-semibold text-purple-800 block">
+              <div className="p-4 rounded-xl bg-purple-50/70 dark:bg-purple-950/25 border border-purple-200 dark:border-purple-900/40 print:bg-purple-50 print:border-purple-200 space-y-1">
+                <span className="text-[11px] font-semibold text-purple-800 dark:text-purple-300 print:text-purple-800 block">
                   Assertividade de SLA
                 </span>
                 <div className="flex items-baseline gap-1.5">
-                  <span className="text-2xl font-black font-mono text-purple-800">
+                  <span className="text-2xl font-black font-mono text-purple-800 dark:text-purple-300 print:text-purple-800">
                     {onTimePct}%
                   </span>
                 </div>
-                <span className="text-[10px] text-purple-700 block">
+                <span className="text-[10px] text-purple-700 dark:text-purple-400 print:text-purple-700 block">
                   Cumpridas no prazo original
                 </span>
               </div>
@@ -684,61 +780,61 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
           {/* Section 2: SLA Audit & Categories Matrix */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 page-break-avoid">
             {/* SLA Breakdown Card */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex items-center justify-between">
                 <span>Auditoria de Cumprimento de Prazos (SLA)</span>
-                <span className="text-emerald-700 font-mono font-bold">{onTimePct + extendedPct}% Confiabilidade</span>
+                <span className="text-emerald-700 dark:text-emerald-400 font-mono font-bold">{onTimePct + extendedPct}% Confiabilidade</span>
               </h3>
 
               <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between py-1 border-b border-slate-200">
-                  <span className="text-slate-700 flex items-center gap-1.5">
+                <div className="flex items-center justify-between py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
+                  <span className="text-slate-700 dark:text-zinc-300 print:text-slate-700 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-600" />
                     No Prazo Original (Sem prorrogação)
                   </span>
-                  <strong className="text-slate-900 font-mono">{onTimeCount} ({onTimePct}%)</strong>
+                  <strong className="text-slate-900 dark:text-white print:text-black font-mono">{onTimeCount} ({onTimePct}%)</strong>
                 </div>
 
-                <div className="flex items-center justify-between py-1 border-b border-slate-200">
-                  <span className="text-slate-700 flex items-center gap-1.5">
+                <div className="flex items-center justify-between py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
+                  <span className="text-slate-700 dark:text-zinc-300 print:text-slate-700 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-amber-600" />
                     Com Prazo Prorrogado (Gerenciado)
                   </span>
-                  <strong className="text-slate-900 font-mono">{extendedAndCompletedCount} ({extendedPct}%)</strong>
+                  <strong className="text-slate-900 dark:text-white print:text-black font-mono">{extendedAndCompletedCount} ({extendedPct}%)</strong>
                 </div>
 
-                <div className="flex items-center justify-between py-1 border-b border-slate-200">
-                  <span className="text-slate-700 flex items-center gap-1.5">
+                <div className="flex items-center justify-between py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
+                  <span className="text-slate-700 dark:text-zinc-300 print:text-slate-700 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-rose-600" />
                     Entregues com Atraso
                   </span>
-                  <strong className="text-slate-900 font-mono">{breachedCount} ({breachedPct}%)</strong>
+                  <strong className="text-slate-900 dark:text-white print:text-black font-mono">{breachedCount} ({breachedPct}%)</strong>
                 </div>
 
                 <div className="flex items-center justify-between py-1">
-                  <span className="text-slate-700 flex items-center gap-1.5">
+                  <span className="text-slate-700 dark:text-zinc-300 print:text-slate-700 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-slate-400" />
                     Demandas Canceladas / Descartadas
                   </span>
-                  <strong className="text-slate-900 font-mono">{canceledCount} ({canceledPct}%)</strong>
+                  <strong className="text-slate-900 dark:text-white print:text-black font-mono">{canceledCount} ({canceledPct}%)</strong>
                 </div>
               </div>
             </div>
 
             {/* Top Workload Categories */}
-            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex items-center justify-between">
                 <span>Distribuição por Linha de Atuação / Sistema</span>
-                <span className="text-slate-500 font-mono">{categoryCounts.length} categorias</span>
+                <span className="text-slate-500 dark:text-zinc-400 font-mono">{categoryCounts.length} categorias</span>
               </h3>
 
               <div className="space-y-1.5 text-xs max-h-48 overflow-hidden">
                 {categoryCounts.slice(0, 5).map(([cat, count]) => {
                   const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                   return (
-                    <div key={cat} className="flex items-center justify-between py-1 border-b border-slate-200/80">
-                      <span className="text-slate-800 font-medium truncate max-w-[200px]">{cat}</span>
-                      <span className="font-mono text-slate-600 font-semibold">{count} ({pct}%)</span>
+                    <div key={cat} className="flex items-center justify-between py-1 border-b border-slate-200/80 dark:border-zinc-800/80 print:border-slate-200">
+                      <span className="text-slate-800 dark:text-zinc-200 print:text-slate-800 font-medium truncate max-w-[200px]">{cat}</span>
+                      <span className="font-mono text-slate-600 dark:text-zinc-400 print:text-slate-600 font-semibold">{count} ({pct}%)</span>
                     </div>
                   );
                 })}
@@ -748,24 +844,24 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
 
           {/* Section 3: AI Executive Summary (If Available) */}
           {aiSummary ? (
-            <div className="p-5 rounded-2xl bg-purple-50/60 border border-purple-200 space-y-3 page-break-avoid">
-              <div className="flex items-center gap-2 border-b border-purple-200 pb-2">
-                <Sparkles className="w-4 h-4 text-purple-700" />
-                <h3 className="text-xs font-bold uppercase tracking-wider text-purple-900">
+            <div className="p-5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 print:bg-purple-50 print:border-purple-200 space-y-3 page-break-avoid">
+              <div className="flex items-center gap-2 border-b border-purple-200 dark:border-purple-800/60 print:border-purple-200 pb-2">
+                <Sparkles className="w-4 h-4 text-purple-700 dark:text-purple-400 print:text-purple-700" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-purple-900 dark:text-purple-300 print:text-purple-900">
                   Parecer Executivo & Diagnóstico com Inteligência Artificial
                 </h3>
               </div>
-              <div className="text-xs leading-relaxed text-slate-800 space-y-2">
+              <div className="text-xs leading-relaxed text-slate-800 dark:text-zinc-200 print:text-slate-800 space-y-2">
                 <FormattedText text={aiSummary} />
               </div>
             </div>
           ) : (
-            <div className="no-print p-4 rounded-2xl bg-slate-50 border border-dashed border-slate-300 flex items-center justify-between gap-4">
+            <div className="no-print p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-dashed border-slate-300 dark:border-zinc-700 flex items-center justify-between gap-4">
               <div className="space-y-0.5">
-                <span className="text-xs font-bold text-slate-800 block">
-                  Deseja incluir parecer executivo automático no PDF?
+                <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 block">
+                  Deseja incluir parecer executivo automático no Relatório?
                 </span>
-                <span className="text-[11px] text-slate-500 block">
+                <span className="text-[11px] text-slate-500 dark:text-zinc-400 block">
                   Gere a síntese com a IA antes de exportar para que ela apareça na apresentação impressa.
                 </span>
               </div>
@@ -783,44 +879,44 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
 
           {/* Section 4: Comprehensive Analytical Delivery Table */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-300 pb-2">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-slate-900" />
+            <div className="flex items-center justify-between border-b border-slate-300 dark:border-zinc-700 print:border-slate-300 pb-2">
+              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-slate-900 dark:bg-white print:bg-black" />
                 4. Quadro Analítico de Demandas & Entregas do Período ({filteredTasks.length})
               </h2>
-              <span className="text-[11px] font-mono text-slate-500">
+              <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400 print:text-slate-500">
                 Auditoria Completa
               </span>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border border-slate-200 rounded-xl overflow-hidden">
-                <thead className="bg-slate-100 border-b border-slate-300">
+              <table className="w-full text-left text-xs border border-slate-200 dark:border-zinc-800 print:border-slate-300 rounded-xl overflow-hidden">
+                <thead className="bg-slate-100 dark:bg-[#181926] print:bg-slate-100 border-b border-slate-300 dark:border-zinc-700 print:border-slate-300">
                   <tr>
-                    <th className="p-2.5 font-bold text-slate-800 w-12 text-center">#</th>
-                    <th className="p-2.5 font-bold text-slate-800 w-24">Tipo</th>
-                    <th className="p-2.5 font-bold text-slate-800">Demanda / Escopo</th>
-                    <th className="p-2.5 font-bold text-slate-800 w-32">Categoria</th>
-                    <th className="p-2.5 font-bold text-slate-800 w-16 text-center">Pri.</th>
-                    <th className="p-2.5 font-bold text-slate-800 w-28 text-center">Status / SLA</th>
-                    <th className="p-2.5 font-bold text-slate-800">Resolução / Solução Técnica</th>
+                    <th className="p-2.5 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-12 text-center">#</th>
+                    <th className="p-2.5 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-24">Tipo</th>
+                    <th className="p-2.5 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800">Demanda / Escopo</th>
+                    <th className="p-2.5 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-32">Categoria</th>
+                    <th className="p-2.5 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-16 text-center">Pri.</th>
+                    <th className="p-2.5 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-28 text-center">Status / SLA</th>
+                    <th className="p-2.5 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800">Resolução / Solução Técnica</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200">
+                <tbody className="divide-y divide-slate-200 dark:divide-zinc-800 print:divide-slate-200">
                   {filteredTasks.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-6 text-center text-slate-500">
+                      <td colSpan={7} className="p-6 text-center text-slate-500 dark:text-zinc-400">
                         Nenhuma demanda registrada para os parâmetros selecionados.
                       </td>
                     </tr>
                   ) : (
                     filteredTasks.map((task, idx) => (
-                      <tr key={task.id} className="page-break-avoid hover:bg-slate-50/80">
-                        <td className="p-2.5 font-mono text-slate-500 text-center font-semibold">
+                      <tr key={task.id} className="page-break-avoid hover:bg-slate-50/80 dark:hover:bg-zinc-800/40 print:hover:bg-transparent">
+                        <td className="p-2.5 font-mono text-slate-500 dark:text-zinc-400 print:text-slate-500 text-center font-semibold">
                           {idx + 1}
                         </td>
                         <td className="p-2.5">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-800 border border-slate-300">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700 print:bg-slate-100 print:border-slate-300 print:text-black">
                             {task.item_type === "activity"
                               ? "Atividade"
                               : task.item_type === "reminder"
@@ -829,52 +925,52 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
                           </span>
                         </td>
                         <td className="p-2.5 space-y-0.5">
-                          <span className="font-bold text-slate-900 block leading-snug">
+                          <span className="font-bold text-slate-900 dark:text-white print:text-black block leading-snug">
                             {task.title}
                           </span>
                           {task.description && (
-                            <span className="text-[11px] text-slate-600 line-clamp-2 leading-tight block">
+                            <span className="text-[11px] text-slate-600 dark:text-zinc-400 print:text-slate-600 line-clamp-2 leading-tight block">
                               {task.description.replace(/\*\*/g, "")}
                             </span>
                           )}
                         </td>
-                        <td className="p-2.5 font-medium text-slate-700 text-[11px]">
+                        <td className="p-2.5 font-medium text-slate-700 dark:text-zinc-300 print:text-slate-700 text-[11px]">
                           {task.category}
                         </td>
-                        <td className="p-2.5 text-center font-mono font-bold text-[11px]">
+                        <td className="p-2.5 text-center font-mono font-bold text-[11px] text-slate-800 dark:text-zinc-200 print:text-slate-800">
                           {task.priority}
                         </td>
                         <td className="p-2.5 text-center">
                           {task.status === "COMPLETED" ? (
-                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 print:bg-emerald-100 print:text-emerald-800 print:border-emerald-300">
                               Concluída
                             </span>
                           ) : task.status === "CANCELED" ? (
-                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 dark:bg-rose-950/50 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800 print:bg-rose-100 print:text-rose-800 print:border-rose-300">
                               Cancelada
                             </span>
                           ) : (
-                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300">
+                            <span className="inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800 print:bg-amber-100 print:text-amber-800 print:border-amber-300">
                               Em Aberto
                             </span>
                           )}
                           {task.completed_at && (
-                            <span className="block text-[10px] font-mono text-slate-500 mt-0.5">
+                            <span className="block text-[10px] font-mono text-slate-500 dark:text-zinc-400 print:text-slate-500 mt-0.5">
                               {format(parseISO(task.completed_at), "dd/MM/yyyy")}
                             </span>
                           )}
                         </td>
-                        <td className="p-2.5 text-[11px] text-slate-700 leading-snug">
+                        <td className="p-2.5 text-[11px] text-slate-700 dark:text-zinc-300 print:text-slate-700 leading-snug">
                           {task.resolution_notes ? (
-                            <span className="text-slate-800">
+                            <span className="text-slate-800 dark:text-zinc-200 print:text-slate-800">
                               {task.resolution_notes.replace(/\*\*/g, "")}
                             </span>
                           ) : task.cancel_reason ? (
-                            <span className="text-rose-700 font-medium italic">
+                            <span className="text-rose-700 dark:text-rose-400 print:text-rose-700 font-medium italic">
                               Cancelada: {task.cancel_reason}
                             </span>
                           ) : (
-                            <span className="text-slate-400 italic">Em execução</span>
+                            <span className="text-slate-400 dark:text-zinc-500 italic">Em execução</span>
                           )}
                         </td>
                       </tr>
@@ -886,7 +982,7 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
           </div>
 
           {/* Document Footer */}
-          <div className="pt-6 border-t-2 border-slate-300 flex items-center justify-between text-[10px] text-slate-500 font-medium">
+          <div className="pt-6 border-t-2 border-slate-300 dark:border-zinc-800 print:border-slate-300 flex items-center justify-between text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-500 font-medium">
             <span>MontLife Platform &bull; Sistema Integrado de Produtividade & Operações</span>
             <span>Documento Oficial de Prestação de Contas &bull; Confidencial</span>
           </div>
@@ -1117,55 +1213,81 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
                     <p className="text-xs">Nenhuma atividade registrada para o período e escopo selecionados.</p>
                   </div>
                 ) : (
-                  filteredTasks.map((t) => (
-                    <div
-                      key={t.id}
-                      className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 transition-all space-y-2 shadow-xs"
-                    >
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          {getItemTypeBadge(t.item_type)}
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
-                            {t.category}
-                          </span>
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-mono text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60">
-                            {t.priority}
-                          </span>
-                          {t.status === "COMPLETED" ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                              Concluída
+                  filteredTasks.map((t) => {
+                    const isExpanded = Boolean(expandedTaskIds[t.id]);
+
+                    return (
+                      <div
+                        key={t.id}
+                        onClick={() => toggleTaskExpand(t.id)}
+                        className={`p-4 rounded-2xl bg-white dark:bg-[#141520] border transition-all space-y-2.5 shadow-xs cursor-pointer select-none ${
+                          isExpanded
+                            ? "border-indigo-400 dark:border-indigo-500/70 ring-1 ring-indigo-500/20"
+                            : "border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700"
+                        }`}
+                        title="Clique para expandir/recolher a descrição da demanda"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {getItemTypeBadge(t.item_type)}
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
+                              {t.category}
                             </span>
-                          ) : t.status === "CANCELED" ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
-                              Cancelada
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-mono text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60">
+                              {t.priority}
                             </span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                              Em Aberto
-                            </span>
-                          )}
+                            {t.status === "COMPLETED" ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                Concluída
+                              </span>
+                            ) : t.status === "CANCELED" ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                                Cancelada
+                              </span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+                                Em Aberto
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                            <span>Criada: {format(parseISO(t.created_at), "dd/MM/yyyy")}</span>
+                            {t.completed_at && (
+                              <span>• Concluída: {format(parseISO(t.completed_at), "dd/MM/yyyy")}</span>
+                            )}
+                            <div className="p-1 rounded-md bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors ml-1">
+                              {isExpanded ? (
+                                <ChevronUp className="w-3.5 h-3.5" />
+                              ) : (
+                                <ChevronDown className="w-3.5 h-3.5" />
+                              )}
+                            </div>
+                          </div>
                         </div>
 
-                        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-mono text-[11px]">
-                          <span>Criada: {format(parseISO(t.created_at), "dd/MM/yyyy")}</span>
-                          {t.completed_at && <span>• Concluída: {format(parseISO(t.completed_at), "dd/MM/yyyy")}</span>}
-                        </div>
+                        <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                          {t.title}
+                        </h4>
+
+                        {/* Accordion: Displays ONLY the description when expanded */}
+                        {isExpanded && (
+                          <div className="mt-3 p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200/90 dark:border-zinc-800/90 text-xs text-slate-700 dark:text-slate-300 animate-in fade-in slide-in-from-top-1 duration-150 space-y-1.5">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block">
+                              Descrição da Demanda
+                            </span>
+                            {t.description ? (
+                              <FormattedText text={t.description} />
+                            ) : (
+                              <p className="italic text-slate-400 dark:text-zinc-500">
+                                Nenhuma descrição detalhada registrada para esta demanda.
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
-
-                      <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
-                        {t.title}
-                      </h4>
-
-                      {t.resolution_notes && (
-                        <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800/80 text-xs text-slate-700 dark:text-slate-300">
-                          <strong className="text-emerald-600 dark:text-emerald-400 block mb-1">
-                            Resolução Técnica:
-                          </strong>
-                          <FormattedText text={t.resolution_notes} />
-                        </div>
-                      )}
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </div>

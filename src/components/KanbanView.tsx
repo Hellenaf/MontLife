@@ -493,8 +493,8 @@ export function KanbanView({
         </div>
       </div>
 
-      {/* Kanban Horizontal Scrollable Columns Container */}
-      <div className="flex-1 flex gap-4 min-h-0 overflow-x-auto pb-3 items-stretch custom-scrollbar">
+      {/* Kanban Horizontal Scrollable Columns Container (Occupies 100% width, dynamic flex sizing) */}
+      <div className="w-full flex-1 flex gap-4 min-h-0 overflow-x-auto pb-3 items-stretch custom-scrollbar">
         {columns.map((col) => {
           const colTasks = filteredTasks.filter((t) => col.statuses.includes(t.status));
           const isOverThisCol = draggedOverColId === col.id;
@@ -524,7 +524,7 @@ export function KanbanView({
                   handleDropOnColumn(taskId, col);
                 }
               }}
-              className={`flex flex-col rounded-2xl bg-slate-100/90 dark:bg-[#0b0c10] border transition-all duration-200 overflow-hidden w-[290px] lg:w-[320px] shrink-0 shadow-xs ${
+              className={`flex flex-col rounded-2xl bg-slate-100/90 dark:bg-[#0b0c10] border transition-all duration-200 overflow-hidden flex-1 min-w-[280px] shadow-xs ${
                 isOverThisCol
                   ? "border-indigo-500 ring-2 ring-indigo-500/50 bg-indigo-50/50 dark:bg-[#10121d]"
                   : "border-slate-200/90 dark:border-zinc-800/80"

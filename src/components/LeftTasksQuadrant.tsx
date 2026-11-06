@@ -24,6 +24,8 @@ import {
   RotateCcw,
   AlertTriangle,
   ArrowRightLeft,
+  Layers,
+  Globe,
 } from "lucide-react";
 import { Task, TaskStatus, Priority, AccountType, ItemType, ConnectedAccount } from "@/types";
 import { isTaskOverdue } from "@/lib/sla";
@@ -665,41 +667,97 @@ export function LeftTasksQuadrant({
     <aside className="w-full lg:w-[340px] xl:w-[380px] h-full flex flex-col border-r border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
       {/* Top Filter & Search Bar */}
       <div className="p-3.5 border-b border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-[#101118] space-y-2.5 shrink-0">
-        {/* Dynamic Context Selector */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#161722] p-1 rounded-xl border border-slate-200 dark:border-zinc-800 overflow-x-auto custom-scrollbar">
+        {/* Dynamic Context Selector: Segmented Control (Todos / Trabalho / Pessoal) */}
+        <div className="grid grid-cols-3 gap-1 bg-slate-100 dark:bg-[#161722] p-1 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-xs">
+          {/* Option 1: Todos */}
           <button
+            type="button"
             onClick={() => setAccountFilter("all")}
-            className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center justify-center shrink-0 transition-all ${accountFilter === "all"
-                ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-slate-100 shadow-sm border border-slate-200/60 dark:border-zinc-700"
-                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
-              }`}
+            className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              accountFilter === "all"
+                ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs border border-slate-200/80 dark:border-zinc-700 font-bold"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+            title="Exibir todas as demandas"
           >
-            Todas ({tasks.length})
+            <Layers
+              className={`w-3.5 h-3.5 shrink-0 ${
+                accountFilter === "all"
+                  ? "text-indigo-600 dark:text-indigo-400"
+                  : "text-slate-400 dark:text-zinc-500"
+              }`}
+            />
+            <span className="truncate">Todos</span>
+            <span
+              className={`text-[10px] font-mono px-1 py-0.2 rounded-full ${
+                accountFilter === "all"
+                  ? "bg-slate-100 dark:bg-zinc-700 text-slate-800 dark:text-zinc-200"
+                  : "opacity-60"
+              }`}
+            >
+              {tasks.length}
+            </span>
           </button>
-          {dynamicAccounts.map((acc) => {
-            const count = tasks.filter((t) => isTaskMatchingFilter(t, acc.id)).length;
-            const isSelected =
-              accountFilter.toLowerCase() === acc.id.toLowerCase() ||
-              accountFilter.toLowerCase() === acc.label.toLowerCase();
 
-            const isWork = acc.id === "work" || acc.label === "Trabalho";
+          {/* Option 2: Trabalho */}
+          <button
+            type="button"
+            onClick={() => setAccountFilter("work")}
+            className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              accountFilter === "work" || accountFilter === "trabalho"
+                ? "bg-blue-600 text-white shadow-xs font-bold"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+            title="Demandas profissionais de Trabalho (Notre Dame)"
+          >
+            <Briefcase
+              className={`w-3.5 h-3.5 shrink-0 ${
+                accountFilter === "work" || accountFilter === "trabalho"
+                  ? "text-white"
+                  : "text-blue-500"
+              }`}
+            />
+            <span className="truncate">Trabalho</span>
+            <span
+              className={`text-[10px] font-mono px-1 py-0.2 rounded-full ${
+                accountFilter === "work" || accountFilter === "trabalho"
+                  ? "bg-blue-700 text-white"
+                  : "opacity-60"
+              }`}
+            >
+              {tasks.filter((t) => isWorkTask(t)).length}
+            </span>
+          </button>
 
-            return (
-              <button
-                key={acc.id}
-                onClick={() => setAccountFilter(acc.id as any)}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-lg flex items-center justify-center gap-1 shrink-0 transition-all ${isSelected
-                    ? isWork
-                      ? "bg-blue-600 text-white shadow-sm"
-                      : "bg-purple-600 text-white shadow-sm"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-                  }`}
-              >
-                <span>{acc.label}</span>
-                <span className="text-[10px] opacity-75">({count})</span>
-              </button>
-            );
-          })}
+          {/* Option 3: Pessoal */}
+          <button
+            type="button"
+            onClick={() => setAccountFilter("personal")}
+            className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              accountFilter === "personal" || accountFilter === "pessoal"
+                ? "bg-purple-600 text-white shadow-xs font-bold"
+                : "text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+            title="Demandas pessoais e estudos"
+          >
+            <User
+              className={`w-3.5 h-3.5 shrink-0 ${
+                accountFilter === "personal" || accountFilter === "pessoal"
+                  ? "text-white"
+                  : "text-purple-500"
+              }`}
+            />
+            <span className="truncate">Pessoal</span>
+            <span
+              className={`text-[10px] font-mono px-1 py-0.2 rounded-full ${
+                accountFilter === "personal" || accountFilter === "pessoal"
+                  ? "bg-purple-700 text-white"
+                  : "opacity-60"
+              }`}
+            >
+              {tasks.filter((t) => isPersonalTask(t)).length}
+            </span>
+          </button>
         </div>
 
         {/* Search Bar + AI Categorize + Sync Buttons */}
