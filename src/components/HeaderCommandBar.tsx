@@ -29,6 +29,7 @@ import {
   CheckSquare,
   Trash2,
   Repeat,
+  RotateCcw,
 } from "lucide-react";
 import { findSimilarTasks } from "@/lib/taskDeduplication";
 import {
@@ -105,6 +106,7 @@ export function HeaderCommandBar({
   // Deduplication state in AI Confirmation modal
   const [isSimilarityDismissed, setIsSimilarityDismissed] = useState(false);
   const [isRegisteringRecurrence, setIsRegisteringRecurrence] = useState(false);
+  const [isReopeningTask, setIsReopeningTask] = useState(false);
 
   const similarMatches = useMemo(() => {
     const textToCheck = editTitle.trim() || input.trim();
@@ -113,6 +115,30 @@ export function HeaderCommandBar({
   }, [editTitle, input, editDescription, tasks]);
 
   const topSimilar = !isSimilarityDismissed && similarMatches.length > 0 ? similarMatches[0] : null;
+
+  const handleReopenSimilarTask = async () => {
+    if (!topSimilar) return;
+    setIsReopeningTask(true);
+    try {
+      const res = await fetch(`/api/tasks/${topSimilar.task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "update_status",
+          status: "TODO",
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.task) {
+        if (onSelectTask) onSelectTask(data.task);
+        handleDiscardTriage();
+      }
+    } catch (err) {
+      console.error("Erro ao reabrir demanda:", err);
+    } finally {
+      setIsReopeningTask(false);
+    }
+  };
 
   useEffect(() => {
     setCurrentTime(new Date());
@@ -592,15 +618,27 @@ export function HeaderCommandBar({
           {/* Header of confirmation - Fixed */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
-                  <Sparkles className="w-4 h-4" />
+                <div className={`p-1.5 rounded-xl shrink-0 ${
+                  topSimilar && !isSimilarityDismissed
+                    ? "bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400"
+                    : "bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400"
+                }`}>
+                  {topSimilar && !isSimilarityDismissed ? (
+                    <Lightbulb className="w-4 h-4 text-amber-500" />
+                  ) : (
+                    <Sparkles className="w-4 h-4" />
+                  )}
                 </div>
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                    Confirmar Nova Demanda
+                    {topSimilar && !isSimilarityDismissed
+                      ? "Demanda Semelhante / Existente Detectada"
+                      : "Confirmar Nova Demanda"}
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Verifique os dados estruturados e ajuste o prazo ou tipo antes de salvar.
+                    {topSimilar && !isSimilarityDismissed
+                      ? `Encontramos uma demanda existente com ${Math.round(topSimilar.similarityScore * 100)}% de similaridade.`
+                      : "Verifique os dados estruturados e ajuste o prazo ou tipo antes de salvar."}
                   </p>
                 </div>
               </div>
@@ -613,66 +651,75 @@ export function HeaderCommandBar({
               </button>
             </div>
 
-            {/* Scrollable Body */}
-            <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-3.5 custom-scrollbar">
-              {/* Smart Deduplication Alert Banner */}
-              {topSimilar && (
-                <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-600/40 text-xs space-y-2.5 animate-in fade-in duration-200 shadow-sm">
+            {/* Scrollable Body: Tela Intersticial de Demanda Similar OU Formulário de Confirmação */}
+            {topSimilar && !isSimilarityDismissed ? (
+              /* ========================================================= */
+              /* 1. TELA INTERSTICIAL DE DEMANDA SEMELHANTE                */
+              /* ========================================================= */
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar">
+                <div className="p-4 rounded-2xl bg-amber-50/80 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-700/50 space-y-3 shadow-xs">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <div className="flex items-center gap-1.5 text-amber-700 dark:text-amber-400 font-bold text-xs uppercase tracking-wide">
-                      <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
-                      <span>
-                        {topSimilar.isExactMatch
-                          ? "Demanda Idêntica Já Existente Detectada"
-                          : `Demanda Similar Encontrada (${Math.round(topSimilar.similarityScore * 100)}% de similaridade)`}
-                      </span>
-                    </div>
+                    <span className="text-[11px] font-bold text-amber-800 dark:text-amber-300 uppercase tracking-wide flex items-center gap-1.5">
+                      <Lightbulb className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                      Demanda Cadastrada Anteriormente
+                    </span>
                     <span
-                      className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-semibold border ${
+                      className={`text-[10px] font-mono px-2 py-0.5 rounded-md font-bold border ${
                         topSimilar.task.status === "COMPLETED"
-                          ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800"
-                          : "bg-amber-50 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700"
+                          ? "bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800"
+                          : "bg-amber-100 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200 border-amber-300 dark:border-amber-700"
                       }`}
                     >
                       {topSimilar.task.status === "COMPLETED" ? "✓ Já Concluída" : "⏳ Em Aberto"}
                     </span>
                   </div>
 
-                  <div className="space-y-1.5 bg-white/80 dark:bg-zinc-900/60 p-3 rounded-xl border border-amber-100 dark:border-zinc-800">
-                    <p className="font-bold text-slate-900 dark:text-zinc-100 text-xs">
+                  <div className="p-3.5 rounded-xl bg-white dark:bg-[#12131d] border border-amber-200/70 dark:border-zinc-800 space-y-2">
+                    <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
                       {topSimilar.task.title}
-                    </p>
+                    </h4>
+
                     {topSimilar.task.description && (
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
-                        {topSimilar.task.description}
+                      <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-3 leading-relaxed">
+                        {topSimilar.task.description.replace(/\*\*/g, "")}
                       </p>
                     )}
 
+                    <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                      <span>Categoria: <strong className="text-slate-700 dark:text-slate-200">{topSimilar.task.category}</strong></span>
+                      <span>•</span>
+                      <span>Prioridade: <strong className="text-purple-600 dark:text-purple-400">{topSimilar.task.priority}</strong></span>
+                    </div>
+
                     {topSimilar.hasPreviousResolution && topSimilar.previousResolutionNotes && (
-                      <div className="p-2.5 rounded-lg bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[11px] text-slate-700 dark:text-zinc-300 mt-1">
+                      <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 text-[11px] text-slate-700 dark:text-zinc-300">
                         <span className="text-emerald-700 dark:text-emerald-400 font-bold block mb-0.5">
-                          ✓ Resolução / Procedimento Anterior:
+                          ✓ Procedimento / Resolução Anterior:
                         </span>
-                        <span className="line-clamp-2 italic">{topSimilar.previousResolutionNotes}</span>
+                        <span className="italic">{topSimilar.previousResolutionNotes}</span>
                       </div>
                     )}
                   </div>
+                </div>
 
-                  <div className="flex items-center flex-wrap gap-2 pt-1 border-t border-amber-200/60 dark:border-amber-900/40">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (onSelectTask) {
-                          onSelectTask(topSimilar.task);
-                        }
-                        handleDiscardTriage();
-                      }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-800 dark:text-zinc-200 text-xs font-semibold transition-all cursor-pointer shadow-xs"
-                    >
-                      <ArrowRight className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>Ver Demanda Existente</span>
-                    </button>
+                {/* Demanda sendo digitada agora */}
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#10111a] border border-slate-200 dark:border-zinc-800 space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                    Sua nova solicitação:
+                  </span>
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 italic">
+                    &quot;{editTitle || input}&quot;
+                  </p>
+                </div>
 
+                {/* 3 Ações Solicitadas: Recorrência, Reabrir ou Criação Independente */}
+                <div className="space-y-2 pt-2">
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Como deseja prosseguir com esta demanda?
+                  </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                    {/* Botão 1: Registrar Recorrência */}
                     <button
                       type="button"
                       disabled={isRegisteringRecurrence}
@@ -683,7 +730,7 @@ export function HeaderCommandBar({
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({
-                              notes: `Nova ocorrência registrada via comando IA: "${input}"`,
+                              notes: `Nova ocorrência registrada via comando: "${input}"`,
                               method: topSimilar.previousResolutionNotes || undefined,
                               reopen_status: topSimilar.task.status === "COMPLETED" ? undefined : topSimilar.task.status,
                             }),
@@ -694,33 +741,70 @@ export function HeaderCommandBar({
                             handleDiscardTriage();
                           }
                         } catch (err) {
-                          console.error("Erro ao registrar reincidência:", err);
+                          console.error("Erro ao registrar recorrência:", err);
                         } finally {
                           setIsRegisteringRecurrence(false);
                         }
                       }}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                      className="p-3 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-left transition-all cursor-pointer shadow-xs group"
                     >
-                      {isRegisteringRecurrence ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      ) : (
-                        <Repeat className="w-3.5 h-3.5" />
-                      )}
-                      <span>Registrar como Reincidência (+1x)</span>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-1">
+                        {isRegisteringRecurrence ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Repeat className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 group-hover:rotate-180 transition-transform" />
+                        )}
+                        <span>Registrar Recorrência</span>
+                      </div>
+                      <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400 leading-tight">
+                        Incrementa contador (+1x) na demanda existente mantendo histórico unificado.
+                      </p>
                     </button>
 
+                    {/* Botão 2: Reabrir Demanda */}
+                    <button
+                      type="button"
+                      disabled={isReopeningTask}
+                      onClick={handleReopenSimilarTask}
+                      className="p-3 rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-left transition-all cursor-pointer shadow-xs group"
+                    >
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-blue-800 dark:text-blue-300 mb-1">
+                        {isReopeningTask ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <RotateCcw className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 group-hover:-rotate-90 transition-transform" />
+                        )}
+                        <span>Reabrir Demanda</span>
+                      </div>
+                      <p className="text-[10px] text-blue-700/80 dark:text-blue-400 leading-tight">
+                        {topSimilar.task.status === "COMPLETED"
+                          ? "Retorna o status para 'A Fazer' para execução imediata."
+                          : "Abre a demanda existente em aberto para edição."}
+                      </p>
+                    </button>
+
+                    {/* Botão 3: Continuar Criação Independente */}
                     <button
                       type="button"
                       onClick={() => setIsSimilarityDismissed(true)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs transition-all cursor-pointer ml-auto"
-                      title="Criar como uma nova demanda independente sem vincular à anterior"
+                      className="p-3 rounded-xl border border-indigo-300 dark:border-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-left transition-all cursor-pointer shadow-xs group"
                     >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Criar Demanda Independente</span>
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-1">
+                        <Plus className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 group-hover:scale-125 transition-transform" />
+                        <span>Criação Independente</span>
+                      </div>
+                      <p className="text-[10px] text-indigo-700/80 dark:text-indigo-400 leading-tight">
+                        Ignorar similaridade e avançar para cadastrar como nova demanda avulsa.
+                      </p>
                     </button>
                   </div>
                 </div>
-              )}
+              </div>
+            ) : (
+              /* ========================================================= */
+              /* 2. FORMULÁRIO DE CONFIRMAÇÃO E EDIÇÃO DA NOVA DEMANDA     */
+              /* ========================================================= */
+              <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-3.5 custom-scrollbar">
 
               {/* Classification selector */}
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
@@ -1004,32 +1088,35 @@ export function HeaderCommandBar({
                 </div>
               </div>
             </div>
+          )}
 
-            {/* Actions - Always visible */}
+          {/* Actions - Always visible when filling the form */}
+          {(!topSimilar || isSimilarityDismissed) && (
             <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
-              <button
-                type="button"
-                onClick={handleDiscardTriage}
-                className="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
-              >
-                Descartar
-              </button>
-              <button
-                type="button"
-                onClick={handleConfirmTask}
-                disabled={isCreating || !editTitle.trim()}
-                className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50"
-              >
-                {isCreating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <>
-                    <CheckCircle2 className="w-4 h-4" />
-                    Confirmar & Salvar
-                  </>
-                )}
-              </button>
-            </div>
+                <button
+                  type="button"
+                  onClick={handleDiscardTriage}
+                  className="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+                >
+                  Descartar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmTask}
+                  disabled={isCreating || !editTitle.trim()}
+                  className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-sm transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                >
+                  {isCreating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      Confirmar & Salvar
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

@@ -37,14 +37,22 @@ import { MontLifeLogo } from "@/components/MontLifeLogo";
 
 interface ReportsViewProps {
   tasks: Task[];
+  accountFilter?: "all" | string;
   onBackToTasks?: () => void;
 }
 
-export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
+export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: ReportsViewProps) {
   // Period filter states: "ALL" represents "Todos os anos" (Compilado Geral)
   const [selectedYear, setSelectedYear] = useState<number | "ALL">("ALL");
   const [selectedMonth, setSelectedMonth] = useState<number | "ALL">("ALL");
-  const [scopeFilter, setScopeFilter] = useState<"all" | "work" | "personal">("all");
+  
+  // Scope filter is derived from the active workspace in the sidebar
+  const scopeFilter: "all" | "work" | "personal" = useMemo(() => {
+    const f = (accountFilter || "all").toLowerCase().trim();
+    if (f === "work" || f.includes("trab") || f.includes("notre") || f.includes("haferreira")) return "work";
+    if (f === "personal" || f.includes("pess") || f.includes("hellen")) return "personal";
+    return "all";
+  }, [accountFilter]);
 
   // Executive AI summary state
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
@@ -470,52 +478,9 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
         </div>
       </div>
 
-      {/* 2. Filter Bar: Scope + Year + Month + Sub-tabs (Tudo em uma única linha alinhada) */}
+      {/* 2. Filter Bar: Year + Month + Sub-tabs (Tudo em uma única linha alinhada) */}
       <div className="no-print p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center justify-between gap-2.5 overflow-x-auto custom-scrollbar flex-nowrap">
-        {/* 1. Scope Selector: "Todos" em primeiro lugar */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#16152a] p-1 rounded-xl border border-slate-200 dark:border-zinc-700 shrink-0">
-          <button
-            type="button"
-            onClick={() => setScopeFilter("all")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              scopeFilter === "all"
-                ? "bg-slate-800 text-white dark:bg-zinc-700 shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-            title="Todas as demandas (Trabalho + Pessoal)"
-          >
-            <Layers className="w-3 h-3" />
-            <span>Todos</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setScopeFilter("work")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              scopeFilter === "work"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-            title="Demandas de Trabalho (Notre Dame)"
-          >
-            <Briefcase className="w-3 h-3" />
-            <span>Trabalho</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setScopeFilter("personal")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              scopeFilter === "personal"
-                ? "bg-purple-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-            title="Demandas Pessoais"
-          >
-            <User className="w-3 h-3" />
-            <span>Pessoal</span>
-          </button>
-        </div>
-
-        {/* 2. Period Selector: Year (Compact Menu / Dropdown) + Month Pills */}
+        {/* 1. Period Selector: Year (Compact Menu / Dropdown) + Month Pills */}
         <div className="flex items-center gap-1.5 shrink-0">
           {/* Year Select ("Menuzinho de Ano") */}
           <div className="relative shrink-0">

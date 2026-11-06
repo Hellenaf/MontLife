@@ -34,6 +34,22 @@ interface AccountsModalProps {
   onRefreshAccounts: () => Promise<void>;
 }
 
+function formatSafeSyncDate(dateStr?: string | null): string {
+  if (!dateStr) return "Consolidação pendente";
+  try {
+    const d = new Date(dateStr);
+    if (!isNaN(d.getTime())) {
+      return `Última consolidação: ${format(d, "dd/MM HH:mm", { locale: ptBR })}`;
+    }
+    if (typeof dateStr === "string" && dateStr.trim().length > 0) {
+      return `Última consolidação: ${dateStr.replace(/^Última consolidação:\s*/i, "").trim()}`;
+    }
+  } catch {
+    // fallback
+  }
+  return "Consolidação pendente";
+}
+
 export function AccountsModal({
   isOpen,
   onClose,
@@ -66,7 +82,7 @@ export function AccountsModal({
 
   // Master email is hellenalvesferreira.s2@gmail.com or the first personal/primary account
   const masterAccount =
-    connectedAccounts.find((a) => a.email.toLowerCase().includes("hellenalvesferreira")) ||
+    connectedAccounts.find((a) => (a.email || "").toLowerCase().includes("hellenalvesferreira")) ||
     connectedAccounts.find((a) => (a.label || "").toLowerCase().includes("pessoal")) ||
     connectedAccounts[0];
   const masterEmail = masterAccount?.email || "hellenalvesferreira.s2@gmail.com";
@@ -359,11 +375,7 @@ export function AccountsModal({
 
                   <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-200/60 dark:border-white/5">
                     <span>
-                      {acc.last_sync_at
-                        ? `Última consolidação: ${format(parseISO(acc.last_sync_at), "dd/MM HH:mm", {
-                            locale: ptBR,
-                          })}`
-                        : "Consolidação pendente"}
+                      {formatSafeSyncDate(acc.last_sync_at)}
                     </span>
                     <span className="font-mono text-[10px]">Armazenamento Nativo MontLife</span>
                   </div>

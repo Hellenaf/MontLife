@@ -32,6 +32,7 @@ import { ptBR } from "date-fns/locale";
 
 interface KanbanViewProps {
   tasks: Task[];
+  accountFilter?: "all" | string;
   onSelectTask: (task: Task) => void;
   onUpdateStatus: (taskId: string, newStatus: TaskStatus) => void;
   onOpenNewTaskModal: (initialStatus?: TaskStatus) => void;
@@ -159,13 +160,13 @@ const KANBAN_STORAGE_KEY = "montlife_kanban_columns_v3";
 
 export function KanbanView({
   tasks,
+  accountFilter: propAccountFilter = "all",
   onSelectTask,
   onUpdateStatus,
   onOpenNewTaskModal,
   onRequestCancelTask,
 }: KanbanViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [accountFilter, setAccountFilter] = useState<"all" | AccountType>("all");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
 
   // Dynamic columns state with local persistence
@@ -228,13 +229,16 @@ export function KanbanView({
     return tasks.filter((task) => {
       if (task.status === "CANCELED") return false;
 
-      // Strict account filtering
-      if (accountFilter === "work" || accountFilter === "trabalho") {
-        if (!isWorkTask(task)) return false;
-      } else if (accountFilter === "personal" || accountFilter === "pessoal") {
-        if (isWorkTask(task)) return false;
-      } else if (accountFilter !== "all" && task.account_type !== accountFilter) {
-        return false;
+      // Global workspace/account filtering from sidebar
+      const f = (propAccountFilter || "all").toLowerCase().trim();
+      if (f !== "all") {
+        if (f === "work" || f.includes("trab") || f.includes("notre") || f.includes("haferreira")) {
+          if (!isWorkTask(task)) return false;
+        } else if (f === "personal" || f.includes("pess") || f.includes("hellen")) {
+          if (isWorkTask(task)) return false;
+        } else if (task.account_type && task.account_type.toLowerCase() !== f) {
+          return false;
+        }
       }
 
       if (priorityFilter !== "all" && task.priority !== priorityFilter) {
@@ -251,7 +255,7 @@ export function KanbanView({
       }
       return true;
     });
-  }, [tasks, accountFilter, priorityFilter, searchQuery]);
+  }, [tasks, propAccountFilter, priorityFilter, searchQuery]);
 
   // Handle Drag & Drop to target column
   const handleDropOnColumn = (taskId: string, targetCol: ColumnDef) => {
@@ -405,45 +409,6 @@ export function KanbanView({
 
         {/* Filter Pills and Action Buttons */}
         <div className="flex items-center gap-2 overflow-x-auto flex-wrap">
-          {/* Workspace Filter */}
-          <div className="flex items-center bg-slate-100 dark:bg-zinc-900/90 rounded-lg p-0.5 border border-slate-200 dark:border-zinc-800 shrink-0">
-            <button
-              type="button"
-              onClick={() => setAccountFilter("all")}
-              className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-                accountFilter === "all"
-                  ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs"
-                  : "text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200"
-              }`}
-            >
-              Todas
-            </button>
-            <button
-              type="button"
-              onClick={() => setAccountFilter("work")}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-                accountFilter === "work" || accountFilter === "trabalho"
-                  ? "bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-xs"
-                  : "text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200"
-              }`}
-            >
-              <Briefcase className="w-3 h-3 text-blue-500 dark:text-blue-400" />
-              <span>Trabalho</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setAccountFilter("personal")}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
-                accountFilter === "personal" || accountFilter === "pessoal"
-                  ? "bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-400 shadow-xs"
-                  : "text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200"
-              }`}
-            >
-              <User className="w-3 h-3 text-purple-500 dark:text-purple-400" />
-              <span>Pessoal</span>
-            </button>
-          </div>
-
           {/* Priority Quick Filter */}
           <select
             value={priorityFilter}

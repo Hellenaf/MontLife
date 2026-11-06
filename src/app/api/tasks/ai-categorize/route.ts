@@ -16,17 +16,20 @@ export async function POST(req: NextRequest) {
 
     // Filter to ONLY process tasks that genuinely need categorization (generic or missing tags)
     // Skips already established categories to prevent redundant token burning
-    const tasksToProcess = tasks.filter((t) => {
-      const isGeneric =
-        !t.category ||
-        t.category === "Geral" ||
-        t.category === "Operações & Geral" ||
-        t.category === "Suporte & Demandas" ||
-        !t.tags ||
-        t.tags.length === 0 ||
-        (t.tags.length === 1 && t.tags[0].includes("google-task"));
-      return isGeneric;
-    });
+    // Limit to max 5 tasks per batch to ensure conscious, controlled API consumption
+    const tasksToProcess = tasks
+      .filter((t) => {
+        const isGeneric =
+          !t.category ||
+          t.category === "Geral" ||
+          t.category === "Operações & Geral" ||
+          t.category === "Suporte & Demandas" ||
+          !t.tags ||
+          t.tags.length === 0 ||
+          (t.tags.length === 1 && t.tags[0].includes("google-task"));
+        return isGeneric;
+      })
+      .slice(0, 5);
 
     for (const task of tasksToProcess) {
       const cacheKey = `cat:${task.title}:${task.description || ""}:${task.account_type}`;

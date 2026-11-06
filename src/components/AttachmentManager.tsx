@@ -114,12 +114,12 @@ export function AttachmentManager({
       {/* Header with Title and Add Actions */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Paperclip className="w-3.5 h-3.5 text-zinc-400" />
-          <span className="text-xs font-semibold text-zinc-300">
+          <Paperclip className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
+          <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
             {label || "Anexos & Links Externos"}
           </span>
           {attachments.length > 0 && (
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700/60">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-400 border border-slate-300 dark:border-zinc-700/60">
               {attachments.length}
             </span>
           )}
@@ -132,12 +132,12 @@ export function AttachmentManager({
               type="button"
               disabled={isProcessingFile}
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-300 border border-zinc-700/50 transition-all cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80 text-slate-700 dark:text-zinc-300 border border-slate-300/80 dark:border-zinc-700/50 transition-all cursor-pointer shadow-xs"
             >
               {isProcessingFile ? (
-                <Loader2 className="w-3 h-3 animate-spin text-zinc-400" />
+                <Loader2 className="w-3 h-3 animate-spin text-slate-500 dark:text-zinc-400" />
               ) : (
-                <Paperclip className="w-3 h-3 text-zinc-400" />
+                <Paperclip className="w-3 h-3 text-slate-600 dark:text-zinc-400" />
               )}
               <span>Arquivo</span>
             </button>
@@ -153,9 +153,9 @@ export function AttachmentManager({
             <button
               type="button"
               onClick={() => setIsAddingLink((prev) => !prev)}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[11px] font-medium bg-zinc-800/80 hover:bg-zinc-700/80 text-zinc-300 border border-zinc-700/50 transition-all cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80 text-slate-700 dark:text-zinc-300 border border-slate-300/80 dark:border-zinc-700/50 transition-all cursor-pointer shadow-xs"
             >
-              <LinkIcon className="w-3 h-3 text-indigo-400" />
+              <LinkIcon className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
               <span>Link URL</span>
             </button>
           </div>
@@ -164,9 +164,9 @@ export function AttachmentManager({
 
       {/* Inline Form to Add External Link */}
       {isAddingLink && !readOnly && (
-        <div className="p-3 rounded-lg bg-zinc-900/90 border border-zinc-700/70 space-y-2.5 animate-fadeIn">
-          <div className="text-[11px] font-medium text-zinc-300 flex items-center gap-1.5">
-            <Globe className="w-3.5 h-3.5 text-indigo-400" />
+        <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-700/70 space-y-2.5 animate-fadeIn">
+          <div className="text-[11px] font-medium text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
+            <Globe className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             <span>Adicionar Link Externo (Jira, GitHub, Docs, Figma, etc.)</span>
           </div>
 
@@ -177,7 +177,7 @@ export function AttachmentManager({
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddLink()}
-              className="w-full text-xs px-2.5 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+              className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
               autoFocus
             />
             <input
@@ -186,7 +186,7 @@ export function AttachmentManager({
               value={linkTitle}
               onChange={(e) => setLinkTitle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddLink()}
-              className="w-full text-xs px-2.5 py-1.5 rounded-md bg-zinc-950 border border-zinc-800 text-zinc-200 placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+              className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
             />
           </div>
 
@@ -198,7 +198,7 @@ export function AttachmentManager({
                 setLinkUrl("");
                 setLinkTitle("");
               }}
-              className="px-2.5 py-1 text-xs text-zinc-400 hover:text-zinc-200"
+              className="px-2.5 py-1 text-xs text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200"
             >
               Cancelar
             </button>
@@ -206,7 +206,7 @@ export function AttachmentManager({
               type="button"
               onClick={handleAddLink}
               disabled={!linkUrl.trim()}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 transition-all"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 transition-all shadow-xs cursor-pointer"
             >
               <Plus className="w-3 h-3" />
               <span>Vincular Link</span>
@@ -217,7 +217,7 @@ export function AttachmentManager({
 
       {/* Render List of Attachments */}
       {attachments.length === 0 ? (
-        <div className="text-[11px] text-zinc-500 italic py-1 px-0.5">
+        <div className="text-[11px] text-slate-400 dark:text-zinc-500 italic py-1 px-0.5">
           Nenhum anexo ou link vinculado.
         </div>
       ) : (
@@ -248,7 +248,7 @@ export function AttachmentManager({
             return (
               <div
                 key={att.id}
-                className="group relative flex items-center justify-between p-2 rounded-lg bg-zinc-900/60 border border-zinc-800/80 hover:border-zinc-700/80 transition-all text-xs"
+                className="group relative flex items-center justify-between p-2 rounded-xl bg-slate-100/90 hover:bg-slate-200/80 dark:bg-zinc-900/60 dark:hover:bg-zinc-800/60 border border-slate-200/90 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700/80 transition-all text-xs"
               >
                 <div
                   className={`flex items-center gap-2.5 min-w-0 flex-1 ${canPreviewInModal ? "cursor-pointer" : ""}`}
@@ -256,11 +256,11 @@ export function AttachmentManager({
                 >
                   {/* Icon or Thumbnail */}
                   {isLink ? (
-                    <div className="w-7 h-7 rounded-md bg-indigo-950/60 border border-indigo-800/40 flex items-center justify-center shrink-0 text-indigo-400">
-                      <Globe className="w-3.5 h-3.5" />
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/40 flex items-center justify-center shrink-0 text-indigo-600 dark:text-indigo-400 shadow-2xs">
+                      <Globe className="w-4 h-4" />
                     </div>
                   ) : isImage ? (
-                    <div className="w-7 h-7 rounded-md bg-zinc-800 border border-zinc-700 overflow-hidden shrink-0 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 overflow-hidden shrink-0 flex items-center justify-center shadow-2xs">
                       {att.url ? (
                         <img
                           src={att.url}
@@ -268,12 +268,12 @@ export function AttachmentManager({
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                         />
                       ) : (
-                        <ImageIcon className="w-3.5 h-3.5 text-zinc-400" />
+                        <ImageIcon className="w-4 h-4 text-slate-500 dark:text-zinc-400" />
                       )}
                     </div>
                   ) : (
-                    <div className="w-7 h-7 rounded-md bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0 text-zinc-400">
-                      <FileText className="w-3.5 h-3.5" />
+                    <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-zinc-300 shadow-2xs">
+                      <FileText className="w-4 h-4" />
                     </div>
                   )}
 
@@ -281,7 +281,7 @@ export function AttachmentManager({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       {canPreviewInModal ? (
-                        <span className="font-medium text-zinc-200 hover:text-white truncate flex items-center gap-1">
+                        <span className="font-semibold text-slate-800 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-white truncate flex items-center gap-1">
                           <span className="truncate">{att.name}</span>
                         </span>
                       ) : (
@@ -289,19 +289,19 @@ export function AttachmentManager({
                           href={att.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-medium text-zinc-200 hover:text-white truncate hover:underline flex items-center gap-1"
+                          className="font-semibold text-slate-800 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-white truncate hover:underline flex items-center gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <span className="truncate">{att.name}</span>
                           {isLink && (
-                            <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-60 group-hover:opacity-100 text-indigo-400" />
+                            <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-60 group-hover:opacity-100 text-indigo-500" />
                           )}
                         </a>
                       )}
                     </div>
-                    <div className="text-[10px] text-zinc-500 font-mono flex items-center gap-1.5 mt-0.5">
+                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono flex items-center gap-1.5 mt-0.5">
                       {isLink ? (
-                        <span className="text-indigo-400/90 truncate">
+                        <span className="text-indigo-600 dark:text-indigo-400 truncate">
                           {getDomainFromUrl(att.url)}
                         </span>
                       ) : (
@@ -318,7 +318,7 @@ export function AttachmentManager({
                   <button
                     type="button"
                     onClick={() => handleRemove(att.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1 text-zinc-500 hover:text-rose-400 rounded transition-all ml-1 shrink-0"
+                    className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-600 dark:text-zinc-500 dark:hover:text-rose-400 rounded-lg transition-all ml-1 shrink-0 cursor-pointer"
                     title="Remover anexo"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

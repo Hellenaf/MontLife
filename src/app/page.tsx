@@ -526,6 +526,7 @@ export default function MontOpsDashboard() {
           <main className="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <AgendaDoDiaView
               tasks={tasks}
+              accountFilter={accountFilter}
               selectedTaskId={selectedTaskId}
               onSelectTask={(task) => {
                 setSelectedTaskId(task.id);
@@ -557,6 +558,7 @@ export default function MontOpsDashboard() {
           <main className="flex-1 overflow-hidden p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <KanbanView
               tasks={tasks}
+              accountFilter={accountFilter}
               onSelectTask={(task) => {
                 setSelectedTaskId(task.id);
                 setActiveNav("tarefas");
@@ -577,6 +579,7 @@ export default function MontOpsDashboard() {
           <main className="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <ReportsView
               tasks={tasks}
+              accountFilter={accountFilter}
               onBackToTasks={() => {
                 setActiveNav("tarefas");
                 setCentralActiveTab("details");
