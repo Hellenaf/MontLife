@@ -2,36 +2,54 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { GeminiTriageResponse, TaskCategory, Priority, AccountType, ItemType } from "@/types";
 import { aiCache } from "@/lib/aiCache";
 
-const SYSTEM_PROMPT = `Você é o assistente inteligente de organização, triagem e produtividade autônoma do MontLife.
-O MontLife é uma plataforma universal de produtividade projetada para qualquer usuário e equipe (profissionais de TI, gestores, analistas, engenheiros, educadores, profissionais liberais e uso pessoal).
+const SYSTEM_PROMPT = `Você é o assistente executivo e arquiteto de demandas sênior do MontLife.
+Sua missão é transformar qualquer entrada em linguagem natural (áudios transcritos, mensagens informais de WhatsApp/Teams, rascunhos rápidos ou comandos falados com gírias e vícios) em uma demanda corporativa impecável de alto nível executivo.
 
-Sua função é analisar a demanda, e-mail, áudio transcrito ou anotação enviada e estruturá-la com alto nível executivo e profissional:
-1. Título Claro & Acionável ('refined_title'):
-   - Crie um título conciso (máximo 60 caracteres), profissional e orientado à ação (Ex: 'Atualizar Métricas de Lead Time no Power BI de Suprimentos', 'Aplicação e Homologação de Patch no TOTVS RM', 'Manutenção Financeira no TOTVS').
-   - NUNCA use linguagem coloquial, gírias ou conectores informais no título ('seria', 'algo assim', 'resumindo', 'no power bi inserir...').
-2. Descrição Estruturada ('structured_description'):
-   - Sintetize com clareza executiva o objetivo real da solicitação.
-   - Estruture em tópicos organizados: Sistemas envolvidos, Regras de negócio/cálculo mencionadas (ex: Lead Time, consultas 1207/1215), e Áreas/setores envolvidos.
-   - NUNCA repita o texto bruto do usuário de forma literal no objetivo. Escreva uma síntese técnica de alto padrão.
-3. Pontos de Validação & Etapas de Finalização ('validation_steps'):
-   - Sugira uma lista sequencial de 3 a 5 etapas práticas e estritamente contextualizadas para a demanda real (se for Power BI/BI: modelagem DAX, validação de fontes, checagem com o ERP; se for TOTVS: parâmetros, testes de relatórios, homologação; se for compras: pedidos, cotação, entrega).
-4. Identificação Precisa de Prazo ('extracted_due_date_iso'):
-   - Analise se o usuário mencionou prazo explícito ou implícito e converta precisamente para ISO 8601 (YYYY-MM-DDTHH:mm:00Z) com base na data atual informada. Se não houver menção, retorne null.
-5. Contexto ('account_type'):
-   - 'work': Demandas profissionais, corporativas, sistemas ERP (TOTVS), Power BI, relatórios, contratos, TI, rotinas escolares.
-   - 'personal': Finanças pessoais, saúde, estudos, compras, casa, família.
-6. Tipo de Registro ('item_type'):
-   - 'task': Demanda operacional ou técnica.
-   - 'activity': Reunião, alinhamento, compromisso agendado.
-   - 'reminder': Lembrete rápido ou memorando.
-7. Categoria Dinâmica ('category'):
-   - 'BI & Analytics', 'Sistemas ERP', 'Gestão & Contratos', 'Finanças & Tesouraria', 'Engenharia de Software', 'Infraestrutura & Redes', 'Secretaria Acadêmica', etc.
-8. Prioridade & Nível de SLA ('priority'):
-   - 'P1' (Urgente/Crítica), 'P2' (Alta), 'P3' (Média/Padrão), 'P4' (Baixa).
-9. Tags Técnicas & Tópicos ('search_tags'):
-   - 2 a 5 tags objetivas (ferramentas, tecnologias, módulos).
-10. Recursos de Estudo no YouTube ('learning_queries'):
-   - 2 queries de busca objetivas para encontrar tutoriais no YouTube.`;
+CRITÉRIOS OBRIGATÓRIOS DE QUALIDADE:
+
+1. TÍTULO CLARO, PROFISSIONAL & ACIONÁVEL ('refined_title'):
+   - Crie um título conciso, elegante e orientado ao entregável final (máximo 70 caracteres).
+   - Inicie sempre com verbo de ação ou substantivo técnico forte (ex: "Implementar", "Parametrizar", "Atualizar", "Corrigir", "Homologar").
+   - Exemplos de excelência:
+     • Entrada informal: "No power bi de suprimentos inserir atualização do Tempo (Lead Time)... média de NFs de mês para dia"
+       -> Título: "Implementar Métricas de Lead Time e Média Diária de NFs no Power BI de Suprimentos"
+     • Entrada informal: "Ajustar o relatório 1207 do totvs que tá travando a saída"
+       -> Título: "Otimizar e Parametrizar Consulta/Relatório 1207 no TOTVS RM"
+   - JAMAIS repita construções coloquiais ("No power bi inserir...", "seria algo assim", "resumindo", "fazer tal coisa").
+
+2. DESCRIÇÃO ESTRUTURADA DE ALTO PADRÃO ('structured_description'):
+   - A descrição NUNCA deve ser um parágrafo genérico e NUNCA deve colar o texto bruto no objetivo.
+   - Siga rigorosamente a seguinte estrutura em Markdown:
+
+📋 Resumo Executivo:
+[Síntese técnica e profissional em 1 ou 2 períodos explicando o que será realizado e o objetivo principal da demanda]
+
+---
+
+🎯 Requisitos & Regras de Negócio:
+1. [Requisito 1 detalhado com regras de cálculo, fórmulas, filtros ou parâmetros citados]
+2. [Requisito 2 detalhado, periodicidade, granularidade ou regras operacionais]
+
+---
+
+🔗 Sistemas & Fontes Envolvidas:
+• Sistemas & Ferramentas: [Ex: Power BI (Painel e Modelo Semântico), TOTVS RM (Consultas 1207/1215), SQL, etc.]
+• Setores Impactados: [Ex: Suprimentos, Compras e Expedição, TI, etc.]
+
+3. PONTOS DE VALIDAÇÃO & CHECKLIST ('validation_steps'):
+   - Gere de 3 a 5 etapas práticas, sequenciais e técnicas para que a demanda seja homologada e concluída com sucesso:
+     • Mapear fontes de dados ou tabelas necessárias no sistema...
+     • Desenvolver regra de negócio / medida DAX / código...
+     • Testar amostragem confrontando com o ERP/base real...
+     • Homologar com o solicitante / equipe responsável e publicar...
+
+4. CONTEXTO & CLASSIFICAÇÃO:
+   - 'account_type': 'work' (TOTVS, Power BI, relatórios, contratos, TI, rotinas escolares) ou 'personal' (saúde, finanças pessoais, compras).
+   - 'item_type': 'task' (demanda técnica/operacional), 'activity' (reunião/evento) ou 'reminder' (lembrete).
+   - 'category': Nome curto e técnico (ex: 'BI & Analytics', 'Sistemas ERP', 'TI & Suporte', 'Finanças & Contas', 'Secretaria Acadêmica').
+   - 'priority': 'P1' (crítica), 'P2' (alta), 'P3' (média/padrão), 'P4' (baixa/planejada).
+   - 'search_tags': Array com 3 a 5 tags técnicas limpas (ex: ["PowerBI", "TOTVS-RM", "Suprimentos", "LeadTime", "DAX"]).
+   - 'learning_queries': 2 buscas focadas para tutoriais e melhores práticas.`;
 
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
@@ -482,6 +500,7 @@ export function synthesizeRefinedTitle(rawInput: string): string {
   // 1. High-precision Power BI / Analytics & Reports
   if (lower.includes("power bi") || lower.includes("dashboard") || lower.includes("painel") || lower.includes("dax")) {
     const isLeadTime = lower.includes("lead time") || (lower.includes("tempo") && (lower.includes("emiss") || lower.includes("saida") || lower.includes("fatur")));
+    const isMediaNf = (lower.includes("média") || lower.includes("media")) && (lower.includes("nf") || lower.includes("nota"));
     const isSuprimentos = lower.includes("suprimento") || lower.includes("compras");
     const isFaturamento = lower.includes("fatur") || lower.includes("venda");
     const isEstoque = lower.includes("estoque");
@@ -493,13 +512,19 @@ export function synthesizeRefinedTitle(rawInput: string): string {
     else if (isEstoque) context = "de Estoque";
     else if (isFinanceiro) context = "Financeiro";
 
+    if (isLeadTime && isMediaNf) {
+      return `Implementar Métricas de Lead Time e Média Diária de NFs no Power BI${context ? " " + context : ""}`;
+    }
     if (isLeadTime) {
-      return `Atualizar Métricas de Lead Time no Power BI${context ? " " + context : ""}`;
+      return `Implementar Métricas de Lead Time no Power BI${context ? " " + context : ""}`;
+    }
+    if (isMediaNf) {
+      return `Ajustar Medida de Média de NFs no Power BI${context ? " " + context : ""}`;
     }
     if (lower.includes("atualiz") || lower.includes("ajust") || lower.includes("inserir")) {
-      return `Atualização de Indicadores no Power BI${context ? " " + context : ""}`;
+      return `Atualizar Indicadores no Power BI${context ? " " + context : ""}`;
     }
-    return `Desenvolvimento de Dashboard no Power BI${context ? " " + context : ""}`;
+    return `Desenvolver Dashboard no Power BI${context ? " " + context : ""}`;
   }
 
   // 2. TOTVS RM / ERP Systems
@@ -579,27 +604,47 @@ export function synthesizeStructuredDescription(
   if (!clean) return "";
   const lower = clean.toLowerCase();
 
-  // 1. Synthesize clear objective
-  let objective = "";
-  if (lower.includes("lead time") && (lower.includes("power bi") || lower.includes("totvs"))) {
-    objective = "Implementar o cálculo e visualização de métricas de Lead Time no painel de Suprimentos (Power BI), mensurando o tempo decorrido entre a emissão das Notas Fiscais e a data de saída/faturamento a partir das consultas 1207 e 1215 do TOTVS RM.";
-  } else if (lower.includes("power bi") || lower.includes("dashboard")) {
-    objective = `Desenvolver e calibrar visualizações analíticas no painel Power BI conforme solicitação operacional.`;
-  } else if (lower.includes("totvs") && (lower.includes("patch") || lower.includes("release"))) {
-    objective = `Realizar a aplicação e validação técnica de pacotes de atualização (patch) no ambiente TOTVS RM.`;
+  // 1. Synthesize clear objective & requirements
+  let executiveSummary = "";
+  const requirements: string[] = [];
+
+  const isPowerBi = lower.includes("power bi") || lower.includes("dashboard") || lower.includes("dax");
+  const isTotvs = lower.includes("totvs") || lower.includes(" rm") || lower.includes("protheus");
+  const isLeadTime = lower.includes("lead time") || (lower.includes("tempo") && (lower.includes("emiss") || lower.includes("saida") || lower.includes("fatur")));
+  const isMediaNf = (lower.includes("média") || lower.includes("media")) && (lower.includes("nf") || lower.includes("nota"));
+
+  if (isPowerBi && (isLeadTime || isMediaNf)) {
+    executiveSummary = "Atualização do painel analítico de Suprimentos no Power BI para inclusão do indicador de Lead Time de faturamento e ajuste na periodicidade de apuração da média de emissão de Notas Fiscais.";
+    if (isLeadTime) {
+      requirements.push("Cálculo de Lead Time: Criar indicador mensurando o intervalo entre a Data de Emissão e a Data de Saída / Faturamento da Nota Fiscal (`Lead Time = Data Saída − Data Emissão`).");
+    }
+    if (lower.includes("1207") || lower.includes("1215") || isTotvs) {
+      requirements.push("Mapeamento no TOTVS RM: Extrair e cruzar as informações com base nas consultas/relatórios 1207 e 1215 do TOTVS RM.");
+    }
+    if (isMediaNf) {
+      requirements.push("Ajuste na Medida de Média de NFs: Alterar a granularidade da medida DAX atual de média de Notas Fiscais, migrando da visão mensal (NFs/Mês) para visão diária (NFs/Dia).");
+    }
+  } else if (isTotvs && (lower.includes("patch") || lower.includes("release"))) {
+    executiveSummary = "Aplicação e homologação técnica de pacote de atualização (patch) no ambiente do TOTVS RM, visando estabilidade e conformidade das rotinas.";
+    requirements.push("Efetuar backup preventivo da base e validar dependências do pacote de atualização.");
+    requirements.push("Aplicar o pacote em ambiente de homologação e executar bateria de testes regressivos nas rotinas integradas.");
+  } else if (isTotvs && (lower.includes("1207") || lower.includes("1215") || lower.includes("relat"))) {
+    executiveSummary = "Parametrização e ajuste em relatório operacional do TOTVS RM para correção de regras de negócio e integridade de dados.";
+    requirements.push("Inspecionar os parâmetros da consulta e filtros aplicados no gerador de relatórios do TOTVS RM.");
+    requirements.push("Validar consistência dos dados gerados com as tabelas do banco de dados.");
   } else {
-    // Take the primary sentence, stripped of filler phrases
     let primary = clean.split(/[.?!;\n]/)[0].trim();
     primary = primary
       .replace(/^(?:no|na|em|para|por\s+favor|favor|preciso\s+que|solicito)\s+/i, "")
       .replace(/,\s*(?:seria|resumindo|algo\s+assim).*$/i, "")
       .trim();
-    objective = primary.charAt(0).toUpperCase() + primary.slice(1) + ".";
+    executiveSummary = `${primary.charAt(0).toUpperCase() + primary.slice(1)}.`;
+    requirements.push(`Executar as especificações técnicas da demanda: ${clean.replace(/[\n\r]+/g, " ").slice(0, 150)}`);
   }
 
   // 2. Identify Systems & Data Sources
   const systems: string[] = [];
-  if (lower.includes("power bi") || lower.includes("dashboard")) systems.push("Power BI");
+  if (lower.includes("power bi") || lower.includes("dashboard")) systems.push("Power BI (Painel e Modelo Semântico)");
   if (lower.includes("totvs") || lower.includes(" rm")) {
     if (lower.includes("1207") || lower.includes("1215")) {
       systems.push("TOTVS RM (Consultas/Relatórios 1207 e 1215)");
@@ -607,38 +652,31 @@ export function synthesizeStructuredDescription(
       systems.push("TOTVS RM (ERP Corporativo)");
     }
   }
+  if (lower.includes("sql") || lower.includes("banco")) systems.push("Banco de Dados Relacional");
   if (lower.includes("excel") || lower.includes("planilha")) systems.push("Planilhas / Excel");
   if (lower.includes("classapp")) systems.push("ClassApp");
-  if (lower.includes("pergamum")) systems.push("Pergamum (Biblioteca)");
 
-  // 3. Extract Technical Parameters / Business Rules
-  const params: string[] = [];
-  if (lower.includes("lead time") || (lower.includes("emiss") && (lower.includes("saida") || lower.includes("saída")))) {
-    params.push("Lead Time = Data de Saída / Faturamento − Data de Emissão da NF");
-  }
-  if (lower.includes("1207") || lower.includes("1215")) {
-    params.push("Consultas Fonte: 1207 e 1215");
-  }
-  if (lower.includes("cpf") && !lower.includes("power bi")) {
-    params.push("Ponto Crítico: Validação de chave única por CPF");
-  }
-
-  // 4. Identify Sectors & Departments
+  // 3. Identify Sectors & Departments
   const depts: string[] = [];
-  if (lower.includes("suprimento") || lower.includes("compras")) depts.push("Suprimentos & Compras");
-  if (lower.includes("fatur") || lower.includes("nf") || lower.includes("saida") || lower.includes("saída")) depts.push("Faturamento & Expedição");
-  if (lower.includes("tesouraria") || lower.includes("financeir")) depts.push("Tesouraria & Financeiro");
+  if (lower.includes("suprimento") || lower.includes("compras")) depts.push("Suprimentos, Compras e Expedição");
+  if (lower.includes("fatur") || lower.includes("nf") || lower.includes("saida") || lower.includes("saída")) {
+    if (!depts.includes("Suprimentos, Compras e Expedição")) depts.push("Faturamento & Expedição");
+  }
+  if (lower.includes("tesouraria") || lower.includes("financeir")) depts.push("Financeiro & Tesouraria");
   if (lower.includes("secretaria")) depts.push("Secretaria Acadêmica");
   if (/\brh\b/.test(lower) || lower.includes("recursos humanos")) depts.push("Recursos Humanos (RH)");
-  if (lower.includes("biblioteca")) depts.push("Biblioteca");
   if (depts.length === 0) depts.push("TI & Suporte Técnico");
 
-  let desc = `📌 Objetivo da Demanda:\n${objective}\n\n`;
-  desc += `🔍 Especificações Técnicas & Parâmetros:\n`;
-  if (systems.length > 0) desc += `• Sistemas & Fontes de Dados: ${systems.join(", ")}\n`;
-  if (params.length > 0) desc += `• Regras / Métricas: ${params.join(" | ")}\n`;
-  desc += `• Setores Envolvidos: ${depts.join(", ")}\n\n`;
-  desc += `💬 Solicitação Original Registrada:\n"${clean}"`;
+  let desc = `📋 Resumo Executivo:\n${executiveSummary}\n\n`;
+  desc += `---\n\n`;
+  desc += `🎯 Requisitos & Regras de Negócio:\n`;
+  requirements.forEach((req, idx) => {
+    desc += `${idx + 1}. ${req}\n`;
+  });
+  desc += `\n---\n\n`;
+  desc += `🔗 Sistemas & Fontes Envolvidas:\n`;
+  if (systems.length > 0) desc += `• Sistemas & Ferramentas: ${systems.join(", ")}\n`;
+  desc += `• Setores Impactados: ${depts.join(", ")}\n`;
 
   return desc;
 }
@@ -654,14 +692,17 @@ export function synthesizeValidationSteps(rawInput: string, title: string): stri
   // 1. Power BI / Analytics / Reports
   if (t.includes("power bi") || t.includes("dashboard") || t.includes("dax") || t.includes("lead time")) {
     if (t.includes("totvs") || t.includes("1207") || t.includes("1215")) {
-      steps.push("1. Inspecionar as consultas 1207 e 1215 no TOTVS RM para mapear os campos de emissão e faturamento/saída.");
+      steps.push("Mapear os campos de data de emissão e data de saída nas consultas 1207 e 1215 do TOTVS RM.");
     } else {
-      steps.push("1. Mapear as fontes de dados e tabelas necessárias no modelo relacional do Power BI.");
+      steps.push("Mapear as fontes de dados e tabelas necessárias no modelo relacional do Power BI.");
     }
-    steps.push("2. Construir e calibrar as medidas DAX de Lead Time e tempos médios no modelo.");
-    steps.push("3. Validar a consistência dos números e filtros de período comparando amostras com os registros do ERP.");
+    steps.push("Criar e calibrar as medidas DAX necessárias (Lead Time médio e métricas operacionais).");
+    if (t.includes("média") || t.includes("media") || t.includes("dia")) {
+      steps.push("Ajustar a fórmula da média de NFs para apuração em granularidade diária.");
+    }
+    steps.push("Confrontar amostragem dos dados do Power BI com os registros do ERP para validar consistência.");
     const solicitante = t.includes("suprimento") ? "Suprimentos" : t.includes("fatur") ? "Faturamento" : "solicitante";
-    steps.push(`4. Homologar os novos visuais com a equipe de ${solicitante} e publicar a versão atualizada do painel.`);
+    steps.push(`Homologar o painel atualizado com a equipe de ${solicitante} e publicar no workspace.`);
     return steps;
   }
 
