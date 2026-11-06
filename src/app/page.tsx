@@ -18,7 +18,7 @@ import { ReportsView } from "@/components/ReportsView";
 import { KanbanView } from "@/components/KanbanView";
 import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
 import { getAllCategories } from "@/lib/categories";
-import { ExternalLink, ListTodo, FileText, Calendar, TrendingUp, User, Plus } from "lucide-react";
+import { ExternalLink, ListTodo, FileText, Calendar, TrendingUp, User, Plus, Kanban, BarChart3, Menu, Layers, X } from "lucide-react";
 
 export default function MontOpsDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -28,6 +28,7 @@ export default function MontOpsDashboard() {
   const [accountFilter, setAccountFilter] = useState<"all" | AccountType>("all");
   const [centralActiveTab, setCentralActiveTab] = useState<"details" | "study">("details");
   const [mobileActiveView, setMobileActiveView] = useState<"tasks" | "details" | "kpi">("tasks");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Dynamically derive selected task from tasks array
   const selectedTask =
@@ -471,6 +472,49 @@ export default function MontOpsDashboard() {
         />
       </div>
 
+      {/* 1.1 Mobile Slide-Over Drawer */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 flex lg:hidden no-print">
+          <div
+            className="fixed inset-0 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+            onClick={() => setIsMobileMenuOpen(false)}
+          />
+          <div className="relative w-[280px] max-w-[85vw] h-full shadow-2xl z-10 animate-in slide-in-from-left duration-250">
+            <SidebarNav
+              accounts={accounts}
+              tasks={tasks}
+              activeNav={activeNav}
+              onSelectNav={(nav) => {
+                setActiveNav(nav);
+                setIsMobileMenuOpen(false);
+                if (nav === "config") setIsAccountsModalOpen(true);
+                if (nav === "tarefas" || nav === "inicio") {
+                  setCentralActiveTab("details");
+                  setMobileActiveView("tasks");
+                }
+              }}
+              onOpenAccountsModal={() => {
+                setIsAccountsModalOpen(true);
+                setIsMobileMenuOpen(false);
+              }}
+              onOpenReportModal={() => {
+                setActiveNav("relatorios");
+                setIsMobileMenuOpen(false);
+              }}
+              selectedAccountFilter={accountFilter}
+              onSelectAccountFilter={(filter) => {
+                setAccountFilter(filter);
+                setIsMobileMenuOpen(false);
+              }}
+              onLogout={handleLogout}
+              completedTasksCount={tasks.filter((t) => t.status === "COMPLETED").length}
+              currentUser={currentUser}
+              onClose={() => setIsMobileMenuOpen(false)}
+            />
+          </div>
+        </div>
+      )}
+
       {/* 2. Main Area (Header on top, then 3 columns below) */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 pb-16 lg:pb-0">
         {/* Header Command Bar */}
@@ -491,6 +535,7 @@ export default function MontOpsDashboard() {
               setNewTaskInitialText(prefill || "");
               setIsNewTaskModalOpen(true);
             }}
+            onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
           />
         </div>
 
@@ -530,7 +575,7 @@ export default function MontOpsDashboard() {
 
         {/* Main Content: Dedicated Agenda do Dia View OR Wiki Técnica View OR 3 Columns Demand Grid */}
         {activeNav === "agenda" ? (
-          <main className="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 overflow-y-auto p-3 sm:p-5 pb-24 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <AgendaDoDiaView
               tasks={tasks}
               accountFilter={accountFilter}
@@ -547,7 +592,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "wiki" ? (
-          <main className="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 overflow-y-auto p-3 sm:p-5 pb-24 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <WikiTechnicalView
               tasks={tasks}
               onSelectTask={(task) => {
@@ -562,7 +607,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "kanban" ? (
-          <main className="flex-1 overflow-hidden p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 overflow-hidden p-2.5 sm:p-5 pb-24 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <KanbanView
               tasks={tasks}
               accountFilter={accountFilter}
@@ -583,7 +628,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "relatorios" ? (
-          <main className="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 overflow-y-auto p-3 sm:p-5 pb-24 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <ReportsView
               tasks={tasks}
               accountFilter={accountFilter}
@@ -698,8 +743,8 @@ export default function MontOpsDashboard() {
             setActiveNav("tarefas");
             setMobileActiveView("tasks");
           }}
-          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all ${
-            activeNav === "tarefas" && mobileActiveView === "tasks"
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
+            activeNav === "tarefas"
               ? "text-purple-600 dark:text-purple-400 font-bold"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
@@ -717,24 +762,21 @@ export default function MontOpsDashboard() {
 
         <button
           type="button"
-          onClick={() => {
-            setActiveNav("tarefas");
-            setMobileActiveView("details");
-          }}
-          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all ${
-            activeNav === "tarefas" && mobileActiveView === "details"
+          onClick={() => setActiveNav("kanban")}
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
+            activeNav === "kanban"
               ? "text-purple-600 dark:text-purple-400 font-bold"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
-          <FileText className="w-5 h-5" />
-          <span className="text-[10px]">Detalhes</span>
+          <Kanban className="w-5 h-5" />
+          <span className="text-[10px]">Kanban</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveNav("agenda")}
-          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all ${
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
             activeNav === "agenda"
               ? "text-purple-600 dark:text-purple-400 font-bold"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
@@ -746,27 +788,28 @@ export default function MontOpsDashboard() {
 
         <button
           type="button"
-          onClick={() => {
-            setActiveNav("tarefas");
-            setMobileActiveView("kpi");
-          }}
-          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all ${
-            activeNav === "tarefas" && mobileActiveView === "kpi"
+          onClick={() => setActiveNav("relatorios")}
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
+            activeNav === "relatorios"
               ? "text-purple-600 dark:text-purple-400 font-bold"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
-          <TrendingUp className="w-5 h-5" />
-          <span className="text-[10px]">Métricas</span>
+          <BarChart3 className="w-5 h-5" />
+          <span className="text-[10px]">Relatórios</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setIsAccountsModalOpen(true)}
-          className="flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-all"
+          onClick={() => setIsMobileMenuOpen(true)}
+          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
+            isMobileMenuOpen || activeNav === "wiki"
+              ? "text-purple-600 dark:text-purple-400 font-bold"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
         >
-          <User className="w-5 h-5" />
-          <span className="text-[10px]">Contas</span>
+          <Menu className="w-5 h-5" />
+          <span className="text-[10px]">Menu</span>
         </button>
       </nav>
 

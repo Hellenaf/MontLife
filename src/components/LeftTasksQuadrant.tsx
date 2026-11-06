@@ -831,7 +831,7 @@ export function LeftTasksQuadrant({
       </div>
 
       {/* Task List (Google Tasks Style) */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 pb-24 lg:pb-3">
         {filteredTasks.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500">
             <Filter className="w-8 h-8 mb-2 opacity-30 text-indigo-500" />

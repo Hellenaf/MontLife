@@ -30,6 +30,7 @@ import {
   Trash2,
   Repeat,
   RotateCcw,
+  Menu,
 } from "lucide-react";
 import { findSimilarTasks } from "@/lib/taskDeduplication";
 import {
@@ -61,6 +62,7 @@ interface HeaderCommandBarProps {
   onOpenReportModal: () => void;
   onOpenNewTaskModal?: (initialText?: string) => void;
   onSelectTask?: (task: Task) => void;
+  onToggleMobileMenu?: () => void;
 }
 
 export function HeaderCommandBar({
@@ -72,6 +74,7 @@ export function HeaderCommandBar({
   onOpenReportModal,
   onOpenNewTaskModal,
   onSelectTask,
+  onToggleMobileMenu,
 }: HeaderCommandBarProps) {
   const { theme, toggleTheme } = useTheme();
   const categoriesList = useMemo(() => {
@@ -355,22 +358,33 @@ export function HeaderCommandBar({
 
   return (
     <>
-      <header className="h-16 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-4 sm:px-6 flex items-center justify-between shadow-sm transition-colors duration-200 z-30">
-      {/* Brand & Identity (visible on mobile where sidebar is hidden) */}
-      <div className="flex items-center gap-2 shrink-0 lg:hidden">
-        <MontLifeLogo size="sm" showText={true} />
+      <header className="h-16 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-3 sm:px-6 flex items-center justify-between shadow-sm transition-colors duration-200 z-30 gap-2 sm:gap-4">
+      {/* Brand & Menu (visible on mobile where sidebar is hidden) */}
+      <div className="flex items-center gap-1.5 shrink-0 lg:hidden">
+        {onToggleMobileMenu && (
+          <button
+            type="button"
+            onClick={onToggleMobileMenu}
+            className="p-2 -ml-1 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            title="Abrir menu de navegação e espaços"
+            aria-label="Menu principal"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
+        <MontLifeLogo size="sm" showText={false} />
       </div>
 
       {/* Center Command Bar + Nova Demanda */}
-      <div className="flex-1 max-w-2xl mx-2 sm:mx-4 flex items-center gap-2">
-        <form onSubmit={handleRunTriage} className="relative flex items-center flex-1">
-          <Sparkles className="w-4 h-4 text-purple-500 absolute left-3.5 pointer-events-none" />
+      <div className="flex-1 max-w-2xl flex items-center gap-2 min-w-0">
+        <form onSubmit={handleRunTriage} className="relative flex items-center flex-1 min-w-0">
+          <Sparkles className="w-4 h-4 text-purple-500 absolute left-3 pointer-events-none shrink-0" />
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Digite um comando... (ex: criar tarefa, ver minhas metas, estudar sobre React)"
-            className="w-full h-10 pl-10 pr-28 rounded-xl bg-slate-100 dark:bg-[#16152a] border border-slate-200 dark:border-[#282647] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-medium"
+            placeholder="Digite um comando com IA..."
+            className="w-full h-10 pl-9 pr-24 sm:pr-28 rounded-xl bg-slate-100 dark:bg-[#16152a] border border-slate-200 dark:border-[#282647] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-medium truncate"
             disabled={isProcessing}
           />
 

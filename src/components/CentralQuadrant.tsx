@@ -658,7 +658,7 @@ export function CentralQuadrant({
       </div>
 
       {/* Main Tab Content */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-5">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-5 pb-28 lg:pb-5">
         {/* TAB 2: DETAILS OF SELECTED ITEM (ABOVE) & AGENDA DO DIA (BELOW) */}
         {activeTab === "details" && (
           <div className="max-w-4xl mx-auto space-y-4">
