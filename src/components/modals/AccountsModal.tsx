@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   X,
   Briefcase,
@@ -51,7 +51,17 @@ export function AccountsModal({
 
   if (!isOpen) return null;
 
-  const connectedAccounts = accounts.filter((a) => a.is_connected && a.email);
+  // Deduplicate accounts by email to ensure each account is listed only once
+  const connectedAccounts = useMemo(() => {
+    const seen = new Set<string>();
+    return accounts.filter((a) => {
+      if (!a.is_connected || !a.email) return false;
+      const key = a.email.toLowerCase().trim();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+  }, [accounts]);
   const totalConnected = connectedAccounts.length;
 
   // Master email is hellenalvesferreira.s2@gmail.com or the first personal/primary account

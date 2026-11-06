@@ -22,7 +22,6 @@ import {
   ListTodo,
   Activity,
   Bell,
-  ArrowLeft,
   Eye,
   EyeOff,
   FileText,
@@ -45,7 +44,7 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
   // Period filter states: "ALL" represents "Todos os anos" (Compilado Geral)
   const [selectedYear, setSelectedYear] = useState<number | "ALL">("ALL");
   const [selectedMonth, setSelectedMonth] = useState<number | "ALL">("ALL");
-  const [scopeFilter, setScopeFilter] = useState<"work" | "personal" | "all">("work");
+  const [scopeFilter, setScopeFilter] = useState<"all" | "work" | "personal">("all");
 
   // Executive AI summary state
   const [isGeneratingAi, setIsGeneratingAi] = useState(false);
@@ -468,24 +467,26 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
             <FileSpreadsheet className="w-3.5 h-3.5" />
             <span>CSV</span>
           </button>
-
-          {onBackToTasks && (
-            <button
-              type="button"
-              onClick={onBackToTasks}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/80 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-700 text-xs font-semibold shadow-xs transition-all active:scale-95 ml-1 cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Voltar</span>
-            </button>
-          )}
         </div>
       </div>
 
-      {/* 2. Filter Bar: Scope + Year + Month + Sub-tabs (Hidden when printing) */}
-      <div className="no-print p-4 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        {/* Scope Selector: Work vs Personal vs All */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#16152a] p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+      {/* 2. Filter Bar: Scope + Year + Month + Sub-tabs (Tudo em uma única linha alinhada) */}
+      <div className="no-print p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center justify-between gap-2.5 overflow-x-auto custom-scrollbar flex-nowrap">
+        {/* 1. Scope Selector: "Todos" em primeiro lugar */}
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#16152a] p-1 rounded-xl border border-slate-200 dark:border-zinc-700 shrink-0">
+          <button
+            type="button"
+            onClick={() => setScopeFilter("all")}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              scopeFilter === "all"
+                ? "bg-slate-800 text-white dark:bg-zinc-700 shadow-sm"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+            }`}
+            title="Todas as demandas (Trabalho + Pessoal)"
+          >
+            <Layers className="w-3 h-3" />
+            <span>Todos</span>
+          </button>
           <button
             type="button"
             onClick={() => setScopeFilter("work")}
@@ -494,6 +495,7 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
                 ? "bg-blue-600 text-white shadow-sm"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
+            title="Demandas de Trabalho (Notre Dame)"
           >
             <Briefcase className="w-3 h-3" />
             <span>Trabalho</span>
@@ -506,67 +508,45 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
                 ? "bg-purple-600 text-white shadow-sm"
                 : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
             }`}
+            title="Demandas Pessoais"
           >
             <User className="w-3 h-3" />
             <span>Pessoal</span>
           </button>
-          <button
-            type="button"
-            onClick={() => setScopeFilter("all")}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              scopeFilter === "all"
-                ? "bg-slate-800 text-white dark:bg-zinc-700 shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            <Layers className="w-3 h-3" />
-            <span>Todos</span>
-          </button>
         </div>
 
-        {/* Year & Month Selector */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-zinc-800 p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
-            {/* "Todos os Anos" (Compilado Geral) */}
-            <button
-              type="button"
-              onClick={() => setSelectedYear("ALL")}
-              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                selectedYear === "ALL"
-                  ? "bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 font-bold shadow-xs"
-                  : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
-              }`}
-              title="Exibir histórico completo de todos os anos consolidados (Compilado Geral)"
+        {/* 2. Period Selector: Year (Compact Menu / Dropdown) + Month Pills */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          {/* Year Select ("Menuzinho de Ano") */}
+          <div className="relative shrink-0">
+            <select
+              value={selectedYear}
+              onChange={(e) =>
+                setSelectedYear(e.target.value === "ALL" ? "ALL" : Number(e.target.value))
+              }
+              className="h-8 pl-2.5 pr-7 rounded-xl bg-slate-100 dark:bg-[#16152a] border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 shadow-xs cursor-pointer appearance-none transition-all"
+              title="Filtrar por ano ou compilado geral"
             >
-              Todos os Anos
-            </button>
-
-            {availableYears.map((yr) => (
-              <button
-                key={yr}
-                type="button"
-                onClick={() => setSelectedYear(yr)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  selectedYear === yr
-                    ? "bg-white dark:bg-zinc-900 text-indigo-600 dark:text-indigo-400 font-bold shadow-xs"
-                    : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
-                }`}
-              >
-                {yr}
-              </button>
-            ))}
+              <option value="ALL">Todos os Anos</option>
+              {availableYears.map((yr) => (
+                <option key={yr} value={yr}>
+                  {yr}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3 h-3 text-slate-400 dark:text-zinc-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
           {/* Month Selector Pills */}
-          <div className="flex items-center gap-0.5 overflow-x-auto max-w-xs sm:max-w-md p-1 bg-slate-100 dark:bg-zinc-800 rounded-xl border border-slate-200 dark:border-zinc-700 custom-scrollbar">
+          <div className="flex items-center gap-0.5 p-0.5 bg-slate-100 dark:bg-[#16152a] rounded-xl border border-slate-200 dark:border-zinc-700 shrink-0">
             {months.map((m) => (
               <button
                 key={String(m.value)}
                 type="button"
                 onClick={() => setSelectedMonth(m.value as any)}
-                className={`px-2 py-0.5 rounded-lg text-xs font-medium shrink-0 transition-all cursor-pointer ${
+                className={`px-2 py-0.5 rounded-lg text-[11px] font-medium shrink-0 transition-all cursor-pointer ${
                   selectedMonth === m.value
-                    ? "bg-white dark:bg-zinc-900 text-slate-900 dark:text-white font-bold shadow-xs"
+                    ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white font-bold shadow-xs"
                     : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
                 }`}
               >
@@ -576,15 +556,15 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
           </div>
         </div>
 
-        {/* View Tabs */}
+        {/* 3. View Tabs (Métricas vs Lista) */}
         {!isPreviewMode && (
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#16152a] p-1 rounded-xl border border-slate-200 dark:border-zinc-700">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#16152a] p-1 rounded-xl border border-slate-200 dark:border-zinc-700 shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab("dashboard")}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === "dashboard"
-                  ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs"
+                  ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs font-bold"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
               }`}
             >
@@ -595,7 +575,7 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
               onClick={() => setActiveTab("activities")}
               className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                 activeTab === "activities"
-                  ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs"
+                  ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs font-bold"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
               }`}
             >
@@ -607,7 +587,7 @@ export function ReportsView({ tasks, onBackToTasks }: ReportsViewProps) {
                 onClick={() => setActiveTab("ai_summary")}
                 className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   activeTab === "ai_summary"
-                    ? "bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-400 shadow-xs"
+                    ? "bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-400 shadow-xs font-bold"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >

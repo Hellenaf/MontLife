@@ -76,7 +76,15 @@ export default function MontOpsDashboard() {
         if (cachedAccounts) {
           const parsed = JSON.parse(cachedAccounts);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setAccounts(parsed);
+            const seen = new Set<string>();
+            const deduped = parsed.filter((a: any) => {
+              const k = (a?.email || "").toLowerCase().trim();
+              if (!k) return true;
+              if (seen.has(k)) return false;
+              seen.add(k);
+              return true;
+            });
+            setAccounts(deduped);
           }
         }
       } catch (e) {

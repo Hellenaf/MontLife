@@ -275,19 +275,46 @@ export function SidebarNav({
           </button>
         </div>
 
-        {/* 3. Espaços de Trabalho (Workspaces Dinâmicos) */}
+        {/* 3. Espaços de Trabalho (Workspaces Dinâmicos com "Todos" em primeiro) */}
         <div className="pt-2 border-t border-[#1e1c36]/60 space-y-1.5">
           <div className="px-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-purple-300/60 flex items-center justify-between">
             <span>Espaços de Trabalho</span>
             <button
               type="button"
               onClick={onOpenAccountsModal}
-              className="text-[10px] text-purple-400 hover:text-white transition-colors"
+              className="text-[10px] text-purple-400 hover:text-white transition-colors cursor-pointer"
               title="Gerenciar Contas"
             >
               + Vincular
             </button>
           </div>
+
+          {/* Opção 1: Todos os Espaços (Em primeiro lugar) */}
+          <button
+            type="button"
+            onClick={() => onSelectAccountFilter?.("all")}
+            className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all text-left cursor-pointer ${
+              selectedAccountFilter === "all"
+                ? "bg-purple-600/30 border-purple-500/60 text-white shadow-sm"
+                : "bg-white/[0.02] hover:bg-white/[0.05] border-white/5 text-slate-300"
+            }`}
+            title="Mostrar todos os espaços consolidados"
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                <Layers className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-left min-w-0">
+                <span className="text-xs font-semibold block truncate">Todos</span>
+                <span className="text-[9px] text-slate-400 block truncate">
+                  Visão Consolidada
+                </span>
+              </div>
+            </div>
+            <span className="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+              {totalTasks}
+            </span>
+          </button>
 
           {dynamicWorkspaces.map((ws) => {
             const isSelected = selectedAccountFilter.toLowerCase() === ws.id.toLowerCase();
@@ -296,7 +323,7 @@ export function SidebarNav({
                 key={ws.id}
                 type="button"
                 onClick={() => onSelectAccountFilter?.(ws.id as any)}
-                className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all text-left ${
+                className={`w-full flex items-center justify-between p-2 rounded-xl border transition-all text-left cursor-pointer ${
                   isSelected
                     ? "bg-purple-600/30 border-purple-500/60 text-white shadow-sm"
                     : "bg-white/[0.02] hover:bg-white/[0.05] border-white/5 text-slate-300"
@@ -324,17 +351,6 @@ export function SidebarNav({
               </button>
             );
           })}
-
-          {/* Ver Todos */}
-          {selectedAccountFilter !== "all" && (
-            <button
-              type="button"
-              onClick={() => onSelectAccountFilter?.("all")}
-              className="w-full py-1 text-center text-[10px] font-semibold text-purple-400 hover:text-purple-300 hover:underline transition-colors cursor-pointer"
-            >
-              ← Mostrar todos os espaços ({totalTasks})
-            </button>
-          )}
         </div>
 
         {/* 4. Saúde Operacional & Produtividade Card */}

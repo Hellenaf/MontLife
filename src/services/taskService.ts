@@ -1304,7 +1304,31 @@ export async function getConnectedAccounts(userId?: string): Promise<ConnectedAc
       return [];
     }
 
-    return accounts;
+    // Automatic Deduplication by email:
+    // Ensures that if an account was linked multiple times under different IDs,
+    // only ONE unified entry is kept and redundant duplicate documents are pruned from Firestore.
+    const deduplicatedAccounts: ConnectedAccount[] = [];
+    const seenEmails = new Set<string>();
+
+    for (const acc of accounts) {
+      const emailLower = (acc.email || "").toLowerCase().trim();
+      if (!emailLower) {
+        deduplicatedAccounts.push(acc);
+        continue;
+      }
+
+      if (seenEmails.has(emailLower)) {
+        // Redundant duplicate: delete from Firestore to keep the DB clean
+        if (targetUserId && acc.id) {
+          db.collection("users").doc(targetUserId).collection("accounts").doc(acc.id).delete().catch(() => {});
+        }
+      } else {
+        seenEmails.add(emailLower);
+        deduplicatedAccounts.push(acc);
+      }
+    }
+
+    return deduplicatedAccounts;
   } catch (err) {
     console.warn("Firestore read accounts failed:", err);
     if (isHellen) return hellenDefaultAccounts;
