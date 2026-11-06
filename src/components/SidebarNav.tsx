@@ -118,11 +118,14 @@ export function SidebarNav({
 
     const connected = accounts.filter((a) => a.is_connected && a.email);
     for (const acc of connected) {
-      const lbl = acc.label || (acc.id === "work" ? "Trabalho" : acc.id === "personal" ? "Pessoal" : "Geral");
-      if (!seen.has(lbl.toLowerCase())) {
-        seen.add(lbl.toLowerCase());
+      const isWork = (acc.id || "").includes("work") || (acc.label || "").toLowerCase().includes("trab") || (acc.email || "").toLowerCase().includes("notredame");
+      const isPersonal = (acc.id || "").includes("personal") || (acc.label || "").toLowerCase().includes("pess") || (acc.email || "").toLowerCase().includes("hellen");
+      const standardId = isWork ? "work" : isPersonal ? "personal" : acc.id;
+      const lbl = acc.label || (isWork ? "Trabalho (Notre Dame)" : isPersonal ? "Pessoal" : "Geral");
+      if (!seen.has(standardId)) {
+        seen.add(standardId);
         const count = tasks.filter((t) => isTaskInWorkspace(t, acc.id, lbl, acc.email)).length;
-        list.push({ id: lbl, label: lbl, email: acc.email, count });
+        list.push({ id: standardId, label: lbl, email: acc.email, count });
       }
     }
 
@@ -130,7 +133,7 @@ export function SidebarNav({
       const workCount = tasks.filter((t) => isTaskInWorkspace(t, "work", "Trabalho", "haferreira@notredamecampinas.net.br")).length;
       const personalCount = tasks.filter((t) => isTaskInWorkspace(t, "personal", "Pessoal", "hellenalvesferreira.s2@gmail.com")).length;
       return [
-        { id: "work", label: "Trabalho", count: workCount },
+        { id: "work", label: "Trabalho (Notre Dame)", count: workCount },
         { id: "personal", label: "Pessoal", count: personalCount },
       ];
     }
@@ -317,7 +320,10 @@ export function SidebarNav({
           </button>
 
           {dynamicWorkspaces.map((ws) => {
-            const isSelected = selectedAccountFilter.toLowerCase() === ws.id.toLowerCase();
+            const isSelected =
+              selectedAccountFilter.toLowerCase() === ws.id.toLowerCase() ||
+              (ws.id === "work" && (selectedAccountFilter.toLowerCase().includes("trab") || selectedAccountFilter.toLowerCase().includes("work") || selectedAccountFilter.toLowerCase().includes("notre"))) ||
+              (ws.id === "personal" && (selectedAccountFilter.toLowerCase().includes("pess") || selectedAccountFilter.toLowerCase().includes("person") || selectedAccountFilter.toLowerCase().includes("hellen")));
             return (
               <button
                 key={ws.id}
