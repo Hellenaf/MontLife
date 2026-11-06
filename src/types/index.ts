@@ -170,6 +170,22 @@ export interface SimilarResolution {
   matched_tags: string[];
 }
 
+export interface GoogleCalendarEventItem {
+  id: string;
+  summary: string;
+  description?: string;
+  start: string; // ISO date or dateTime string
+  end?: string;
+  allDay: boolean;
+  status?: string;
+  htmlLink?: string;
+  location?: string;
+  accountEmail?: string;
+  accountLabel?: string;
+  isPersonal: boolean;
+  linkedTaskId?: string | null;
+}
+
 export interface AnalyticsMetrics {
   total_tasks: number;
   work_count: number;

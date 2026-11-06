@@ -589,6 +589,7 @@ export default function MontOpsDashboard() {
                 setNewTaskInitialText("");
                 setIsNewTaskModalOpen(true);
               }}
+              onTaskCreated={handleTaskCreated}
             />
           </main>
         ) : activeNav === "wiki" ? (
