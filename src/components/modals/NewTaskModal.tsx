@@ -179,7 +179,7 @@ export function NewTaskModal({
       const res = await fetch("/api/triage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ raw_input: textToAnalyze, force_fresh_ai: true }),
+        body: JSON.stringify({ raw_input: textToAnalyze, force_fresh_ai: false }),
       });
       const data = await res.json();
       if (data.success && data.triage) {

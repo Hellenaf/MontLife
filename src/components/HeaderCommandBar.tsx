@@ -211,7 +211,7 @@ export function HeaderCommandBar({
       const res = await fetch("/api/triage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ raw_input: input, force_fresh_ai: true }),
+        body: JSON.stringify({ raw_input: input, force_fresh_ai: false }),
       });
 
       const data = await res.json();

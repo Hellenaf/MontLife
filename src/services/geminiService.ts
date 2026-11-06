@@ -698,6 +698,16 @@ export async function triageInputWithGemini(
     return cached.data;
   }
 
+  // 2. Ultra-fast Zero-Token Path for simple phrases (0 TOKENS)
+  // For short or direct commands (<= 7 words, e.g. "Reunião amanhã às 14h", "Pagar fatura até dia 15", "Comprar café"),
+  // the heuristic handles it with high fidelity and zero token cost!
+  const words = cleanInput.split(/\s+/).filter(Boolean);
+  if (words.length <= 7 && !cleanInput.includes("\n") && cleanInput.length <= 70) {
+    const fastResult = fallbackTriage(cleanInput);
+    aiCache.set(cleanInput, fastResult, 0);
+    return fastResult;
+  }
+
   const key = apiKey || process.env.GEMINI_API_KEY;
   if (!key || key === "sua_chave_da_gemini_api") {
     const fallback = fallbackTriage(cleanInput);
@@ -907,7 +917,7 @@ Títulos de exemplo: ${tasks.slice(0, 10).map((t) => t.title).join("; ")}
 Use tom executivo, claro e objetivo.`;
 
     const response = await ai.models.generateContent({
-      model: "gemini-3.8-flash",
+      model: "gemini-2.0-flash",
       contents: prompt,
       config: {
         temperature: 0.3,
