@@ -5,42 +5,33 @@ import { aiCache } from "@/lib/aiCache";
 const SYSTEM_PROMPT = `Você é o assistente inteligente de organização, triagem e produtividade autônoma do MontLife.
 O MontLife é uma plataforma universal de produtividade projetada para qualquer usuário e equipe (profissionais de TI, gestores, analistas, engenheiros, educadores, profissionais liberais e uso pessoal).
 
-Sua função é analisar a demanda, e-mail, áudio transcrito ou anotação enviada e estruturá-la com alto nível de autonomia e inteligência:
+Sua função é analisar a demanda, e-mail, áudio transcrito ou anotação enviada e estruturá-la com alto nível executivo e profissional:
 1. Título Claro & Acionável ('refined_title'):
-   - Crie um título conciso, profissional e orientado à ação para a demanda.
+   - Crie um título conciso (máximo 60 caracteres), profissional e orientado à ação (Ex: 'Atualizar Métricas de Lead Time no Power BI de Suprimentos', 'Aplicação e Homologação de Patch no TOTVS RM', 'Manutenção Financeira no TOTVS').
+   - NUNCA use linguagem coloquial, gírias ou conectores informais no título ('seria', 'algo assim', 'resumindo', 'no power bi inserir...').
 2. Descrição Estruturada ('structured_description'):
-   - Resuma o contexto do chamado/solicitação, detalhando escopo, informações recebidas e especificações técnicas.
-   - Escreva de forma limpa, direta e profissional, SEM usar asteriscos markdown duplos (**texto**). Utilize quebras de linha e marcadores simples (•) para listar tópicos.
+   - Sintetize com clareza executiva o objetivo real da solicitação.
+   - Estruture em tópicos organizados: Sistemas envolvidos, Regras de negócio/cálculo mencionadas (ex: Lead Time, consultas 1207/1215), e Áreas/setores envolvidos.
+   - NUNCA repita o texto bruto do usuário de forma literal no objetivo. Escreva uma síntese técnica de alto padrão.
 3. Pontos de Validação & Etapas de Finalização ('validation_steps'):
-   - Sugira uma lista sequencial de 3 a 6 etapas práticas de execução e pontos de validação que o responsável deve seguir passo a passo para testar e finalizar a demanda com segurança.
-   - Exemplos:
-     - "1. Identificar logs de erro no servidor de banco de dados"
-     - "2. Ajustar parametrização no módulo de integração"
-     - "3. Realizar teste em ambiente de homologação"
-     - "4. Confirmar validação e funcionamento com o usuário solicitante"
+   - Sugira uma lista sequencial de 3 a 5 etapas práticas e estritamente contextualizadas para a demanda real (se for Power BI/BI: modelagem DAX, validação de fontes, checagem com o ERP; se for TOTVS: parâmetros, testes de relatórios, homologação; se for compras: pedidos, cotação, entrega).
 4. Identificação Precisa de Prazo ('extracted_due_date_iso'):
-   - Analise profundamente o texto para identificar se o usuário mencionou qualquer prazo explícito ou implícito (ex: 'até sexta às 17h', 'amanhã cedo', 'dia 15/11', 'preciso para daqui a 2 horas', 'reunião hoje às 14h', 'prazo até fim do mês').
-   - Calcule e converta precisamente para uma data/hora no formato ISO 8601 (YYYY-MM-DDTHH:mm:00Z) com base na data atual informada.
-   - Se o texto NÃO contiver menção de data/prazo, retorne null.
+   - Analise se o usuário mencionou prazo explícito ou implícito e converta precisamente para ISO 8601 (YYYY-MM-DDTHH:mm:00Z) com base na data atual informada. Se não houver menção, retorne null.
 5. Contexto ('account_type'):
-   - 'work': Demandas profissionais, corporativas, acadêmicas, relatórios, contratos, sistemas, TI, reuniões de trabalho.
-   - 'personal': Vida pessoal, finanças pessoais, saúde, estudos, compras, casa, família e compromissos cotidianos.
+   - 'work': Demandas profissionais, corporativas, sistemas ERP (TOTVS), Power BI, relatórios, contratos, TI, rotinas escolares.
+   - 'personal': Finanças pessoais, saúde, estudos, compras, casa, família.
 6. Tipo de Registro ('item_type'):
-   - 'task': Demanda que exige execução prática e etapas de validação.
-   - 'activity': Reunião, compromisso, aula, consulta ou evento com horário agendado.
-   - 'reminder': Lembrete rápido, aviso pontual ou memorando.
+   - 'task': Demanda operacional ou técnica.
+   - 'activity': Reunião, alinhamento, compromisso agendado.
+   - 'reminder': Lembrete rápido ou memorando.
 7. Categoria Dinâmica ('category'):
-   - Crie ou selecione com autonomia a categoria mais precisa, elegante e profissional para o assunto.
-   - Exemplos: 'BI & Analytics', 'Sistemas ERP', 'Gestão & Contratos', 'Finanças & Tesouraria', 'Engenharia de Software', 'Infraestrutura & Redes', 'Comunicação & Mensagens', 'Gestão Educacional', 'Projetos', 'Jurídico', 'Operações', 'Estudos & Capacitação', 'Saúde & Bem-estar', 'Vida Pessoal', etc.
+   - 'BI & Analytics', 'Sistemas ERP', 'Gestão & Contratos', 'Finanças & Tesouraria', 'Engenharia de Software', 'Infraestrutura & Redes', 'Secretaria Acadêmica', etc.
 8. Prioridade & Nível de SLA ('priority'):
-   - 'P1' (Urgente / Crítica - SLA 4h): Problemas que travam a operação, paradas de sistema, ordens de diretoria ou prazos imediatos.
-   - 'P2' (Alta - SLA 24h): Demandas importantes com prazo para o mesmo dia ou dia seguinte.
-   - 'P3' (Média / Padrão - SLA 48h): Demandas rotineiras e operacionais normais.
-   - 'P4' (Baixa / Planejamento - SLA 72h+): Sugestões, ideias, estudos ou melhorias sem urgência.
+   - 'P1' (Urgente/Crítica), 'P2' (Alta), 'P3' (Média/Padrão), 'P4' (Baixa).
 9. Tags Técnicas & Tópicos ('search_tags'):
-   - Extraia de 2 a 5 tags objetivas e contextuais (ferramentas, tecnologias, departamentos).
+   - 2 a 5 tags objetivas (ferramentas, tecnologias, módulos).
 10. Recursos de Estudo no YouTube ('learning_queries'):
-   - Gere 2 queries de busca objetivas para encontrar tutoriais ou documentações em vídeo no YouTube.`;
+   - 2 queries de busca objetivas para encontrar tutoriais no YouTube.`;
 
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
@@ -181,6 +172,27 @@ export function classifyTaskHeuristic(
 
   // 2. High-precision contextual domains for dynamic categories & tags
   if (
+    text.includes("power bi") ||
+    /\bbi\b/.test(text) ||
+    text.includes("dashboard") ||
+    text.includes("relatório") ||
+    text.includes("relatorio") ||
+    text.includes("cubo") ||
+    text.includes("dax") ||
+    text.includes("lead time") ||
+    text.includes("metabase")
+  ) {
+    category = "BI & Analytics";
+    accountType = "work";
+    tags.push("Power BI", "Relatórios");
+    if (text.includes("totvs") || text.includes(" rm")) tags.push("TOTVS RM");
+    if (text.includes("lead time")) tags.push("Lead Time");
+    if (text.includes("suprimento") || text.includes("compras")) tags.push("Suprimentos");
+    if (text.includes("fatur") || text.includes("saida") || text.includes("saída") || text.includes("nf")) tags.push("Faturamento");
+    if (text.includes("1207") || text.includes("1215")) tags.push("Consultas 1207/1215");
+    if (text.includes("tesouraria")) tags.push("Tesouraria");
+    if (text.includes("bolsa")) tags.push("Bolsas");
+  } else if (
     text.includes("totvs") ||
     text.includes(" rm") ||
     text.includes("patch") ||
@@ -193,51 +205,12 @@ export function classifyTaskHeuristic(
     tags.push("TOTVS RM", "ERP");
     if (text.includes("patch")) tags.push("Patch");
     if (text.includes("portal")) tags.push("Portal");
-    if (/\brh\b/.test(text) || text.includes("funcionário") || text.includes("funcionario")) tags.push("RH", "Funcionários");
+    if (text.includes("1207") || text.includes("1215")) tags.push("Consultas 1207/1215");
+    if (text.includes("suprimento") || text.includes("compras")) tags.push("Suprimentos");
+    if (text.includes("fatur")) tags.push("Faturamento");
+    if (/\brh\b/.test(text) || text.includes("colaborador") || text.includes("funcionário") || text.includes("funcionario")) tags.push("RH", "Funcionários");
     if (text.includes("cpf")) tags.push("CPF");
     if (text.includes("biblioteca")) tags.push("Biblioteca");
-  } else if (
-    /\brh\b/.test(text) ||
-    text.includes("recursos humanos") ||
-    text.includes("departamento pessoal") ||
-    /\bdp\b/.test(text) ||
-    text.includes("admissão") ||
-    text.includes("admissao") ||
-    text.includes("demissão") ||
-    text.includes("demissao") ||
-    text.includes("folha de pagamento") ||
-    text.includes("colaborador") ||
-    text.includes("funcionário") ||
-    text.includes("funcionario")
-  ) {
-    category = "Recursos Humanos & DP";
-    accountType = "work";
-    tags.push("RH", "Gestão de Pessoas");
-    if (text.includes("cpf")) tags.push("CPF");
-  } else if (
-    text.includes("biblioteca") ||
-    text.includes("acervo") ||
-    text.includes("pergamum") ||
-    text.includes("empréstimo de livro")
-  ) {
-    category = "Biblioteca & Acervo";
-    accountType = "work";
-    tags.push("Biblioteca", "Acervo");
-  } else if (
-    text.includes("power bi") ||
-    /\bbi\b/.test(text) ||
-    text.includes("dashboard") ||
-    text.includes("relatório") ||
-    text.includes("relatorio") ||
-    text.includes("cubo") ||
-    text.includes("dax") ||
-    text.includes("metabase")
-  ) {
-    category = "BI & Analytics";
-    accountType = "work";
-    tags.push("Power BI", "Relatórios");
-    if (text.includes("tesouraria")) tags.push("Tesouraria");
-    if (text.includes("bolsa")) tags.push("Bolsas");
   } else if (
     text.includes("contrato") ||
     text.includes("aditivo") ||
@@ -504,43 +477,90 @@ export function synthesizeRefinedTitle(rawInput: string): string {
   const clean = rawInput.trim().replace(/\s+/g, " ");
   if (!clean) return "Nova Demanda";
 
-  if (clean.length <= 50 && !clean.includes(".") && !clean.includes(";") && !clean.includes(",")) {
-    return clean.charAt(0).toUpperCase() + clean.slice(1);
+  const lower = clean.toLowerCase();
+
+  // 1. High-precision Power BI / Analytics & Reports
+  if (lower.includes("power bi") || lower.includes("dashboard") || lower.includes("painel") || lower.includes("dax")) {
+    const isLeadTime = lower.includes("lead time") || (lower.includes("tempo") && (lower.includes("emiss") || lower.includes("saida") || lower.includes("fatur")));
+    const isSuprimentos = lower.includes("suprimento") || lower.includes("compras");
+    const isFaturamento = lower.includes("fatur") || lower.includes("venda");
+    const isEstoque = lower.includes("estoque");
+    const isFinanceiro = lower.includes("financeir") || lower.includes("tesouraria");
+
+    let context = "";
+    if (isSuprimentos) context = "de Suprimentos";
+    else if (isFaturamento) context = "de Faturamento";
+    else if (isEstoque) context = "de Estoque";
+    else if (isFinanceiro) context = "Financeiro";
+
+    if (isLeadTime) {
+      return `Atualizar Métricas de Lead Time no Power BI${context ? " " + context : ""}`;
+    }
+    if (lower.includes("atualiz") || lower.includes("ajust") || lower.includes("inserir")) {
+      return `Atualização de Indicadores no Power BI${context ? " " + context : ""}`;
+    }
+    return `Desenvolvimento de Dashboard no Power BI${context ? " " + context : ""}`;
   }
 
-  // Detect first primary objective clause before explanatory connectors
+  // 2. TOTVS RM / ERP Systems
+  if (lower.includes("totvs") || lower.includes(" rm") || lower.includes("protheus") || lower.includes("erp")) {
+    if (lower.includes("patch") || lower.includes("release")) {
+      return "Aplicação e Homologação de Patch no TOTVS RM";
+    }
+    if (lower.includes("1207") || lower.includes("1215") || lower.includes("relat") || lower.includes("papeleta")) {
+      return "Ajuste e Homologação de Relatório no TOTVS RM";
+    }
+    if (lower.includes("matrícula") || lower.includes("matricula") || lower.includes("secretaria")) {
+      return "Parametrização de Processos de Matrícula no TOTVS RM";
+    }
+    if (lower.includes("boleto") || lower.includes("remessa") || lower.includes("retorno") || lower.includes("financeir")) {
+      return "Manutenção e Homologação Financeira no TOTVS RM";
+    }
+    if (/\brh\b/.test(lower) || lower.includes("folha") || lower.includes("colaborador") || lower.includes("funcionário")) {
+      return "Parametrização do Módulo de Recursos Humanos no TOTVS RM";
+    }
+    return "Análise e Parametrização de Rotina no TOTVS RM";
+  }
+
+  // 3. Infrastructure, Networks & Hardware
+  if (lower.includes("servidor") || lower.includes("rede") || lower.includes("switch") || lower.includes("wifi") || lower.includes("impressora")) {
+    return "Manutenção e Suporte à Infraestrutura de TI";
+  }
+
+  // 4. Communication & School Tools (ClassApp, Agenda Edu)
+  if (lower.includes("classapp") || lower.includes("agendaedu") || lower.includes("comunicado")) {
+    return "Gestão e Envio de Comunicações Escolares";
+  }
+
+  // 5. Personal / Financial / Studies
+  if (lower.includes("pagar") || lower.includes("boleto") || lower.includes("fatura")) {
+    const obj = clean.split(/[.,;\n]/)[0].replace(/^(?:lembrete|pagar|fazer\s+o\s+pagamento)\s+/i, "").trim();
+    return `Pagamento de ${obj ? obj.charAt(0).toUpperCase() + obj.slice(1) : "Fatura"}`;
+  }
+
+  // 6. Natural Language Objective Cleaning
   let title = clean;
   const firstClauseMatch = clean.match(
-    /^([^.,;]+?)(?:,\s*(?:pois|porque|já\s+que|para\s+que|onde|afim\s+de)|[.;]|\n)/i
+    /^([^.,;]+?)(?:,\s*(?:pois|porque|já\s+que|para\s+que|onde|afim\s+de|seria|resumindo)|[.;]|\n)/i
   );
   if (firstClauseMatch) {
     title = firstClauseMatch[1].trim();
   }
 
-  // Refine colloquial or verbose phrases into punchy, professional phrasing
+  // Strip conversational leading words
   title = title
+    .replace(/^(?:no|na|em|para|por\s+favor|favor|preciso\s+que|solicito|gostaria\s+de|inserir|fazer|ajustar)\s+/i, "")
     .replace(/a forma que eles registram/i, "o registro de")
     .replace(/a forma como registram/i, "o registro de")
     .replace(/a forma de registrar/i, "o registro de")
     .replace(/como eles cadastram/i, "o cadastro de")
-    .replace(/como cadastrar/i, "o cadastro de")
-    .replace(/verificar com o ([a-z0-9]+) a forma/i, "Alinhar com $1 o processo")
-    .replace(/\s+(?:pois|porque|para|com|em|de|que|e|se)$/i, "");
-
-  // If text mentions critical systems/contexts missing from the clause, append concisely
-  const lower = clean.toLowerCase();
-  if (lower.includes("totvs") && !title.toLowerCase().includes("totvs")) {
-    title += " no TOTVS";
-  }
-  if (lower.includes("cpf") && !title.toLowerCase().includes("cpf")) {
-    title += " (Vínculo CPF)";
-  }
+    .trim();
 
   title = title.charAt(0).toUpperCase() + title.slice(1);
 
-  if (title.length > 70) {
-    const spaceIdx = title.lastIndexOf(" ", 67);
-    title = (spaceIdx > 35 ? title.substring(0, spaceIdx) : title.substring(0, 67)).trim() + "...";
+  if (title.length > 65) {
+    const spaceIdx = title.lastIndexOf(" ", 62);
+    title = (spaceIdx > 30 ? title.substring(0, spaceIdx) : title.substring(0, 62)).trim() + "...";
   }
 
   return title;
@@ -557,46 +577,68 @@ export function synthesizeStructuredDescription(
 ): string {
   const clean = rawInput.trim();
   if (!clean) return "";
+  const lower = clean.toLowerCase();
 
-  // Split into sentences
-  const sentences = clean.split(/(?<=[.?!])\s+/).filter(Boolean);
-  const mainGoal = sentences[0] || clean;
+  // 1. Synthesize clear objective
+  let objective = "";
+  if (lower.includes("lead time") && (lower.includes("power bi") || lower.includes("totvs"))) {
+    objective = "Implementar o cálculo e visualização de métricas de Lead Time no painel de Suprimentos (Power BI), mensurando o tempo decorrido entre a emissão das Notas Fiscais e a data de saída/faturamento a partir das consultas 1207 e 1215 do TOTVS RM.";
+  } else if (lower.includes("power bi") || lower.includes("dashboard")) {
+    objective = `Desenvolver e calibrar visualizações analíticas no painel Power BI conforme solicitação operacional.`;
+  } else if (lower.includes("totvs") && (lower.includes("patch") || lower.includes("release"))) {
+    objective = `Realizar a aplicação e validação técnica de pacotes de atualização (patch) no ambiente TOTVS RM.`;
+  } else {
+    // Take the primary sentence, stripped of filler phrases
+    let primary = clean.split(/[.?!;\n]/)[0].trim();
+    primary = primary
+      .replace(/^(?:no|na|em|para|por\s+favor|favor|preciso\s+que|solicito)\s+/i, "")
+      .replace(/,\s*(?:seria|resumindo|algo\s+assim).*$/i, "")
+      .trim();
+    objective = primary.charAt(0).toUpperCase() + primary.slice(1) + ".";
+  }
 
+  // 2. Identify Systems & Data Sources
   const systems: string[] = [];
-  if (/totvs/i.test(clean)) systems.push("TOTVS (Gestão / RM)");
-  if (/power\s*bi/i.test(clean)) systems.push("Power BI");
-  if (/excel|planilha/i.test(clean)) systems.push("Planilhas / Excel");
-  if (/email|e-mail|outlook|gmail/i.test(clean)) systems.push("Email / Mensageria");
-  if (/catraca|acesso/i.test(clean)) systems.push("Controle de Acesso");
-
-  const depts: string[] = [];
-  if (/\brh\b/i.test(clean)) depts.push("Recursos Humanos (RH)");
-  if (/biblioteca/i.test(clean)) depts.push("Biblioteca");
-  if (/tesouraria|financeir/i.test(clean)) depts.push("Tesouraria / Financeiro");
-  if (/secretaria/i.test(clean)) depts.push("Secretaria Acadêmica");
-  if (/ti|suporte/i.test(clean)) depts.push("TI & Suporte Técnico");
-
-  let desc = `📋 Objetivo da Demanda:\n${mainGoal}\n\n`;
-
-  const details: string[] = [];
-  if (systems.length > 0) details.push(`• Sistemas Envolvidos: ${systems.join(", ")}`);
-  if (depts.length > 0) details.push(`• Setores Impactados: ${depts.join(", ")}`);
-  if (/cpf/i.test(clean)) details.push(`• Ponto Crítico: Vínculo por CPF (atenção para não mesclar históricos de ex-alunos ou responsáveis)`);
-  if (/sonia/i.test(clean)) details.push(`• Interessado / Solicitante: Observação reportada por Sonia (Biblioteca)`);
-
-  // Extra context if multiple sentences exist
-  if (sentences.length > 1) {
-    const additionalNotes = sentences.slice(1).join(" ").trim();
-    if (additionalNotes) {
-      details.push(`• Observações Adicionais: ${additionalNotes}`);
+  if (lower.includes("power bi") || lower.includes("dashboard")) systems.push("Power BI");
+  if (lower.includes("totvs") || lower.includes(" rm")) {
+    if (lower.includes("1207") || lower.includes("1215")) {
+      systems.push("TOTVS RM (Consultas/Relatórios 1207 e 1215)");
+    } else {
+      systems.push("TOTVS RM (ERP Corporativo)");
     }
   }
+  if (lower.includes("excel") || lower.includes("planilha")) systems.push("Planilhas / Excel");
+  if (lower.includes("classapp")) systems.push("ClassApp");
+  if (lower.includes("pergamum")) systems.push("Pergamum (Biblioteca)");
 
-  if (details.length > 0) {
-    desc += `🔍 Contexto & Detalhes Operacionais:\n${details.join("\n")}\n\n`;
+  // 3. Extract Technical Parameters / Business Rules
+  const params: string[] = [];
+  if (lower.includes("lead time") || (lower.includes("emiss") && (lower.includes("saida") || lower.includes("saída")))) {
+    params.push("Lead Time = Data de Saída / Faturamento − Data de Emissão da NF");
+  }
+  if (lower.includes("1207") || lower.includes("1215")) {
+    params.push("Consultas Fonte: 1207 e 1215");
+  }
+  if (lower.includes("cpf") && !lower.includes("power bi")) {
+    params.push("Ponto Crítico: Validação de chave única por CPF");
   }
 
-  desc += `💬 Demanda Original Registrada:\n"${clean}"`;
+  // 4. Identify Sectors & Departments
+  const depts: string[] = [];
+  if (lower.includes("suprimento") || lower.includes("compras")) depts.push("Suprimentos & Compras");
+  if (lower.includes("fatur") || lower.includes("nf") || lower.includes("saida") || lower.includes("saída")) depts.push("Faturamento & Expedição");
+  if (lower.includes("tesouraria") || lower.includes("financeir")) depts.push("Tesouraria & Financeiro");
+  if (lower.includes("secretaria")) depts.push("Secretaria Acadêmica");
+  if (/\brh\b/.test(lower) || lower.includes("recursos humanos")) depts.push("Recursos Humanos (RH)");
+  if (lower.includes("biblioteca")) depts.push("Biblioteca");
+  if (depts.length === 0) depts.push("TI & Suporte Técnico");
+
+  let desc = `📌 Objetivo da Demanda:\n${objective}\n\n`;
+  desc += `🔍 Especificações Técnicas & Parâmetros:\n`;
+  if (systems.length > 0) desc += `• Sistemas & Fontes de Dados: ${systems.join(", ")}\n`;
+  if (params.length > 0) desc += `• Regras / Métricas: ${params.join(" | ")}\n`;
+  desc += `• Setores Envolvidos: ${depts.join(", ")}\n\n`;
+  desc += `💬 Solicitação Original Registrada:\n"${clean}"`;
 
   return desc;
 }
@@ -609,47 +651,59 @@ export function synthesizeValidationSteps(rawInput: string, title: string): stri
   const t = rawInput.toLowerCase();
   const steps: string[] = [];
 
-  if (
-    t.includes("totvs") ||
-    t.includes("rh") ||
-    t.includes("cadastro") ||
-    t.includes("funcionario") ||
-    t.includes("funcionário")
-  ) {
-    steps.push("1. Alinhar com o RH o fluxo atual de inclusão e consulta de colaboradores no sistema.");
-    steps.push("2. Avaliar no TOTVS a regra de chave por CPF para evitar sobrescrever registros de ex-alunos ou responsáveis.");
-    if (t.includes("biblioteca") || t.includes("emprestimo") || t.includes("empréstimo")) {
-      steps.push("3. Verificar no módulo da Biblioteca a segregação do histórico de empréstimos.");
+  // 1. Power BI / Analytics / Reports
+  if (t.includes("power bi") || t.includes("dashboard") || t.includes("dax") || t.includes("lead time")) {
+    if (t.includes("totvs") || t.includes("1207") || t.includes("1215")) {
+      steps.push("1. Inspecionar as consultas 1207 e 1215 no TOTVS RM para mapear os campos de emissão e faturamento/saída.");
+    } else {
+      steps.push("1. Mapear as fontes de dados e tabelas necessárias no modelo relacional do Power BI.");
     }
-    steps.push("4. Definir e homologar a parametrização para preservar a integridade dos dados históricos.");
-    steps.push("5. Finalizar a demanda prestando o retorno à solicitante (Sonia) e às equipes envolvidas.");
-  } else if (
-    t.includes("power bi") ||
-    t.includes("relatório") ||
-    t.includes("relatorio") ||
-    t.includes("dashboard")
-  ) {
-    steps.push("1. Levantar as métricas e regras de negócio exigidas no relatório.");
-    steps.push("2. Realizar a extração e tratamento dos dados na fonte.");
-    steps.push("3. Desenvolver o painel / relatório e validar os números.");
-    steps.push("4. Homologar os resultados e publicar para os usuários.");
-  } else if (
-    t.includes("pagar") ||
-    t.includes("comprar") ||
-    t.includes("financeir") ||
-    t.includes("tesouraria") ||
-    t.includes("boleto")
-  ) {
+    steps.push("2. Construir e calibrar as medidas DAX de Lead Time e tempos médios no modelo.");
+    steps.push("3. Validar a consistência dos números e filtros de período comparando amostras com os registros do ERP.");
+    const solicitante = t.includes("suprimento") ? "Suprimentos" : t.includes("fatur") ? "Faturamento" : "solicitante";
+    steps.push(`4. Homologar os novos visuais com a equipe de ${solicitante} e publicar a versão atualizada do painel.`);
+    return steps;
+  }
+
+  // 2. TOTVS RM (ERP Geral / Relatórios / Fiscal)
+  if (t.includes("totvs") || t.includes(" rm") || t.includes("patch") || t.includes("protheus")) {
+    if (t.includes("patch") || t.includes("release")) {
+      steps.push("1. Baixar o pacote de atualização e verificar documentação de notas de release.");
+      steps.push("2. Aplicar o patch no ambiente de homologação e validar a integridade dos serviços.");
+      steps.push("3. Executar testes regressivos nas principais rotinas impactadas.");
+      steps.push("4. Agendar a aplicação em produção e notificar a equipe.");
+    } else {
+      steps.push("1. Inspecionar as regras de negócio, tabelas e parâmetros da rotina no TOTVS RM.");
+      steps.push("2. Aplicar os ajustes ou configurações necessárias em ambiente de homologação.");
+      steps.push("3. Executar testes de validação dos processos e relatórios impactados.");
+      steps.push("4. Confirmar o funcionamento correto com o usuário solicitante e documentar na Wiki.");
+    }
+    return steps;
+  }
+
+  // 3. Recursos Humanos / DP
+  if (/\brh\b/.test(t) || t.includes("recursos humanos") || t.includes("folha") || t.includes("colaborador")) {
+    steps.push("1. Alinhar com o setor de Recursos Humanos os requisitos e critérios da demanda.");
+    steps.push("2. Parametrizar e validar os registros no módulo de RH do sistema.");
+    steps.push("3. Realizar testes de consistência em ambiente de testes.");
+    steps.push("4. Confirmar homologação com a equipe de RH.");
+    return steps;
+  }
+
+  // 4. Finanças & Tesouraria
+  if (t.includes("pagar") || t.includes("comprar") || t.includes("financeir") || t.includes("tesouraria") || t.includes("boleto")) {
     steps.push("1. Conferir os valores, comprovantes fiscais e datas de vencimento.");
-    steps.push("2. Obter autorização da coordenação / diretoria.");
+    steps.push("2. Obter autorização da coordenação / diretoria responsável.");
     steps.push("3. Executar o pagamento / lançamento e realizar a conciliação bancária.");
     steps.push("4. Arquivar o comprovante e notificar os envolvidos.");
-  } else {
-    steps.push("1. Analisar o escopo detalhado e dependências da demanda.");
-    steps.push("2. Executar as ações e configurações necessárias no ambiente.");
-    steps.push("3. Realizar testes de homologação e validação técnica.");
-    steps.push("4. Confirmar a conclusão e alinhar com o solicitante.");
+    return steps;
   }
+
+  // 5. Demanda Geral
+  steps.push("1. Analisar o escopo detalhado e dependências da demanda.");
+  steps.push("2. Executar as ações e configurações necessárias no ambiente.");
+  steps.push("3. Realizar testes de homologação e validação técnica.");
+  steps.push("4. Confirmar a conclusão e alinhar com o solicitante.");
 
   return steps;
 }
@@ -724,19 +778,31 @@ Analise o texto a seguir, crie um título profissional, estruture a descrição,
 "${cleanInput}"`;
 
     const ai = new GoogleGenAI({ apiKey: key });
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: promptWithContext,
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        responseMimeType: "application/json",
-        responseSchema: RESPONSE_SCHEMA,
-        temperature: 0.2,
-        maxOutputTokens: 750,
-      },
-    });
+    let text: string | null = null;
+    const candidateModels = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
 
-    const text = typeof response.text === "function" ? (response.text as any)() : response.text;
+    for (const modelName of candidateModels) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: promptWithContext,
+          config: {
+            systemInstruction: SYSTEM_PROMPT,
+            responseMimeType: "application/json",
+            responseSchema: RESPONSE_SCHEMA,
+            temperature: 0.2,
+            maxOutputTokens: 850,
+          },
+        });
+        const respText = typeof response.text === "function" ? (response.text as any)() : response.text;
+        if (respText && respText.trim().startsWith("{")) {
+          text = respText;
+          break;
+        }
+      } catch (modelErr) {
+        console.warn(`Model ${modelName} call failed, trying next candidate:`, modelErr);
+      }
+    }
     if (!text) {
       const fallback = fallbackTriage(cleanInput);
       aiCache.set(cleanInput, fallback, 0);
@@ -832,19 +898,29 @@ export async function categorizeTaskWithAI(
       const ai = new GoogleGenAI({ apiKey: key });
       const prompt = `Título: ${cleanTitle}\nNotas: ${cleanNotes.slice(0, 100)}\nContexto: ${accountTypeHint || "work"}`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.0-flash",
-        contents: prompt,
-        config: {
-          systemInstruction: MICRO_CATEGORIZATION_PROMPT,
-          responseMimeType: "application/json",
-          responseSchema: MICRO_CATEGORIZATION_SCHEMA,
-          temperature: 0.1,
-          maxOutputTokens: 90,
-        },
-      });
-
-      const text = typeof response.text === "function" ? (response.text as any)() : response.text;
+      let text: string | null = null;
+      for (const m of ["gemini-1.5-flash", "gemini-2.0-flash"]) {
+        try {
+          const response = await ai.models.generateContent({
+            model: m,
+            contents: prompt,
+            config: {
+              systemInstruction: MICRO_CATEGORIZATION_PROMPT,
+              responseMimeType: "application/json",
+              responseSchema: MICRO_CATEGORIZATION_SCHEMA,
+              temperature: 0.1,
+              maxOutputTokens: 90,
+            },
+          });
+          const respText = typeof response.text === "function" ? (response.text as any)() : response.text;
+          if (respText) {
+            text = respText;
+            break;
+          }
+        } catch {
+          // Try next model
+        }
+      }
       if (text) {
         const parsed = JSON.parse(text);
         if (parsed.category) {
@@ -916,15 +992,25 @@ Categorias presentes: ${Array.from(new Set(tasks.map((t) => t.category))).join("
 Títulos de exemplo: ${tasks.slice(0, 10).map((t) => t.title).join("; ")}
 Use tom executivo, claro e objetivo.`;
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.0-flash",
-      contents: prompt,
-      config: {
-        temperature: 0.3,
-      },
-    });
-
-    const text = typeof response.text === "function" ? (response.text as any)() : response.text;
+    let text: string | null = null;
+    for (const m of ["gemini-1.5-flash", "gemini-2.0-flash"]) {
+      try {
+        const response = await ai.models.generateContent({
+          model: m,
+          contents: prompt,
+          config: {
+            temperature: 0.3,
+          },
+        });
+        const respText = typeof response.text === "function" ? (response.text as any)() : response.text;
+        if (respText) {
+          text = respText;
+          break;
+        }
+      } catch {
+        // Try next candidate
+      }
+    }
     return text || fallbackSummary;
   } catch (err) {
     console.warn("Failed to generate executive summary with Gemini:", err);
