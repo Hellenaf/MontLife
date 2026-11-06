@@ -10,6 +10,10 @@ export async function POST(req: NextRequest) {
     const session = await getSessionUser(req);
     const userId = session?.userId;
 
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 });
+    }
+
     const tasks = await getTasksFromDb(userId);
     let updatedCount = 0;
     let tokensSaved = 0;

@@ -17,8 +17,16 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
     const userId = session?.userId;
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Não autorizado. Por favor, faça login." },
+        { status: 401 }
+      );
+    }
+
     const isHellen = isHellenUser(userId) || isHellenUser(session?.email);
-    const targetUserId = userId || (isHellen ? HELLEN_MASTER_ID : "primary_workspace");
+    const targetUserId = userId;
 
     let consolidatedCount = 0;
 

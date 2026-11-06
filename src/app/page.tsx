@@ -60,64 +60,66 @@ export default function MontOpsDashboard() {
     picture?: string;
   } | null>(null);
 
-  // Optimistic initial hydration from local cache
+  // User-scoped cache hydration to guarantee multi-tenant UI isolation on shared devices
   useEffect(() => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && currentUser?.userId) {
       try {
-        const cachedTasks = localStorage.getItem("montlife_cached_tasks");
-        if (cachedTasks) {
+        const userCacheKey = `montlife_cached_tasks_${currentUser.userId}`;
+        const cachedTasks = localStorage.getItem(userCacheKey);
+        if (cachedTasks && tasks.length === 0) {
           const parsed = JSON.parse(cachedTasks);
           if (Array.isArray(parsed) && parsed.length > 0) {
             setTasks(parsed);
             setSelectedTaskId(parsed[0].id);
           }
         }
-        const cachedAccounts = localStorage.getItem("montlife_cached_accounts");
-        if (cachedAccounts) {
+        const accCacheKey = `montlife_cached_accounts_${currentUser.userId}`;
+        const cachedAccounts = localStorage.getItem(accCacheKey);
+        if (cachedAccounts && accounts.length === 0) {
           const parsed = JSON.parse(cachedAccounts);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            const seen = new Set<string>();
-            const deduped = parsed.filter((a: any) => {
-              const k = (a?.email || "").toLowerCase().trim();
-              if (!k) return true;
-              if (seen.has(k)) return false;
-              seen.add(k);
-              return true;
-            });
-            setAccounts(deduped);
+            setAccounts(parsed);
           }
         }
       } catch (e) {
         // ignore parse error
       }
     }
-  }, []);
+  }, [currentUser?.userId]);
 
   // Fetch initial data ONCE on mount
   const loadTasks = useCallback(async () => {
     try {
       const res = await fetch("/api/tasks");
+      if (res.status === 401) {
+        setTasks([]);
+        return;
+      }
       const data = await res.json();
       if (data.success && Array.isArray(data.tasks)) {
         setTasks(data.tasks);
-        setSelectedTaskId((prev) => prev || (data.tasks.length > 0 ? data.tasks[0].id : null));
-        if (typeof window !== "undefined") {
-          localStorage.setItem("montlife_cached_tasks", JSON.stringify(data.tasks));
+        setSelectedTaskId((prev) => (prev && data.tasks.some((t: Task) => t.id === prev)) ? prev : (data.tasks.length > 0 ? data.tasks[0].id : null));
+        if (typeof window !== "undefined" && currentUser?.userId) {
+          localStorage.setItem(`montlife_cached_tasks_${currentUser.userId}`, JSON.stringify(data.tasks));
         }
       }
     } catch (err) {
       console.error("Failed to load tasks:", err);
     }
-  }, []);
+  }, [currentUser?.userId]);
 
   const loadAccounts = useCallback(async () => {
     try {
       const res = await fetch("/api/accounts");
+      if (res.status === 401) {
+        setAccounts([]);
+        return;
+      }
       const data = await res.json();
       if (data.success && Array.isArray(data.accounts)) {
         setAccounts(data.accounts);
-        if (typeof window !== "undefined") {
-          localStorage.setItem("montlife_cached_accounts", JSON.stringify(data.accounts));
+        if (typeof window !== "undefined" && currentUser?.userId) {
+          localStorage.setItem(`montlife_cached_accounts_${currentUser.userId}`, JSON.stringify(data.accounts));
         }
       }
     } catch (err) {
@@ -125,11 +127,27 @@ export default function MontOpsDashboard() {
     } finally {
       setAccountsLoaded(true);
     }
-  }, []);
+  }, [currentUser?.userId]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch {}
+    if (typeof window !== "undefined") {
+      localStorage.clear();
+      window.location.href = "/login";
+    }
+  };
 
   const loadUser = useCallback(async () => {
     try {
       const res = await fetch("/api/auth/me");
+      if (res.status === 401) {
+        setCurrentUser(null);
+        setTasks([]);
+        setAccounts([]);
+        return;
+      }
       const data = await res.json();
       if (data.success && data.user) {
         setCurrentUser(data.user);
@@ -142,17 +160,6 @@ export default function MontOpsDashboard() {
       setUserLoaded(true);
     }
   }, []);
-
-  const handleLogout = async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch {}
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("montlife_cached_tasks");
-      localStorage.removeItem("montlife_cached_accounts");
-      window.location.href = "/login";
-    }
-  };
 
   useEffect(() => {
     loadTasks();

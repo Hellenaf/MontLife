@@ -1,9 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { generateExecutiveSummary } from "@/services/geminiService";
+import { getSessionUser } from "@/lib/session";
 import { Task, AccountType } from "@/types";
 
 export async function POST(req: NextRequest) {
   try {
+    const session = await getSessionUser(req);
+    if (!session?.userId) {
+      return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 });
+    }
+
     const { tasks, period_label, account_type } = await req.json();
 
     if (!Array.isArray(tasks)) {

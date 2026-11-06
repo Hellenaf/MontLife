@@ -11,6 +11,9 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
     const userId = session?.userId;
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "Não autorizado", accounts: [] }, { status: 401 });
+    }
     const accounts = await getConnectedAccounts(userId);
     return NextResponse.json({ success: true, accounts });
   } catch (error: unknown) {
@@ -26,6 +29,9 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
     const userId = session?.userId;
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 });
+    }
     const body = (await req.json()) as ConnectedAccount;
 
     const updated = await saveConnectedAccount(
@@ -50,6 +56,9 @@ export async function DELETE(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
     const userId = session?.userId;
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 });
+    }
     const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
 

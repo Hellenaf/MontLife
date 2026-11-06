@@ -9,6 +9,13 @@ export async function GET(req: NextRequest) {
     const session = await getSessionUser(req);
     const userId = session?.userId;
 
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Não autorizado. Faça login para acessar suas demandas.", tasks: [] },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(req.url);
     const accountType = searchParams.get("account_type");
     const accountEmail = searchParams.get("account_email");
@@ -61,6 +68,14 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
     const userId = session?.userId;
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Não autorizado. Faça login para criar demandas." },
+        { status: 401 }
+      );
+    }
+
     const body = await req.json();
 
     const priority = body.priority || "P3";

@@ -12,16 +12,37 @@ export async function GET(req: NextRequest) {
     const session = await getSessionUser(req);
     const userId = session?.userId;
 
-    const consolidation = await consolidateHellenWorkspace(userId);
-    const tasks = await getTasksFromDb(userId || HELLEN_MASTER_ID);
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Não autorizado. Por favor, faça login." },
+        { status: 401 }
+      );
+    }
 
+    if (isHellenUser(userId)) {
+      const consolidation = await consolidateHellenWorkspace(userId);
+      const tasks = await getTasksFromDb(userId);
+
+      return NextResponse.json({
+        success: true,
+        message: "Consolidação de perfil mestre e demandas realizada com sucesso.",
+        master_id: consolidation.master_id,
+        migrated_tasks_count: consolidation.migrated_tasks_count,
+        total_tasks_count: consolidation.total_tasks_count,
+        accounts: consolidation.accounts,
+        tasks_count: tasks.length,
+        tasks,
+      });
+    }
+
+    const tasks = await getTasksFromDb(userId);
     return NextResponse.json({
       success: true,
-      message: "Consolidação de perfil mestre e demandas realizada com sucesso.",
-      master_id: consolidation.master_id,
-      migrated_tasks_count: consolidation.migrated_tasks_count,
-      total_tasks_count: consolidation.total_tasks_count,
-      accounts: consolidation.accounts,
+      message: "Demandas recuperadas com sucesso.",
+      master_id: userId,
+      migrated_tasks_count: 0,
+      total_tasks_count: tasks.length,
+      accounts: [],
       tasks_count: tasks.length,
       tasks,
     });

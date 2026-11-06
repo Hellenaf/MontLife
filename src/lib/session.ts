@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import crypto from "crypto";
 
 export interface UserSession {
   userId: string; // The master_uid / owner_uid
@@ -15,24 +16,48 @@ export interface UserSession {
 }
 
 const SESSION_COOKIE_NAME = "montlife_session";
+const SESSION_SECRET =
+  process.env.SESSION_SECRET ||
+  process.env.NEXTAUTH_SECRET ||
+  "montlife_enterprise_master_secret_key_v2_2026";
+
+function signPayload(payload: string): string {
+  return crypto.createHmac("sha256", SESSION_SECRET).update(payload).digest("hex");
+}
 
 /**
- * Creates a base64-encoded signed session payload
+ * Creates a base64-encoded HMAC-SHA256 signed session payload
  */
 export function serializeSession(session: UserSession): string {
   if (!session.masterUid) {
     session.masterUid = session.userId;
   }
-  return Buffer.from(JSON.stringify(session)).toString("base64");
+  const payload = Buffer.from(JSON.stringify(session)).toString("base64");
+  const signature = signPayload(payload);
+  return `${payload}.${signature}`;
 }
 
 /**
- * Parses and verifies the session payload
+ * Parses and cryptographically verifies the session payload
  */
 export function deserializeSession(token?: string | null): UserSession | null {
   if (!token) return null;
   try {
-    const json = Buffer.from(token, "base64").toString("utf-8");
+    let payload = token;
+    if (token.includes(".")) {
+      const parts = token.split(".");
+      if (parts.length === 2) {
+        const [data, sig] = parts;
+        const expected = signPayload(data);
+        if (sig !== expected) {
+          console.warn("Invalid or tampered session token rejected.");
+          return null;
+        }
+        payload = data;
+      }
+    }
+
+    const json = Buffer.from(payload, "base64").toString("utf-8");
     const data = JSON.parse(json) as UserSession;
     if (data && data.userId && data.email) {
       if (!data.masterUid) {

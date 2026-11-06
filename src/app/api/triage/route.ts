@@ -8,10 +8,41 @@ import { findSimilarTasks } from "@/lib/taskDeduplication";
 import { getSessionUser } from "@/lib/session";
 import { GeminiTriageResponse } from "@/types";
 
+// In-memory sliding window rate limiter: max 25 calls per user per minute
+const triageRateLimits = new Map<string, number[]>();
+
+function checkTriageRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const windowMs = 60 * 1000;
+  const timestamps = triageRateLimits.get(userId) || [];
+  const validTimestamps = timestamps.filter((t) => now - t < windowMs);
+  if (validTimestamps.length >= 25) {
+    return false;
+  }
+  validTimestamps.push(now);
+  triageRateLimits.set(userId, validTimestamps);
+  return true;
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await getSessionUser(req);
     const userId = session?.userId;
+
+    if (!userId) {
+      return NextResponse.json(
+        { success: false, error: "Não autorizado. Faça login para usar a triagem por IA." },
+        { status: 401 }
+      );
+    }
+
+    if (!checkTriageRateLimit(userId)) {
+      return NextResponse.json(
+        { success: false, error: "Limite de requisições por minuto atingido. Aguarde alguns instantes." },
+        { status: 429 }
+      );
+    }
+
     const { raw_input, force_fresh_ai } = await req.json();
 
     if (!raw_input || typeof raw_input !== "string" || raw_input.trim() === "") {

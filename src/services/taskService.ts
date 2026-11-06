@@ -118,8 +118,11 @@ export async function transferTaskAccount(
   targetEmail?: string,
   userId?: string
 ): Promise<Task | null> {
-  const isHellen = !userId || isHellenUser(userId);
-  const targetUserId = isHellen ? HELLEN_MASTER_ID : (userId || "primary_workspace");
+  if (!userId) {
+    return null;
+  }
+  const isHellen = isHellenUser(userId);
+  const targetUserId = isHellen ? HELLEN_MASTER_ID : userId;
   const db = getFirestoreDb();
 
   const isWork = targetAccount === "work" || targetAccount.toLowerCase().includes("trab");
@@ -635,8 +638,12 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
 // ==========================================
 
 export async function getTasksFromDb(userId?: string): Promise<Task[]> {
-  const isHellen = !userId || isHellenUser(userId);
-  const targetMasterId = isHellen ? HELLEN_MASTER_ID : (userId || "primary_workspace");
+  // If no user is authenticated, return strictly empty array to prevent data leaking
+  if (!userId) {
+    return [];
+  }
+  const isHellen = isHellenUser(userId);
+  const targetMasterId = isHellen ? HELLEN_MASTER_ID : userId;
 
   const db = getFirestoreDb();
   if (!db) {
@@ -823,8 +830,12 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
 }
 
 export async function saveTaskToDb(task: Task, userId?: string): Promise<Task> {
-  const isHellen = isHellenUser(userId) || isHellenUser(task.user_id) || isHellenUser(task.owner_uid);
-  const targetUserId = isHellen ? HELLEN_MASTER_ID : (userId || task.owner_uid || task.user_id || "primary_workspace");
+  const effectiveUserId = userId || task.owner_uid || task.user_id;
+  if (!effectiveUserId) {
+    throw new Error("Não é possível salvar tarefa sem usuário autenticado.");
+  }
+  const isHellen = isHellenUser(effectiveUserId);
+  const targetUserId = isHellen ? HELLEN_MASTER_ID : effectiveUserId;
   task.user_id = targetUserId;
   task.owner_uid = targetUserId;
 
@@ -974,7 +985,11 @@ export async function migrateAndUnlinkAccount(
 }
 
 export async function deleteTaskFromDb(taskId: string, userId?: string): Promise<boolean> {
-  const isHellen = !userId || isHellenUser(userId);
+  if (!userId) {
+    console.warn(`Unauthorized deleteTaskFromDb attempt without userId on task ${taskId}`);
+    return false;
+  }
+  const isHellen = isHellenUser(userId);
   const targetUserId = isHellen ? HELLEN_MASTER_ID : userId;
 
   const db = getFirestoreDb();
@@ -1184,8 +1199,11 @@ export async function extendTaskDeadline(
 // ==========================================
 
 export async function getConnectedAccounts(userId?: string): Promise<ConnectedAccount[]> {
+  if (!userId) {
+    return [];
+  }
   const isHellen = isHellenUser(userId);
-  const targetUserId = isHellen ? HELLEN_MASTER_ID : (userId || "");
+  const targetUserId = isHellen ? HELLEN_MASTER_ID : userId;
 
   const hellenDefaultAccounts: ConnectedAccount[] = [
     {

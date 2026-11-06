@@ -16,6 +16,9 @@ export async function GET(
   try {
     const session = await getSessionUser(req);
     const userId = session?.userId;
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 });
+    }
     const { id } = await context.params;
     const tasks = await getTasksFromDb(userId);
     const task = tasks.find((t) => t.id === id);
@@ -38,6 +41,9 @@ export async function PATCH(
   try {
     const session = await getSessionUser(req);
     const userId = session?.userId;
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 });
+    }
     const { id } = await context.params;
     const body = await req.json();
     const action = body.action;
@@ -94,6 +100,9 @@ export async function DELETE(
   try {
     const session = await getSessionUser(req);
     const userId = session?.userId;
+    if (!userId) {
+      return NextResponse.json({ success: false, error: "Não autorizado" }, { status: 401 });
+    }
     const { id } = await context.params;
     await deleteTaskFromDb(id, userId);
     return NextResponse.json({ success: true, message: "Tarefa excluída" });
