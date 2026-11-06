@@ -58,9 +58,10 @@ export function SidebarNav({
 }: SidebarNavProps) {
   // Display user information
   const displayName = currentUser?.name || "Hellen Ferreira";
+  const safeAccountsList = Array.isArray(accounts) ? accounts.filter((a): a is ConnectedAccount => Boolean(a && typeof a === "object")) : [];
   const displayEmail =
     currentUser?.email ||
-    accounts.find((a) => a.email)?.email ||
+    safeAccountsList.find((a) => typeof a.email === "string" && a.email)?.email ||
     "hellen@montlife.com";
 
   const userInitials = displayName
@@ -119,12 +120,23 @@ export function SidebarNav({
     const list: { id: string; label: string; email?: string; count: number }[] = [];
     const seen = new Set<string>();
 
-    const connected = accounts.filter((a) => a.is_connected && a.email);
+    const safeList = Array.isArray(accounts)
+      ? accounts.filter((a): a is ConnectedAccount => Boolean(a && typeof a === "object"))
+      : [];
+    const connected = safeList.filter((a) => Boolean(a.is_connected || a.access_token || a.refresh_token) && typeof a.email === "string" && a.email);
+
     for (const acc of connected) {
-      const isWork = (acc.id || "").includes("work") || (acc.label || "").toLowerCase().includes("trab") || (acc.email || "").toLowerCase().includes("notredame");
-      const isPersonal = (acc.id || "").includes("personal") || (acc.label || "").toLowerCase().includes("pess") || (acc.email || "").toLowerCase().includes("hellen");
-      const standardId = isWork ? "work" : isPersonal ? "personal" : acc.id;
-      const lbl = acc.label || (isWork ? "Trabalho (Notre Dame)" : isPersonal ? "Pessoal" : "Geral");
+      const accId = typeof acc.id === "string" ? acc.id.toLowerCase() : "";
+      const accLabel = typeof acc.label === "string" ? acc.label.toLowerCase() : "";
+      const accEmail = typeof acc.email === "string" ? acc.email.toLowerCase() : "";
+
+      const isWork = accId.includes("work") || accLabel.includes("trab") || accEmail.includes("notredame");
+      const isPersonal = accId.includes("personal") || accLabel.includes("pess") || accEmail.includes("hellen");
+      const standardId = isWork ? "work" : isPersonal ? "personal" : (acc.id || accEmail || "geral");
+      const lbl = typeof acc.label === "string" && acc.label.trim()
+        ? acc.label.trim()
+        : (isWork ? "Trabalho (Notre Dame)" : isPersonal ? "Pessoal" : "Geral");
+
       if (!seen.has(standardId)) {
         seen.add(standardId);
         const count = tasks.filter((t) => isTaskInWorkspace(t, acc.id, lbl, acc.email)).length;

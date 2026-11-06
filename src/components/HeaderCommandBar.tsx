@@ -354,7 +354,9 @@ export function HeaderCommandBar({
     setIsSimilarityDismissed(false);
   };
 
-  const connectedAccountsCount = accounts.filter((a) => a.is_connected && a.email).length;
+  const connectedAccountsCount = (Array.isArray(accounts) ? accounts : []).filter(
+    (a) => a && typeof a === "object" && Boolean(a.is_connected || a.access_token || a.refresh_token) && typeof a.email === "string" && a.email
+  ).length;
 
   return (
     <>

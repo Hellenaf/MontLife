@@ -79,7 +79,14 @@ export default function MontOpsDashboard() {
         if (cachedAccounts && accounts.length === 0) {
           const parsed = JSON.parse(cachedAccounts);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setAccounts(parsed);
+            const sanitized = parsed
+              .filter((a: unknown): a is ConnectedAccount => Boolean(a && typeof a === "object"))
+              .map((a: ConnectedAccount) => ({
+                ...a,
+                label: typeof a.label === "string" ? a.label : "Geral",
+                email: typeof a.email === "string" ? a.email : "",
+              }));
+            setAccounts(sanitized);
           }
         }
       } catch (e) {
@@ -118,9 +125,16 @@ export default function MontOpsDashboard() {
       }
       const data = await res.json();
       if (data.success && Array.isArray(data.accounts)) {
-        setAccounts(data.accounts);
+        const sanitized = data.accounts
+          .filter((a: unknown): a is ConnectedAccount => Boolean(a && typeof a === "object"))
+          .map((a: ConnectedAccount) => ({
+            ...a,
+            label: typeof a.label === "string" ? a.label : "Geral",
+            email: typeof a.email === "string" ? a.email : "",
+          }));
+        setAccounts(sanitized);
         if (typeof window !== "undefined" && currentUser?.userId) {
-          localStorage.setItem(`montlife_cached_accounts_${currentUser.userId}`, JSON.stringify(data.accounts));
+          localStorage.setItem(`montlife_cached_accounts_${currentUser.userId}`, JSON.stringify(sanitized));
         }
       }
     } catch (err) {
@@ -444,7 +458,17 @@ export default function MontOpsDashboard() {
     }
   };
 
-  const hasConnectedAccount = accounts.some((a) => a.is_connected);
+  const safeAccounts = useMemo(() => {
+    return (Array.isArray(accounts) ? accounts : [])
+      .filter((a): a is ConnectedAccount => Boolean(a && typeof a === "object"))
+      .map((a) => ({
+        ...a,
+        label: typeof a.label === "string" ? a.label : "Geral",
+        email: typeof a.email === "string" ? a.email : "",
+      }));
+  }, [accounts]);
+
+  const hasConnectedAccount = safeAccounts.some((a) => Boolean(a.is_connected || a.access_token || a.refresh_token));
   const allCategories = useMemo(() => getAllCategories(tasks), [tasks]);
 
   return (
@@ -452,7 +476,7 @@ export default function MontOpsDashboard() {
       {/* 1. Sidebar Nav (Far Left, from the mockup) */}
       <div className="hidden lg:flex h-full no-print">
         <SidebarNav
-          accounts={accounts}
+          accounts={safeAccounts}
           tasks={tasks}
           activeNav={activeNav}
           onSelectNav={(nav) => {
@@ -481,7 +505,7 @@ export default function MontOpsDashboard() {
           />
           <div className="relative w-[280px] max-w-[85vw] h-full shadow-2xl z-10 animate-in slide-in-from-left duration-250">
             <SidebarNav
-              accounts={accounts}
+              accounts={safeAccounts}
               tasks={tasks}
               activeNav={activeNav}
               onSelectNav={(nav) => {
@@ -520,7 +544,7 @@ export default function MontOpsDashboard() {
         {/* Header Command Bar */}
         <div className="no-print">
           <HeaderCommandBar
-            accounts={accounts}
+            accounts={safeAccounts}
             tasks={tasks}
             availableCategories={allCategories}
             onTaskCreated={handleTaskCreated}
@@ -645,7 +669,7 @@ export default function MontOpsDashboard() {
             <div className={`${mobileActiveView === "tasks" ? "flex" : "hidden"} lg:flex h-full w-full lg:w-auto shrink-0`}>
               <LeftTasksQuadrant
                 tasks={tasks}
-                accounts={accounts}
+                accounts={safeAccounts}
                 selectedTaskId={selectedTask?.id || null}
                 onSelectTask={(task) => {
                   setSelectedTaskId(task.id);
@@ -839,7 +863,7 @@ export default function MontOpsDashboard() {
       <AccountsModal
         isOpen={isAccountsModalOpen}
         onClose={() => setIsAccountsModalOpen(false)}
-        accounts={accounts}
+        accounts={safeAccounts}
         onRefreshAccounts={loadAccounts}
       />
 

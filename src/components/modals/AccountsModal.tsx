@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, Component, ErrorInfo, ReactNode } from "react";
 import {
   X,
   Briefcase,
@@ -18,13 +18,12 @@ import {
   Edit2,
   Check,
   Loader2,
-  ExternalLink,
   ShieldAlert,
   ArrowRight,
   AlertTriangle,
 } from "lucide-react";
 import { ConnectedAccount } from "@/types";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface AccountsModalProps {
@@ -34,23 +33,106 @@ interface AccountsModalProps {
   onRefreshAccounts: () => Promise<void>;
 }
 
-function formatSafeSyncDate(dateStr?: string | null): string {
-  if (!dateStr) return "Consolidação pendente";
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  onClose: () => void;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  errorMessage?: string;
+}
+
+class AccountsModalErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return {
+      hasError: true,
+      errorMessage: error?.message || "Erro inesperado ao carregar contas",
+    };
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    console.error("AccountsModal ErrorBoundary captured exception:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-[#141326] border border-rose-500/30 dark:border-rose-500/40 shadow-2xl p-6 text-center space-y-4">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 flex items-center justify-center mx-auto">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                Contas Google Vinculadas
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                Houve uma instabilidade momentânea ao renderizar as contas vinculadas. Seus dados continuam 100% seguros.
+              </p>
+            </div>
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
+                type="button"
+                onClick={() => this.setState({ hasError: false })}
+                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold transition-all shadow-md cursor-pointer"
+              >
+                Tentar Novamente
+              </button>
+              <button
+                type="button"
+                onClick={this.props.onClose}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+function formatSafeSyncDate(dateVal?: unknown): string {
+  if (!dateVal) return "Consolidação pendente";
   try {
-    const d = new Date(dateStr);
-    if (!isNaN(d.getTime())) {
+    let d: Date | null = null;
+    if (typeof dateVal === "object" && dateVal !== null) {
+      const obj = dateVal as Record<string, unknown>;
+      if (typeof obj._seconds === "number") {
+        d = new Date(obj._seconds * 1000);
+      } else if (typeof obj.seconds === "number") {
+        d = new Date(obj.seconds * 1000);
+      } else if (typeof (obj as { toDate?: () => Date }).toDate === "function") {
+        d = (obj as { toDate: () => Date }).toDate();
+      }
+    } else if (typeof dateVal === "number") {
+      d = new Date(dateVal);
+    } else if (typeof dateVal === "string") {
+      const parsed = new Date(dateVal);
+      if (!isNaN(parsed.getTime())) {
+        d = parsed;
+      } else if (dateVal.trim().length > 0) {
+        return `Última consolidação: ${dateVal.replace(/^Última consolidação:\s*/i, "").trim()}`;
+      }
+    }
+    if (d && !isNaN(d.getTime())) {
       return `Última consolidação: ${format(d, "dd/MM HH:mm", { locale: ptBR })}`;
     }
-    if (typeof dateStr === "string" && dateStr.trim().length > 0) {
-      return `Última consolidação: ${dateStr.replace(/^Última consolidação:\s*/i, "").trim()}`;
-    }
-  } catch {
-    // fallback
+  } catch (err) {
+    console.warn("formatSafeSyncDate parsing exception:", err);
   }
   return "Consolidação pendente";
 }
 
-export function AccountsModal({
+function AccountsModalContent({
   isOpen,
   onClose,
   accounts,
@@ -65,27 +147,33 @@ export function AccountsModal({
   const [targetTransferEmail, setTargetTransferEmail] = useState<string>("");
   const [isTransferring, setIsTransferring] = useState<boolean>(false);
 
-  if (!isOpen) return null;
-
-  // Deduplicate accounts by email to ensure each account is listed only once
+  // Deduplicate and sanitize accounts by email to ensure each account is listed cleanly
   const connectedAccounts = useMemo(() => {
+    const list = Array.isArray(accounts) ? accounts : [];
     const seen = new Set<string>();
-    return accounts.filter((a) => {
-      if (!a.is_connected || !a.email) return false;
-      const key = a.email.toLowerCase().trim();
+    return list.filter((a): a is ConnectedAccount => {
+      if (!a || typeof a !== "object") return false;
+      const email = typeof a.email === "string" ? a.email.trim() : "";
+      if (!email) return false;
+      const isConnected = Boolean(a.is_connected || a.access_token || a.refresh_token);
+      if (!isConnected) return false;
+      const key = email.toLowerCase();
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
     });
   }, [accounts]);
+
   const totalConnected = connectedAccounts.length;
 
   // Master email is hellenalvesferreira.s2@gmail.com or the first personal/primary account
   const masterAccount =
-    connectedAccounts.find((a) => (a.email || "").toLowerCase().includes("hellenalvesferreira")) ||
-    connectedAccounts.find((a) => (a.label || "").toLowerCase().includes("pessoal")) ||
+    connectedAccounts.find((a) => typeof a.email === "string" && a.email.toLowerCase().includes("hellenalvesferreira")) ||
+    connectedAccounts.find((a) => typeof a.label === "string" && a.label.toLowerCase().includes("pessoal")) ||
     connectedAccounts[0];
-  const masterEmail = masterAccount?.email || "hellenalvesferreira.s2@gmail.com";
+  const masterEmail = (typeof masterAccount?.email === "string" && masterAccount.email.trim())
+    ? masterAccount.email.trim()
+    : "hellenalvesferreira.s2@gmail.com";
 
   const handleSyncNow = async () => {
     setIsSyncing(true);
@@ -114,7 +202,8 @@ export function AccountsModal({
   };
 
   const handleInitiateDisconnect = (acc: ConnectedAccount) => {
-    if (acc.email.toLowerCase() === masterEmail.toLowerCase()) {
+    const accEmail = typeof acc.email === "string" ? acc.email.trim().toLowerCase() : "";
+    if (accEmail && accEmail === masterEmail.toLowerCase()) {
       alert("A Conta Mestre principal não pode ser desvinculada, pois ela é a âncora de segurança de todo o seu banco de dados.");
       return;
     }
@@ -123,7 +212,7 @@ export function AccountsModal({
   };
 
   const handleConfirmSafeUnlink = async () => {
-    if (!accountToUnlink) return;
+    if (!accountToUnlink || !accountToUnlink.email) return;
     setIsTransferring(true);
     try {
       const res = await fetch("/api/accounts/transfer", {
@@ -151,8 +240,8 @@ export function AccountsModal({
   };
 
   const handleStartEdit = (acc: ConnectedAccount) => {
-    setEditingAccountId(acc.id);
-    setEditingLabel(acc.label || "");
+    setEditingAccountId(acc.id || acc.email);
+    setEditingLabel(typeof acc.label === "string" ? acc.label : "");
   };
 
   const handleSaveLabel = async (acc: ConnectedAccount) => {
@@ -182,8 +271,8 @@ export function AccountsModal({
     window.location.href = "/api/google/auth?action=link";
   };
 
-  const getAccountIcon = (label?: string) => {
-    const l = (label || "").toLowerCase();
+  const getAccountIcon = (label?: unknown) => {
+    const l = typeof label === "string" ? label.toLowerCase() : "";
     if (l.includes("trab") || l.includes("work") || l.includes("empresa")) {
       return <Briefcase className="w-4 h-4 text-blue-500" />;
     }
@@ -198,6 +287,8 @@ export function AccountsModal({
     }
     return <Bookmark className="w-4 h-4 text-indigo-500" />;
   };
+
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
@@ -291,12 +382,17 @@ export function AccountsModal({
               </button>
             </div>
           ) : (
-            connectedAccounts.map((acc) => {
-              const isEditing = editingAccountId === acc.id;
+            connectedAccounts.map((acc, idx) => {
+              const accountKey = acc.id || acc.email || `acc_${idx}`;
+              const isEditing = editingAccountId === accountKey;
+              const displayLabel = typeof acc.label === "string" && acc.label.trim().length > 0
+                ? acc.label.trim()
+                : "Geral";
+              const displayEmail = typeof acc.email === "string" ? acc.email : String(acc.email || "");
 
               return (
                 <div
-                  key={acc.id}
+                  key={accountKey}
                   className="p-4 rounded-2xl bg-slate-50/70 dark:bg-[#18172e] border border-slate-200 dark:border-white/5 space-y-3 transition-all hover:border-purple-300 dark:hover:border-purple-500/30"
                 >
                   <div className="flex items-start justify-between gap-3">
@@ -337,7 +433,7 @@ export function AccountsModal({
                         ) : (
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
-                              {acc.label || "Geral"}
+                              {displayLabel}
                             </span>
                             <button
                               type="button"
@@ -351,7 +447,7 @@ export function AccountsModal({
                         )}
 
                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                          {acc.email}
+                          {displayEmail}
                         </p>
                       </div>
                     </div>
@@ -430,8 +526,8 @@ export function AccountsModal({
                   <p className="leading-relaxed">
                     Você está prestes a desvincular o e-mail:
                     <br />
-                    <strong className="text-slate-900 dark:text-white font-mono">{accountToUnlink.email}</strong>{" "}
-                    ({accountToUnlink.label}).
+                    <strong className="text-slate-900 dark:text-white font-mono">{String(accountToUnlink.email)}</strong>{" "}
+                    ({typeof accountToUnlink.label === "string" ? accountToUnlink.label : "Geral"}).
                   </p>
                 </div>
                 <p className="text-[11px] text-amber-800 dark:text-amber-300 leading-relaxed">
@@ -452,14 +548,16 @@ export function AccountsModal({
                     {masterEmail} (Conta Mestre / Pessoal)
                   </option>
                   {connectedAccounts
-                    .filter(
-                      (a) =>
-                        a.email.toLowerCase() !== accountToUnlink.email.toLowerCase() &&
-                        a.email.toLowerCase() !== masterEmail.toLowerCase()
-                    )
-                    .map((a) => (
-                      <option key={a.id} value={a.email}>
-                        {a.email} ({a.label || "Secundária"})
+                    .filter((a) => {
+                      if (!a.email) return false;
+                      const aEmail = a.email.toLowerCase().trim();
+                      const unlinkingEmail = (accountToUnlink?.email || "").toLowerCase().trim();
+                      const mEmail = masterEmail.toLowerCase().trim();
+                      return aEmail !== unlinkingEmail && aEmail !== mEmail;
+                    })
+                    .map((a, idx) => (
+                      <option key={a.id || a.email || `opt_${idx}`} value={a.email}>
+                        {a.email} ({typeof a.label === "string" ? a.label : "Secundária"})
                       </option>
                     ))}
                 </select>
@@ -498,5 +596,14 @@ export function AccountsModal({
         )}
       </div>
     </div>
+  );
+}
+
+export function AccountsModal(props: AccountsModalProps) {
+  if (!props.isOpen) return null;
+  return (
+    <AccountsModalErrorBoundary onClose={props.onClose}>
+      <AccountsModalContent {...props} />
+    </AccountsModalErrorBoundary>
   );
 }

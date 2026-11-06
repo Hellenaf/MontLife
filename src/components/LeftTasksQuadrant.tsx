@@ -139,20 +139,23 @@ export function LeftTasksQuadrant({
       { id: "personal", label: "Pessoal", email: "hellenalvesferreira.s2@gmail.com" },
     ];
 
-    if (accounts && accounts.length > 0) {
+    if (Array.isArray(accounts) && accounts.length > 0) {
       for (const acc of accounts) {
-        if (!acc.email) continue;
-        const emailLower = acc.email.toLowerCase();
+        if (!acc || typeof acc !== "object" || typeof acc.email !== "string" || !acc.email.trim()) continue;
+        const emailLower = acc.email.toLowerCase().trim();
         if (
           emailLower.includes("notredame") ||
           emailLower.includes("hellenalvesferreira")
         ) {
           continue;
         }
-        if (!list.some((a) => a.email?.toLowerCase() === emailLower)) {
+        if (!list.some((a) => (a.email || "").toLowerCase() === emailLower)) {
+          const accLabel = typeof acc.label === "string" && acc.label.trim()
+            ? acc.label.trim()
+            : emailLower.split("@")[0];
           list.push({
             id: emailLower,
-            label: acc.label || emailLower.split("@")[0],
+            label: accLabel,
             email: acc.email,
           });
         }
