@@ -96,8 +96,11 @@ export function NewTaskModal({
   const [isReopeningTask, setIsReopeningTask] = useState(false);
 
   const similarMatches = useMemo(() => {
-    if (!title.trim() || !existingTasks || existingTasks.length === 0) return [];
-    return findSimilarTasks(title, description, existingTasks, 0.38);
+    const cleanTitle = title.trim();
+    if (!cleanTitle || cleanTitle.length < 8 || cleanTitle.split(/\s+/).length < 2 || !existingTasks || existingTasks.length === 0) {
+      return [];
+    }
+    return findSimilarTasks(cleanTitle, description, existingTasks, 0.65);
   }, [title, description, existingTasks]);
 
   const topSimilar =
@@ -206,12 +209,13 @@ export function NewTaskModal({
       const res = await fetch("/api/triage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ raw_input: textToAnalyze, force_fresh_ai: false }),
+        body: JSON.stringify({ raw_input: textToAnalyze, force_fresh_ai: true }),
       });
       const data = await res.json();
       if (data.success && data.triage) {
         const triage: GeminiTriageResponse = data.triage;
         setAiSuggestions(triage);
+        setIsSimilarityDismissed(true);
 
         if (triage.refined_title) {
           setTitle(triage.refined_title);
@@ -498,7 +502,13 @@ export function NewTaskModal({
                 {/* Botão 3: Continuar Criação Independente */}
                 <button
                   type="button"
-                  onClick={() => setIsSimilarityDismissed(true)}
+                  onClick={async () => {
+                    setIsSimilarityDismissed(true);
+                    // Dispara a IA para estruturar título e descrição concisa em texto corrido se ainda não sintetizado
+                    if (!aiSuggestions && (title.trim() || description.trim())) {
+                      await handleAnalyzeWithAI();
+                    }
+                  }}
                   className="p-3 rounded-xl border border-indigo-300 dark:border-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-left transition-all cursor-pointer shadow-xs group"
                 >
                   <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-1">
@@ -506,7 +516,7 @@ export function NewTaskModal({
                     <span>Criação Independente</span>
                   </div>
                   <p className="text-[10px] text-indigo-700/80 dark:text-indigo-400 leading-tight">
-                    Ignorar similaridade e avançar para cadastrar como nova demanda avulsa.
+                    Ignorar similaridade e avançar para cadastrar como nova demanda avulsa com auxílio da IA.
                   </p>
                 </button>
               </div>

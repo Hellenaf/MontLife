@@ -114,7 +114,7 @@ export function HeaderCommandBar({
   const similarMatches = useMemo(() => {
     const textToCheck = editTitle.trim() || input.trim();
     if (!textToCheck || !tasks || tasks.length === 0) return [];
-    return findSimilarTasks(textToCheck, editDescription, tasks, 0.38);
+    return findSimilarTasks(textToCheck, editDescription, tasks, 0.65);
   }, [editTitle, input, editDescription, tasks]);
 
   const topSimilar = !isSimilarityDismissed && similarMatches.length > 0 ? similarMatches[0] : null;
@@ -887,10 +887,10 @@ export function HeaderCommandBar({
                     Descrição & Notas:
                   </label>
                   <textarea
-                    rows={2}
+                    rows={4}
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 resize-none font-sans"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 font-sans leading-relaxed"
                   />
                 </div>
               </div>

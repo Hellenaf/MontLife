@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
       triage.refined_title || cleanInput,
       triage.structured_description || "",
       allDbTasks,
-      0.38
+      0.65
     );
 
     // 3. Similar past resolved problems for knowledge base suggestions

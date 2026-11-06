@@ -19,7 +19,16 @@ const PORTUGUESE_STOP_WORDS = new Set([
   "pelo", "pela", "pelos", "pelas", "onde", "quando", "como", "qual",
   "quais", "quem", "fazer", "deve", "sobre", "mais", "muito", "estou",
   "esta", "estao", "foram", "foi", "sera", "serao", "preciso", "solicito",
-  "favor", "urgente", "demanda", "tarefa", "atividade", "chamado", "item"
+  "favor", "urgente", "demanda", "tarefa", "atividade", "chamado", "item",
+  // Termos operacionais genéricos que não devem causar falsos positivos de similaridade isolados:
+  "relatorio", "relatorios", "sistema", "sistemas",
+  "ajuste", "ajustes", "ajustar", "atualizar", "atualizacao", "atualizacoes",
+  "verificar", "verificacao", "validar", "validacao", "criar", "criacao",
+  "corrigir", "correcao", "novo", "nova", "novos", "novas",
+  "rotina", "rotinas", "processo", "processos", "dados", "base",
+  "tela", "telas", "erro", "falha", "problema", "duvida",
+  "geral", "modulo", "campo", "campos", "implementar", "implementacao",
+  "painel", "dashboard"
 ]);
 
 /**
@@ -177,14 +186,24 @@ function computeTokenOverlap(
 }
 
 /**
+ * Extracts identifying numeric/alphanumeric codes (e.g. "1207", "1215", "rm12", "nf1040").
+ */
+function extractCodesAndNumbers(text: string): string[] {
+  if (!text) return [];
+  const matches = text.match(/\b(?:\d{2,}|[a-z]{1,4}\d{2,}|\d{2,}[a-z]{1,4})\b/gi) || [];
+  return Array.from(new Set(matches.map((m) => m.toLowerCase())));
+}
+
+/**
  * Scans existing tasks for duplicates or semantically similar items.
- * Guaranteed not to penalize short titles when existing tasks have long descriptions.
+ * Uses high-precision matching (threshold 0.65), differentiates technical codes (e.g. 1207 vs 1215),
+ * and prevents false positives caused by single common words.
  */
 export function findSimilarTasks(
   inputTitle: string,
   inputDescription: string = "",
   existingTasks: Task[] = [],
-  threshold: number = 0.38
+  threshold: number = 0.65
 ): SimilarTaskMatch[] {
   const cleanInputTitle = normalizeClean(inputTitle);
   if (!cleanInputTitle || !existingTasks || existingTasks.length === 0) return [];
@@ -192,6 +211,7 @@ export function findSimilarTasks(
   const inputTitleTokens = tokenize(inputTitle);
   const inputDescTokens = tokenize(inputDescription);
   const allInputTokens = Array.from(new Set([...inputTitleTokens, ...inputDescTokens]));
+  const inputCodes = extractCodesAndNumbers(inputTitle);
 
   const matches: SimilarTaskMatch[] = [];
 
@@ -219,9 +239,19 @@ export function findSimilarTasks(
       continue;
     }
 
-    // 2. Substring & Containment on Titles
+    // 2. Technical Code Mismatch Check (CRITICAL: Diferencia Relatório 1207 de 1215, chamados, etc.)
+    const taskCodes = extractCodesAndNumbers(task.title || "");
+    if (inputCodes.length > 0 && taskCodes.length > 0) {
+      const hasSharedCode = inputCodes.some((code) => taskCodes.includes(code));
+      if (!hasSharedCode) {
+        // Códigos distintos indicam itens ou relatórios completamente diferentes -> não é duplicata
+        continue;
+      }
+    }
+
+    // 3. Substring & Containment on Titles
     let substringScore = 0;
-    if (cleanInputTitle.length > 3 && taskCleanTitle.length > 3) {
+    if (cleanInputTitle.length > 5 && taskCleanTitle.length > 5) {
       if (taskCleanTitle.includes(cleanInputTitle) || cleanInputTitle.includes(taskCleanTitle)) {
         const minLen = Math.min(cleanInputTitle.length, taskCleanTitle.length);
         const maxLen = Math.max(cleanInputTitle.length, taskCleanTitle.length);
@@ -229,21 +259,27 @@ export function findSimilarTasks(
       }
     }
 
-    // 3. Token Overlap on Titles (Primary!)
+    // 4. Token Overlap on Titles (Primary!)
     const taskTitleTokens = tokenize(task.title || "");
     const titleOverlap = computeTokenOverlap(inputTitleTokens, taskTitleTokens);
 
-    // 4. Character Bigram Dice on Titles
+    // 5. Character Bigram Dice on Titles
     const titleDice = diceCoefficient(cleanInputTitle, taskCleanTitle);
 
-    // 5. Best Title Similarity Signal
+    // Requisito de relevância: se não for match direto nem alta correlação global (dice >= 0.82),
+    // exige pelo menos 2 termos significativos não genéricos para evitar falsos positivos
+    if (titleDice < 0.82 && titleOverlap.matched.length < 2) {
+      continue;
+    }
+
+    // 6. Best Title Similarity Signal
     const bestTitleSignal = Math.max(
       substringScore,
       titleOverlap.containment >= 0.75 ? titleOverlap.containment * 0.92 : titleOverlap.score,
       titleDice * 0.88
     );
 
-    // 6. Context corroboration (Description & Tags bonus)
+    // 7. Context corroboration (Description & Tags bonus)
     const taskDescTokens = tokenize(task.description || "");
     const taskTags = (task.tags || []).map((t) => normalizeClean(t));
     const descOverlap = computeTokenOverlap(allInputTokens, taskDescTokens);
@@ -254,18 +290,18 @@ export function findSimilarTasks(
 
     let contextBonus = 0;
     if (descOverlap.matched.length > 0) {
-      contextBonus += Math.min(0.15, descOverlap.matched.length * 0.05);
+      contextBonus += Math.min(0.12, descOverlap.matched.length * 0.04);
     }
     if (tagMatches.length > 0) {
-      contextBonus += Math.min(0.15, tagMatches.length * 0.05);
+      contextBonus += Math.min(0.12, tagMatches.length * 0.04);
     }
 
-    // Combined score: Title is 85% of weight, context is up to 15% bonus
-    const combinedScore = Math.min(1.0, bestTitleSignal * 0.85 + contextBonus);
+    // Combined score: Title is 88% of weight, context is up to 12% bonus
+    const combinedScore = Math.min(1.0, bestTitleSignal * 0.88 + contextBonus);
 
     const isExact =
       bestTitleSignal >= 0.92 ||
-      (inputTitleTokens.length >= 2 && titleOverlap.containment === 1.0 && titleDice >= 0.8);
+      (inputTitleTokens.length >= 2 && titleOverlap.containment === 1.0 && titleDice >= 0.82);
 
     if (combinedScore >= threshold || isExact) {
       const allMatchedTerms = Array.from(

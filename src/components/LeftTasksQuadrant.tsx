@@ -605,7 +605,7 @@ export function LeftTasksQuadrant({
                 className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-emerald-50 hover:text-emerald-700 dark:hover:bg-emerald-950/40 dark:hover:text-emerald-400 transition-colors"
               >
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Concluir com solução</span>
+                <span>Concluir</span>
               </button>
             )}
 

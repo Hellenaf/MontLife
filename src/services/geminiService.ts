@@ -17,24 +17,18 @@ CRITÉRIOS OBRIGATÓRIOS DE QUALIDADE:
        -> Título: "Otimizar e Parametrizar Consulta/Relatório 1207 no TOTVS RM"
    - JAMAIS repita construções coloquiais ("No power bi inserir...", "seria algo assim", "resumindo", "fazer tal coisa").
 
-2. DESCRIÇÃO ESTRUTURADA DE ALTO PADRÃO ('structured_description'):
-   - A descrição NUNCA deve ser um parágrafo genérico e NUNCA deve colar o texto bruto no objetivo.
-   - Siga rigorosamente a seguinte estrutura em Markdown:
-
-📋 Resumo Executivo:
-[Síntese técnica e profissional em 1 ou 2 períodos explicando o que será realizado e o objetivo principal da demanda]
-
----
-
-🎯 Requisitos & Regras de Negócio:
-1. [Requisito 1 detalhado com regras de cálculo, fórmulas, filtros ou parâmetros citados]
-2. [Requisito 2 detalhado, periodicidade, granularidade ou regras operacionais]
-
----
-
-🔗 Sistemas & Fontes Envolvidas:
-• Sistemas & Ferramentas: [Ex: Power BI (Painel e Modelo Semântico), TOTVS RM (Consultas 1207/1215), SQL, etc.]
-• Setores Impactados: [Ex: Suprimentos, Compras e Expedição, TI, etc.]
+2. DESCRIÇÃO SIMPLES, CONCISA E EM TEXTO CORRIDO ('structured_description'):
+   - A descrição DEVE ser redigida OBRIGATORIAMENTE em TEXTO CORRIDO (prosa fluida contínua em 1 ou 2 parágrafos).
+   - Deve ser uma mensagem simples, direta e concisa, sem enrolação e sem jargões vazios.
+   - Traga TODOS os pontos, especificações, sistemas e requisitos mencionados pelo usuário, sem omitir detalhes.
+   - Melhore integralmente a ortografia, pontuação, acentuação e concordância do texto original (corrigindo gírias, erros de digitação e termos truncados).
+   - É ESTRITAMENTE PROIBIDO usar:
+     • Marcadores de tópicos ou listas com traços, asteriscos ou hífens (ex: '-', '*', '•').
+     • Listas numeradas (ex: '1.', '2.').
+     • Linhas divisórias (ex: '---').
+     • Títulos artificiais, seções em negrito ou emojis de cabeçalho (como '📋 Resumo Executivo:', '🎯 Requisitos:', '🔗 Sistemas:').
+   - Exemplo de excelência em texto corrido:
+     "Desenvolver e atualizar o painel analítico de Suprimentos no Power BI com a implementação do indicador de Lead Time de faturamento, calculado a partir da diferença entre a data de saída e a emissão das notas fiscais. Além disso, ajustar a granularidade da medida de emissão de NFs de periodicidade mensal para apuração diária, integrando as regras com base nas consultas operacionais 1207 e 1215 do TOTVS RM para validação junto ao setor de Suprimentos e Expedição."
 
 3. PONTOS DE VALIDAÇÃO & CHECKLIST ('validation_steps'):
    - Gere de 3 a 5 etapas práticas, sequenciais e técnicas para que a demanda seja homologada e concluída com sucesso:
@@ -60,7 +54,7 @@ const RESPONSE_SCHEMA = {
     },
     structured_description: {
       type: Type.STRING,
-      description: "Contexto organizado e resumo da solicitação.",
+      description: "Mensagem simples, concisa e melhorada ortograficamente em texto corrido (prosa fluida contínua sem tópicos, hífens ou listas), trazendo todos os pontos solicitados.",
     },
     validation_steps: {
       type: Type.ARRAY,
@@ -529,10 +523,16 @@ export function synthesizeRefinedTitle(rawInput: string): string {
 
   // 2. TOTVS RM / ERP Systems
   if (lower.includes("totvs") || lower.includes(" rm") || lower.includes("protheus") || lower.includes("erp")) {
+    const has1207 = lower.includes("1207");
+    const has1215 = lower.includes("1215");
+    const reportCode = has1207 && has1215 ? "1207 e 1215" : has1207 ? "1207" : has1215 ? "1215" : "";
+    if (reportCode) {
+      return `Otimizar e Parametrizar Relatório ${reportCode} no TOTVS RM`;
+    }
     if (lower.includes("patch") || lower.includes("release")) {
       return "Aplicação e Homologação de Patch no TOTVS RM";
     }
-    if (lower.includes("1207") || lower.includes("1215") || lower.includes("relat") || lower.includes("papeleta")) {
+    if (lower.includes("relat") || lower.includes("papeleta")) {
       return "Ajuste e Homologação de Relatório no TOTVS RM";
     }
     if (lower.includes("matrícula") || lower.includes("matricula") || lower.includes("secretaria")) {
@@ -572,9 +572,9 @@ export function synthesizeRefinedTitle(rawInput: string): string {
     title = firstClauseMatch[1].trim();
   }
 
-  // Strip conversational leading words
+  // Strip conversational leading words (preserva verbos acionáveis)
   title = title
-    .replace(/^(?:no|na|em|para|por\s+favor|favor|preciso\s+que|solicito|gostaria\s+de|inserir|fazer|ajustar)\s+/i, "")
+    .replace(/^(?:no|na|em|para|por\s+favor|favor|preciso\s+que|solicito|gostaria\s+de|seria\s+bom)\s+/i, "")
     .replace(/a forma que eles registram/i, "o registro de")
     .replace(/a forma como registram/i, "o registro de")
     .replace(/a forma de registrar/i, "o registro de")
@@ -592,8 +592,46 @@ export function synthesizeRefinedTitle(rawInput: string): string {
 }
 
 /**
+ * Converte qualquer texto, lista com marcadores ou bloco estruturado em texto corrido (prosa fluida contínua),
+ * eliminando hífens, marcadores, numerações, divisores e cabeçalhos artificiais, preservando todos os pontos com clareza.
+ */
+export function cleanToContinuousProse(text: string): string {
+  if (!text) return "";
+  let clean = text.trim();
+
+  // 1. Remove cabeçalhos artificiais e emojis
+  clean = clean.replace(/📋\s*Resumo\s+Executivo:?/gi, "");
+  clean = clean.replace(/🎯\s*Requisitos\s*(?:&|e)?\s*Regras\s+de\s+Negócio:?/gi, "");
+  clean = clean.replace(/🔗\s*Sistemas\s*(?:&|e)?\s*Fontes\s+Envolvidas:?/gi, "");
+  clean = clean.replace(/•\s*Sistemas\s*(?:&|e)?\s*Ferramentas:?/gi, "");
+  clean = clean.replace(/•\s*Setores\s+Impactados:?/gi, "");
+  clean = clean.replace(/^#+\s+/gm, "");
+  clean = clean.replace(/---+/g, " ");
+
+  // 2. Normaliza quebras de linha e remove marcadores de tópicos (- , * , • , 1. )
+  const rawLines = clean.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const sentences: string[] = [];
+
+  for (const line of rawLines) {
+    let stripped = line.replace(/^(?:[-*•]|\d+\.|\([a-z0-9]+\)|[a-z]\))\s+/i, "").trim();
+    // Transforma títulos de bullets em texto integrado (ex: "**Otimização:** texto" -> "Otimização: texto")
+    stripped = stripped.replace(/^\*\*([^*]+)\*\*:\s*/i, "$1: ");
+    stripped = stripped.replace(/\*\*/g, "");
+    if (stripped) {
+      if (!/[.!?:;]$/.test(stripped)) {
+        stripped += ".";
+      }
+      sentences.push(stripped);
+    }
+  }
+
+  const result = sentences.join(" ").replace(/\s{2,}/g, " ").trim();
+  return result;
+}
+
+/**
  * Autonomous NLP Structured Description Synthesizer:
- * Transforms raw message dumps into structured enterprise-grade Markdown with objectives and context.
+ * Transforma comandos em texto corrido simples, conciso e coeso, cobrindo todos os pontos com alto padrão corporativo.
  */
 export function synthesizeStructuredDescription(
   rawInput: string,
@@ -604,81 +642,37 @@ export function synthesizeStructuredDescription(
   if (!clean) return "";
   const lower = clean.toLowerCase();
 
-  // 1. Synthesize clear objective & requirements
-  let executiveSummary = "";
-  const requirements: string[] = [];
-
   const isPowerBi = lower.includes("power bi") || lower.includes("dashboard") || lower.includes("dax");
   const isTotvs = lower.includes("totvs") || lower.includes(" rm") || lower.includes("protheus");
   const isLeadTime = lower.includes("lead time") || (lower.includes("tempo") && (lower.includes("emiss") || lower.includes("saida") || lower.includes("fatur")));
   const isMediaNf = (lower.includes("média") || lower.includes("media")) && (lower.includes("nf") || lower.includes("nota"));
 
   if (isPowerBi && (isLeadTime || isMediaNf)) {
-    executiveSummary = "Atualização do painel analítico de Suprimentos no Power BI para inclusão do indicador de Lead Time de faturamento e ajuste na periodicidade de apuração da média de emissão de Notas Fiscais.";
-    if (isLeadTime) {
-      requirements.push("Cálculo de Lead Time: Criar indicador mensurando o intervalo entre a Data de Emissão e a Data de Saída / Faturamento da Nota Fiscal (`Lead Time = Data Saída − Data Emissão`).");
-    }
+    const parts: string[] = [
+      "Atualização do painel analítico de Suprimentos no Power BI com foco na implementação do indicador de Lead Time de faturamento, apurado pelo intervalo entre a data de emissão e a data de saída das notas fiscais."
+    ];
     if (lower.includes("1207") || lower.includes("1215") || isTotvs) {
-      requirements.push("Mapeamento no TOTVS RM: Extrair e cruzar as informações com base nas consultas/relatórios 1207 e 1215 do TOTVS RM.");
+      parts.push("Os dados e regras devem ser conciliados com base nas consultas operacionais 1207 e 1215 do TOTVS RM.");
     }
     if (isMediaNf) {
-      requirements.push("Ajuste na Medida de Média de NFs: Alterar a granularidade da medida DAX atual de média de Notas Fiscais, migrando da visão mensal (NFs/Mês) para visão diária (NFs/Dia).");
+      parts.push("A granularidade da medida de média de emissão de notas fiscais deve ser ajustada da periodicidade mensal para a apuração diária.");
     }
-  } else if (isTotvs && (lower.includes("patch") || lower.includes("release"))) {
-    executiveSummary = "Aplicação e homologação técnica de pacote de atualização (patch) no ambiente do TOTVS RM, visando estabilidade e conformidade das rotinas.";
-    requirements.push("Efetuar backup preventivo da base e validar dependências do pacote de atualização.");
-    requirements.push("Aplicar o pacote em ambiente de homologação e executar bateria de testes regressivos nas rotinas integradas.");
-  } else if (isTotvs && (lower.includes("1207") || lower.includes("1215") || lower.includes("relat"))) {
-    executiveSummary = "Parametrização e ajuste em relatório operacional do TOTVS RM para correção de regras de negócio e integridade de dados.";
-    requirements.push("Inspecionar os parâmetros da consulta e filtros aplicados no gerador de relatórios do TOTVS RM.");
-    requirements.push("Validar consistência dos dados gerados com as tabelas do banco de dados.");
-  } else {
-    let primary = clean.split(/[.?!;\n]/)[0].trim();
-    primary = primary
-      .replace(/^(?:no|na|em|para|por\s+favor|favor|preciso\s+que|solicito)\s+/i, "")
-      .replace(/,\s*(?:seria|resumindo|algo\s+assim).*$/i, "")
-      .trim();
-    executiveSummary = `${primary.charAt(0).toUpperCase() + primary.slice(1)}.`;
-    requirements.push(`Executar as especificações técnicas da demanda: ${clean.replace(/[\n\r]+/g, " ").slice(0, 150)}`);
+    parts.push("A homologação dos números será conduzida em alinhamento com os setores de Suprimentos e Faturamento.");
+    return parts.join(" ");
   }
 
-  // 2. Identify Systems & Data Sources
-  const systems: string[] = [];
-  if (lower.includes("power bi") || lower.includes("dashboard")) systems.push("Power BI (Painel e Modelo Semântico)");
-  if (lower.includes("totvs") || lower.includes(" rm")) {
-    if (lower.includes("1207") || lower.includes("1215")) {
-      systems.push("TOTVS RM (Consultas/Relatórios 1207 e 1215)");
-    } else {
-      systems.push("TOTVS RM (ERP Corporativo)");
-    }
+  if (isTotvs && (lower.includes("patch") || lower.includes("release"))) {
+    return "Aplicação e homologação técnica de pacote de atualização no TOTVS RM, realizando backup preventivo da base de dados e executando bateria de testes regressivos nas rotinas integradas para assegurar a conformidade e estabilidade do ambiente corporativo.";
   }
-  if (lower.includes("sql") || lower.includes("banco")) systems.push("Banco de Dados Relacional");
-  if (lower.includes("excel") || lower.includes("planilha")) systems.push("Planilhas / Excel");
-  if (lower.includes("classapp")) systems.push("ClassApp");
 
-  // 3. Identify Sectors & Departments
-  const depts: string[] = [];
-  if (lower.includes("suprimento") || lower.includes("compras")) depts.push("Suprimentos, Compras e Expedição");
-  if (lower.includes("fatur") || lower.includes("nf") || lower.includes("saida") || lower.includes("saída")) {
-    if (!depts.includes("Suprimentos, Compras e Expedição")) depts.push("Faturamento & Expedição");
+  if (isTotvs && (lower.includes("1207") || lower.includes("1215") || lower.includes("relat"))) {
+    const code = lower.includes("1207") ? "1207" : lower.includes("1215") ? "1215" : "";
+    const reportPart = code ? `no relatório operacional ${code}` : "no relatório operacional";
+    return `Parametrização e ajuste técnico ${reportPart} do TOTVS RM, revisando filtros, parâmetros de consulta e consistência dos dados gerados frente às tabelas do ERP para garantir a integridade das informações gerenciais.`;
   }
-  if (lower.includes("tesouraria") || lower.includes("financeir")) depts.push("Financeiro & Tesouraria");
-  if (lower.includes("secretaria")) depts.push("Secretaria Acadêmica");
-  if (/\brh\b/.test(lower) || lower.includes("recursos humanos")) depts.push("Recursos Humanos (RH)");
-  if (depts.length === 0) depts.push("TI & Suporte Técnico");
 
-  let desc = `📋 Resumo Executivo:\n${executiveSummary}\n\n`;
-  desc += `---\n\n`;
-  desc += `🎯 Requisitos & Regras de Negócio:\n`;
-  requirements.forEach((req, idx) => {
-    desc += `${idx + 1}. ${req}\n`;
-  });
-  desc += `\n---\n\n`;
-  desc += `🔗 Sistemas & Fontes Envolvidas:\n`;
-  if (systems.length > 0) desc += `• Sistemas & Ferramentas: ${systems.join(", ")}\n`;
-  desc += `• Setores Impactados: ${depts.join(", ")}\n`;
-
-  return desc;
+  // Fallback geral em texto corrido simples e conciso
+  return cleanToContinuousProse(clean);
 }
 
 /**
@@ -793,11 +787,11 @@ export async function triageInputWithGemini(
     return cached.data;
   }
 
-  // 2. Ultra-fast Zero-Token Path for simple phrases (0 TOKENS)
-  // For short or direct commands (<= 7 words, e.g. "Reunião amanhã às 14h", "Pagar fatura até dia 15", "Comprar café"),
-  // the heuristic handles it with high fidelity and zero token cost!
+  // 2. Ultra-fast Zero-Token Path for micro-commands (0 TOKENS)
+  // Somente desvia para heurística comandos ultra curtos (<= 2 palavras, ex: "Comprar café") sem identificadores técnicos
   const words = cleanInput.split(/\s+/).filter(Boolean);
-  if (words.length <= 7 && !cleanInput.includes("\n") && cleanInput.length <= 70) {
+  const isMicroSimple = words.length <= 2 && !cleanInput.includes("\n") && !/[0-9]/.test(cleanInput);
+  if (isMicroSimple) {
     const fastResult = fallbackTriage(cleanInput);
     aiCache.set(cleanInput, fastResult, 0);
     return fastResult;
@@ -851,6 +845,9 @@ Analise o texto a seguir, crie um título profissional, estruture a descrição,
     }
 
     const parsed = JSON.parse(text) as GeminiTriageResponse;
+    if (parsed.structured_description) {
+      parsed.structured_description = cleanToContinuousProse(parsed.structured_description);
+    }
     if (!parsed.item_type) {
       parsed.item_type = fallbackTriage(cleanInput).item_type;
     }
