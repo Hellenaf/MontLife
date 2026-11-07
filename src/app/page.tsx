@@ -604,7 +604,7 @@ export default function MontOpsDashboard() {
 
         {/* Main Content: Dedicated Agenda do Dia View OR Wiki Técnica View OR 3 Columns Demand Grid */}
         {activeNav === "agenda" ? (
-          <main className="flex-1 overflow-y-auto p-3 sm:p-5 pb-24 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-3.5 pb-24 lg:pb-3.5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <AgendaDoDiaView
               tasks={tasks}
               accountFilter={accountFilter}

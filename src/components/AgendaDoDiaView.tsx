@@ -264,20 +264,20 @@ export function AgendaDoDiaView({
   const handleToday = () => setCalendarDate(new Date());
 
   return (
-    <div className="w-full max-w-[1680px] mx-auto space-y-4 pb-12 transition-colors animate-in fade-in duration-150">
+    <div className="w-full max-w-[1680px] mx-auto space-y-3 pb-2 lg:pb-0 transition-colors animate-in fade-in duration-150">
       {/* ========================================================================= */}
       {/* 1. AGENDA TOOLBAR EXPANDIDA */}
       {/* ========================================================================= */}
-      <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
+      <div className="py-2.5 px-3.5 sm:py-3 sm:px-4 rounded-3xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-2.5">
         {/* Lado Esquerdo: + Nova Demanda + Hoje + Controles do Mês + Título */}
-        <div className="flex items-center gap-2.5 sm:gap-3.5 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {onOpenNewTaskModal && (
             <button
               type="button"
               onClick={onOpenNewTaskModal}
-              className="flex items-center gap-1.5 px-4 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/20 active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/20 active:scale-95 cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-3.5 h-3.5" />
               <span>Nova Demanda</span>
             </button>
           )}
@@ -285,37 +285,37 @@ export function AgendaDoDiaView({
           <button
             type="button"
             onClick={handleToday}
-            className="px-3.5 py-2 rounded-2xl border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors shadow-2xs active:scale-95 cursor-pointer"
+            className="px-3 py-1.5 rounded-2xl border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors shadow-2xs active:scale-95 cursor-pointer"
           >
             Hoje
           </button>
 
-          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-[#181926] p-1 rounded-2xl border border-slate-200 dark:border-zinc-700">
+          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-[#181926] p-0.5 rounded-xl border border-slate-200 dark:border-zinc-700">
             <button
               type="button"
               onClick={handlePrevMonth}
               aria-label="Mês Anterior"
               title="Mês Anterior"
-              className="p-1.5 rounded-xl hover:bg-white dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+              className="p-1 rounded-lg hover:bg-white dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
               onClick={handleNextMonth}
               aria-label="Próximo Mês"
               title="Próximo Mês"
-              className="p-1.5 rounded-xl hover:bg-white dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+              className="p-1 rounded-lg hover:bg-white dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
             >
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
           <div>
-            <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white capitalize leading-tight flex items-center gap-2">
+            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white capitalize leading-tight flex items-center gap-2">
               <span>{format(calendarDate, "MMMM 'de' yyyy", { locale: ptBR })}</span>
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 capitalize">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize leading-tight">
               Dia em foco:{" "}
               <strong className="text-indigo-600 dark:text-indigo-400 font-bold">
                 {format(calendarDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
@@ -327,11 +327,11 @@ export function AgendaDoDiaView({
         {/* Lado Direito: Filtros da Agenda do Dia + Indicador Google Calendar */}
         <div className="flex items-center gap-2 flex-wrap">
           {/* Seletor de visualização exclusivo da Agenda do Dia */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#161724] p-1 rounded-2xl border border-slate-200 dark:border-zinc-800 text-xs font-medium">
+          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-[#161724] p-0.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs font-medium">
             <button
               type="button"
               onClick={() => setAgendaSourceFilter("all")}
-              className={`px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 agendaSourceFilter === "all"
                   ? "bg-white dark:bg-[#202234] text-slate-900 dark:text-white font-bold shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -342,7 +342,7 @@ export function AgendaDoDiaView({
             <button
               type="button"
               onClick={() => setAgendaSourceFilter("work")}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 agendaSourceFilter === "work"
                   ? "bg-blue-600 text-white font-bold shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -354,7 +354,7 @@ export function AgendaDoDiaView({
             <button
               type="button"
               onClick={() => setAgendaSourceFilter("personal")}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 agendaSourceFilter === "personal"
                   ? "bg-purple-600 text-white font-bold shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -366,7 +366,7 @@ export function AgendaDoDiaView({
             <button
               type="button"
               onClick={() => setAgendaSourceFilter("gcal")}
-              className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                 agendaSourceFilter === "gcal"
                   ? "bg-amber-600 text-white font-bold shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
@@ -386,7 +386,7 @@ export function AgendaDoDiaView({
               fetchGoogleCalendarEvents();
             }}
             disabled={isSyncingGcal || isLoadingGcal}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#181926] hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-100 dark:bg-[#181926] hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
             title="Atualizar agendamentos da Agenda Pessoal do Google"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGcal || isLoadingGcal ? "animate-spin text-amber-500" : "text-slate-500"}`} />
@@ -398,29 +398,29 @@ export function AgendaDoDiaView({
       {/* ========================================================================= */}
       {/* 2. GRADE AMPLIADA: MÊS EXPANDIDO (ESQUERDA) + SEMANA & DIA (DIREITA) */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
         {/* ========================================================================= */}
         {/* PAINEL ESQUERDO: CALENDÁRIO MENSAL AMPLIADO (COL-SPAN-7) */}
         {/* ========================================================================= */}
         <div className="lg:col-span-7 flex flex-col h-full">
           <div className="rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm overflow-hidden flex flex-col h-full">
             {/* Header do Calendário Mensal */}
-            <div className="px-5 py-3.5 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-[#151622] flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <div className="p-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
-                  <Calendar className="w-4 h-4" />
+            <div className="px-4 py-2 sm:py-2.5 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-[#151622] flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                  <Calendar className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  <h3 className="text-xs sm:text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Calendário Geral & Google Agenda
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
                     Clique em qualquer data para inspecionar os agendamentos corporativos e pessoais.
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2.5 py-1 rounded-xl border border-indigo-200 dark:border-indigo-800/60">
+                <span className="text-[11px] font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-800/60">
                   {monthTasksCount} demandas • {monthGcalCount} Google
                 </span>
               </div>
@@ -431,7 +431,7 @@ export function AgendaDoDiaView({
               {["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"].map((wd) => (
                 <div
                   key={wd}
-                  className="py-2.5 text-xs font-black text-slate-600 dark:text-slate-300 tracking-wider"
+                  className="py-1.5 text-[11px] font-black text-slate-600 dark:text-slate-300 tracking-wider"
                 >
                   {wd}
                 </div>
@@ -439,7 +439,7 @@ export function AgendaDoDiaView({
             </div>
 
             {/* Grade Ampliada de Dias do Mês */}
-            <div className="grid grid-cols-7 gap-1 bg-slate-200/70 dark:bg-zinc-800/50 p-1.5 sm:p-2 flex-1">
+            <div className="grid grid-cols-7 gap-1 bg-slate-200/70 dark:bg-zinc-800/50 p-1 sm:p-1.5 flex-1">
               {monthGridDays.map((day) => {
                 const dayTasks = tasks.filter((t) => isTaskScheduledForDay(t, day));
                 const dayGcal = gcalEvents.filter((ev) => isGcalEventOnDay(ev, day));
@@ -456,9 +456,9 @@ export function AgendaDoDiaView({
                     key={day.toISOString()}
                     type="button"
                     onClick={() => setCalendarDate(day)}
-                    className={`min-h-[86px] sm:min-h-[96px] lg:min-h-[104px] p-2 rounded-2xl flex flex-col justify-between transition-all cursor-pointer relative group text-left ${
+                    className={`min-h-[58px] sm:min-h-[64px] lg:min-h-[68px] p-1.5 rounded-xl flex flex-col justify-between transition-all cursor-pointer relative group text-left ${
                       isDaySelected
-                        ? "bg-indigo-600 text-white font-bold shadow-lg shadow-indigo-600/30 scale-[1.01] z-10 ring-2 ring-indigo-400"
+                        ? "bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30 scale-[1.01] z-10 ring-2 ring-indigo-400"
                         : isDayToday
                         ? "bg-indigo-50/90 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 font-bold ring-2 ring-indigo-500/50"
                         : !isDayInCurrentMonth
@@ -469,7 +469,7 @@ export function AgendaDoDiaView({
                     {/* Top Row: Número do dia + badges indicadores */}
                     <div className="flex items-center justify-between w-full">
                       <span
-                        className={`text-xs sm:text-sm font-bold rounded-xl w-6 h-6 flex items-center justify-center ${
+                        className={`text-xs font-bold rounded-lg w-5 h-5 flex items-center justify-center ${
                           isDaySelected
                             ? "bg-white text-indigo-700 font-black shadow-xs"
                             : isDayToday
@@ -483,7 +483,7 @@ export function AgendaDoDiaView({
                       {/* Total count badge */}
                       {(dayTasks.length > 0 || dayGcal.length > 0) && (
                         <span
-                          className={`text-[10px] font-mono px-1.5 py-0.5 rounded-md font-bold leading-none ${
+                          className={`text-[9px] font-mono px-1 py-0.2 rounded font-bold leading-none ${
                             isDaySelected
                               ? "bg-white/20 text-white"
                               : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-700"
@@ -495,24 +495,24 @@ export function AgendaDoDiaView({
                     </div>
 
                     {/* Middle Area: Mini Indicadores / Pílulas Visuais */}
-                    <div className="w-full space-y-1 my-1">
+                    <div className="w-full space-y-0.5 my-0.5">
                       {/* Dots coloridos */}
                       <div className="flex items-center gap-1">
                         {hasWork && (
                           <span
-                            className={`w-2 h-2 rounded-full ${isDaySelected ? "bg-white" : "bg-blue-500"}`}
+                            className={`w-1.5 h-1.5 rounded-full ${isDaySelected ? "bg-white" : "bg-blue-500"}`}
                             title="Demandas de Trabalho"
                           />
                         )}
                         {hasPersonal && (
                           <span
-                            className={`w-2 h-2 rounded-full ${isDaySelected ? "bg-white" : "bg-purple-500"}`}
+                            className={`w-1.5 h-1.5 rounded-full ${isDaySelected ? "bg-white" : "bg-purple-500"}`}
                             title="Demandas Pessoais"
                           />
                         )}
                         {hasGcal && (
                           <span
-                            className={`w-2 h-2 rounded-full ${isDaySelected ? "bg-white" : "bg-amber-400"}`}
+                            className={`w-1.5 h-1.5 rounded-full ${isDaySelected ? "bg-white" : "bg-amber-400"}`}
                             title="Compromisso da Agenda Google Pessoal"
                           />
                         )}
@@ -521,7 +521,7 @@ export function AgendaDoDiaView({
                       {/* Preview em texto compacto: prioriza Demandas do MontLife sobre o Google Agenda */}
                       {dayTasks.length > 0 ? (
                         <div
-                          className={`truncate text-[10px] px-1.5 py-0.5 rounded-md font-medium leading-tight ${
+                          className={`truncate text-[9px] px-1 py-0.2 rounded font-medium leading-tight ${
                             isDaySelected
                               ? "bg-white/20 text-white"
                               : hasWork
@@ -533,7 +533,7 @@ export function AgendaDoDiaView({
                         </div>
                       ) : dayGcal.length > 0 ? (
                         <div
-                          className={`truncate text-[10px] px-1.5 py-0.5 rounded-md font-medium leading-tight flex items-center gap-1 ${
+                          className={`truncate text-[9px] px-1 py-0.2 rounded font-medium leading-tight flex items-center gap-1 ${
                             isDaySelected
                               ? "bg-white/20 text-white"
                               : "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/50"
@@ -546,7 +546,7 @@ export function AgendaDoDiaView({
                     </div>
 
                     {/* Bottom Status label */}
-                    <div className="text-[10px] opacity-70 leading-none">
+                    <div className="text-[9px] opacity-70 leading-none">
                       {isDayToday ? "Hoje" : ""}
                     </div>
                   </button>
@@ -555,22 +555,22 @@ export function AgendaDoDiaView({
             </div>
 
             {/* Legenda Informativa */}
-            <div className="p-3 border-t border-slate-100 dark:border-zinc-800/60 bg-slate-50/60 dark:bg-[#10111a] flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600 dark:text-slate-400">
+            <div className="px-3.5 py-1.5 border-t border-slate-100 dark:border-zinc-800/60 bg-slate-50/60 dark:bg-[#10111a] flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="flex items-center gap-1.5 font-medium">
-                  <span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
+                <span className="flex items-center gap-1 font-medium text-[11px]">
+                  <span className="w-2 h-2 rounded-full bg-blue-500" />
                   Trabalho
                 </span>
-                <span className="flex items-center gap-1.5 font-medium">
-                  <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
+                <span className="flex items-center gap-1 font-medium text-[11px]">
+                  <span className="w-2 h-2 rounded-full bg-purple-500" />
                   Pessoal
                 </span>
-                <span className="flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                <span className="flex items-center gap-1 font-medium text-[11px] text-amber-700 dark:text-amber-400">
+                  <span className="w-2 h-2 rounded-full bg-amber-500" />
                   Google Agenda Pessoal
                 </span>
               </div>
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[10px] text-slate-400">
                 Visualização ampla de espaço corporativo
               </span>
             </div>
@@ -583,22 +583,22 @@ export function AgendaDoDiaView({
         <div className="lg:col-span-5 flex flex-col h-full">
           <div className="rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm overflow-hidden flex flex-col h-full">
             {/* 1. Header do Card: Semana Selecionada (Navegação Rápida) */}
-            <div className="p-3.5 sm:p-4 border-b border-slate-200/80 dark:border-zinc-800/80 bg-slate-50/80 dark:bg-[#151622] space-y-2 shrink-0">
+            <div className="p-2.5 sm:p-3 border-b border-slate-200/80 dark:border-zinc-800/80 bg-slate-50/80 dark:bg-[#151622] space-y-1.5 shrink-0">
               <div className="flex items-center justify-between px-1">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" />
                   <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
                     Semana Selecionada
                   </span>
                 </div>
-                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
                   {format(weekStart, "d 'de' MMM", { locale: ptBR })} —{" "}
                   {format(weekEnd, "d 'de' MMM yyyy", { locale: ptBR })}
                 </span>
               </div>
 
               {/* 7 Dias da Semana com contadores */}
-              <div className="grid grid-cols-7 gap-1 pt-1">
+              <div className="grid grid-cols-7 gap-1 pt-0.5">
                 {weekDays.map((day) => {
                   const isSelected = isSameDay(day, calendarDate);
                   const isDayToday = isToday(day);
@@ -611,7 +611,7 @@ export function AgendaDoDiaView({
                       key={day.toISOString()}
                       type="button"
                       onClick={() => setCalendarDate(day)}
-                      className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+                      className={`py-1.5 px-0.5 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
                         isSelected
                           ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold scale-[1.03]"
                           : isDayToday
@@ -619,13 +619,13 @@ export function AgendaDoDiaView({
                           : "bg-white dark:bg-[#0c0d13] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border border-slate-200/60 dark:border-zinc-800/60"
                       }`}
                     >
-                      <span className="text-[10px] uppercase tracking-wider opacity-80 mb-0.5 font-medium">
+                      <span className="text-[9px] uppercase tracking-wider opacity-80 mb-0.5 font-medium">
                         {format(day, "EEE", { locale: ptBR })}
                       </span>
-                      <span className="text-sm sm:text-base font-black leading-tight">
+                      <span className="text-xs sm:text-sm font-black leading-tight">
                         {format(day, "d")}
                       </span>
-                      <div className="h-3 flex items-center justify-center mt-0.5">
+                      <div className="h-2 flex items-center justify-center mt-0.5">
                         {totalDayItems > 0 ? (
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
@@ -641,16 +641,16 @@ export function AgendaDoDiaView({
             </div>
 
             {/* 2. Sub-header: Dia Selecionado com Botão de Adicionar */}
-            <div className="p-3.5 sm:p-4 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between shrink-0 bg-slate-50/40 dark:bg-[#12131A]">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
-                  <Clock className="w-4 h-4" />
+            <div className="px-3.5 py-2 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between shrink-0 bg-slate-50/40 dark:bg-[#12131A]">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
+                  <Clock className="w-3.5 h-3.5" />
                 </div>
                 <div>
-                  <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white capitalize">
+                  <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white capitalize leading-tight">
                     {format(calendarDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
                   </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
                     {totalItemsForSelectedDay === 0
                       ? "Nenhum compromisso ou demanda para esta data"
                       : totalItemsForSelectedDay === 1
@@ -664,7 +664,7 @@ export function AgendaDoDiaView({
                 <button
                   type="button"
                   onClick={onOpenNewTaskModal}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-xs font-semibold border border-indigo-200 dark:border-indigo-800/60 transition-all cursor-pointer shadow-xs active:scale-95"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 text-xs font-semibold border border-indigo-200 dark:border-indigo-800/60 transition-all cursor-pointer shadow-xs active:scale-95"
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Adicionar</span>
@@ -674,7 +674,7 @@ export function AgendaDoDiaView({
 
             {/* Aviso status se houver */}
             {gcalStatusMessage && (
-              <div className="mx-4 mt-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 flex items-center justify-between gap-2 text-xs text-amber-800 dark:text-amber-200 shrink-0">
+              <div className="mx-3 mt-2 p-2.5 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 flex items-center justify-between gap-2 text-xs text-amber-800 dark:text-amber-200 shrink-0">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                   <span>{gcalStatusMessage}</span>
@@ -689,10 +689,10 @@ export function AgendaDoDiaView({
             )}
 
             {/* 3. Lista de Demandas & Compromissos com flex-1 e rolagem interna suave */}
-            <div className="flex-1 p-3.5 sm:p-4 space-y-3 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 p-2.5 sm:p-3 space-y-2.5 overflow-y-auto custom-scrollbar">
               {totalItemsForSelectedDay === 0 ? (
-                <div className="py-16 text-center text-slate-400 dark:text-slate-500 space-y-3 flex flex-col items-center justify-center h-full min-h-[300px]">
-                  <Clock className="w-10 h-10 mx-auto opacity-40 text-indigo-400" />
+                <div className="py-12 text-center text-slate-400 dark:text-slate-500 space-y-2.5 flex flex-col items-center justify-center h-full min-h-[220px]">
+                  <Clock className="w-8 h-8 mx-auto opacity-40 text-indigo-400" />
                   <p className="text-xs font-medium text-slate-600 dark:text-slate-400 max-w-xs">
                     Nenhuma demanda ou compromisso agendado para este dia.
                   </p>
@@ -700,7 +700,7 @@ export function AgendaDoDiaView({
                     <button
                       type="button"
                       onClick={onOpenNewTaskModal}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-slate-100 dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors cursor-pointer shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors cursor-pointer shadow-xs"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Agendar Nova Demanda
@@ -734,14 +734,14 @@ export function AgendaDoDiaView({
                           <div
                             key={task.id}
                             onClick={() => onSelectTask(task)}
-                            className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                            className={`p-2.5 sm:p-3 rounded-xl border flex items-center justify-between cursor-pointer transition-all ${
                               isCurrentSelected
                                 ? "ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-[#141520] bg-indigo-50/40 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-700 shadow-xs"
                                 : "bg-slate-50/70 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-xs"
                             }`}
                           >
-                            <div className="flex items-center gap-3 min-w-0 pr-2">
-                              <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-200 shrink-0 min-w-[50px]">
+                            <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                              <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-200 shrink-0 min-w-[46px]">
                                 {timeText}
                               </span>
                               <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700 shrink-0" />
@@ -759,9 +759,9 @@ export function AgendaDoDiaView({
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2 shrink-0">
+                            <div className="flex items-center gap-1.5 shrink-0">
                               <span
-                                className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold flex items-center gap-1 ${
+                                className={`px-1.5 py-0.5 rounded-md text-[10px] font-semibold flex items-center gap-1 ${
                                   isWork
                                     ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20"
                                     : "bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20"
@@ -782,7 +782,7 @@ export function AgendaDoDiaView({
                               <span className="text-[10px] font-bold font-mono text-purple-600 dark:text-purple-400">
                                 {task.priority}
                               </span>
-                              <span className="text-[11px] text-indigo-500 font-semibold flex items-center gap-0.5 ml-1">
+                              <span className="text-[11px] text-indigo-500 font-semibold flex items-center gap-0.5 ml-0.5">
                                 Abrir <ArrowRight className="w-3 h-3" />
                               </span>
                             </div>
@@ -818,28 +818,28 @@ export function AgendaDoDiaView({
                         return (
                           <div
                             key={ev.id}
-                            className="p-3.5 rounded-2xl bg-amber-50/40 dark:bg-[#181622] border border-amber-200/70 dark:border-amber-800/40 space-y-2.5 transition-all hover:shadow-xs"
+                            className="p-2.5 sm:p-3 rounded-xl bg-amber-50/40 dark:bg-[#181622] border border-amber-200/70 dark:border-amber-800/40 space-y-2 transition-all hover:shadow-xs"
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="space-y-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-xs font-mono font-bold text-amber-800 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/70 px-2 py-0.5 rounded-lg border border-amber-300/80 dark:border-amber-800/70">
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="text-xs font-mono font-bold text-amber-800 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/70 px-1.5 py-0.5 rounded-md border border-amber-300/80 dark:border-amber-800/70">
                                     {timeText}
                                   </span>
-                                  <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-100/70 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
+                                  <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-100/70 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
                                     Agenda Pessoal
                                   </span>
                                 </div>
-                                <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
+                                <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
                                   {ev.summary}
                                 </h4>
                                 {ev.description && (
-                                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">
+                                  <p className="text-[11px] text-slate-600 dark:text-slate-300 line-clamp-2">
                                     {ev.description}
                                   </p>
                                 )}
                                 {ev.location && (
-                                  <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+                                  <div className="flex items-center gap-1 text-[10px] text-slate-500 dark:text-slate-400">
                                     <MapPin className="w-3 h-3 text-amber-600" />
                                     <span className="truncate">{ev.location}</span>
                                   </div>
@@ -860,11 +860,11 @@ export function AgendaDoDiaView({
                             </div>
 
                             {/* AÇÃO PRINCIPAL: TRANSFORMAR EM DEMANDA */}
-                            <div className="pt-2 border-t border-amber-200/50 dark:border-amber-900/40 flex items-center justify-between gap-2 flex-wrap">
+                            <div className="pt-1.5 border-t border-amber-200/50 dark:border-amber-900/40 flex items-center justify-between gap-2 flex-wrap">
                               {linkedTask ? (
                                 <div className="flex items-center justify-between w-full">
-                                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 px-2.5 py-1 rounded-xl">
-                                    <Check className="w-3.5 h-3.5" />
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 px-2 py-0.5 rounded-lg">
+                                    <Check className="w-3 h-3" />
                                     Vinculado como Demanda
                                   </span>
                                   <button
@@ -877,24 +877,24 @@ export function AgendaDoDiaView({
                                 </div>
                               ) : (
                                 <div className="flex items-center justify-between w-full">
-                                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
                                     Agendamento do Google disponível para gestão.
                                   </span>
                                   <button
                                     type="button"
                                     disabled={isConverting}
                                     onClick={() => handleConvertToTask(ev)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                                     title="Transformar este agendamento do Google em uma demanda corporativa/pessoal no MontLife"
                                   >
                                     {isConverting ? (
                                       <>
-                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                        <Loader2 className="w-3 h-3 animate-spin" />
                                         <span>Transformando...</span>
                                       </>
                                     ) : (
                                       <>
-                                        <Sparkles className="w-3.5 h-3.5" />
+                                        <Sparkles className="w-3 h-3" />
                                         <span>Transformar em Demanda</span>
                                       </>
                                     )}
@@ -912,11 +912,11 @@ export function AgendaDoDiaView({
             </div>
 
             {/* 4. Rodapé Informativo combinando com o card da esquerda */}
-            <div className="p-3 border-t border-slate-100 dark:border-zinc-800/60 bg-slate-50/60 dark:bg-[#10111a] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
-              <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+            <div className="px-3.5 py-1.5 border-t border-slate-100 dark:border-zinc-800/60 bg-slate-50/60 dark:bg-[#10111a] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
+              <span className="font-semibold text-indigo-600 dark:text-indigo-400 text-[11px]">
                 {tasksForSelectedDay.length} {tasksForSelectedDay.length === 1 ? "demanda no site" : "demandas no site"}
               </span>
-              <span className="font-semibold text-amber-600 dark:text-amber-400">
+              <span className="font-semibold text-amber-600 dark:text-amber-400 text-[11px]">
                 {gcalEventsForSelectedDay.length} {gcalEventsForSelectedDay.length === 1 ? "no Google Agenda" : "no Google Agenda"}
               </span>
             </div>
