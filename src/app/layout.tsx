@@ -23,12 +23,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/brand-logo-square.png?v=3", type: "image/png" },
-      { url: "/icon.png?v=3", type: "image/png" },
-      { url: "/favicon.ico?v=3" },
+      { url: "/brand-logo-square.png?v=4", type: "image/png" },
+      { url: "/favicon-32x32.png?v=4", sizes: "32x32", type: "image/png" },
+      { url: "/icon.png?v=4", type: "image/png" },
+      { url: "/favicon.ico?v=4" },
     ],
-    shortcut: "/brand-logo-square.png?v=3",
-    apple: "/apple-touch-icon.png?v=3",
+    shortcut: "/brand-logo-square.png?v=4",
+    apple: "/apple-touch-icon.png?v=4",
   },
 };
 
@@ -40,10 +41,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/brand-logo-square.png?v=3" type="image/png" />
-        <link rel="alternate icon" href="/icon.png?v=3" type="image/png" />
-        <link rel="shortcut icon" href="/brand-logo-square.png?v=3" />
-        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=3" />
+        <link rel="icon" href="/brand-logo-square.png?v=4" type="image/png" />
+        <link rel="icon" href="/favicon-32x32.png?v=4" sizes="32x32" type="image/png" />
+        <link rel="alternate icon" href="/icon.png?v=4" type="image/png" />
+        <link rel="shortcut icon" href="/brand-logo-square.png?v=4" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=4" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />

@@ -456,7 +456,7 @@ export function AgendaDoDiaView({
                     key={day.toISOString()}
                     type="button"
                     onClick={() => setCalendarDate(day)}
-                    className={`min-h-[72px] sm:min-h-[80px] lg:min-h-[88px] xl:min-h-[92px] p-2 sm:p-2.5 rounded-xl flex flex-col justify-between transition-all cursor-pointer relative group text-left ${
+                    className={`min-h-[78px] sm:min-h-[86px] lg:min-h-[96px] xl:min-h-[100px] p-2 sm:p-2.5 rounded-xl flex flex-col justify-between transition-all cursor-pointer relative group text-left ${
                       isDaySelected
                         ? "bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30 scale-[1.01] z-10 ring-2 ring-indigo-400"
                         : isDayToday
@@ -611,7 +611,7 @@ export function AgendaDoDiaView({
                       key={day.toISOString()}
                       type="button"
                       onClick={() => setCalendarDate(day)}
-                      className={`py-2 px-1 sm:py-2.5 sm:px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+                      className={`py-2.5 px-1 sm:py-3 sm:px-1.5 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
                         isSelected
                           ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold scale-[1.03]"
                           : isDayToday
@@ -691,7 +691,7 @@ export function AgendaDoDiaView({
             {/* 3. Lista de Demandas & Compromissos com flex-1 e rolagem interna suave */}
             <div className="flex-1 p-2.5 sm:p-3 space-y-2.5 overflow-y-auto custom-scrollbar">
               {totalItemsForSelectedDay === 0 ? (
-                <div className="py-14 text-center text-slate-400 dark:text-slate-500 space-y-3 flex flex-col items-center justify-center h-full min-h-[260px]">
+                <div className="py-14 text-center text-slate-400 dark:text-slate-500 space-y-3 flex flex-col items-center justify-center h-full min-h-[300px] sm:min-h-[340px]">
                   <Clock className="w-8 h-8 mx-auto opacity-40 text-indigo-400" />
                   <p className="text-xs font-medium text-slate-600 dark:text-slate-400 max-w-xs">
                     Nenhuma demanda ou compromisso agendado para este dia.
