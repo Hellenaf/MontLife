@@ -8,6 +8,7 @@ import {
   deleteTaskFromDb,
 } from "@/services/taskService";
 import { getSessionUser } from "@/lib/session";
+import { normalizeCategory } from "@/lib/categories";
 
 export async function GET(
   req: NextRequest,
@@ -77,7 +78,11 @@ export async function PATCH(
       const tasks = await getTasksFromDb(userId);
       const existing = tasks.find((t) => t.id === id);
       if (existing) {
-        const merged = { ...existing, ...body };
+        const merged = {
+          ...existing,
+          ...body,
+          ...(body.category ? { category: normalizeCategory(body.category) } : {}),
+        };
         updatedTask = await saveTaskToDb(merged, userId);
       }
     }

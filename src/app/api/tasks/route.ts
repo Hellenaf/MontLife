@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTasksFromDb, saveTaskToDb } from "@/services/taskService";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { getSessionUser } from "@/lib/session";
+import { normalizeCategory } from "@/lib/categories";
 import { Task } from "@/types";
 
 export async function GET(req: NextRequest) {
@@ -92,7 +93,7 @@ export async function POST(req: NextRequest) {
       description: body.description || "",
       account_type: body.account_type || "work",
       item_type: body.item_type || "task",
-      category: body.category || "Suporte TI",
+      category: normalizeCategory(body.category || "Operações & Demandas"),
       tags: body.tags || [],
       priority,
       status: body.status || "TODO",

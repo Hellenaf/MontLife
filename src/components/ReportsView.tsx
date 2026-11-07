@@ -28,12 +28,18 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  Timer,
+  Zap,
+  Target,
+  Gauge,
+  BarChart3,
 } from "lucide-react";
 import { Task, AccountType, ItemType } from "@/types";
 import { parseISO, getYear, getMonth, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { FormattedText } from "@/components/FormattedText";
 import { MontLifeLogo } from "@/components/MontLifeLogo";
+import { normalizeCategory } from "@/lib/categories";
 
 interface ReportsViewProps {
   tasks: Task[];
@@ -219,13 +225,172 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
   const extendedPct = completedCount > 0 ? Math.round((extendedAndCompletedCount / completedCount) * 100) : 0;
   const breachedPct = completedCount > 0 ? Math.round((breachedCount / completedCount) * 100) : 0;
 
+  // 1. Categoria Counts unificadas e normalizadas
   const categoryCounts = useMemo(() => {
     const map: Record<string, number> = {};
     for (const t of filteredTasks) {
-      map[t.category] = (map[t.category] || 0) + 1;
+      const cat = normalizeCategory(t.category);
+      map[cat] = (map[cat] || 0) + 1;
     }
     return Object.entries(map).sort((a, b) => b[1] - a[1]);
   }, [filteredTasks]);
+
+  // 2. Análise Detalhada por Categoria Padronizada (Total, Concluídas, Em Andamento e Taxa de Sucesso)
+  const categoryStats = useMemo(() => {
+    const map: Record<string, { total: number; completed: number; inProgress: number }> = {};
+    for (const t of filteredTasks) {
+      const cat = normalizeCategory(t.category);
+      if (!map[cat]) {
+        map[cat] = { total: 0, completed: 0, inProgress: 0 };
+      }
+      map[cat].total += 1;
+      if (t.status === "COMPLETED") {
+        map[cat].completed += 1;
+      } else if (t.status !== "CANCELED") {
+        map[cat].inProgress += 1;
+      }
+    }
+    return Object.entries(map)
+      .map(([cat, data]) => ({
+        category: cat,
+        total: data.total,
+        completed: data.completed,
+        inProgress: data.inProgress,
+        pct: total > 0 ? Math.round((data.total / total) * 100) : 0,
+        successRate: data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0,
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [filteredTasks, total]);
+
+  // 3. Tempo Médio de Cumprimento de Demandas (Lead Time & Resolução)
+  const resolutionMetrics = useMemo(() => {
+    const completedTasksWithDates = completed.filter((t) =>
+      Boolean(t.created_at && (t.completed_at || t.current_due_date))
+    );
+
+    const formatDuration = (hours: number): string => {
+      if (hours <= 0.1) return "< 1 hora";
+      if (hours < 1) return `${Math.round(hours * 60)} min`;
+      if (hours < 24) return `${hours.toFixed(1)} horas`;
+      const days = hours / 24;
+      return `${days.toFixed(1)} dias`;
+    };
+
+    if (completedTasksWithDates.length === 0) {
+      return {
+        avgHours: 0,
+        avgDays: 0,
+        avgLabel: "N/D",
+        fastestLabel: "N/D",
+        longestLabel: "N/D",
+        avgLabelP1: "—",
+        avgLabelP2: "—",
+        avgLabelP3: "—",
+        avgLabelP4: "—",
+        validCount: 0,
+      };
+    }
+
+    let totalDurationMs = 0;
+    let minMs = Infinity;
+    let maxMs = 0;
+
+    const byPriority: Record<string, { totalMs: number; count: number }> = {
+      P1: { totalMs: 0, count: 0 },
+      P2: { totalMs: 0, count: 0 },
+      P3: { totalMs: 0, count: 0 },
+      P4: { totalMs: 0, count: 0 },
+    };
+
+    for (const t of completedTasksWithDates) {
+      try {
+        const created = parseISO(t.created_at).getTime();
+        const finishStr = t.completed_at || t.current_due_date;
+        const finished = parseISO(finishStr!).getTime();
+        if (isNaN(created) || isNaN(finished)) continue;
+
+        let diff = finished - created;
+        if (diff < 0) diff = 1800000; // fallback 30m para datas invertidas
+
+        totalDurationMs += diff;
+        if (diff < minMs) minMs = diff;
+        if (diff > maxMs) maxMs = diff;
+
+        const pri = t.priority || "P3";
+        if (byPriority[pri]) {
+          byPriority[pri].totalMs += diff;
+          byPriority[pri].count += 1;
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    const count = completedTasksWithDates.length;
+    const avgMs = count > 0 ? totalDurationMs / count : 0;
+    const avgHours = avgMs / (1000 * 3600);
+    const avgDays = avgHours / 24;
+
+    const calcPriLabel = (pri: string) => {
+      const p = byPriority[pri];
+      if (!p || p.count === 0) return "—";
+      const h = p.totalMs / p.count / (1000 * 3600);
+      return formatDuration(h);
+    };
+
+    return {
+      avgHours,
+      avgDays,
+      avgLabel: formatDuration(avgHours),
+      fastestLabel: minMs === Infinity ? "N/D" : formatDuration(minMs / (1000 * 3600)),
+      longestLabel: maxMs === 0 ? "N/D" : formatDuration(maxMs / (1000 * 3600)),
+      avgLabelP1: calcPriLabel("P1"),
+      avgLabelP2: calcPriLabel("P2"),
+      avgLabelP3: calcPriLabel("P3"),
+      avgLabelP4: calcPriLabel("P4"),
+      validCount: count,
+    };
+  }, [completed]);
+
+  // 4. Matriz de Prioridade & Complexidade (P1 a P4)
+  const priorityStats = useMemo(() => {
+    const priorities = ["P1", "P2", "P3", "P4"] as const;
+    return priorities.map((p) => {
+      const inPri = filteredTasks.filter((t) => t.priority === p);
+      const compInPri = inPri.filter((t) => t.status === "COMPLETED");
+      const inProgInPri = inPri.filter((t) => t.status !== "COMPLETED" && t.status !== "CANCELED");
+      const pct = total > 0 ? Math.round((inPri.length / total) * 100) : 0;
+      const resRate = inPri.length > 0 ? Math.round((compInPri.length / inPri.length) * 100) : 0;
+
+      const label =
+        p === "P1"
+          ? "P1 - Crítica / Urgente"
+          : p === "P2"
+          ? "P2 - Alta Prioridade"
+          : p === "P3"
+          ? "P3 - Média / Operacional"
+          : "P4 - Planejada / Baixa";
+
+      return {
+        priority: p,
+        label,
+        total: inPri.length,
+        completed: compInPri.length,
+        inProgress: inProgInPri.length,
+        pctOfTotal: pct,
+        resolutionRate: resRate,
+      };
+    });
+  }, [filteredTasks, total]);
+
+  // Métricas agregadas de governança e prazo
+  const criticalTasks = filteredTasks.filter((t) => t.priority === "P1" || t.priority === "P2");
+  const criticalCompleted = criticalTasks.filter((t) => t.status === "COMPLETED").length;
+  const criticalResolutionRate =
+    criticalTasks.length > 0 ? Math.round((criticalCompleted / criticalTasks.length) * 100) : 0;
+
+  const totalExtensions = filteredTasks.reduce((acc, t) => acc + (t.extension_count || 0), 0);
+  const tasksWithExtensions = filteredTasks.filter((t) => (t.extension_count || 0) > 0).length;
 
   // AI Executive Summary Generator
   const handleGenerateAiSummary = async () => {
@@ -255,37 +420,50 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
   const handleCopyEmailReport = () => {
     const lines = [
-      `MONTLIFE — RELATÓRIO OPERACIONAL DE ATIVIDADES`,
-      `Período: ${selectedMonthLabel} | Contexto: ${scopeFilter === "work" ? "Trabalho" : scopeFilter === "personal" ? "Pessoal" : "Consolidado"}`,
+      `MONTLIFE — RELATÓRIO EXECUTIVO DE ATIVIDADES & OPERAÇÕES`,
+      `Período: ${selectedMonthLabel} | Contexto: ${scopeFilter === "work" ? "Corporativo (Trabalho)" : scopeFilter === "personal" ? "Pessoal" : "Consolidado"}`,
       `Gestor / Responsável: ${managerName}`,
       `Data de Emissão: ${format(new Date(), "dd/MM/yyyy HH:mm")}`,
       `--------------------------------------------------`,
-      `INDICADORES PRINCIPAIS:`,
+      `1. INDICADORES DE VOLUME & RESOLUÇÃO:`,
       `• Total de Demandas Registradas: ${total}`,
       `• Entregues / Concluídas: ${completedCount} (${completedPct}%)`,
       `• Em Andamento / Abertas: ${inProgressCount} (${inProgressPct}%)`,
-      `• Canceladas: ${canceledCount} (${canceledPct}%)`,
+      `• Canceladas / Descartadas: ${canceledCount} (${canceledPct}%)`,
       ``,
-      `AUDITORIA DE SLA:`,
+      `2. EFICIÊNCIA & TEMPO DE RESOLUÇÃO (LEAD TIME):`,
+      `• Tempo Médio de Resolução: ${resolutionMetrics.avgLabel}`,
+      `• Resolução Mais Ágil: ${resolutionMetrics.fastestLabel}`,
+      `• Ciclo de Maior Complexidade: ${resolutionMetrics.longestLabel}`,
+      `• Assertividade em Demandas Críticas (P1/P2): ${criticalResolutionRate}% (${criticalCompleted}/${criticalTasks.length})`,
+      `• Demandas Prorrogadas com Governança: ${tasksWithExtensions} (${totalExtensions} extensões)`,
+      ``,
+      `3. AUDITORIA DE SLA & PRAZOS:`,
       `• Entregas no Prazo Original: ${onTimeCount} (${onTimePct}%)`,
       `• Prazos Prorrogados (Gerenciados): ${extendedAndCompletedCount} (${extendedPct}%)`,
       `• Entregas com Atraso: ${breachedCount} (${breachedPct}%)`,
-      `• Índice de Confiabilidade: ${onTimePct + extendedPct}%`,
+      `• Índice Global de Confiabilidade: ${onTimePct + extendedPct}%`,
+      ``,
+      `4. MATRIZ DE PRIORIDADE (VOLUME & TEMPO MÉDIO):`,
+      `• P1 (Crítica): ${priorityStats[0].completed}/${priorityStats[0].total} entregues (${priorityStats[0].resolutionRate}%) — Ciclo médio: ${resolutionMetrics.avgLabelP1}`,
+      `• P2 (Alta): ${priorityStats[1].completed}/${priorityStats[1].total} entregues (${priorityStats[1].resolutionRate}%) — Ciclo médio: ${resolutionMetrics.avgLabelP2}`,
+      `• P3 (Média): ${priorityStats[2].completed}/${priorityStats[2].total} entregues (${priorityStats[2].resolutionRate}%) — Ciclo médio: ${resolutionMetrics.avgLabelP3}`,
+      `• P4 (Baixa): ${priorityStats[3].completed}/${priorityStats[3].total} entregues (${priorityStats[3].resolutionRate}%) — Ciclo médio: ${resolutionMetrics.avgLabelP4}`,
       `--------------------------------------------------`,
     ];
 
     if (aiSummary) {
       lines.push(
-        `PARECER EXECUTIVO (INTELIGÊNCIA ARTIFICIAL):`,
+        `5. PARECER EXECUTIVO (INTELIGÊNCIA ARTIFICIAL):`,
         aiSummary,
         `--------------------------------------------------`
       );
     }
 
-    lines.push(`PRINCIPAIS ENTREGAS DO PERÍODO:`);
+    lines.push(`6. PRINCIPAIS ENTREGAS DO PERÍODO:`);
     filteredTasks.slice(0, 25).forEach((t, i) => {
       lines.push(
-        `${i + 1}. [${t.status === "COMPLETED" ? "CONCLUÍDO" : t.status === "CANCELED" ? "CANCELADO" : "ABERTO"}] ${t.title} (${t.category} - ${t.priority})`
+        `${i + 1}. [${t.status === "COMPLETED" ? "CONCLUÍDO" : t.status === "CANCELED" ? "CANCELADO" : "ABERTO"}] ${t.title} (${normalizeCategory(t.category)} - ${t.priority})`
       );
       if (t.resolution_notes) {
         lines.push(`   Resolução: ${t.resolution_notes}`);
@@ -722,12 +900,146 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             </div>
           </div>
 
-          {/* Section 2: SLA Audit & Categories Matrix */}
+          {/* Section 2: Eficiência & Tempo de Resolução (Lead Time) */}
+          <div className="space-y-3 page-break-avoid">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-400 print:text-slate-600 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-indigo-600" />
+              2. Indicadores de Eficiência, Ritmo & Ciclo de Resolução (Lead Time)
+            </h2>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
+                  Tempo Médio de Resolução
+                </span>
+                <span className="text-xl font-black font-mono text-indigo-700 dark:text-indigo-400 print:text-indigo-900 block">
+                  {resolutionMetrics.avgLabel}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
+                  Ciclo médio entre criação e entrega final
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
+                  Entrega Mais Ágil
+                </span>
+                <span className="text-xl font-black font-mono text-emerald-700 dark:text-emerald-400 print:text-emerald-900 block">
+                  {resolutionMetrics.fastestLabel}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
+                  Menor ciclo de resolução registrado
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
+                  Maior Complexidade
+                </span>
+                <span className="text-xl font-black font-mono text-amber-700 dark:text-amber-400 print:text-amber-900 block">
+                  {resolutionMetrics.longestLabel}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
+                  Demanda de ciclo estendido
+                </span>
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
+                <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
+                  Assertividade Crítica (P1/P2)
+                </span>
+                <span className="text-xl font-black font-mono text-purple-700 dark:text-purple-400 print:text-purple-900 block">
+                  {criticalResolutionRate}%
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
+                  {criticalCompleted} de {criticalTasks.length} concluídas com êxito
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Matriz de Prioridade & Impacto Operacional */}
+          <div className="space-y-3 page-break-avoid">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-zinc-400 print:text-slate-600 flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-indigo-600" />
+              3. Matriz de Prioridade & Volume de Demandas
+            </h2>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border border-slate-200 dark:border-zinc-800 print:border-slate-300 rounded-xl overflow-hidden">
+                <thead className="bg-slate-100 dark:bg-[#181926] print:bg-slate-100 border-b border-slate-300 dark:border-zinc-700 print:border-slate-300">
+                  <tr>
+                    <th className="p-2 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-16 text-center">Nível</th>
+                    <th className="p-2 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800">Classificação / Descrição</th>
+                    <th className="p-2 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-24 text-center">Total</th>
+                    <th className="p-2 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-24 text-center">Concluídas</th>
+                    <th className="p-2 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-24 text-center">Em Aberto</th>
+                    <th className="p-2 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-28 text-center">Taxa Resolução</th>
+                    <th className="p-2 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-28 text-center">Tempo Médio</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 dark:divide-zinc-800 print:divide-slate-200">
+                  {priorityStats.map((p) => {
+                    const avgTime =
+                      p.priority === "P1"
+                        ? resolutionMetrics.avgLabelP1
+                        : p.priority === "P2"
+                        ? resolutionMetrics.avgLabelP2
+                        : p.priority === "P3"
+                        ? resolutionMetrics.avgLabelP3
+                        : resolutionMetrics.avgLabelP4;
+
+                    return (
+                      <tr key={p.priority} className="hover:bg-slate-50/50 print:hover:bg-transparent">
+                        <td className="p-2 text-center font-mono font-bold text-slate-900 dark:text-white print:text-black">
+                          <span
+                            className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                              p.priority === "P1"
+                                ? "bg-rose-100 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                                : p.priority === "P2"
+                                ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
+                                : p.priority === "P3"
+                                ? "bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800"
+                                : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-zinc-700"
+                            }`}
+                          >
+                            {p.priority}
+                          </span>
+                        </td>
+                        <td className="p-2 font-semibold text-slate-800 dark:text-zinc-200 print:text-slate-800">
+                          {p.label}
+                        </td>
+                        <td className="p-2 text-center font-mono font-bold text-slate-900 dark:text-white print:text-black">
+                          {p.total}
+                        </td>
+                        <td className="p-2 text-center font-mono font-bold text-emerald-700 dark:text-emerald-400 print:text-emerald-800">
+                          {p.completed}
+                        </td>
+                        <td className="p-2 text-center font-mono font-bold text-amber-700 dark:text-amber-400 print:text-amber-800">
+                          {p.inProgress}
+                        </td>
+                        <td className="p-2 text-center font-mono font-bold">
+                          <span className="text-slate-900 dark:text-white print:text-black">
+                            {p.resolutionRate}%
+                          </span>
+                        </td>
+                        <td className="p-2 text-center font-mono text-slate-700 dark:text-zinc-300 print:text-slate-700 font-semibold">
+                          {avgTime}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Section 4: SLA Audit & Categories Matrix */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 page-break-avoid">
             {/* SLA Breakdown Card */}
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex items-center justify-between">
-                <span>Auditoria de Cumprimento de Prazos (SLA)</span>
+                <span>4. Auditoria de Cumprimento de Prazos (SLA)</span>
                 <span className="text-emerald-700 dark:text-emerald-400 font-mono font-bold">{onTimePct + extendedPct}% Confiabilidade</span>
               </h3>
 
@@ -769,17 +1081,16 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             {/* Top Workload Categories */}
             <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex items-center justify-between">
-                <span>Distribuição por Linha de Atuação / Sistema</span>
-                <span className="text-slate-500 dark:text-zinc-400 font-mono">{categoryCounts.length} categorias</span>
+                <span>5. Distribuição por Linha de Atuação (Categorias)</span>
+                <span className="text-slate-500 dark:text-zinc-400 font-mono">{categoryStats.length} categorias</span>
               </h3>
 
-              <div className="space-y-1.5 text-xs max-h-48 overflow-hidden">
-                {categoryCounts.slice(0, 5).map(([cat, count]) => {
-                  const pct = total > 0 ? Math.round((count / total) * 100) : 0;
+              <div className="space-y-1.5 text-xs max-h-52 overflow-hidden">
+                {categoryStats.slice(0, 6).map((c) => {
                   return (
-                    <div key={cat} className="flex items-center justify-between py-1 border-b border-slate-200/80 dark:border-zinc-800/80 print:border-slate-200">
-                      <span className="text-slate-800 dark:text-zinc-200 print:text-slate-800 font-medium truncate max-w-[200px]">{cat}</span>
-                      <span className="font-mono text-slate-600 dark:text-zinc-400 print:text-slate-600 font-semibold">{count} ({pct}%)</span>
+                    <div key={c.category} className="flex items-center justify-between py-1 border-b border-slate-200/80 dark:border-zinc-800/80 print:border-slate-200">
+                      <span className="text-slate-800 dark:text-zinc-200 print:text-slate-800 font-medium truncate max-w-[210px]">{c.category}</span>
+                      <span className="font-mono text-slate-600 dark:text-zinc-400 print:text-slate-600 font-semibold">{c.completed}/{c.total} ({c.successRate}%)</span>
                     </div>
                   );
                 })}
@@ -926,6 +1237,30 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             </div>
           </div>
 
+          {/* Section 8: Termo de Homologação Executiva & Assinatura */}
+          <div className="pt-6 border-t border-slate-300 dark:border-zinc-700 print:border-slate-400 page-break-avoid">
+            <div className="flex items-end justify-between gap-8 pt-2">
+              <div className="space-y-1 text-xs">
+                <span className="font-bold text-slate-900 dark:text-white print:text-black block">
+                  Termo de Homologação Executiva
+                </span>
+                <p className="text-[11px] text-slate-500 dark:text-zinc-400 print:text-slate-600 max-w-md">
+                  Atesto a exatidão dos dados operacionais e o cumprimento das diretrizes de entrega, governança e SLA registrados nesta auditoria.
+                </p>
+              </div>
+
+              <div className="text-center min-w-[240px] shrink-0 space-y-1">
+                <div className="border-b border-slate-900 dark:border-white print:border-black h-8 w-full" />
+                <span className="font-bold text-xs text-slate-900 dark:text-white print:text-black block">
+                  {managerName || "Gestor Responsável"}
+                </span>
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
+                  Gestão de Operações & Produtividade
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* Document Footer */}
           <div className="pt-6 border-t-2 border-slate-300 dark:border-zinc-800 print:border-slate-300 flex items-center justify-between text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-500 font-medium">
             <span>MontLife Platform &bull; Sistema Integrado de Produtividade & Operações</span>
@@ -1028,6 +1363,218 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                       className="bg-rose-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${canceledPct}%` }}
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* Secondary 4-KPI Efficiency & Lead Time Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+                {/* 1. TEMPO MÉDIO DE RESOLUÇÃO */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
+                      <Timer className="w-3.5 h-3.5" />
+                      Lead Time Médio
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-mono font-bold">
+                      {resolutionMetrics.validCount} auditadas
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">
+                      {resolutionMetrics.avgLabel}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Ciclo médio decorrido entre criação e entrega final
+                  </p>
+                </div>
+
+                {/* 2. VELOCIDADE EXTREMA (MAIS ÁGIL VS MAIS LONGA) */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
+                      <Zap className="w-3.5 h-3.5" />
+                      Resolução Mais Ágil
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 font-mono font-bold">
+                      Recorde
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                      {resolutionMetrics.fastestLabel}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Maior ciclo: <strong className="text-slate-700 dark:text-slate-300 font-mono">{resolutionMetrics.longestLabel}</strong>
+                  </p>
+                </div>
+
+                {/* 3. ASSERTIVIDADE CRÍTICA (P1 / P2) */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
+                      <Target className="w-3.5 h-3.5" />
+                      Prioridade Crítica (P1/P2)
+                    </span>
+                    <span className="text-xs font-bold font-mono text-purple-600 dark:text-purple-400">
+                      {criticalResolutionRate}%
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-purple-600 dark:text-purple-400 font-mono">
+                      {criticalCompleted}/{criticalTasks.length}
+                    </span>
+                    <span className="text-xs text-slate-400">concluídas</span>
+                  </div>
+                  <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                    <div
+                      className="bg-purple-600 h-full rounded-full transition-all duration-500"
+                      style={{ width: `${criticalResolutionRate}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* 4. GOVERNANÇA DE PRAZOS & PRORROGAÇÕES */}
+                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
+                      <Calendar className="w-3.5 h-3.5" />
+                      Prazos Gerenciados
+                    </span>
+                    <span className="text-xs font-bold font-mono text-amber-600 dark:text-amber-400">
+                      {totalExtensions} ext.
+                    </span>
+                  </div>
+                  <div className="flex items-baseline gap-2">
+                    <span className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
+                      {tasksWithExtensions}
+                    </span>
+                    <span className="text-xs text-slate-400">demandas prorrogadas</span>
+                  </div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Justificativas registradas e auditadas
+                  </p>
+                </div>
+              </div>
+
+              {/* Priority & Complexidade Performance Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Card 1: Ciclo Médio por Prioridade */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                    <div className="flex items-center gap-2">
+                      <Gauge className="w-4 h-4 text-indigo-500" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Lead Time por Nível de Prioridade
+                      </h3>
+                    </div>
+                    <span className="text-xs text-slate-400">Tempo médio de entrega</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-medium">
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300">P1</span>
+                          Crítica / Urgente
+                        </span>
+                        <strong className="text-rose-600 dark:text-rose-400 font-mono">
+                          {resolutionMetrics.avgLabelP1}
+                        </strong>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-rose-500 h-full rounded-full" style={{ width: "95%" }} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-medium">
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300">P2</span>
+                          Alta Prioridade
+                        </span>
+                        <strong className="text-amber-600 dark:text-amber-400 font-mono">
+                          {resolutionMetrics.avgLabelP2}
+                        </strong>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-amber-500 h-full rounded-full" style={{ width: "80%" }} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-medium">
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-indigo-100 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300">P3</span>
+                          Média / Operacional
+                        </span>
+                        <strong className="text-indigo-600 dark:text-indigo-400 font-mono">
+                          {resolutionMetrics.avgLabelP3}
+                        </strong>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-indigo-500 h-full rounded-full" style={{ width: "60%" }} />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-medium">
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300">P4</span>
+                          Baixa / Planejada
+                        </span>
+                        <strong className="text-slate-600 dark:text-slate-400 font-mono">
+                          {resolutionMetrics.avgLabelP4}
+                        </strong>
+                      </div>
+                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                        <div className="bg-slate-400 h-full rounded-full" style={{ width: "40%" }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Card 2: Matriz de Prioridade & Volume de Demandas */}
+                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
+                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                    <div className="flex items-center gap-2">
+                      <BarChart3 className="w-4 h-4 text-purple-500" />
+                      <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
+                        Matriz de Resolução por Prioridade
+                      </h3>
+                    </div>
+                    <span className="text-xs text-slate-400">Concluídas vs Volume</span>
+                  </div>
+
+                  <div className="space-y-3">
+                    {priorityStats.map((p) => (
+                      <div key={p.priority} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-700 dark:text-slate-300 font-medium">
+                            {p.label}
+                          </span>
+                          <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                            {p.completed}/{p.total} ({p.resolutionRate}%)
+                          </span>
+                        </div>
+                        <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${
+                              p.priority === "P1"
+                                ? "bg-rose-500"
+                                : p.priority === "P2"
+                                ? "bg-amber-500"
+                                : p.priority === "P3"
+                                ? "bg-indigo-500"
+                                : "bg-slate-400"
+                            }`}
+                            style={{ width: `${p.resolutionRate}%` }}
+                          />
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>

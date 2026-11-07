@@ -4,6 +4,7 @@ import { categorizeTaskWithAI } from "@/services/geminiService";
 import { fetchYouTubeResources } from "@/services/googleService";
 import { aiCache } from "@/lib/aiCache";
 import { getSessionUser } from "@/lib/session";
+import { normalizeCategory } from "@/lib/categories";
 
 export async function POST(req: NextRequest) {
   try {
@@ -54,8 +55,9 @@ export async function POST(req: NextRequest) {
 
       let hasChanges = false;
 
-      if (task.category !== aiData.category) {
-        task.category = aiData.category;
+      const normalizedCategory = normalizeCategory(aiData.category);
+      if (task.category !== normalizedCategory) {
+        task.category = normalizedCategory;
         hasChanges = true;
       }
 

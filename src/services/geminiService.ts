@@ -1,6 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GeminiTriageResponse, TaskCategory, Priority, AccountType, ItemType } from "@/types";
 import { aiCache } from "@/lib/aiCache";
+import { normalizeCategory, STANDARD_CATEGORIES } from "@/lib/categories";
 
 const SYSTEM_PROMPT = `Você é o assistente executivo e arquiteto de demandas sênior do MontLife.
 Sua missão é transformar qualquer entrada em linguagem natural (áudios transcritos, mensagens informais de WhatsApp/Teams, rascunhos rápidos ou comandos falados com gírias e vícios) em uma demanda corporativa impecável de alto nível executivo.
@@ -40,7 +41,21 @@ CRITÉRIOS OBRIGATÓRIOS DE QUALIDADE:
 4. CONTEXTO & CLASSIFICAÇÃO:
    - 'account_type': 'work' (TOTVS, Power BI, relatórios, contratos, TI, rotinas escolares) ou 'personal' (saúde, finanças pessoais, compras).
    - 'item_type': 'task' (demanda técnica/operacional), 'activity' (reunião/evento) ou 'reminder' (lembrete).
-   - 'category': Nome curto e técnico (ex: 'BI & Analytics', 'Sistemas ERP', 'TI & Suporte', 'Finanças & Contas', 'Secretaria Acadêmica').
+   - 'category': DEVE ser OBRIGATORIAMENTE uma destas categorias padronizadas do MontLife:
+     • 'Sistemas ERP' (TOTVS RM, Protheus, Patches, ERP)
+     • 'BI & Analytics' (Power BI, Relatórios, Metabase, Dashboards, DAX)
+     • 'Finanças & Tesouraria' (Tesouraria, Contas, Pagamentos, Faturamento, Boletos)
+     • 'Recursos Humanos & DP' (RH, DP, Colaboradores, Folha, Ponto)
+     • 'Secretaria & Acadêmico' (Secretaria, Matrículas, Alunos, Histórico, Biblioteca)
+     • 'Infraestrutura & TI' (Redes, Servidores, Hardware, Suporte Técnico, Wifi)
+     • 'Comunicação & Avisos' (Classapp, Mensagens, E-mails, Notificações)
+     • 'Gestão & Contratos' (Contratos, Jurídico, Compras, Suprimentos)
+     • 'Automações & Scripts' (Python, Scripts, APIs, Bots, Automações)
+     • 'Vida Pessoal & Casa' (Casa, Família, Mercado, Finanças Pessoais)
+     • 'Saúde & Bem-estar' (Médicos, Treino, Consultas, Exames, Remédios)
+     • 'Estudos & Carreira' (Cursos, Livros, Certificações, Idiomas)
+     • 'Operações & Demandas' (Demandas gerais, suporte operacional, rotinas)
+     NUNCA invente sinônimos ou variações livres. Escolha sempre a categoria que melhor se alinha à lista acima.
    - 'priority': 'P1' (crítica), 'P2' (alta), 'P3' (média/padrão), 'P4' (baixa/planejada).
    - 'search_tags': Array com 3 a 5 tags técnicas limpas (ex: ["PowerBI", "TOTVS-RM", "Suprimentos", "LeadTime", "DAX"]).
    - 'learning_queries': 2 buscas focadas para tutoriais e melhores práticas.`;
@@ -73,7 +88,7 @@ const RESPONSE_SCHEMA = {
     },
     category: {
       type: Type.STRING,
-      description: "Categoria dinâmica concisa e profissional que melhor define o assunto da tarefa.",
+      description: "Categoria padronizada do MontLife ('Sistemas ERP', 'BI & Analytics', 'Finanças & Tesouraria', 'Recursos Humanos & DP', 'Secretaria & Acadêmico', 'Infraestrutura & TI', 'Comunicação & Avisos', 'Gestão & Contratos', 'Automações & Scripts', 'Vida Pessoal & Casa', 'Saúde & Bem-estar', 'Estudos & Carreira', 'Operações & Demandas').",
     },
     priority: {
       type: Type.STRING,
@@ -112,7 +127,7 @@ const RESPONSE_SCHEMA = {
 // Ultra-lightweight micro prompt for fast categorization (~80 tokens vs ~1500 tokens)
 const MICRO_CATEGORIZATION_PROMPT = `Você é um categorizador veloz do MontLife.
 Dado um título e notas de uma tarefa, determine objetivamente:
-1. category: Categoria profissional curta (ex: 'Sistemas ERP', 'TI & Suporte', 'RH & DP', 'Finanças & Contas', 'Secretaria Acadêmica', 'Comunicação', 'Biblioteca', 'Projetos', 'Estudos', 'Saúde & Bem-estar', 'Vida Pessoal').
+1. category: Escolha ESTRITAMENTE uma destas categorias padronizadas do MontLife: 'Sistemas ERP', 'BI & Analytics', 'Finanças & Tesouraria', 'Recursos Humanos & DP', 'Secretaria & Acadêmico', 'Infraestrutura & TI', 'Comunicação & Avisos', 'Gestão & Contratos', 'Automações & Scripts', 'Vida Pessoal & Casa', 'Saúde & Bem-estar', 'Estudos & Carreira', ou 'Operações & Demandas'.
 2. tags: Array com 1 a 3 tags contextuais.
 3. item_type: 'task', 'activity' ou 'reminder'.
 4. priority: 'P1', 'P2', 'P3' ou 'P4'.
@@ -389,7 +404,7 @@ export function classifyTaskHeuristic(
     priority = "P4";
   }
 
-  const cleanCategory = category;
+  const cleanCategory = normalizeCategory(category);
   const learningQueries = [
     `${cleanCategory} ${tags[0] || ""} tutorial e melhores práticas`,
     `Como resolver e estruturar ${title.slice(0, 40)}`,
@@ -851,9 +866,7 @@ Analise o texto a seguir, crie um título profissional, estruture a descrição,
     if (!parsed.item_type) {
       parsed.item_type = fallbackTriage(cleanInput).item_type;
     }
-    if (!parsed.category) {
-      parsed.category = fallbackTriage(cleanInput).category;
-    }
+    parsed.category = normalizeCategory(parsed.category || fallbackTriage(cleanInput).category);
     if (!parsed.validation_steps || parsed.validation_steps.length === 0) {
       parsed.validation_steps = fallbackTriage(cleanInput).validation_steps;
     }
@@ -963,7 +976,7 @@ export async function categorizeTaskWithAI(
         const parsed = JSON.parse(text);
         if (parsed.category) {
           const result = {
-            category: parsed.category,
+            category: normalizeCategory(parsed.category),
             tags: Array.isArray(parsed.tags) && parsed.tags.length > 0 ? parsed.tags : heuristic.tags,
             priority: (parsed.priority as Priority) || heuristic.priority,
             item_type: (parsed.item_type as ItemType) || heuristic.item_type,
