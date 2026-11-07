@@ -554,12 +554,12 @@ export function CentralQuadrant({
   const getGoogleCalendarColor = (task: Task) => {
     if (task.item_type === "activity" || task.tags?.includes("google-agenda")) {
       return {
-        accent: "#0b8043", // Google Basil Green
-        pillBg: "bg-[#0b8043] text-white hover:bg-[#09713a]",
-        cardBg: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-100 border-l-4 border-l-[#0b8043] border-slate-200 dark:border-zinc-800",
+        accent: "#d97706", // Amber / Warm Orange
+        pillBg: "bg-amber-600 text-white hover:bg-amber-500",
+        cardBg: "bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 border-l-4 border-l-amber-500 border-slate-200 dark:border-zinc-800",
         sourceName: "Google Agenda",
-        badgeBg: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200",
-        icon: <Activity className="w-3 h-3 text-emerald-600 dark:text-emerald-400 shrink-0" />,
+        badgeBg: "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200",
+        icon: <Activity className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />,
       };
     }
     if (task.item_type === "reminder") {

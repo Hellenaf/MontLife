@@ -368,12 +368,12 @@ export function AgendaDoDiaView({
               onClick={() => setAgendaSourceFilter("gcal")}
               className={`flex items-center gap-1 px-3 py-1.5 rounded-xl transition-all cursor-pointer ${
                 agendaSourceFilter === "gcal"
-                  ? "bg-emerald-600 text-white font-bold shadow-xs"
+                  ? "bg-amber-600 text-white font-bold shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
               title="Exibir apenas os compromissos importados da sua Agenda Pessoal do Google"
             >
-              <Calendar className="w-3 h-3 text-emerald-500" />
+              <Calendar className="w-3 h-3 text-amber-500" />
               <span>Google Agenda</span>
             </button>
           </div>
@@ -389,7 +389,7 @@ export function AgendaDoDiaView({
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#181926] hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50"
             title="Atualizar agendamentos da Agenda Pessoal do Google"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGcal || isLoadingGcal ? "animate-spin text-emerald-500" : "text-slate-500"}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGcal || isLoadingGcal ? "animate-spin text-amber-500" : "text-slate-500"}`} />
             <span className="hidden sm:inline">Sincronizar Google</span>
           </button>
         </div>
@@ -512,7 +512,7 @@ export function AgendaDoDiaView({
                         )}
                         {hasGcal && (
                           <span
-                            className={`w-2 h-2 rounded-full ${isDaySelected ? "bg-white" : "bg-emerald-400"}`}
+                            className={`w-2 h-2 rounded-full ${isDaySelected ? "bg-white" : "bg-amber-400"}`}
                             title="Compromisso da Agenda Google Pessoal"
                           />
                         )}
@@ -524,7 +524,7 @@ export function AgendaDoDiaView({
                           className={`truncate text-[10px] px-1.5 py-0.5 rounded-md font-medium leading-tight flex items-center gap-1 ${
                             isDaySelected
                               ? "bg-white/20 text-white"
-                              : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60"
+                              : "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/50"
                           }`}
                         >
                           <span className="shrink-0">📅</span>
@@ -565,8 +565,8 @@ export function AgendaDoDiaView({
                   <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
                   Pessoal
                 </span>
-                <span className="flex items-center gap-1.5 font-medium text-emerald-700 dark:text-emerald-400">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                <span className="flex items-center gap-1.5 font-medium text-amber-700 dark:text-amber-400">
+                  <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                   Google Agenda Pessoal
                 </span>
               </div>
@@ -628,7 +628,7 @@ export function AgendaDoDiaView({
                       {totalDayItems > 0 ? (
                         <span
                           className={`w-1.5 h-1.5 rounded-full ${
-                            isSelected ? "bg-white" : dayGcalCount > 0 ? "bg-emerald-400" : "bg-indigo-500"
+                            isSelected ? "bg-white" : dayGcalCount > 0 ? "bg-amber-400" : "bg-indigo-500"
                           }`}
                         />
                       ) : null}
@@ -714,7 +714,7 @@ export function AgendaDoDiaView({
                   {gcalEventsForSelectedDay.length > 0 && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between px-1">
-                        <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+                        <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5" />
                           Google Agenda Pessoal ({gcalEventsForSelectedDay.length})
                         </span>
@@ -736,15 +736,15 @@ export function AgendaDoDiaView({
                         return (
                           <div
                             key={ev.id}
-                            className="p-3.5 rounded-2xl bg-emerald-50/50 dark:bg-[#0c1514] border border-emerald-200/80 dark:border-emerald-800/50 space-y-2.5 transition-all hover:shadow-xs"
+                            className="p-3.5 rounded-2xl bg-amber-50/40 dark:bg-[#181622] border border-amber-200/70 dark:border-amber-800/40 space-y-2.5 transition-all hover:shadow-xs"
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="space-y-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-xs font-mono font-bold text-emerald-800 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/80 px-2 py-0.5 rounded-lg border border-emerald-300 dark:border-emerald-800/80">
+                                  <span className="text-xs font-mono font-bold text-amber-800 dark:text-amber-300 bg-amber-100/90 dark:bg-amber-950/70 px-2 py-0.5 rounded-lg border border-amber-300/80 dark:border-amber-800/70">
                                     {timeText}
                                   </span>
-                                  <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-emerald-100/70 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60">
+                                  <span className="px-2 py-0.5 rounded-lg text-[10px] font-bold bg-amber-100/70 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
                                     Agenda Pessoal
                                   </span>
                                 </div>
@@ -758,7 +758,7 @@ export function AgendaDoDiaView({
                                 )}
                                 {ev.location && (
                                   <div className="flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-                                    <MapPin className="w-3 h-3 text-emerald-600" />
+                                    <MapPin className="w-3 h-3 text-amber-600" />
                                     <span className="truncate">{ev.location}</span>
                                   </div>
                                 )}
@@ -769,7 +769,7 @@ export function AgendaDoDiaView({
                                   href={ev.htmlLink}
                                   target="_blank"
                                   rel="noopener noreferrer"
-                                  className="p-1 rounded-lg text-slate-400 hover:text-emerald-600 transition-colors"
+                                  className="p-1 rounded-lg text-slate-400 hover:text-amber-500 transition-colors"
                                   title="Abrir no Google Calendar Oficial"
                                 >
                                   <ExternalLink className="w-3.5 h-3.5" />
@@ -778,10 +778,10 @@ export function AgendaDoDiaView({
                             </div>
 
                             {/* AÇÃO PRINCIPAL: TRANSFORMAR EM DEMANDA */}
-                            <div className="pt-2 border-t border-emerald-200/50 dark:border-emerald-900/40 flex items-center justify-between gap-2 flex-wrap">
+                            <div className="pt-2 border-t border-amber-200/50 dark:border-amber-900/40 flex items-center justify-between gap-2 flex-wrap">
                               {linkedTask ? (
                                 <div className="flex items-center justify-between w-full">
-                                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 px-2.5 py-1 rounded-xl">
+                                  <span className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 px-2.5 py-1 rounded-xl">
                                     <Check className="w-3.5 h-3.5" />
                                     Vinculado como Demanda
                                   </span>
@@ -802,7 +802,7 @@ export function AgendaDoDiaView({
                                     type="button"
                                     disabled={isConverting}
                                     onClick={() => handleConvertToTask(ev)}
-                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white text-xs font-bold shadow-sm transition-all active:scale-95 cursor-pointer disabled:opacity-50"
                                     title="Transformar este agendamento do Google em uma demanda corporativa/pessoal no MontLife"
                                   >
                                     {isConverting ? (
