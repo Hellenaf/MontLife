@@ -57,12 +57,12 @@ export function SidebarNav({
   onClose,
 }: SidebarNavProps) {
   // Display user information
-  const displayName = currentUser?.name || "Hellen Ferreira";
+  const displayName = currentUser?.name || "Usuário MontLife";
   const safeAccountsList = Array.isArray(accounts) ? accounts.filter((a): a is ConnectedAccount => Boolean(a && typeof a === "object")) : [];
   const displayEmail =
     currentUser?.email ||
     safeAccountsList.find((a) => typeof a.email === "string" && a.email)?.email ||
-    "hellen@montlife.com";
+    "usuario@montlife.com";
 
   const userInitials = displayName
     .split(" ")
@@ -132,10 +132,12 @@ export function SidebarNav({
 
       const isWork = accId.includes("work") || accLabel.includes("trab") || accEmail.includes("notredame");
       const isPersonal = accId.includes("personal") || accLabel.includes("pess") || accEmail.includes("hellen");
+      const isHellenUser = currentUser?.email?.toLowerCase().includes("hellen") || currentUser?.email?.toLowerCase().includes("notredame");
+      const defaultWorkLabel = isHellenUser ? "Trabalho (Notre Dame)" : "Trabalho";
       const standardId = isWork ? "work" : isPersonal ? "personal" : (acc.id || accEmail || "geral");
       const lbl = typeof acc.label === "string" && acc.label.trim()
         ? acc.label.trim()
-        : (isWork ? "Trabalho (Notre Dame)" : isPersonal ? "Pessoal" : "Geral");
+        : (isWork ? defaultWorkLabel : isPersonal ? "Pessoal" : "Geral");
 
       if (!seen.has(standardId)) {
         seen.add(standardId);
@@ -145,10 +147,14 @@ export function SidebarNav({
     }
 
     if (list.length === 0) {
-      const workCount = tasks.filter((t) => isTaskInWorkspace(t, "work", "Trabalho", "haferreira@notredamecampinas.net.br")).length;
-      const personalCount = tasks.filter((t) => isTaskInWorkspace(t, "personal", "Pessoal", "hellenalvesferreira.s2@gmail.com")).length;
+      const isHellenUser = currentUser?.email?.toLowerCase().includes("hellen") || currentUser?.email?.toLowerCase().includes("notredame");
+      const workLabel = isHellenUser ? "Trabalho (Notre Dame)" : "Trabalho";
+      const workEmail = isHellenUser ? "haferreira@notredamecampinas.net.br" : (currentUser?.email || undefined);
+      const personalEmail = isHellenUser ? "hellenalvesferreira.s2@gmail.com" : (currentUser?.email || undefined);
+      const workCount = tasks.filter((t) => isTaskInWorkspace(t, "work", workLabel, workEmail)).length;
+      const personalCount = tasks.filter((t) => isTaskInWorkspace(t, "personal", "Pessoal", personalEmail)).length;
       return [
-        { id: "work", label: "Trabalho (Notre Dame)", count: workCount },
+        { id: "work", label: workLabel, count: workCount },
         { id: "personal", label: "Pessoal", count: personalCount },
       ];
     }

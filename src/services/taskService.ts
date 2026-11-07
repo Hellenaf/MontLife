@@ -128,7 +128,7 @@ export async function transferTaskAccount(
   const isWork = targetAccount === "work" || targetAccount.toLowerCase().includes("trab");
   const newType = isWork ? "Trabalho" : "Pessoal";
   const newEmail =
-    targetEmail || (isWork ? "haferreira@notredamecampinas.net.br" : HELLEN_PRIMARY_EMAIL);
+    targetEmail || (isHellen ? (isWork ? "haferreira@notredamecampinas.net.br" : HELLEN_PRIMARY_EMAIL) : "");
 
   const updatePayload: Partial<Task> = {
     account_type: newType,
@@ -173,6 +173,9 @@ export function resolveTaskAccountEmail(
   if (explicitEmail && explicitEmail.includes("@")) {
     return explicitEmail.toLowerCase().trim();
   }
+  if (!isHellenMatch) {
+    return "";
+  }
   const at = (accountType || "").toLowerCase();
   if (
     at.includes("notre") ||
@@ -186,10 +189,7 @@ export function resolveTaskAccountEmail(
   if (at.includes("pess") || at.includes("pers") || at.includes("vida")) {
     return HELLEN_PRIMARY_EMAIL;
   }
-  if (isHellenMatch) {
-    return "haferreira@notredamecampinas.net.br";
-  }
-  return "";
+  return "haferreira@notredamecampinas.net.br";
 }
 
 const DEFAULT_ACCOUNTS: ConnectedAccount[] = [

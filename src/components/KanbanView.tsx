@@ -635,14 +635,14 @@ export function KanbanView({
                           {isWorkTask(task) ? (
                             <span
                               className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-blue-50 text-blue-700 dark:bg-blue-950/70 dark:text-blue-300 border border-blue-200/60 dark:border-blue-900/50"
-                              title={task.account_email || "haferreira@notredamecampinas.net.br"}
+                              title={task.account_email || "Espaço de Trabalho"}
                             >
                               Trabalho
                             </span>
                           ) : (
                             <span
                               className="px-1.5 py-0.2 rounded text-[9px] font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/70 dark:text-purple-300 border border-purple-200/60 dark:border-purple-900/50"
-                              title={task.account_email || "hellenalvesferreira.s2@gmail.com"}
+                              title={task.account_email || "Espaço Pessoal"}
                             >
                               Pessoal
                             </span>

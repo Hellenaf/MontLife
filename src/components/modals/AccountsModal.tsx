@@ -166,14 +166,14 @@ function AccountsModalContent({
 
   const totalConnected = connectedAccounts.length;
 
-  // Master email is hellenalvesferreira.s2@gmail.com or the first personal/primary account
+  // Master email is the first personal/primary account or the first connected account
   const masterAccount =
     connectedAccounts.find((a) => typeof a.email === "string" && a.email.toLowerCase().includes("hellenalvesferreira")) ||
     connectedAccounts.find((a) => typeof a.label === "string" && a.label.toLowerCase().includes("pessoal")) ||
     connectedAccounts[0];
   const masterEmail = (typeof masterAccount?.email === "string" && masterAccount.email.trim())
     ? masterAccount.email.trim()
-    : "hellenalvesferreira.s2@gmail.com";
+    : (connectedAccounts[0]?.email || "usuario@montlife.com");
 
   const handleSyncNow = async () => {
     setIsSyncing(true);

@@ -134,31 +134,52 @@ export function LeftTasksQuadrant({
 
   // Derive dynamic list of workspaces/accounts from connected accounts
   const dynamicAccounts = useMemo(() => {
-    const list: { id: string; label: string; email?: string }[] = [
-      { id: "work", label: "Trabalho", email: "haferreira@notredamecampinas.net.br" },
-      { id: "personal", label: "Pessoal", email: "hellenalvesferreira.s2@gmail.com" },
-    ];
+    const list: { id: string; label: string; email?: string }[] = [];
+    const seen = new Set<string>();
 
-    if (Array.isArray(accounts) && accounts.length > 0) {
-      for (const acc of accounts) {
+    const safeAccountsList = Array.isArray(accounts)
+      ? accounts.filter((a): a is ConnectedAccount => Boolean(a && typeof a === "object"))
+      : [];
+
+    const isHellen = safeAccountsList.some((a) => {
+      const e = (a.email || "").toLowerCase();
+      return e.includes("hellen") || e.includes("notredame");
+    });
+
+    if (safeAccountsList.length > 0) {
+      for (const acc of safeAccountsList) {
         if (!acc || typeof acc !== "object" || typeof acc.email !== "string" || !acc.email.trim()) continue;
         const emailLower = acc.email.toLowerCase().trim();
-        if (
-          emailLower.includes("notredame") ||
-          emailLower.includes("hellenalvesferreira")
-        ) {
-          continue;
-        }
-        if (!list.some((a) => (a.email || "").toLowerCase() === emailLower)) {
-          const accLabel = typeof acc.label === "string" && acc.label.trim()
-            ? acc.label.trim()
-            : emailLower.split("@")[0];
+        const accLabel = typeof acc.label === "string" && acc.label.trim()
+          ? acc.label.trim()
+          : emailLower.split("@")[0];
+
+        const isWork = (acc.id || "").includes("work") || accLabel.toLowerCase().includes("trab") || emailLower.includes("notredame");
+        const isPersonal = (acc.id || "").includes("personal") || accLabel.toLowerCase().includes("pess") || emailLower.includes("hellen");
+        const standardId = isWork ? "work" : isPersonal ? "personal" : emailLower;
+
+        if (!seen.has(standardId)) {
+          seen.add(standardId);
           list.push({
-            id: emailLower,
+            id: standardId,
             label: accLabel,
             email: acc.email,
           });
         }
+      }
+    }
+
+    if (list.length === 0) {
+      if (isHellen) {
+        list.push(
+          { id: "work", label: "Trabalho", email: "haferreira@notredamecampinas.net.br" },
+          { id: "personal", label: "Pessoal", email: "hellenalvesferreira.s2@gmail.com" }
+        );
+      } else {
+        list.push(
+          { id: "work", label: "Trabalho" },
+          { id: "personal", label: "Pessoal" }
+        );
       }
     }
 

@@ -355,9 +355,14 @@ export default function MontOpsDashboard() {
     targetAccount: "work" | "personal" | string
   ) => {
     const isWork = targetAccount === "work" || targetAccount.toLowerCase().includes("trab");
-    const targetEmail = isWork
-      ? "haferreira@notredamecampinas.net.br"
-      : "hellenalvesferreira.s2@gmail.com";
+    const isHellen = currentUser?.email?.toLowerCase().includes("hellen") || currentUser?.email?.toLowerCase().includes("notredame");
+    const matchedAcc = safeAccounts.find((a) => {
+      const lbl = (a.label || "").toLowerCase();
+      return isWork ? (lbl.includes("trab") || lbl.includes("work")) : (lbl.includes("pess") || lbl.includes("vida"));
+    });
+    const targetEmail = matchedAcc?.email || (isHellen
+      ? (isWork ? "haferreira@notredamecampinas.net.br" : "hellenalvesferreira.s2@gmail.com")
+      : (currentUser?.email || ""));
     const targetType = isWork ? "Trabalho" : "Pessoal";
 
     // Optimistic local update
