@@ -398,12 +398,12 @@ export function AgendaDoDiaView({
       {/* ========================================================================= */}
       {/* 2. GRADE AMPLIADA: MÊS EXPANDIDO (ESQUERDA) + SEMANA & DIA (DIREITA) */}
       {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
         {/* ========================================================================= */}
         {/* PAINEL ESQUERDO: CALENDÁRIO MENSAL AMPLIADO (COL-SPAN-7) */}
         {/* ========================================================================= */}
-        <div className="lg:col-span-7 space-y-3">
-          <div className="rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm overflow-hidden flex flex-col">
+        <div className="lg:col-span-7 flex flex-col h-full">
+          <div className="rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm overflow-hidden flex flex-col h-full">
             {/* Header do Calendário Mensal */}
             <div className="px-5 py-3.5 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-[#151622] flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -439,7 +439,7 @@ export function AgendaDoDiaView({
             </div>
 
             {/* Grade Ampliada de Dias do Mês */}
-            <div className="grid grid-cols-7 gap-1 bg-slate-200/70 dark:bg-zinc-800/50 p-1.5 sm:p-2">
+            <div className="grid grid-cols-7 gap-1 bg-slate-200/70 dark:bg-zinc-800/50 p-1.5 sm:p-2 flex-1">
               {monthGridDays.map((day) => {
                 const dayTasks = tasks.filter((t) => isTaskScheduledForDay(t, day));
                 const dayGcal = gcalEvents.filter((ev) => isGcalEventOnDay(ev, day));
@@ -578,71 +578,70 @@ export function AgendaDoDiaView({
         </div>
 
         {/* ========================================================================= */}
-        {/* PAINEL DIREITO: SEMANA ATIVA + COMPROMISSOS DO DIA (COL-SPAN-5) */}
+        {/* PAINEL DIREITO: AGENDA & COMPROMISSOS DO DIA (COL-SPAN-5) */}
         {/* ========================================================================= */}
-        <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-2 self-start">
-          {/* 1. Faixa da Semana Ativa */}
-          <div className="p-3.5 sm:p-4 rounded-3xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-2">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" />
-                <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
-                  Semana Selecionada
+        <div className="lg:col-span-5 flex flex-col h-full">
+          <div className="rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm overflow-hidden flex flex-col h-full">
+            {/* 1. Header do Card: Semana Selecionada (Navegação Rápida) */}
+            <div className="p-3.5 sm:p-4 border-b border-slate-200/80 dark:border-zinc-800/80 bg-slate-50/80 dark:bg-[#151622] space-y-2 shrink-0">
+              <div className="flex items-center justify-between px-1">
+                <div className="flex items-center gap-2">
+                  <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" />
+                  <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                    Semana Selecionada
+                  </span>
+                </div>
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  {format(weekStart, "d 'de' MMM", { locale: ptBR })} —{" "}
+                  {format(weekEnd, "d 'de' MMM yyyy", { locale: ptBR })}
                 </span>
               </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400">
-                {format(weekStart, "d 'de' MMM", { locale: ptBR })} —{" "}
-                {format(weekEnd, "d 'de' MMM yyyy", { locale: ptBR })}
-              </span>
+
+              {/* 7 Dias da Semana com contadores */}
+              <div className="grid grid-cols-7 gap-1 pt-1">
+                {weekDays.map((day) => {
+                  const isSelected = isSameDay(day, calendarDate);
+                  const isDayToday = isToday(day);
+                  const dayTasksCount = tasks.filter((t) => isTaskScheduledForDay(t, day)).length;
+                  const dayGcalCount = gcalEvents.filter((ev) => isGcalEventOnDay(ev, day)).length;
+                  const totalDayItems = dayTasksCount + dayGcalCount;
+
+                  return (
+                    <button
+                      key={day.toISOString()}
+                      type="button"
+                      onClick={() => setCalendarDate(day)}
+                      className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+                        isSelected
+                          ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold scale-[1.03]"
+                          : isDayToday
+                          ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 font-semibold"
+                          : "bg-white dark:bg-[#0c0d13] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border border-slate-200/60 dark:border-zinc-800/60"
+                      }`}
+                    >
+                      <span className="text-[10px] uppercase tracking-wider opacity-80 mb-0.5 font-medium">
+                        {format(day, "EEE", { locale: ptBR })}
+                      </span>
+                      <span className="text-sm sm:text-base font-black leading-tight">
+                        {format(day, "d")}
+                      </span>
+                      <div className="h-3 flex items-center justify-center mt-0.5">
+                        {totalDayItems > 0 ? (
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              isSelected ? "bg-white" : dayTasksCount > 0 ? "bg-indigo-400" : "bg-amber-400"
+                            }`}
+                          />
+                        ) : null}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
-            {/* 7 Dias da Semana com contadores */}
-            <div className="grid grid-cols-7 gap-1 pt-1">
-              {weekDays.map((day) => {
-                const isSelected = isSameDay(day, calendarDate);
-                const isDayToday = isToday(day);
-                const dayTasksCount = tasks.filter((t) => isTaskScheduledForDay(t, day)).length;
-                const dayGcalCount = gcalEvents.filter((ev) => isGcalEventOnDay(ev, day)).length;
-                const totalDayItems = dayTasksCount + dayGcalCount;
-
-                return (
-                  <button
-                    key={day.toISOString()}
-                    type="button"
-                    onClick={() => setCalendarDate(day)}
-                    className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer ${
-                      isSelected
-                        ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold scale-[1.03]"
-                        : isDayToday
-                        ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 font-semibold"
-                        : "bg-slate-50 dark:bg-[#0c0d13] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border border-slate-200/60 dark:border-zinc-800/60"
-                    }`}
-                  >
-                    <span className="text-[10px] uppercase tracking-wider opacity-80 mb-0.5 font-medium">
-                      {format(day, "EEE", { locale: ptBR })}
-                    </span>
-                    <span className="text-sm sm:text-base font-black leading-tight">
-                      {format(day, "d")}
-                    </span>
-                    <div className="h-3 flex items-center justify-center mt-0.5">
-                      {totalDayItems > 0 ? (
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            isSelected ? "bg-white" : dayGcalCount > 0 ? "bg-amber-400" : "bg-indigo-500"
-                          }`}
-                        />
-                      ) : null}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 2. Lista Unificada de Demandas e Agendamentos do Dia Selecionado */}
-          <div className="p-4 sm:p-5 rounded-3xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
-            {/* Header da Lista */}
-            <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+            {/* 2. Sub-header: Dia Selecionado com Botão de Adicionar */}
+            <div className="p-3.5 sm:p-4 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between shrink-0 bg-slate-50/40 dark:bg-[#12131A]">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
                   <Clock className="w-4 h-4" />
@@ -673,9 +672,9 @@ export function AgendaDoDiaView({
               )}
             </div>
 
-            {/* Aviso caso a Agenda Google esteja sincronizando ou com mensagem */}
+            {/* Aviso status se houver */}
             {gcalStatusMessage && (
-              <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 flex items-center justify-between gap-2 text-xs text-amber-800 dark:text-amber-200">
+              <div className="mx-4 mt-3 p-3 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 flex items-center justify-between gap-2 text-xs text-amber-800 dark:text-amber-200 shrink-0">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                   <span>{gcalStatusMessage}</span>
@@ -689,10 +688,10 @@ export function AgendaDoDiaView({
               </div>
             )}
 
-            {/* Lista com Rolagem Customizada e Altura Fixa Confortável */}
-            <div className="space-y-3 pt-1 min-h-[420px] max-h-[calc(100vh-270px)] lg:max-h-[620px] overflow-y-auto custom-scrollbar pr-1">
+            {/* 3. Lista de Demandas & Compromissos com flex-1 e rolagem interna suave */}
+            <div className="flex-1 p-3.5 sm:p-4 space-y-3 overflow-y-auto custom-scrollbar">
               {totalItemsForSelectedDay === 0 ? (
-                <div className="py-16 text-center text-slate-400 dark:text-slate-500 space-y-3 flex flex-col items-center justify-center h-full min-h-[350px]">
+                <div className="py-16 text-center text-slate-400 dark:text-slate-500 space-y-3 flex flex-col items-center justify-center h-full min-h-[300px]">
                   <Clock className="w-10 h-10 mx-auto opacity-40 text-indigo-400" />
                   <p className="text-xs font-medium text-slate-600 dark:text-slate-400 max-w-xs">
                     Nenhuma demanda ou compromisso agendado para este dia.
@@ -910,6 +909,16 @@ export function AgendaDoDiaView({
                   )}
                 </>
               )}
+            </div>
+
+            {/* 4. Rodapé Informativo combinando com o card da esquerda */}
+            <div className="p-3 border-t border-slate-100 dark:border-zinc-800/60 bg-slate-50/60 dark:bg-[#10111a] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
+              <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                {tasksForSelectedDay.length} {tasksForSelectedDay.length === 1 ? "demanda no site" : "demandas no site"}
+              </span>
+              <span className="font-semibold text-amber-600 dark:text-amber-400">
+                {gcalEventsForSelectedDay.length} {gcalEventsForSelectedDay.length === 1 ? "no Google Agenda" : "no Google Agenda"}
+              </span>
             </div>
           </div>
         </div>
