@@ -518,19 +518,8 @@ export function AgendaDoDiaView({
                         )}
                       </div>
 
-                      {/* Preview em texto compacto de até 1 item para dias com conteúdo */}
-                      {dayGcal.length > 0 ? (
-                        <div
-                          className={`truncate text-[10px] px-1.5 py-0.5 rounded-md font-medium leading-tight flex items-center gap-1 ${
-                            isDaySelected
-                              ? "bg-white/20 text-white"
-                              : "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/50"
-                          }`}
-                        >
-                          <span className="shrink-0">📅</span>
-                          <span className="truncate">{dayGcal[0].summary}</span>
-                        </div>
-                      ) : dayTasks.length > 0 ? (
+                      {/* Preview em texto compacto: prioriza Demandas do MontLife sobre o Google Agenda */}
+                      {dayTasks.length > 0 ? (
                         <div
                           className={`truncate text-[10px] px-1.5 py-0.5 rounded-md font-medium leading-tight ${
                             isDaySelected
@@ -541,6 +530,17 @@ export function AgendaDoDiaView({
                           }`}
                         >
                           <span className="truncate">{dayTasks[0].title}</span>
+                        </div>
+                      ) : dayGcal.length > 0 ? (
+                        <div
+                          className={`truncate text-[10px] px-1.5 py-0.5 rounded-md font-medium leading-tight flex items-center gap-1 ${
+                            isDaySelected
+                              ? "bg-white/20 text-white"
+                              : "bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/50"
+                          }`}
+                        >
+                          <span className="shrink-0">📅</span>
+                          <span className="truncate">{dayGcal[0].summary}</span>
                         </div>
                       ) : null}
                     </div>
@@ -580,7 +580,7 @@ export function AgendaDoDiaView({
         {/* ========================================================================= */}
         {/* PAINEL DIREITO: SEMANA ATIVA + COMPROMISSOS DO DIA (COL-SPAN-5) */}
         {/* ========================================================================= */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-2 self-start">
           {/* 1. Faixa da Semana Ativa */}
           <div className="p-3.5 sm:p-4 rounded-3xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-2">
             <div className="flex items-center justify-between px-1">
@@ -689,12 +689,12 @@ export function AgendaDoDiaView({
               </div>
             )}
 
-            {/* Lista com Rolagem Customizada */}
-            <div className="space-y-3 pt-1 max-h-[520px] overflow-y-auto custom-scrollbar pr-1">
+            {/* Lista com Rolagem Customizada e Altura Fixa Confortável */}
+            <div className="space-y-3 pt-1 min-h-[420px] max-h-[calc(100vh-270px)] lg:max-h-[620px] overflow-y-auto custom-scrollbar pr-1">
               {totalItemsForSelectedDay === 0 ? (
-                <div className="py-12 text-center text-slate-400 dark:text-slate-500 space-y-3">
-                  <Clock className="w-9 h-9 mx-auto opacity-40 text-indigo-400" />
-                  <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                <div className="py-16 text-center text-slate-400 dark:text-slate-500 space-y-3 flex flex-col items-center justify-center h-full min-h-[350px]">
+                  <Clock className="w-10 h-10 mx-auto opacity-40 text-indigo-400" />
+                  <p className="text-xs font-medium text-slate-600 dark:text-slate-400 max-w-xs">
                     Nenhuma demanda ou compromisso agendado para este dia.
                   </p>
                   {onOpenNewTaskModal && (
@@ -710,9 +710,92 @@ export function AgendaDoDiaView({
                 </div>
               ) : (
                 <>
-                  {/* SEÇÃO 1: EVENTOS DO GOOGLE CALENDAR PESSOAL (COM OPÇÃO DE TRANSFORMAR EM DEMANDA) */}
-                  {gcalEventsForSelectedDay.length > 0 && (
+                  {/* SEÇÃO 1: DEMANDAS MONTLIFE DO SITE (PRIORIDADE MÁXIMA - ACIMA) */}
+                  {tasksForSelectedDay.length > 0 && (
                     <div className="space-y-2">
+                      <div className="flex items-center justify-between px-1">
+                        <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+                          <ListTodo className="w-3.5 h-3.5" />
+                          Demandas & Tarefas do Site ({tasksForSelectedDay.length})
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          Demandas Corporativas & Pessoais
+                        </span>
+                      </div>
+
+                      {tasksForSelectedDay.map((task) => {
+                        const isAllDay = isTaskAllDay(task);
+                        const timeText = isAllDay
+                          ? "Dia todo"
+                          : format(parseISO(getTaskScheduleDate(task)), "HH:mm");
+                        const isCurrentSelected = selectedTaskId === task.id;
+                        const isWork = isWorkTask(task);
+
+                        return (
+                          <div
+                            key={task.id}
+                            onClick={() => onSelectTask(task)}
+                            className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
+                              isCurrentSelected
+                                ? "ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-[#141520] bg-indigo-50/40 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-700 shadow-xs"
+                                : "bg-slate-50/70 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-xs"
+                            }`}
+                          >
+                            <div className="flex items-center gap-3 min-w-0 pr-2">
+                              <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-200 shrink-0 min-w-[50px]">
+                                {timeText}
+                              </span>
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700 shrink-0" />
+                              <div className="flex items-center gap-2 min-w-0">
+                                {task.item_type === "activity" ? (
+                                  <Activity className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+                                ) : task.item_type === "reminder" ? (
+                                  <Bell className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                ) : (
+                                  <ListTodo className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                                )}
+                                <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">
+                                  {task.title}
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 shrink-0">
+                              <span
+                                className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold flex items-center gap-1 ${
+                                  isWork
+                                    ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20"
+                                    : "bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20"
+                                }`}
+                              >
+                                {isWork ? (
+                                  <>
+                                    <Briefcase className="w-2.5 h-2.5" />
+                                    <span>Trabalho</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <User className="w-2.5 h-2.5" />
+                                    <span>Pessoal</span>
+                                  </>
+                                )}
+                              </span>
+                              <span className="text-[10px] font-bold font-mono text-purple-600 dark:text-purple-400">
+                                {task.priority}
+                              </span>
+                              <span className="text-[11px] text-indigo-500 font-semibold flex items-center gap-0.5 ml-1">
+                                Abrir <ArrowRight className="w-3 h-3" />
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* SEÇÃO 2: COMPROMISSOS DA GOOGLE AGENDA (ABAIXO DAS DEMANDAS) */}
+                  {gcalEventsForSelectedDay.length > 0 && (
+                    <div className="space-y-2 pt-1">
                       <div className="flex items-center justify-between px-1">
                         <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
                           <Calendar className="w-3.5 h-3.5" />
@@ -819,88 +902,6 @@ export function AgendaDoDiaView({
                                   </button>
                                 </div>
                               )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* SEÇÃO 2: DEMANDAS MONTLIFE AGENDADAS */}
-                  {tasksForSelectedDay.length > 0 && (
-                    <div className="space-y-2">
-                      {gcalEventsForSelectedDay.length > 0 && (
-                        <div className="flex items-center justify-between px-1 pt-2">
-                          <span className="text-[11px] font-bold text-indigo-700 dark:text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
-                            <ListTodo className="w-3.5 h-3.5" />
-                            Demandas & Atividades MontLife ({tasksForSelectedDay.length})
-                          </span>
-                        </div>
-                      )}
-
-                      {tasksForSelectedDay.map((task) => {
-                        const isAllDay = isTaskAllDay(task);
-                        const timeText = isAllDay
-                          ? "Dia todo"
-                          : format(parseISO(getTaskScheduleDate(task)), "HH:mm");
-                        const isCurrentSelected = selectedTaskId === task.id;
-                        const isWork = isWorkTask(task);
-
-                        return (
-                          <div
-                            key={task.id}
-                            onClick={() => onSelectTask(task)}
-                            className={`p-3.5 rounded-2xl border flex items-center justify-between cursor-pointer transition-all ${
-                              isCurrentSelected
-                                ? "ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-[#141520] bg-indigo-50/40 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-700"
-                                : "bg-slate-50/70 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-xs"
-                            }`}
-                          >
-                            <div className="flex items-center gap-3 min-w-0 pr-2">
-                              <span className="text-xs font-bold font-mono text-slate-700 dark:text-slate-200 shrink-0">
-                                {timeText}
-                              </span>
-                              <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-zinc-700 shrink-0" />
-                              <div className="flex items-center gap-2 min-w-0">
-                                {task.item_type === "activity" ? (
-                                  <Activity className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                                ) : task.item_type === "reminder" ? (
-                                  <Bell className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                                ) : (
-                                  <ListTodo className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                                )}
-                                <span className="text-xs font-semibold text-slate-900 dark:text-white truncate">
-                                  {task.title}
-                                </span>
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-2 shrink-0">
-                              <span
-                                className={`px-2 py-0.5 rounded-lg text-[10px] font-semibold flex items-center gap-1 ${
-                                  isWork
-                                    ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20"
-                                    : "bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20"
-                                }`}
-                              >
-                                {isWork ? (
-                                  <>
-                                    <Briefcase className="w-2.5 h-2.5" />
-                                    <span>Trabalho</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <User className="w-2.5 h-2.5" />
-                                    <span>Pessoal</span>
-                                  </>
-                                )}
-                              </span>
-                              <span className="text-[10px] font-bold font-mono text-purple-600 dark:text-purple-400">
-                                {task.priority}
-                              </span>
-                              <span className="text-[11px] text-indigo-500 font-semibold flex items-center gap-0.5 ml-1">
-                                Abrir <ArrowRight className="w-3 h-3" />
-                              </span>
                             </div>
                           </div>
                         );
