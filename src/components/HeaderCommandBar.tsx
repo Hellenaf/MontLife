@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   Sparkles,
   Mic,
@@ -150,18 +151,61 @@ export function HeaderCommandBar({
     return () => clearInterval(timer);
   }, []);
 
-    // Notifications Popover & Real-time Due Date Alerts
+  // Notifications Popover & Real-time Due Date Alerts
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [notificationCoords, setNotificationCoords] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
   const notificationRef = useRef<HTMLDivElement>(null);
+  const notificationPopoverRef = useRef<HTMLDivElement>(null);
+
+  const updateNotificationPosition = useCallback(() => {
+    if (typeof window === "undefined" || !notificationRef.current) return;
+    const rect = notificationRef.current.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const targetWidth = Math.min(vw - 16, vw >= 640 ? 384 : 320);
+    const rawLeft = rect.right - targetWidth;
+    const clampedLeft = Math.max(8, Math.min(rawLeft, vw - targetWidth - 8));
+    setNotificationCoords({
+      top: rect.bottom + 8,
+      left: clampedLeft,
+      width: targetWidth,
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!isNotificationOpen) return;
+    updateNotificationPosition();
+    window.addEventListener("resize", updateNotificationPosition);
+    window.addEventListener("scroll", updateNotificationPosition, true);
+    return () => {
+      window.removeEventListener("resize", updateNotificationPosition);
+      window.removeEventListener("scroll", updateNotificationPosition, true);
+    };
+  }, [isNotificationOpen, updateNotificationPosition]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (notificationRef.current && !notificationRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      const clickedTrigger = notificationRef.current?.contains(target);
+      const clickedPopover = notificationPopoverRef.current?.contains(target);
+      if (!clickedTrigger && !clickedPopover) {
+        setIsNotificationOpen(false);
+      }
+    }
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
         setIsNotificationOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, []);
 
   const deadlineAlertTasks = useMemo(() => {
@@ -368,7 +412,7 @@ export function HeaderCommandBar({
 
   return (
     <>
-      <header className="h-16 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-3 sm:px-6 flex items-center justify-between shadow-sm transition-colors duration-200 z-30 gap-2 sm:gap-4">
+      <header className="relative z-40 h-16 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-3 sm:px-6 flex items-center justify-between shadow-sm transition-colors duration-200 gap-2 sm:gap-4">
       {/* Brand & Menu (visible on mobile where sidebar is hidden) */}
       <div className="flex items-center gap-1.5 shrink-0 lg:hidden">
         {onToggleMobileMenu && (
@@ -473,7 +517,12 @@ export function HeaderCommandBar({
         <div ref={notificationRef} className="relative">
           <button
             type="button"
-            onClick={() => setIsNotificationOpen((prev) => !prev)}
+            onClick={() => {
+              if (!isNotificationOpen) {
+                updateNotificationPosition();
+              }
+              setIsNotificationOpen((prev) => !prev);
+            }}
             className={`relative p-2 rounded-xl border transition-all shadow-sm ${
               isNotificationOpen
                 ? "bg-purple-50 dark:bg-[#201e3b] border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300"
@@ -489,112 +538,124 @@ export function HeaderCommandBar({
             )}
           </button>
 
-          {/* Interactive Notifications Popover */}
-          {isNotificationOpen && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-[#141326] border border-slate-200 dark:border-[#282647] shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-              <div className="p-3.5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/70 dark:bg-[#100f1f]">
-                <div className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-500">
-                    <Bell className="w-4 h-4" />
+          {/* Interactive Notifications Popover (rendered via Portal on document.body so it stays above Kanban cards & all sections) */}
+          {isNotificationOpen &&
+            notificationCoords &&
+            typeof document !== "undefined" &&
+            createPortal(
+              <div
+                ref={notificationPopoverRef}
+                style={{
+                  top: `${notificationCoords.top}px`,
+                  left: `${notificationCoords.left}px`,
+                  width: `${notificationCoords.width}px`,
+                }}
+                className="fixed rounded-2xl bg-white dark:bg-[#141326] border border-slate-200 dark:border-[#282647] shadow-2xl z-[90] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+              >
+                <div className="p-3.5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/70 dark:bg-[#100f1f]">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-500">
+                      <Bell className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                        Alertas de Prazos
+                      </h4>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Demandas no último dia ou com prazo atingido ({deadlineAlertTasks.length})
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                      Alertas de Prazos
-                    </h4>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                      Demandas no último dia ou com prazo atingido ({deadlineAlertTasks.length})
-                    </p>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsNotificationOpen(false)}
+                    className="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs p-1"
+                  >
+                    ✕
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setIsNotificationOpen(false)}
-                  className="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs p-1"
-                >
-                  ✕
-                </button>
-              </div>
 
-              <div className="max-h-80 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
-                {deadlineAlertTasks.length === 0 ? (
-                  <div className="py-8 text-center text-slate-400 space-y-1.5">
-                    <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-500 opacity-60" />
-                    <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                      Tudo em dia!
-                    </p>
-                    <p className="text-[11px] text-slate-400">
-                      Nenhuma demanda atingindo o limite de prazo no momento.
-                    </p>
-                  </div>
-                ) : (
-                  deadlineAlertTasks.map((t) => {
-                    const dueDate = parseISO(t.current_due_date);
-                    const nowTime = new Date();
-                    const isOverdue = isPast(dueDate) && !isSameDay(dueDate, nowTime);
-                    const isDueToday = isSameDay(dueDate, nowTime);
+                <div className="max-h-80 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
+                  {deadlineAlertTasks.length === 0 ? (
+                    <div className="py-8 text-center text-slate-400 space-y-1.5">
+                      <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-500 opacity-60" />
+                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        Tudo em dia!
+                      </p>
+                      <p className="text-[11px] text-slate-400">
+                        Nenhuma demanda atingindo o limite de prazo no momento.
+                      </p>
+                    </div>
+                  ) : (
+                    deadlineAlertTasks.map((t) => {
+                      const dueDate = parseISO(t.current_due_date);
+                      const nowTime = new Date();
+                      const isOverdue = isPast(dueDate) && !isSameDay(dueDate, nowTime);
+                      const isDueToday = isSameDay(dueDate, nowTime);
 
-                    return (
-                      <div
-                        key={t.id}
-                        onClick={() => {
-                          onSelectTask?.(t);
-                          setIsNotificationOpen(false);
-                        }}
-                        className="p-2.5 rounded-xl border border-slate-100 dark:border-white/5 hover:border-purple-300 dark:hover:border-purple-500/40 bg-slate-50/50 dark:bg-[#18172e]/60 hover:bg-purple-50/30 dark:hover:bg-[#1e1c38] cursor-pointer transition-all space-y-1"
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <span
-                            className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                              isOverdue
-                                ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800"
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => {
+                            onSelectTask?.(t);
+                            setIsNotificationOpen(false);
+                          }}
+                          className="p-2.5 rounded-xl border border-slate-100 dark:border-white/5 hover:border-purple-300 dark:hover:border-purple-500/40 bg-slate-50/50 dark:bg-[#18172e]/60 hover:bg-purple-50/30 dark:hover:bg-[#1e1c38] cursor-pointer transition-all space-y-1"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                                isOverdue
+                                  ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800"
+                                  : isDueToday
+                                  ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
+                                  : "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800"
+                              }`}
+                            >
+                              {isOverdue
+                                ? "🚨 Atrasada"
                                 : isDueToday
-                                ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
-                                : "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800"
-                            }`}
-                          >
-                            {isOverdue
-                              ? "🚨 Atrasada"
-                              : isDueToday
-                              ? "⚠️ Vence Hoje"
-                              : "⏳ Vence em 24h"}
-                          </span>
-                          <span className="text-[10px] text-slate-400 font-mono">
-                            {format(dueDate, "dd/MM 'às' HH:mm")}
-                          </span>
+                                ? "⚠️ Vence Hoje"
+                                : "⏳ Vence em 24h"}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {format(dueDate, "dd/MM 'às' HH:mm")}
+                            </span>
+                          </div>
+                          <h5 className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2">
+                            {t.title}
+                          </h5>
+                          <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+                            <span className="truncate max-w-[180px]">{t.category}</span>
+                            <span className="font-bold text-purple-600 dark:text-purple-400">
+                              {t.priority}
+                            </span>
+                          </div>
                         </div>
-                        <h5 className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2">
-                          {t.title}
-                        </h5>
-                        <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
-                          <span className="truncate max-w-[180px]">{t.category}</span>
-                          <span className="font-bold text-purple-600 dark:text-purple-400">
-                            {t.priority}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
+                      );
+                    })
+                  )}
+                </div>
 
-              {/* Popover Footer */}
-              <div className="p-2.5 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#100f1f] flex items-center justify-between text-xs">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsNotificationOpen(false);
-                    onOpenReportModal();
-                  }}
-                  className="text-purple-600 dark:text-purple-400 hover:underline font-semibold text-[11px]"
-                >
-                  Ver Relatório Completo de SLA
-                </button>
-                <span className="text-[10px] text-slate-400">
-                  {deadlineAlertTasks.length} alertas ativos
-                </span>
-              </div>
-            </div>
-          )}
+                {/* Popover Footer */}
+                <div className="p-2.5 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#100f1f] flex items-center justify-between text-xs">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsNotificationOpen(false);
+                      onOpenReportModal();
+                    }}
+                    className="text-purple-600 dark:text-purple-400 hover:underline font-semibold text-[11px]"
+                  >
+                    Ver Relatório Completo de SLA
+                  </button>
+                  <span className="text-[10px] text-slate-400">
+                    {deadlineAlertTasks.length} alertas ativos
+                  </span>
+                </div>
+              </div>,
+              document.body
+            )}
         </div>
 
         {/* Connected Accounts Status */}

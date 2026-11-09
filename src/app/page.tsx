@@ -577,7 +577,7 @@ export default function MontOpsDashboard() {
       {/* 2. Main Area (Header on top, then 3 columns below) */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 pb-16 lg:pb-0">
         {/* Header Command Bar */}
-        <div className="no-print">
+        <div className="no-print relative z-40 shrink-0">
           <HeaderCommandBar
             accounts={safeAccounts}
             tasks={tasks}
