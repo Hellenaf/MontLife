@@ -271,8 +271,27 @@ export default function MontOpsDashboard() {
   };
 
   // Handlers
+  const syncTasksCache = useCallback(
+    (nextTasks: Task[]) => {
+      if (typeof window !== "undefined" && currentUser?.userId) {
+        try {
+          localStorage.setItem(`montlife_cached_tasks_${currentUser.userId}`, JSON.stringify(nextTasks));
+        } catch {
+          // Ignore storage quota errors
+        }
+      }
+    },
+    [currentUser?.userId]
+  );
+
   const handleTaskCreated = (newTask: Task) => {
-    setTasks((prev) => [newTask, ...prev]);
+    setTasks((prev) => {
+      const updated = prev.some((t) => t.id === newTask.id)
+        ? prev.map((t) => (t.id === newTask.id ? newTask : t))
+        : [newTask, ...prev];
+      syncTasksCache(updated);
+      return updated;
+    });
     setSelectedTaskId(newTask.id);
   };
 
@@ -297,9 +316,11 @@ export default function MontOpsDashboard() {
       });
       const data = await res.json();
       if (data.success && data.task) {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === taskId ? data.task : t))
-        );
+        setTasks((prev) => {
+          const updated = prev.map((t) => (t.id === taskId ? data.task : t));
+          syncTasksCache(updated);
+          return updated;
+        });
       }
     } catch (err) {
       console.error("Failed to update status:", err);
@@ -323,9 +344,11 @@ export default function MontOpsDashboard() {
       });
       const data = await res.json();
       if (data.success && data.task) {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === taskId ? data.task : t))
-        );
+        setTasks((prev) => {
+          const updated = prev.map((t) => (t.id === taskId ? data.task : t));
+          syncTasksCache(updated);
+          return updated;
+        });
       }
     } catch (err) {
       console.error("Failed to update item type:", err);
@@ -341,9 +364,11 @@ export default function MontOpsDashboard() {
       });
       const data = await res.json();
       if (data.success && data.task) {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === taskId ? data.task : t))
-        );
+        setTasks((prev) => {
+          const updated = prev.map((t) => (t.id === taskId ? data.task : t));
+          syncTasksCache(updated);
+          return updated;
+        });
       }
     } catch (err) {
       console.error("Failed to update task fields:", err);
@@ -393,9 +418,11 @@ export default function MontOpsDashboard() {
       });
       const data = await res.json();
       if (data.success && data.task) {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === task.id ? data.task : t))
-        );
+        setTasks((prev) => {
+          const updated = prev.map((t) => (t.id === task.id ? data.task : t));
+          syncTasksCache(updated);
+          return updated;
+        });
       }
     } catch (err) {
       console.error("Failed to transfer task:", err);
@@ -434,9 +461,11 @@ export default function MontOpsDashboard() {
       });
       const data = await res.json();
       if (data.success && data.task) {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === taskForExtend.id ? data.task : t))
-        );
+        setTasks((prev) => {
+          const updated = prev.map((t) => (t.id === taskForExtend.id ? data.task : t));
+          syncTasksCache(updated);
+          return updated;
+        });
       }
     } catch (err) {
       console.error("Failed to extend deadline:", err);
@@ -452,6 +481,7 @@ export default function MontOpsDashboard() {
       if (data.success) {
         setTasks((prev) => {
           const remaining = prev.filter((t) => t.id !== taskId);
+          syncTasksCache(remaining);
           if (selectedTaskId === taskId) {
             setSelectedTaskId(remaining.length > 0 ? remaining[0].id : null);
           }

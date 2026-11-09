@@ -45,8 +45,19 @@ export function getFirebaseAdmin() {
   }
 }
 
+let firestoreSettingsApplied = false;
+
 export function getFirestoreDb() {
   const app = getFirebaseAdmin();
   if (!app) return null;
-  return admin.firestore(app);
+  const db = admin.firestore(app);
+  if (!firestoreSettingsApplied) {
+    firestoreSettingsApplied = true;
+    try {
+      db.settings({ ignoreUndefinedProperties: true });
+    } catch {
+      // Ignore if Firestore settings were already applied by another runtime call
+    }
+  }
+  return db;
 }

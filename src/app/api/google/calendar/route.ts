@@ -197,19 +197,26 @@ export async function POST(req: NextRequest) {
 
     const cleanAccountType =
       accountType === "Trabalho" || accountType === "work" ? "Trabalho" : "Pessoal";
+    const isPersonalCal = cleanAccountType === "Pessoal";
 
     // 3. Cria a nova Demanda/Atividade
     const taskId = `gcal-${eventId.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+    const resolvedCalEmail =
+      accountEmail ||
+      (isHellen
+        ? isPersonalCal
+          ? "hellenalvesferreira.s2@gmail.com"
+          : "haferreira@notredamecampinas.net.br"
+        : session?.email || "");
+
     const newTask: Task = {
       id: taskId,
       owner_uid: targetUserId,
       user_id: targetUserId,
-      account_email:
-        accountEmail ||
-        (cleanAccountType === "Pessoal"
-          ? "hellenalvesferreira.s2@gmail.com"
-          : "haferreira@notredamecampinas.net.br"),
+      account_email: resolvedCalEmail,
       account_type: cleanAccountType,
+      transferred_to: isPersonalCal ? "personal" : "work",
+      manually_assigned: true,
       raw_input: summary,
       title: summary.trim(),
       description:

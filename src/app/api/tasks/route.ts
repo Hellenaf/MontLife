@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTasksFromDb, saveTaskToDb } from "@/services/taskService";
+import {
+  getTasksFromDb,
+  saveTaskToDb,
+  isHellenUser,
+  HELLEN_MASTER_ID,
+} from "@/services/taskService";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { getSessionUser } from "@/lib/session";
 import { normalizeCategory } from "@/lib/categories";
@@ -79,22 +84,56 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
 
+    const title = typeof body.title === "string" ? body.title.trim() : "";
+    if (!title) {
+      return NextResponse.json(
+        { success: false, error: "O título da demanda é obrigatório." },
+        { status: 400 }
+      );
+    }
+
     const priority = body.priority || "P3";
     const dueDate = body.due_date || calculateSlaDueDate(priority);
 
+    const rawAccType = String(body.account_type || "work").toLowerCase().trim();
+    const isPersonal =
+      rawAccType === "personal" ||
+      rawAccType.includes("pess") ||
+      rawAccType.includes("vida");
+
+    const isHellen = isHellenUser(userId, session?.email);
+    const targetUserId = isHellen ? HELLEN_MASTER_ID : userId;
+    const normalizedAccountType = isPersonal ? "Pessoal" : "Trabalho";
+
+    const requestedEmail =
+      typeof body.account_email === "string" && body.account_email.includes("@")
+        ? body.account_email.toLowerCase().trim()
+        : "";
+    const resolvedEmail = isHellen
+      ? requestedEmail && (requestedEmail.includes("hellen") || requestedEmail.includes("notredame"))
+        ? requestedEmail
+        : isPersonal
+        ? "hellenalvesferreira.s2@gmail.com"
+        : "haferreira@notredamecampinas.net.br"
+      : requestedEmail || session?.email || "";
+
     const newTask: Task = {
       id: `task-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      owner_uid: userId,
-      user_id: userId,
-      account_email: body.account_email,
-      account_id: body.account_id,
-      raw_input: body.raw_input || body.title,
-      title: body.title,
-      description: body.description || "",
-      account_type: body.account_type || "work",
+      owner_uid: targetUserId,
+      user_id: targetUserId,
+      account_email: resolvedEmail,
+      ...(typeof body.account_id === "string" && body.account_id
+        ? { account_id: body.account_id }
+        : {}),
+      raw_input: (typeof body.raw_input === "string" && body.raw_input.trim()) || title,
+      title,
+      description: typeof body.description === "string" ? body.description : "",
+      account_type: normalizedAccountType,
+      transferred_to: isPersonal ? "personal" : "work",
+      manually_assigned: true,
       item_type: body.item_type || "task",
       category: normalizeCategory(body.category || "Operações & Demandas"),
-      tags: body.tags || [],
+      tags: Array.isArray(body.tags) ? body.tags : [],
       priority,
       status: body.status || "TODO",
       created_at: new Date().toISOString(),
@@ -113,19 +152,29 @@ export async function POST(req: NextRequest) {
         search_queries: [],
       },
       met_original_sla: null,
-      attachments: body.attachments || [],
-      resolution_attachments: body.resolution_attachments || [],
-      validation_steps: body.validation_steps || [],
+      attachments: Array.isArray(body.attachments) ? body.attachments : [],
+      resolution_attachments: Array.isArray(body.resolution_attachments) ? body.resolution_attachments : [],
+      validation_steps: Array.isArray(body.validation_steps) ? body.validation_steps : [],
     };
 
     // Save directly to native Cloud Firestore
-    const saved = await saveTaskToDb(newTask, userId);
+    const saved = await saveTaskToDb(newTask, targetUserId);
     return NextResponse.json({ success: true, task: saved }, { status: 201 });
   } catch (error: unknown) {
     console.error("POST /api/tasks error:", error);
+    const errMsg = error instanceof Error ? error.message : "";
+    const isTooLarge =
+      errMsg.includes("exceeds the maximum allowed size") ||
+      errMsg.includes("1048576") ||
+      errMsg.toLowerCase().includes("maximum document size");
     return NextResponse.json(
-      { success: false, error: "Falha ao criar tarefa" },
-      { status: 500 }
+      {
+        success: false,
+        error: isTooLarge
+          ? "Os anexos ou dados da demanda ultrapassam o limite máximo (1 MB). Reduza o tamanho dos arquivos."
+          : "Falha ao salvar demanda no banco de dados. Tente novamente.",
+      },
+      { status: isTooLarge ? 413 : 500 }
     );
   }
 }

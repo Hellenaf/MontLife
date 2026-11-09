@@ -88,6 +88,7 @@ export function NewTaskModal({
 
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<GeminiTriageResponse | null>(null);
 
   // Deduplication & Recurrence detection state
@@ -136,6 +137,7 @@ export function NewTaskModal({
   useEffect(() => {
     if (isOpen) {
       setIsSimilarityDismissed(false);
+      setSubmitError(null);
       if (initialText) {
         if (initialText.includes("\n") || initialText.length > 60) {
           setDescription(initialText);
@@ -162,6 +164,7 @@ export function NewTaskModal({
       setNewStepText("");
       setIsAddingStep(false);
       setIsSimilarityDismissed(false);
+      setSubmitError(null);
     }
   }, [isOpen, initialText, initialType]);
 
@@ -276,6 +279,7 @@ export function NewTaskModal({
     if (!title.trim() || isSubmitting) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
     try {
       const parsedTags = tagsInput
         ? tagsInput
@@ -284,18 +288,12 @@ export function NewTaskModal({
             .filter(Boolean)
         : aiSuggestions?.search_tags || [];
 
-      let finalDueDateIso = dueDate ? new Date(dueDate).toISOString() : calculateSlaDueDate(priority);
-
-      const resolvedAccountEmail =
-        accountType === "work"
-          ? "haferreira@notredamecampinas.net.br"
-          : "hellenalvesferreira.s2@gmail.com";
+      const finalDueDateIso = dueDate ? new Date(dueDate).toISOString() : calculateSlaDueDate(priority);
 
       const payload = {
         title: title.trim(),
         description: description.trim(),
         account_type: accountType,
-        account_email: resolvedAccountEmail,
         item_type: itemType,
         category,
         priority,
@@ -309,19 +307,32 @@ export function NewTaskModal({
         },
       };
 
+      const serializedPayload = JSON.stringify(payload);
+      if (serializedPayload.length > 950_000) {
+        setSubmitError(
+          "Os anexos ou textos excedem o limite máximo de 950 KB por demanda. Remova ou reduza um arquivo antes de salvar."
+        );
+        return;
+      }
+
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: serializedPayload,
       });
 
       const data = await res.json();
-      if (data.success && data.task) {
+      if (res.ok && data.success && data.task) {
         onTaskCreated(data.task);
         onClose();
+      } else {
+        setSubmitError(
+          data?.error || "Não foi possível salvar a demanda. Verifique sua conexão e tente novamente."
+        );
       }
     } catch (err) {
       console.error("Erro ao criar demanda:", err);
+      setSubmitError("Erro de conexão ao salvar demanda no banco de dados. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -839,6 +850,12 @@ export function NewTaskModal({
               label="4. Anexos de Arquivos & Links Externos (Opcional)"
             />
           </div>
+
+          {submitError && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-xs font-medium text-rose-700 dark:text-rose-300">
+              {submitError}
+            </div>
+          )}
         </form>
       )}
 

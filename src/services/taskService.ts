@@ -13,6 +13,34 @@ import {
 } from "@/lib/sla";
 
 export const HELLEN_PRIMARY_EMAIL = "hellenalvesferreira.s2@gmail.com";
+
+/**
+ * Recursively removes `undefined` properties and undefined array items
+ * so Cloud Firestore never rejects a document write.
+ */
+export function sanitizeForFirestore<T>(value: T): T {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  if (value instanceof Date) {
+    return value;
+  }
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => item !== undefined)
+      .map((item) => sanitizeForFirestore(item)) as unknown as T;
+  }
+  if (typeof value === "object") {
+    const result: Record<string, unknown> = {};
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      if (val !== undefined) {
+        result[key] = sanitizeForFirestore(val);
+      }
+    }
+    return result as T;
+  }
+  return value;
+}
 export const HELLEN_LINKED_EMAILS: string[] = [
   "hellenalvesferreira.s2@gmail.com",
   "haferreira@notredamecampinas.net.br",
@@ -149,7 +177,7 @@ export async function transferTaskAccount(
   if (db) {
     try {
       const docRef = db.collection("tasks").doc(taskId);
-      await docRef.set(updatePayload, { merge: true });
+      await docRef.set(sanitizeForFirestore(updatePayload), { merge: true });
       const snap = await docRef.get();
       if (snap.exists) {
         return snap.data() as Task;
@@ -401,7 +429,10 @@ export async function createOrUpdateMasterUser(
   const db = getFirestoreDb();
   if (db) {
     try {
-      await db.collection("users").doc(fullProfile.id).set(fullProfile, { merge: true });
+      await db
+        .collection("users")
+        .doc(fullProfile.id)
+        .set(sanitizeForFirestore(fullProfile), { merge: true });
     } catch (err) {
       console.warn("Failed to write master user to Firestore:", err);
     }
@@ -517,7 +548,7 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
         ) {
           migratedCount++;
           batchPromises.push(
-            doc.ref.set(consolidatedTask, { merge: true }).catch(() => {})
+            doc.ref.set(sanitizeForFirestore(consolidatedTask), { merge: true }).catch(() => {})
           );
         }
       }
@@ -544,7 +575,7 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
             taskMap.set(taskId, consolidatedTask);
             migratedCount++;
             batchPromises.push(
-              db.collection("tasks").doc(taskId).set(consolidatedTask, { merge: true }).catch(() => {})
+              db.collection("tasks").doc(taskId).set(sanitizeForFirestore(consolidatedTask), { merge: true }).catch(() => {})
             );
           }
         }
@@ -578,7 +609,7 @@ export async function consolidateHellenWorkspace(userId?: string): Promise<{
                 taskMap.set(taskId, consolidatedTask);
                 migratedCount++;
                 batchPromises.push(
-                  db.collection("tasks").doc(taskId).set(consolidatedTask, { merge: true }).catch(() => {})
+                  db.collection("tasks").doc(taskId).set(sanitizeForFirestore(consolidatedTask), { merge: true }).catch(() => {})
                 );
               }
             }
@@ -760,7 +791,7 @@ export async function getTasksFromDb(userId?: string): Promise<Task[]> {
       if (tasksToMigrate.length > 0) {
         Promise.all(
           tasksToMigrate.map((t) =>
-            db.collection("tasks").doc(t.id).set(t, { merge: true }).catch(() => {})
+            db.collection("tasks").doc(t.id).set(sanitizeForFirestore(t), { merge: true }).catch(() => {})
           )
         ).catch(() => {});
       }
@@ -841,33 +872,53 @@ export async function saveTaskToDb(task: Task, userId?: string): Promise<Task> {
 
   if (isHellen) {
     const { targetAccountType, targetAccountEmail } = partitionHellenTask(task);
-    if (!task.account_type) task.account_type = targetAccountType;
-    if (!task.account_email || (task.account_type === "Trabalho" && task.account_email.includes("hellen"))) {
+    task.account_type = targetAccountType;
+    if (
+      !task.account_email ||
+      (targetAccountType === "Trabalho" && task.account_email.includes("hellen")) ||
+      (targetAccountType === "Pessoal" && !task.account_email.includes("hellen"))
+    ) {
       task.account_email = targetAccountEmail;
     }
   } else if (!task.account_email) {
     task.account_email = resolveTaskAccountEmail(task.account_type, undefined, isHellen);
   }
 
+  const cleanTask = sanitizeForFirestore(task);
+
   // Update memory
-  const idx = memoryTasks.findIndex((t) => t.id === task.id);
+  const idx = memoryTasks.findIndex((t) => t.id === cleanTask.id);
   if (idx >= 0) {
-    memoryTasks[idx] = task;
+    memoryTasks[idx] = cleanTask;
   } else {
-    memoryTasks.unshift(task);
+    memoryTasks.unshift(cleanTask);
   }
 
   const db = getFirestoreDb();
   if (!db) {
-    return task;
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Banco de dados Firestore indisponível no momento.");
+    }
+    return cleanTask;
   }
 
   try {
-    await db.collection("tasks").doc(task.id).set(task, { merge: true });
-    return task;
-  } catch (err) {
-    console.warn("Firestore write failed, saving to in-memory:", err);
-    return task;
+    await db.collection("tasks").doc(cleanTask.id).set(cleanTask, { merge: true });
+    return cleanTask;
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const isMissingLocalCreds =
+      process.env.NODE_ENV !== "production" &&
+      (msg.includes("Could not load the default credentials") ||
+        msg.includes("Unable to detect a Project Id"));
+
+    if (isMissingLocalCreds) {
+      console.warn("Firestore unavailable in local dev without GCP credentials, saving in-memory:", msg);
+      return cleanTask;
+    }
+
+    console.error("Firestore write failed in saveTaskToDb:", err);
+    throw err;
   }
 }
 
@@ -1387,16 +1438,18 @@ export async function saveConnectedAccount(
   const db = getFirestoreDb();
   if (!db) return account;
 
+  const cleanAccount = sanitizeForFirestore(account);
+
   try {
     const docRef = targetUserId
-      ? db.collection("users").doc(targetUserId).collection("accounts").doc(account.id)
-      : db.collection("connected_accounts").doc(account.id);
+      ? db.collection("users").doc(targetUserId).collection("accounts").doc(cleanAccount.id)
+      : db.collection("connected_accounts").doc(cleanAccount.id);
 
-    await docRef.set(account, { merge: true });
-    return account;
+    await docRef.set(cleanAccount, { merge: true });
+    return cleanAccount;
   } catch (err) {
     console.warn("Firestore save account failed:", err);
-    return account;
+    return cleanAccount;
   }
 }
 

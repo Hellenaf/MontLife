@@ -104,6 +104,7 @@ export function HeaderCommandBar({
   const [newHeaderStep, setNewHeaderStep] = useState("");
   const [isAddingHeaderStep, setIsAddingHeaderStep] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
 
   // Deduplication state in AI Confirmation modal
@@ -305,6 +306,7 @@ export function HeaderCommandBar({
   const handleConfirmTask = async () => {
     if (!triageData || isCreating) return;
     setIsCreating(true);
+    setCreateError(null);
 
     try {
       const payload = {
@@ -331,7 +333,7 @@ export function HeaderCommandBar({
       });
 
       const data = await res.json();
-      if (data.success && data.task) {
+      if (res.ok && data.success && data.task) {
         onTaskCreated(data.task);
         setTriageData(null);
         setSimilarResolutions([]);
@@ -339,9 +341,14 @@ export function HeaderCommandBar({
         setInput("");
         setPreferredType("auto");
         setIsSimilarityDismissed(false);
+      } else {
+        setCreateError(
+          data?.error || "Não foi possível salvar a demanda no servidor. Tente novamente."
+        );
       }
     } catch (err) {
       console.error("Failed to create task:", err);
+      setCreateError("Erro de conexão ao salvar demanda. Tente novamente.");
     } finally {
       setIsCreating(false);
     }
@@ -352,6 +359,7 @@ export function HeaderCommandBar({
     setSimilarResolutions([]);
     setLearningResources(null);
     setIsSimilarityDismissed(false);
+    setCreateError(null);
   };
 
   const connectedAccountsCount = (Array.isArray(accounts) ? accounts : []).filter(
@@ -1103,6 +1111,12 @@ export function HeaderCommandBar({
                   />
                 </div>
               </div>
+
+              {createError && (
+                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-xs font-medium text-rose-700 dark:text-rose-300">
+                  {createError}
+                </div>
+              )}
             </div>
           )}
 

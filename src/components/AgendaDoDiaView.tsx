@@ -15,7 +15,6 @@ import {
   Briefcase,
   User,
   Sparkles,
-  Check,
   Loader2,
   ExternalLink,
   MapPin,
@@ -90,6 +89,29 @@ function getGcalEventTimeText(event: GoogleCalendarEventItem): string {
   } catch {
     return "Horário agendado";
   }
+}
+
+/**
+ * Verifica se um agendamento do Google Calendar já está vinculado como Demanda no site.
+ * Itens já vinculados aparecem em "Demandas & Tarefas do Site" e são ignorados
+ * na lista/contadores do Google Agenda para evitar duplicidade.
+ */
+function isGcalEventLinkedToTask(
+  event: GoogleCalendarEventItem,
+  tasks: Task[]
+): boolean {
+  if (tasks.length === 0 && event.linkedTaskId) {
+    return true;
+  }
+  const sanitizedId = `gcal-${event.id.replace(/[^a-zA-Z0-9_-]/g, "_")}`;
+  return tasks.some(
+    (t) =>
+      (event.linkedTaskId && t.id === event.linkedTaskId) ||
+      t.google_calendar_event_id === event.id ||
+      t.id === `gcal-${event.id}` ||
+      t.id === sanitizedId ||
+      (Array.isArray(t.tags) && t.tags.includes(`gcal-${event.id}`))
+  );
 }
 
 export function AgendaDoDiaView({
@@ -225,11 +247,16 @@ export function AgendaDoDiaView({
       });
   }, [relevantMontLifeTasks, calendarDate]);
 
-  // Eventos do Google Agenda Pessoal para o dia selecionado
+  // Filtra eventos do Google Calendar que ainda NÃO foram vinculados como demanda no site
+  const unlinkedGcalEvents = useMemo(() => {
+    return gcalEvents.filter((ev) => !isGcalEventLinkedToTask(ev, tasks));
+  }, [gcalEvents, tasks]);
+
+  // Eventos do Google Agenda Pessoal para o dia selecionado (ignorando os já vinculados como Demanda)
   const gcalEventsForSelectedDay = useMemo(() => {
     if (agendaSourceFilter === "work") return [];
-    return gcalEvents.filter((ev) => isGcalEventOnDay(ev, calendarDate));
-  }, [gcalEvents, calendarDate, agendaSourceFilter]);
+    return unlinkedGcalEvents.filter((ev) => isGcalEventOnDay(ev, calendarDate));
+  }, [unlinkedGcalEvents, calendarDate, agendaSourceFilter]);
 
   // Total de itens combinados do dia selecionado
   const totalItemsForSelectedDay = tasksForSelectedDay.length + gcalEventsForSelectedDay.length;
@@ -246,9 +273,9 @@ export function AgendaDoDiaView({
     }).length;
   }, [tasks, calendarDate]);
 
-  // Total de eventos Google no mês
+  // Total de eventos Google não vinculados no mês
   const monthGcalCount = useMemo(() => {
-    return gcalEvents.filter((ev) => {
+    return unlinkedGcalEvents.filter((ev) => {
       try {
         const d = parseISO(ev.start);
         return isSameMonth(d, calendarDate);
@@ -256,7 +283,7 @@ export function AgendaDoDiaView({
         return false;
       }
     }).length;
-  }, [gcalEvents, calendarDate]);
+  }, [unlinkedGcalEvents, calendarDate]);
 
   // Navegação do Mês
   const handlePrevMonth = () => setCalendarDate((d) => subMonths(d, 1));
@@ -442,7 +469,7 @@ export function AgendaDoDiaView({
             <div className="grid grid-cols-7 gap-1 bg-slate-200/70 dark:bg-zinc-800/50 p-1 sm:p-1.5 flex-1">
               {monthGridDays.map((day) => {
                 const dayTasks = tasks.filter((t) => isTaskScheduledForDay(t, day));
-                const dayGcal = gcalEvents.filter((ev) => isGcalEventOnDay(ev, day));
+                const dayGcal = unlinkedGcalEvents.filter((ev) => isGcalEventOnDay(ev, day));
                 const isDayInCurrentMonth = isSameMonth(day, calendarDate);
                 const isDayToday = isToday(day);
                 const isDaySelected = isSameDay(day, calendarDate);
@@ -603,7 +630,7 @@ export function AgendaDoDiaView({
                   const isSelected = isSameDay(day, calendarDate);
                   const isDayToday = isToday(day);
                   const dayTasksCount = tasks.filter((t) => isTaskScheduledForDay(t, day)).length;
-                  const dayGcalCount = gcalEvents.filter((ev) => isGcalEventOnDay(ev, day)).length;
+                  const dayGcalCount = unlinkedGcalEvents.filter((ev) => isGcalEventOnDay(ev, day)).length;
                   const totalDayItems = dayTasksCount + dayGcalCount;
 
                   return (
@@ -808,12 +835,6 @@ export function AgendaDoDiaView({
                       {gcalEventsForSelectedDay.map((ev) => {
                         const timeText = getGcalEventTimeText(ev);
                         const isConverting = convertingEventId === ev.id;
-                        const linkedTask = tasks.find(
-                          (t) =>
-                            t.id === ev.linkedTaskId ||
-                            t.google_calendar_event_id === ev.id ||
-                            (t.tags && t.tags.includes(`gcal-${ev.id}`))
-                        );
 
                         return (
                           <div
@@ -861,46 +882,30 @@ export function AgendaDoDiaView({
 
                             {/* AÇÃO PRINCIPAL: TRANSFORMAR EM DEMANDA */}
                             <div className="pt-1.5 border-t border-amber-200/50 dark:border-amber-900/40 flex items-center justify-between gap-2 flex-wrap">
-                              {linkedTask ? (
-                                <div className="flex items-center justify-between w-full">
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-100/80 dark:bg-amber-950/80 px-2 py-0.5 rounded-lg">
-                                    <Check className="w-3 h-3" />
-                                    Vinculado como Demanda
-                                  </span>
-                                  <button
-                                    type="button"
-                                    onClick={() => onSelectTask(linkedTask)}
-                                    className="text-xs font-bold text-indigo-600 dark:text-indigo-400 hover:underline flex items-center gap-1 cursor-pointer"
-                                  >
-                                    Ver Detalhes <ArrowRight className="w-3 h-3" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <div className="flex items-center justify-between w-full">
-                                  <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                                    Agendamento do Google disponível para gestão.
-                                  </span>
-                                  <button
-                                    type="button"
-                                    disabled={isConverting}
-                                    onClick={() => handleConvertToTask(ev)}
-                                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
-                                    title="Transformar este agendamento do Google em uma demanda corporativa/pessoal no MontLife"
-                                  >
-                                    {isConverting ? (
-                                      <>
-                                        <Loader2 className="w-3 h-3 animate-spin" />
-                                        <span>Transformando...</span>
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Sparkles className="w-3 h-3" />
-                                        <span>Transformar em Demanda</span>
-                                      </>
-                                    )}
-                                  </button>
-                                </div>
-                              )}
+                              <div className="flex items-center justify-between w-full">
+                                <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                                  Agendamento do Google disponível para gestão.
+                                </span>
+                                <button
+                                  type="button"
+                                  disabled={isConverting}
+                                  onClick={() => handleConvertToTask(ev)}
+                                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-gradient-to-r from-amber-600 to-orange-500 hover:from-amber-500 hover:to-orange-400 text-white text-xs font-bold shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                                  title="Transformar este agendamento do Google em uma demanda corporativa/pessoal no MontLife"
+                                >
+                                  {isConverting ? (
+                                    <>
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                      <span>Transformando...</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Sparkles className="w-3 h-3" />
+                                      <span>Transformar em Demanda</span>
+                                    </>
+                                  )}
+                                </button>
+                              </div>
                             </div>
                           </div>
                         );
