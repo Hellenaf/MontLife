@@ -112,7 +112,7 @@ export function AttachmentManager({
   return (
     <div className="space-y-3">
       {/* Header with Title and Add Actions */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Paperclip className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
           <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
@@ -318,7 +318,7 @@ export function AttachmentManager({
                   <button
                     type="button"
                     onClick={() => handleRemove(att.id)}
-                    className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-600 dark:text-zinc-500 dark:hover:text-rose-400 rounded-lg transition-all ml-1 shrink-0 cursor-pointer"
+                    className="opacity-80 lg:opacity-0 lg:group-hover:opacity-100 p-1.5 text-slate-400 hover:text-rose-600 dark:text-zinc-500 dark:hover:text-rose-400 rounded-lg transition-all ml-1 shrink-0 cursor-pointer"
                     title="Remover anexo"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

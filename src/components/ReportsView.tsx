@@ -553,15 +553,15 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4 pb-12 animate-in fade-in duration-200">
+    <div className="max-w-7xl mx-auto space-y-4 pb-24 lg:pb-12 animate-in fade-in duration-200">
       {/* 1. Header Toolbar (Hidden when printing) */}
-      <div className="no-print p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-rose-500 flex items-center justify-center text-white shadow-lg shadow-purple-600/30">
+      <div className="no-print p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-rose-500 flex items-center justify-center text-white shadow-lg shadow-purple-600/30 shrink-0">
             <Award className="w-5 h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white">
                 Relatórios & Prestação de Contas
               </h2>
@@ -580,7 +580,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto">
           {/* Toggle Presentation Mode */}
           <button
             type="button"
@@ -656,10 +656,10 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
         </div>
       </div>
 
-      {/* 2. Filter Bar: Year + Month + Sub-tabs (Tudo em uma única linha alinhada) */}
-      <div className="no-print p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center justify-between gap-2.5 overflow-x-auto custom-scrollbar flex-nowrap">
+      {/* 2. Filter Bar: Year + Month + Sub-tabs (Empilha com clareza no mobile, única linha no desktop) */}
+      <div className="no-print p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
         {/* 1. Period Selector: Year (Compact Menu / Dropdown) + Month Pills */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 w-full lg:w-auto overflow-x-auto no-scrollbar pb-0.5 lg:pb-0">
           {/* Year Select ("Menuzinho de Ano") */}
           <div className="relative shrink-0">
             <select
@@ -701,11 +701,11 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
         {/* 3. View Tabs (Métricas vs Lista) */}
         {!isPreviewMode && (
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#16152a] p-1 rounded-xl border border-slate-200 dark:border-zinc-700 shrink-0">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#16152a] p-1 rounded-xl border border-slate-200 dark:border-zinc-700 w-full lg:w-auto overflow-x-auto no-scrollbar shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab("dashboard")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "dashboard"
                   ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs font-bold"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
@@ -716,7 +716,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             <button
               type="button"
               onClick={() => setActiveTab("activities")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "activities"
                   ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs font-bold"
                   : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
@@ -728,7 +728,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               <button
                 type="button"
                 onClick={() => setActiveTab("ai_summary")}
-                className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                   activeTab === "ai_summary"
                     ? "bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-400 shadow-xs font-bold"
                     : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
@@ -750,21 +750,21 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           id="printable-report"
           className={`${
             isPreviewMode
-              ? "block bg-white dark:bg-[#12131A] text-slate-900 dark:text-zinc-100 p-6 sm:p-10 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-2xl space-y-8 print:p-0 print:border-0 print:shadow-none print:bg-white print:text-black"
+              ? "block bg-white dark:bg-[#12131A] text-slate-900 dark:text-zinc-100 p-4 sm:p-10 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-2xl space-y-6 sm:space-y-8 print:p-0 print:border-0 print:shadow-none print:bg-white print:text-black"
               : "hidden print:block text-black bg-white space-y-6"
           }`}
         >
           {/* Executive Header Banner */}
           <div className="border-b-2 border-slate-800 dark:border-zinc-700 print:border-black pb-6 space-y-4">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
               <div className="space-y-1">
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2.5 flex-wrap">
                   <MontLifeLogo size="sm" />
                   <span className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 print:text-slate-600">
                     MontLife Platform &bull; Governança Operacional
                   </span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-black text-slate-950 dark:text-white print:text-black uppercase tracking-tight leading-tight">
+                <h1 className="text-xl sm:text-3xl font-black text-slate-950 dark:text-white print:text-black uppercase tracking-tight leading-tight">
                   Relatório Executivo de Operações & Entregas
                 </h1>
                 <p className="text-xs sm:text-sm text-slate-600 dark:text-zinc-400 print:text-slate-700 font-medium">
@@ -773,7 +773,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               </div>
 
               {/* Verified Seal */}
-              <div className="text-right shrink-0">
+              <div className="text-left sm:text-right shrink-0">
                 <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 print:bg-slate-100 print:text-black print:border-slate-300 text-[11px] font-bold">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Documento Oficial Auditado</span>
@@ -837,8 +837,8 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               1. Indicadores de Volume & Taxa de Conclusão
             </h2>
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="p-3 sm:p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
                 <span className="text-[11px] font-semibold text-slate-600 dark:text-zinc-400 print:text-slate-600 block">
                   Total de Demandas
                 </span>
@@ -1037,50 +1037,50 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           {/* Section 4: SLA Audit & Categories Matrix */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 page-break-avoid">
             {/* SLA Breakdown Card */}
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex items-center justify-between">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex flex-wrap items-center justify-between gap-1.5">
                 <span>4. Auditoria de Cumprimento de Prazos (SLA)</span>
                 <span className="text-emerald-700 dark:text-emerald-400 font-mono font-bold">{onTimePct + extendedPct}% Confiabilidade</span>
               </h3>
 
               <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
+                <div className="flex items-center justify-between gap-2 py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
                   <span className="text-slate-700 dark:text-zinc-300 print:text-slate-700 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-600" />
+                    <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
                     No Prazo Original (Sem prorrogação)
                   </span>
-                  <strong className="text-slate-900 dark:text-white print:text-black font-mono">{onTimeCount} ({onTimePct}%)</strong>
+                  <strong className="text-slate-900 dark:text-white print:text-black font-mono shrink-0">{onTimeCount} ({onTimePct}%)</strong>
                 </div>
 
-                <div className="flex items-center justify-between py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
+                <div className="flex items-center justify-between gap-2 py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
                   <span className="text-slate-700 dark:text-zinc-300 print:text-slate-700 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-amber-600" />
+                    <span className="w-2 h-2 rounded-full bg-amber-600 shrink-0" />
                     Com Prazo Prorrogado (Gerenciado)
                   </span>
-                  <strong className="text-slate-900 dark:text-white print:text-black font-mono">{extendedAndCompletedCount} ({extendedPct}%)</strong>
+                  <strong className="text-slate-900 dark:text-white print:text-black font-mono shrink-0">{extendedAndCompletedCount} ({extendedPct}%)</strong>
                 </div>
 
-                <div className="flex items-center justify-between py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
+                <div className="flex items-center justify-between gap-2 py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
                   <span className="text-slate-700 dark:text-zinc-300 print:text-slate-700 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-rose-600" />
+                    <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
                     Entregues com Atraso
                   </span>
-                  <strong className="text-slate-900 dark:text-white print:text-black font-mono">{breachedCount} ({breachedPct}%)</strong>
+                  <strong className="text-slate-900 dark:text-white print:text-black font-mono shrink-0">{breachedCount} ({breachedPct}%)</strong>
                 </div>
 
-                <div className="flex items-center justify-between py-1">
+                <div className="flex items-center justify-between gap-2 py-1">
                   <span className="text-slate-700 dark:text-zinc-300 print:text-slate-700 flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-slate-400" />
+                    <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
                     Demandas Canceladas / Descartadas
                   </span>
-                  <strong className="text-slate-900 dark:text-white print:text-black font-mono">{canceledCount} ({canceledPct}%)</strong>
+                  <strong className="text-slate-900 dark:text-white print:text-black font-mono shrink-0">{canceledCount} ({canceledPct}%)</strong>
                 </div>
               </div>
             </div>
 
             {/* Top Workload Categories */}
-            <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex items-center justify-between">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex flex-wrap items-center justify-between gap-1.5">
                 <span>5. Distribuição por Linha de Atuação (Categorias)</span>
                 <span className="text-slate-500 dark:text-zinc-400 font-mono">{categoryStats.length} categorias</span>
               </h3>
@@ -1088,9 +1088,9 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               <div className="space-y-1.5 text-xs max-h-52 overflow-hidden">
                 {categoryStats.slice(0, 6).map((c) => {
                   return (
-                    <div key={c.category} className="flex items-center justify-between py-1 border-b border-slate-200/80 dark:border-zinc-800/80 print:border-slate-200">
-                      <span className="text-slate-800 dark:text-zinc-200 print:text-slate-800 font-medium truncate max-w-[210px]">{c.category}</span>
-                      <span className="font-mono text-slate-600 dark:text-zinc-400 print:text-slate-600 font-semibold">{c.completed}/{c.total} ({c.successRate}%)</span>
+                    <div key={c.category} className="flex items-center justify-between gap-2 py-1 border-b border-slate-200/80 dark:border-zinc-800/80 print:border-slate-200">
+                      <span className="text-slate-800 dark:text-zinc-200 print:text-slate-800 font-medium truncate min-w-0 flex-1">{c.category}</span>
+                      <span className="font-mono text-slate-600 dark:text-zinc-400 print:text-slate-600 font-semibold shrink-0">{c.completed}/{c.total} ({c.successRate}%)</span>
                     </div>
                   );
                 })}
@@ -1100,9 +1100,9 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
           {/* Section 3: AI Executive Summary (If Available) */}
           {aiSummary ? (
-            <div className="p-5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 print:bg-purple-50 print:border-purple-200 space-y-3 page-break-avoid">
+            <div className="p-4 sm:p-5 rounded-2xl bg-purple-50/60 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800/60 print:bg-purple-50 print:border-purple-200 space-y-3 page-break-avoid">
               <div className="flex items-center gap-2 border-b border-purple-200 dark:border-purple-800/60 print:border-purple-200 pb-2">
-                <Sparkles className="w-4 h-4 text-purple-700 dark:text-purple-400 print:text-purple-700" />
+                <Sparkles className="w-4 h-4 text-purple-700 dark:text-purple-400 print:text-purple-700 shrink-0" />
                 <h3 className="text-xs font-bold uppercase tracking-wider text-purple-900 dark:text-purple-300 print:text-purple-900">
                   Parecer Executivo & Diagnóstico com Inteligência Artificial
                 </h3>
@@ -1112,7 +1112,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               </div>
             </div>
           ) : (
-            <div className="no-print p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-dashed border-slate-300 dark:border-zinc-700 flex items-center justify-between gap-4">
+            <div className="no-print p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-dashed border-slate-300 dark:border-zinc-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
               <div className="space-y-0.5">
                 <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 block">
                   Deseja incluir parecer executivo automático no Relatório?
@@ -1125,7 +1125,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 type="button"
                 onClick={handleGenerateAiSummary}
                 disabled={isGeneratingAi}
-                className="px-3.5 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
+                className="w-full sm:w-auto justify-center px-3.5 py-2 sm:py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-semibold text-xs transition-colors shrink-0 flex items-center gap-1.5 cursor-pointer"
               >
                 {isGeneratingAi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
                 <span>Gerar Síntese</span>
@@ -1135,7 +1135,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
           {/* Section 4: Comprehensive Analytical Delivery Table */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between border-b border-slate-300 dark:border-zinc-700 print:border-slate-300 pb-2">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-300 dark:border-zinc-700 print:border-slate-300 pb-2">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-slate-900 dark:bg-white print:bg-black" />
                 4. Quadro Analítico de Demandas & Entregas do Período ({filteredTasks.length})
@@ -1239,7 +1239,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
           {/* Section 8: Termo de Homologação Executiva & Assinatura */}
           <div className="pt-6 border-t border-slate-300 dark:border-zinc-700 print:border-slate-400 page-break-avoid">
-            <div className="flex items-end justify-between gap-8 pt-2">
+            <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 sm:gap-8 pt-2">
               <div className="space-y-1 text-xs">
                 <span className="font-bold text-slate-900 dark:text-white print:text-black block">
                   Termo de Homologação Executiva
@@ -1249,7 +1249,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </p>
               </div>
 
-              <div className="text-center min-w-[240px] shrink-0 space-y-1">
+              <div className="text-center w-full sm:w-auto sm:min-w-[240px] shrink-0 space-y-1">
                 <div className="border-b border-slate-900 dark:border-white print:border-black h-8 w-full" />
                 <span className="font-bold text-xs text-slate-900 dark:text-white print:text-black block">
                   {managerName || "Gestor Responsável"}
@@ -1262,7 +1262,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           </div>
 
           {/* Document Footer */}
-          <div className="pt-6 border-t-2 border-slate-300 dark:border-zinc-800 print:border-slate-300 flex items-center justify-between text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-500 font-medium">
+          <div className="pt-6 border-t-2 border-slate-300 dark:border-zinc-800 print:border-slate-300 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-500 font-medium">
             <span>MontLife Platform &bull; Sistema Integrado de Produtividade & Operações</span>
             <span>Documento Oficial de Prestação de Contas &bull; Confidencial</span>
           </div>
@@ -1273,48 +1273,48 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           SCREEN-ONLY INTERACTIVE DASHBOARD VIEW (HIDDEN ON PRINT OR IN PREVIEW)
          ========================================================================= */}
       {!isPreviewMode && (
-        <div className="no-print space-y-6">
+        <div className="no-print space-y-5 sm:space-y-6">
           {/* TAB 1: DASHBOARD METRICS */}
           {activeTab === "dashboard" && (
-            <div className="space-y-6">
+            <div className="space-y-5 sm:space-y-6">
               {/* Primary 4-KPI Status Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3.5">
                 {/* 1. QUANTIDADE TOTAL */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5 text-indigo-500" />
-                      Total de Demandas
+                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 sm:gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                      <span>Total</span>
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 font-mono">
+                    <span className="text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 font-mono">
                       {selectedYear}
                     </span>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-slate-900 dark:text-white font-mono">{total}</span>
-                    <span className="text-xs text-slate-400">demandas</span>
+                  <div className="flex items-baseline gap-1.5 sm:gap-2">
+                    <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-mono">{total}</span>
+                    <span className="text-[11px] sm:text-xs text-slate-400">demandas</span>
                   </div>
-                  <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400">
-                    <span title="Tarefas">{tasksCount} tarefas</span>
-                    <span>•</span>
+                  <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex flex-wrap items-center justify-between gap-x-1.5 gap-y-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                    <span title="Tarefas">{tasksCount} tar.</span>
+                    <span className="hidden sm:inline">•</span>
                     <span title="Atividades">{activitiesCount} ativ.</span>
-                    <span>•</span>
+                    <span className="hidden sm:inline">•</span>
                     <span title="Lembretes">{remindersCount} lemb.</span>
                   </div>
                 </div>
 
                 {/* 2. CONCLUÍDAS */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Concluídas
+                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-[11px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 sm:gap-1.5">
+                      <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
+                      <span>Concluídas</span>
                     </span>
-                    <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">{completedPct}%</span>
+                    <span className="text-[11px] sm:text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400">{completedPct}%</span>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{completedCount}</span>
-                    <span className="text-xs text-slate-400">entregas</span>
+                  <div className="flex items-baseline gap-1.5 sm:gap-2">
+                    <span className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{completedCount}</span>
+                    <span className="text-[11px] sm:text-xs text-slate-400">entregas</span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                     <div
@@ -1325,17 +1325,17 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* 3. EM ANDAMENTO / PENDENTES */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      Em Andamento
+                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-[11px] sm:text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 sm:gap-1.5">
+                      <Clock className="w-3.5 h-3.5 shrink-0" />
+                      <span>Em Aberto</span>
                     </span>
-                    <span className="text-xs font-bold font-mono text-amber-600 dark:text-amber-400">{inProgressPct}%</span>
+                    <span className="text-[11px] sm:text-xs font-bold font-mono text-amber-600 dark:text-amber-400">{inProgressPct}%</span>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-amber-600 dark:text-amber-400 font-mono">{inProgressCount}</span>
-                    <span className="text-xs text-slate-400">ativas ({activeRunningCount} executando)</span>
+                  <div className="flex items-baseline gap-1.5 sm:gap-2 flex-wrap">
+                    <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 font-mono">{inProgressCount}</span>
+                    <span className="text-[10px] sm:text-xs text-slate-400 leading-tight">({activeRunningCount} ativas)</span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                     <div
@@ -1346,17 +1346,17 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* 4. CANCELADAS */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1.5">
-                      <XCircle className="w-3.5 h-3.5" />
-                      Canceladas
+                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-[11px] sm:text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1 sm:gap-1.5">
+                      <XCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>Canceladas</span>
                     </span>
-                    <span className="text-xs font-bold font-mono text-rose-600 dark:text-rose-400">{canceledPct}%</span>
+                    <span className="text-[11px] sm:text-xs font-bold font-mono text-rose-600 dark:text-rose-400">{canceledPct}%</span>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-black text-rose-600 dark:text-rose-400 font-mono">{canceledCount}</span>
-                    <span className="text-xs text-slate-400">descartadas</span>
+                  <div className="flex items-baseline gap-1.5 sm:gap-2">
+                    <span className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400 font-mono">{canceledCount}</span>
+                    <span className="text-[11px] sm:text-xs text-slate-400">descartadas</span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                     <div
@@ -1368,65 +1368,65 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               </div>
 
               {/* Secondary 4-KPI Efficiency & Lead Time Grid */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3.5">
                 {/* 1. TEMPO MÉDIO DE RESOLUÇÃO */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1.5">
-                      <Timer className="w-3.5 h-3.5" />
-                      Lead Time Médio
+                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-[11px] sm:text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 sm:gap-1.5">
+                      <Timer className="w-3.5 h-3.5 shrink-0" />
+                      <span>Lead Time</span>
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-mono font-bold">
-                      {resolutionMetrics.validCount} auditadas
+                    <span className="text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-mono font-bold">
+                      {resolutionMetrics.validCount} audit.
                     </span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-slate-900 dark:text-white font-mono">
+                    <span className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
                       {resolutionMetrics.avgLabel}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Ciclo médio decorrido entre criação e entrega final
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                    Ciclo médio criação até entrega
                   </p>
                 </div>
 
                 {/* 2. VELOCIDADE EXTREMA (MAIS ÁGIL VS MAIS LONGA) */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1.5">
-                      <Zap className="w-3.5 h-3.5" />
-                      Resolução Mais Ágil
+                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-[11px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 sm:gap-1.5">
+                      <Zap className="w-3.5 h-3.5 shrink-0" />
+                      <span>Mais Ágil</span>
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 font-mono font-bold">
+                    <span className="text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 font-mono font-bold">
                       Recorde
                     </span>
                   </div>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                    <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
                       {resolutionMetrics.fastestLabel}
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
                     Maior ciclo: <strong className="text-slate-700 dark:text-slate-300 font-mono">{resolutionMetrics.longestLabel}</strong>
                   </p>
                 </div>
 
                 {/* 3. ASSERTIVIDADE CRÍTICA (P1 / P2) */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1.5">
-                      <Target className="w-3.5 h-3.5" />
-                      Prioridade Crítica (P1/P2)
+                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-[11px] sm:text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1 sm:gap-1.5">
+                      <Target className="w-3.5 h-3.5 shrink-0" />
+                      <span>Críticas (P1/P2)</span>
                     </span>
-                    <span className="text-xs font-bold font-mono text-purple-600 dark:text-purple-400">
+                    <span className="text-[11px] sm:text-xs font-bold font-mono text-purple-600 dark:text-purple-400">
                       {criticalResolutionRate}%
                     </span>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-purple-600 dark:text-purple-400 font-mono">
+                  <div className="flex items-baseline gap-1.5 sm:gap-2">
+                    <span className="text-xl sm:text-2xl font-black text-purple-600 dark:text-purple-400 font-mono">
                       {criticalCompleted}/{criticalTasks.length}
                     </span>
-                    <span className="text-xs text-slate-400">concluídas</span>
+                    <span className="text-[10px] sm:text-xs text-slate-400">concl.</span>
                   </div>
                   <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
                     <div
@@ -1437,24 +1437,24 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* 4. GOVERNANÇA DE PRAZOS & PRORROGAÇÕES */}
-                <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2 shadow-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                      <Calendar className="w-3.5 h-3.5" />
-                      Prazos Gerenciados
+                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1">
+                    <span className="text-[11px] sm:text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 sm:gap-1.5">
+                      <Calendar className="w-3.5 h-3.5 shrink-0" />
+                      <span>Prorrogações</span>
                     </span>
-                    <span className="text-xs font-bold font-mono text-amber-600 dark:text-amber-400">
+                    <span className="text-[11px] sm:text-xs font-bold font-mono text-amber-600 dark:text-amber-400">
                       {totalExtensions} ext.
                     </span>
                   </div>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
+                  <div className="flex items-baseline gap-1.5 sm:gap-2">
+                    <span className="text-xl sm:text-2xl font-black text-amber-600 dark:text-amber-400 font-mono">
                       {tasksWithExtensions}
                     </span>
-                    <span className="text-xs text-slate-400">demandas prorrogadas</span>
+                    <span className="text-[10px] sm:text-xs text-slate-400">prorrogadas</span>
                   </div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                    Justificativas registradas e auditadas
+                  <p className="text-[10px] sm:text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                    Justificativas registradas
                   </p>
                 </div>
               </div>
@@ -1462,10 +1462,10 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               {/* Priority & Complexidade Performance Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Card 1: Ciclo Médio por Prioridade */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                     <div className="flex items-center gap-2">
-                      <Gauge className="w-4 h-4 text-indigo-500" />
+                      <Gauge className="w-4 h-4 text-indigo-500 shrink-0" />
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                         Lead Time por Nível de Prioridade
                       </h3>
@@ -1537,10 +1537,10 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* Card 2: Matriz de Prioridade & Volume de Demandas */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                     <div className="flex items-center gap-2">
-                      <BarChart3 className="w-4 h-4 text-purple-500" />
+                      <BarChart3 className="w-4 h-4 text-purple-500 shrink-0" />
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                         Matriz de Resolução por Prioridade
                       </h3>
@@ -1551,11 +1551,11 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                   <div className="space-y-3">
                     {priorityStats.map((p) => (
                       <div key={p.priority} className="space-y-1">
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-700 dark:text-slate-300 font-medium">
+                        <div className="flex items-center justify-between gap-2 text-xs">
+                          <span className="text-slate-700 dark:text-slate-300 font-medium truncate min-w-0">
                             {p.label}
                           </span>
-                          <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                          <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px] shrink-0">
                             {p.completed}/{p.total} ({p.resolutionRate}%)
                           </span>
                         </div>
@@ -1582,10 +1582,10 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               {/* SLA Performance & Categories Breakdown Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* SLA Performance Card */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                     <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-emerald-500" />
+                      <TrendingUp className="w-4 h-4 text-emerald-500 shrink-0" />
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                         Auditoria de Cumprimento de SLA
                       </h3>
@@ -1597,12 +1597,12 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
                   <div className="space-y-3">
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center justify-between gap-2 text-xs">
                         <span className="text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0" />
                           No Prazo Original (Sem extensão)
                         </span>
-                        <strong className="text-slate-900 dark:text-white font-mono">
+                        <strong className="text-slate-900 dark:text-white font-mono shrink-0">
                           {onTimeCount} ({onTimePct}%)
                         </strong>
                       </div>
@@ -1612,12 +1612,12 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                     </div>
 
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center justify-between gap-2 text-xs">
                         <span className="text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
                           Com Prazo Prorrogado (Gerenciado)
                         </span>
-                        <strong className="text-slate-900 dark:text-white font-mono">
+                        <strong className="text-slate-900 dark:text-white font-mono shrink-0">
                           {extendedAndCompletedCount} ({extendedPct}%)
                         </strong>
                       </div>
@@ -1627,12 +1627,12 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                     </div>
 
                     <div className="space-y-1">
-                      <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center justify-between gap-2 text-xs">
                         <span className="text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0" />
                           Entregues com Atraso
                         </span>
-                        <strong className="text-slate-900 dark:text-white font-mono">
+                        <strong className="text-slate-900 dark:text-white font-mono shrink-0">
                           {breachedCount} ({breachedPct}%)
                         </strong>
                       </div>
@@ -1648,10 +1648,10 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* Category Volume Breakdown */}
-                <div className="p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                     <div className="flex items-center gap-2">
-                      <PieChart className="w-4 h-4 text-purple-500" />
+                      <PieChart className="w-4 h-4 text-purple-500 shrink-0" />
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                         Distribuição por Categoria
                       </h3>
@@ -1664,11 +1664,11 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                       const pct = total > 0 ? Math.round((count / total) * 100) : 0;
                       return (
                         <div key={cat} className="space-y-1">
-                          <div className="flex items-center justify-between text-xs">
-                            <span className="text-slate-700 dark:text-slate-300 font-medium truncate max-w-[220px]">
+                          <div className="flex items-center justify-between gap-2 text-xs">
+                            <span className="text-slate-700 dark:text-slate-300 font-medium truncate min-w-0 flex-1">
                               {cat}
                             </span>
-                            <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                            <span className="text-slate-500 dark:text-slate-400 font-mono text-[11px] shrink-0">
                               {count} ({pct}%)
                             </span>
                           </div>
@@ -1687,7 +1687,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           {/* TAB 2: ACTIVITIES / DELIVERIES LIST */}
           {activeTab === "activities" && (
             <div className="space-y-4">
-              <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center justify-between">
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center justify-between">
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                     Quadro Completo de Entregas & Atividades ({filteredTasks.length})
@@ -1712,7 +1712,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                       <div
                         key={t.id}
                         onClick={() => toggleTaskExpand(t.id)}
-                        className={`p-4 rounded-2xl bg-white dark:bg-[#141520] border transition-all space-y-2.5 shadow-xs cursor-pointer select-none ${
+                        className={`p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border transition-all space-y-2.5 shadow-xs cursor-pointer select-none ${
                           isExpanded
                             ? "border-indigo-400 dark:border-indigo-500/70 ring-1 ring-indigo-500/20"
                             : "border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700"
@@ -1720,7 +1720,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                         title="Clique para expandir/recolher a descrição da demanda"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
-                          <div className="flex items-center gap-2 flex-wrap">
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                             {getItemTypeBadge(t.item_type)}
                             <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
                               {t.category}
@@ -1743,7 +1743,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                             )}
                           </div>
 
-                          <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono text-[11px]">
+                          <div className="flex items-center gap-2 sm:gap-3 text-xs text-slate-500 dark:text-slate-400 font-mono text-[11px]">
                             <span>Criada: {format(parseISO(t.created_at), "dd/MM/yyyy")}</span>
                             {t.completed_at && (
                               <span>• Concluída: {format(parseISO(t.completed_at), "dd/MM/yyyy")}</span>
@@ -1787,10 +1787,10 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
           {/* TAB 3: AI EXECUTIVE SUMMARY */}
           {activeTab === "ai_summary" && aiSummary && (
-            <div className="p-6 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+            <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-500" />
+                  <Sparkles className="w-5 h-5 text-purple-500 shrink-0" />
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
                     Parecer Executivo da Inteligência Artificial (Google Gemini)
                   </h3>
@@ -1798,14 +1798,14 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 <button
                   type="button"
                   onClick={handleCopyEmailReport}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+                  className="self-start sm:self-auto flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer shrink-0"
                 >
                   <Copy className="w-3.5 h-3.5" />
                   <span>Copiar Parecer</span>
                 </button>
               </div>
 
-              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 leading-relaxed text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+              <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 leading-relaxed text-xs sm:text-sm text-slate-800 dark:text-slate-200">
                 <FormattedText text={aiSummary} />
               </div>
             </div>

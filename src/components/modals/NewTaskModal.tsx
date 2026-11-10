@@ -518,8 +518,8 @@ export function NewTaskModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-2xl max-h-[94dvh] flex flex-col rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all">
         {/* Header - Fixed */}
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
           <div className="flex items-center gap-3">
@@ -759,20 +759,20 @@ export function NewTaskModal({
               <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
                 1. Tipo de Registro:
               </label>
-              <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 dark:bg-[#0c0d13] rounded-xl border border-slate-200 dark:border-zinc-800">
+              <div className="grid grid-cols-3 gap-1 sm:gap-1.5 p-1 bg-slate-100 dark:bg-[#0c0d13] rounded-xl border border-slate-200 dark:border-zinc-800">
                 <button
                   type="button"
                   onClick={() => {
                     touchedFieldsRef.current.itemType = true;
                     setItemType("task");
                   }}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
                     itemType === "task"
                       ? "bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
-                  <ListTodo className="w-3.5 h-3.5" />
+                  <ListTodo className="w-3.5 h-3.5 shrink-0" />
                   <span>Tarefa</span>
                 </button>
                 <button
@@ -781,13 +781,13 @@ export function NewTaskModal({
                     touchedFieldsRef.current.itemType = true;
                     setItemType("activity");
                   }}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
                     itemType === "activity"
                       ? "bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
-                  <Activity className="w-3.5 h-3.5" />
+                  <Activity className="w-3.5 h-3.5 shrink-0" />
                   <span>Atividade</span>
                 </button>
                 <button
@@ -796,13 +796,13 @@ export function NewTaskModal({
                     touchedFieldsRef.current.itemType = true;
                     setItemType("reminder");
                   }}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
                     itemType === "reminder"
                       ? "bg-white dark:bg-zinc-800 text-amber-600 dark:text-amber-400 shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
-                  <Bell className="w-3.5 h-3.5" />
+                  <Bell className="w-3.5 h-3.5 shrink-0" />
                   <span>Lembrete</span>
                 </button>
               </div>
@@ -929,9 +929,9 @@ export function NewTaskModal({
 
           {/* Pontos de Validação & Etapas Sugeridas pela IA */}
           <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-900/40">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-1.5">
               <div className="flex items-center gap-1.5">
-                <CheckSquare className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                <CheckSquare className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
                 <label className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider block">
                   Pontos de Validação & Etapas de Conclusão:
                 </label>
@@ -991,14 +991,14 @@ export function NewTaskModal({
             )}
 
             {isAddingStep && (
-              <div className="flex items-center gap-2 pt-1.5 animate-fadeIn">
+              <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 pt-1.5 animate-fadeIn">
                 <input
                   type="text"
                   placeholder="Descreva a etapa ou teste..."
                   value={newStepText}
                   onChange={(e) => setNewStepText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddValidationStep())}
-                  className="flex-1 text-xs p-2 rounded-xl bg-white dark:bg-[#0c0d13] border border-indigo-300 dark:border-indigo-800 text-slate-800 dark:text-slate-100 focus:outline-hidden"
+                  className="w-full sm:flex-1 text-xs p-2 rounded-xl bg-white dark:bg-[#0c0d13] border border-indigo-300 dark:border-indigo-800 text-slate-800 dark:text-slate-100 focus:outline-hidden"
                   autoFocus
                 />
                 <button
@@ -1120,7 +1120,7 @@ export function NewTaskModal({
 
       {/* Footer Actions - Visible when filling form */}
         {!isInterstitialVisible && (
-          <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
+          <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
             <button
               type="button"
               onClick={onClose}

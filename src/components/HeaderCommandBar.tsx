@@ -466,14 +466,14 @@ export function HeaderCommandBar({
 
   return (
     <>
-      <header className="relative z-40 h-16 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-3 sm:px-6 flex items-center justify-between shadow-sm transition-colors duration-200 gap-2 sm:gap-4">
+      <header className="relative z-40 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-3 sm:px-6 py-2 md:py-0 md:h-16 flex flex-wrap md:flex-nowrap items-center justify-between shadow-sm transition-colors duration-200 gap-x-2 gap-y-2 md:gap-4">
       {/* Brand & Menu (visible on mobile where sidebar is hidden) */}
-      <div className="flex items-center gap-1.5 shrink-0 lg:hidden">
+      <div className="order-1 flex items-center gap-2 shrink-0 lg:hidden">
         {onToggleMobileMenu && (
           <button
             type="button"
             onClick={onToggleMobileMenu}
-            className="p-2 -ml-1 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-1.5 -ml-1 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
             title="Abrir menu de navegação e espaços"
             aria-label="Menu principal"
           >
@@ -481,10 +481,13 @@ export function HeaderCommandBar({
           </button>
         )}
         <MontLifeLogo size="sm" showText={false} />
+        <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white md:hidden">
+          MontLife
+        </span>
       </div>
 
       {/* Center Command Bar + Nova Demanda */}
-      <div className="flex-1 max-w-2xl flex items-center gap-2 min-w-0">
+      <div className="order-3 md:order-2 w-full md:w-auto md:flex-1 md:max-w-2xl flex items-center gap-2 min-w-0">
         <form onSubmit={handleRunTriage} className="relative flex items-center flex-1 min-w-0">
           <Sparkles className="w-4 h-4 text-purple-500 absolute left-3 pointer-events-none shrink-0" />
           <input
@@ -554,7 +557,7 @@ export function HeaderCommandBar({
       </div>
 
       {/* Right Navigation & Tools */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="order-2 md:order-3 ml-auto md:ml-0 flex items-center gap-1.5 sm:gap-2 shrink-0">
         {/* Clock & Date Widget (Real-time seconds ticking) */}
         <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#16152a] border border-slate-200 dark:border-[#282647] text-xs text-slate-700 dark:text-slate-300 font-medium shadow-xs">
           <Clock className="w-3.5 h-3.5 text-purple-500 animate-pulse" />
@@ -715,7 +718,7 @@ export function HeaderCommandBar({
         {/* Connected Accounts Status */}
         <button
           onClick={onOpenAccountsModal}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs transition-all cursor-pointer ${
             connectedAccountsCount > 0
               ? "bg-slate-50 dark:bg-[#16152a] border-slate-200 dark:border-[#282647] text-slate-700 dark:text-slate-300 hover:border-purple-400"
               : "bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100/60"
@@ -723,16 +726,19 @@ export function HeaderCommandBar({
           title="Gerenciar Contas Google Vinculadas"
         >
           <span
-            className={`w-2 h-2 rounded-full ${
+            className={`w-2 h-2 rounded-full shrink-0 ${
               connectedAccountsCount > 0
                 ? "bg-emerald-500 shadow-xs shadow-emerald-500/50"
                 : "bg-slate-300 dark:bg-zinc-600"
             }`}
           />
-          <span className="font-semibold text-xs">
+          <span className="font-semibold text-xs hidden md:inline">
             {connectedAccountsCount > 0
               ? `${connectedAccountsCount} ${connectedAccountsCount === 1 ? "Conta Conectada" : "Contas Conectadas"}`
               : "Vincular Google"}
+          </span>
+          <span className="font-bold text-[11px] md:hidden whitespace-nowrap">
+            {connectedAccountsCount > 0 ? `${connectedAccountsCount} ${connectedAccountsCount === 1 ? "conta" : "contas"}` : "Vincular"}
           </span>
         </button>
 
@@ -765,8 +771,8 @@ export function HeaderCommandBar({
 
     {/* Floating Confirmation Modal with Backdrop - Rendered outside header to avoid backdrop-filter coordinate containment */}
     {triageData && (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
-        <div className="relative w-full max-w-2xl my-auto flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all max-h-[90vh]">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-5 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
+        <div className="relative w-full max-w-2xl my-auto flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all max-h-[92dvh]">
           {/* Header of confirmation - Fixed */}
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
               <div className="flex items-center gap-2.5">

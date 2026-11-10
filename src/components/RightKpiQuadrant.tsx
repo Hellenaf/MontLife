@@ -312,9 +312,9 @@ export function RightKpiQuadrant({
                 const pct = metrics.total > 0 ? Math.round((count / metrics.total) * 100) : 0;
                 return (
                   <div key={cat} className="space-y-1">
-                    <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
-                      <span className="text-slate-800 dark:text-slate-200 truncate max-w-[170px]">{cat}</span>
-                      <span>{count}</span>
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+                      <span className="text-slate-800 dark:text-slate-200 truncate min-w-0 flex-1">{cat}</span>
+                      <span className="shrink-0 font-mono">{count}</span>
                     </div>
                     <div className="w-full h-1 rounded-full bg-slate-100 dark:bg-zinc-800">
                       <div

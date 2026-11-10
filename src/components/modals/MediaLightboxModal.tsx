@@ -97,15 +97,15 @@ export function MediaLightboxModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="relative w-[92vw] max-w-4xl h-[82vh] max-h-[720px] min-h-[480px] flex flex-col rounded-3xl bg-[#0f1017] border border-zinc-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        className="relative w-[96vw] sm:w-[92vw] max-w-4xl h-[86dvh] sm:h-[82vh] max-h-[720px] min-h-[280px] sm:min-h-[480px] flex flex-col rounded-3xl bg-[#0f1017] border border-zinc-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-zinc-800/80 bg-zinc-900/70 shrink-0">
+        <div className="flex items-center justify-between px-3.5 sm:px-5 py-3 sm:py-3.5 border-b border-zinc-800/80 bg-zinc-900/70 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0 pr-4">
             <div className="w-8 h-8 rounded-xl bg-zinc-800 border border-zinc-700/70 flex items-center justify-center text-indigo-400 shrink-0">
               {youtubeEmbedUrl ? (
@@ -176,7 +176,7 @@ export function MediaLightboxModal({
         </div>
 
         {/* Content Viewer Body */}
-        <div className="flex-1 w-full h-full overflow-hidden p-4 sm:p-6 flex items-center justify-center bg-black/60 min-h-[300px]">
+        <div className="flex-1 w-full h-full overflow-hidden p-3 sm:p-6 flex items-center justify-center bg-black/60 min-h-[200px] sm:min-h-[300px]">
           {youtubeEmbedUrl ? (
             <div className="w-full h-full max-w-3xl aspect-video rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl bg-black flex items-center justify-center">
               <iframe

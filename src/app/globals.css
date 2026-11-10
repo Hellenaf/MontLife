@@ -37,6 +37,22 @@ body {
   padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Mobile-friendly scrollbar hiding utility */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Clean touch tap highlight on mobile devices */
+button,
+a,
+[role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 5px;

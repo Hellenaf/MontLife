@@ -171,7 +171,7 @@ export function SidebarNav({
   };
 
   return (
-    <aside className="w-60 xl:w-64 h-full flex flex-col bg-[#0b0a17] border-r border-[#1e1c36] text-slate-200 shrink-0 select-none transition-all duration-200">
+    <aside className="w-full lg:w-60 xl:w-64 h-full flex flex-col bg-[#0b0a17] border-r border-[#1e1c36] text-slate-200 shrink-0 select-none transition-all duration-200">
       {/* 1. Brand Logo & Title (MontLife) */}
       <div className="h-16 px-4 sm:px-5 flex items-center justify-between border-b border-[#1e1c36]/80 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
@@ -421,7 +421,7 @@ export function SidebarNav({
       </div>
 
       {/* 5. Bottom Section: Configurações logo acima do perfil de login */}
-      <div className="p-3 border-t border-[#1e1c36]/80 space-y-2 shrink-0 bg-[#0d0c1b]">
+      <div className="p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-[#1e1c36]/80 space-y-2 shrink-0 bg-[#0d0c1b]">
         {/* Botão de Configurações (Posicionado logo acima do email de login) */}
         <button
           type="button"

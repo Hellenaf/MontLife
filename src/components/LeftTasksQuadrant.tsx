@@ -196,6 +196,9 @@ export function LeftTasksQuadrant({
   const [isCategorizing, setIsCategorizing] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+
+  const hasActiveExtraFilters = categoryFilter !== "ALL" || selectedTagFilter !== null;
 
   // Extract unique categories dynamically from tasks + standard list
   const dynamicCategories = useMemo(() => {
@@ -446,8 +449,8 @@ export function LeftTasksQuadrant({
                 : "bg-white dark:bg-[#141520] border-slate-200 dark:border-zinc-800/90 hover:border-slate-300 dark:hover:border-zinc-700 shadow-sm"
           }`}
       >
-        <div className="flex items-start gap-2.5">
-          {/* Circular status button */}
+        <div className="flex items-start gap-2.5 sm:gap-2.5">
+          {/* Circular status button with comfortable mobile touch hitbox */}
           <button
             type="button"
             onClick={(e) => {
@@ -465,18 +468,22 @@ export function LeftTasksQuadrant({
                   ? "Reabrir tarefa"
                   : "Concluir tarefa"
             }
-            className={`mt-0.5 w-5 h-5 rounded-full shrink-0 flex items-center justify-center transition-all ${isCanceled
-                ? "bg-rose-500 text-white shadow-sm"
-                : isCompleted
-                  ? "bg-emerald-500 text-white shadow-sm"
-                  : "border-2 border-slate-300 dark:border-zinc-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-transparent hover:text-emerald-500"
-              }`}
+            className="p-1.5 -m-1.5 shrink-0 flex items-center justify-center rounded-full cursor-pointer"
           >
-            {isCanceled ? (
-              <Ban className="w-3 h-3" />
-            ) : (
-              <Check className="w-3 h-3" />
-            )}
+            <span
+              className={`w-6 h-6 sm:w-5 sm:h-5 rounded-full flex items-center justify-center transition-all ${isCanceled
+                  ? "bg-rose-500 text-white shadow-sm"
+                  : isCompleted
+                    ? "bg-emerald-500 text-white shadow-sm"
+                    : "border-2 border-slate-300 dark:border-zinc-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-transparent hover:text-emerald-500"
+                }`}
+            >
+              {isCanceled ? (
+                <Ban className="w-3 h-3" />
+              ) : (
+                <Check className="w-3 h-3" />
+              )}
+            </span>
           </button>
 
           {/* Main Task Content */}
@@ -513,7 +520,7 @@ export function LeftTasksQuadrant({
                   </span>
                 )}
 
-                {/* 3-dots Menu Button */}
+                {/* 3-dots Menu Button (bigger touch target on mobile) */}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -521,9 +528,9 @@ export function LeftTasksQuadrant({
                     setActiveMenuTaskId((prev) => (prev === task.id ? null : task.id));
                   }}
                   title="Opções da demanda"
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="p-2 -mr-1.5 -my-1 rounded-lg text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
                 >
-                  <MoreVertical className="w-3.5 h-3.5" />
+                  <MoreVertical className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
                 </button>
               </div>
             </div>
@@ -702,31 +709,95 @@ export function LeftTasksQuadrant({
   return (
     <aside className="w-full lg:w-[340px] xl:w-[380px] h-full flex flex-col border-r border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
       {/* Top Filter & Search Bar */}
-      <div className="p-3.5 border-b border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-[#101118] space-y-2.5 shrink-0">
+      <div className="p-3 sm:p-3.5 border-b border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-[#101118] space-y-2 shrink-0">
+        {/* Quick Mobile Workspace Switcher (Todos | Trabalho | Pessoal) */}
+        <div className="flex lg:hidden items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 text-[11px]">
+          <button
+            type="button"
+            onClick={() => setAccountFilter("all")}
+            className={`px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+              accountFilter === "all"
+                ? "bg-purple-600 text-white shadow-xs"
+                : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 border border-slate-200/70 dark:border-zinc-800"
+            }`}
+          >
+            Todos ({tasks.filter((t) => t.status !== "COMPLETED" && t.status !== "CANCELED").length})
+          </button>
+          {dynamicAccounts.map((acc) => {
+            const isSel = accountFilter === acc.id || accountFilter === acc.email;
+            const accOpenCount = tasks.filter(
+              (t) =>
+                t.status !== "COMPLETED" &&
+                t.status !== "CANCELED" &&
+                isTaskMatchingFilter(t, acc.id)
+            ).length;
+            return (
+              <button
+                key={acc.id}
+                type="button"
+                onClick={() => setAccountFilter(acc.id as AccountType)}
+                className={`px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all shrink-0 cursor-pointer ${
+                  isSel
+                    ? acc.id === "work"
+                      ? "bg-blue-600 text-white shadow-xs"
+                      : "bg-purple-600 text-white shadow-xs"
+                    : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 border border-slate-200/70 dark:border-zinc-800"
+                }`}
+              >
+                {acc.id === "work" ? (
+                  <Briefcase className="w-3 h-3" />
+                ) : (
+                  <User className="w-3 h-3" />
+                )}
+                <span>{acc.label}</span>
+                <span className="opacity-75 font-mono text-[10px]">({accOpenCount})</span>
+              </button>
+            );
+          })}
+        </div>
+
         {/* Search Bar + AI Categorize + Sync Buttons */}
         <div className="flex items-center gap-1.5">
-          <div className="relative flex-1">
+          <div className="relative flex-1 min-w-0">
             <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Buscar demandas, tags..."
-              className="w-full h-8 pl-8 pr-3 rounded-lg bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+              className="w-full h-9 sm:h-8 pl-8 pr-3 rounded-lg bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
             />
           </div>
+
+          {/* Mobile collapsible Filters button */}
+          <button
+            type="button"
+            onClick={() => setIsMobileFiltersOpen((prev) => !prev)}
+            title="Mostrar/ocultar filtros de categoria e tags"
+            className={`lg:hidden h-9 px-2.5 rounded-lg border flex items-center gap-1 text-[11px] font-semibold shrink-0 transition-all cursor-pointer ${
+              isMobileFiltersOpen || hasActiveExtraFilters
+                ? "bg-indigo-600 text-white border-indigo-500 shadow-xs"
+                : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-zinc-800"
+            }`}
+          >
+            <Filter className="w-3.5 h-3.5" />
+            <span>Filtros</span>
+            {hasActiveExtraFilters && (
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-300" />
+            )}
+          </button>
 
           <button
             type="button"
             onClick={handleAiCategorize}
             disabled={isCategorizing}
             title="Classificar e organizar categorias e tags com IA"
-            className="h-8 px-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 text-[11px] font-semibold shrink-0 transition-all active:scale-95 disabled:opacity-50"
+            className="h-9 sm:h-8 px-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 text-[11px] font-semibold shrink-0 transition-all active:scale-95 disabled:opacity-50"
           >
             {isCategorizing ? (
-              <Loader2 className="w-3 h-3 animate-spin" />
+              <Loader2 className="w-3.5 h-3.5 sm:w-3 sm:h-3 animate-spin" />
             ) : (
-              <Sparkles className="w-3 h-3 text-indigo-500" />
+              <Sparkles className="w-3.5 h-3.5 sm:w-3 sm:h-3 text-indigo-500" />
             )}
             <span className="hidden sm:inline">IA</span>
           </button>
@@ -736,7 +807,7 @@ export function LeftTasksQuadrant({
             onClick={handleSyncGoogleTasks}
             disabled={isSyncing}
             title="Consolidar e Atualizar Demandas (Nativo MontLife)"
-            className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-[#161722] hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-zinc-800 flex items-center justify-center shrink-0 transition-all active:scale-95 disabled:opacity-50"
+            className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-slate-100 dark:bg-[#161722] hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-zinc-800 flex items-center justify-center shrink-0 transition-all active:scale-95 disabled:opacity-50"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-indigo-500" : ""}`} />
           </button>
@@ -746,65 +817,68 @@ export function LeftTasksQuadrant({
               type="button"
               onClick={onRequestNewTask}
               title="Nova Demanda"
-              className="w-8 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shrink-0 transition-all shadow-sm active:scale-95"
+              className="hidden lg:flex w-8 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white items-center justify-center shrink-0 transition-all shadow-sm active:scale-95"
             >
               <Plus className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        {/* Dynamic Category Selector */}
-        {dynamicCategories.length > 0 && (
-          <div className="flex items-center gap-1.5">
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium shrink-0">
-              Categoria:
-            </span>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="flex-1 h-7 px-2 rounded-lg bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-[11px] text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 font-medium"
-            >
-              <option value="ALL">Todas as categorias ({dynamicCategories.length})</option>
-              {dynamicCategories.map((cat) => {
-                const count = tasks.filter((t) => t.category === cat).length;
-                return (
-                  <option key={cat} value={cat}>
-                    {cat} {count > 0 ? `(${count})` : ""}
-                  </option>
-                );
-              })}
-            </select>
-          </div>
-        )}
+        {/* Category + Tags Container (Collapsible on mobile, always visible on desktop) */}
+        <div className={`${isMobileFiltersOpen ? "block" : "hidden"} lg:block space-y-2`}>
+          {/* Dynamic Category Selector */}
+          {dynamicCategories.length > 0 && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-medium shrink-0">
+                Categoria:
+              </span>
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="flex-1 h-8 lg:h-7 px-2 rounded-lg bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-[11px] text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 font-medium"
+              >
+                <option value="ALL">Todas as categorias ({dynamicCategories.length})</option>
+                {dynamicCategories.map((cat) => {
+                  const count = tasks.filter((t) => t.category === cat).length;
+                  return (
+                    <option key={cat} value={cat}>
+                      {cat} {count > 0 ? `(${count})` : ""}
+                    </option>
+                  );
+                })}
+              </select>
+            </div>
+          )}
 
-        {/* Popular Tags Chips */}
-        {dynamicTags.length > 0 && (
-          <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar text-[10px]">
-            <span className="text-slate-400 dark:text-slate-500 shrink-0 font-medium">Tags:</span>
-            {selectedTagFilter && (
-              <button
-                type="button"
-                onClick={() => setSelectedTagFilter(null)}
-                className="px-1.5 py-0.5 rounded font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 shrink-0"
-              >
-                Limpar tag ✕
-              </button>
-            )}
-            {dynamicTags.map((t) => (
-              <button
-                key={t}
-                type="button"
-                onClick={() => setSelectedTagFilter(selectedTagFilter === t ? null : t)}
-                className={`px-1.5 py-0.5 rounded font-medium shrink-0 transition-colors ${selectedTagFilter === t
-                    ? "bg-indigo-600 text-white"
-                    : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-zinc-800"
-                  }`}
-              >
-                #{t}
-              </button>
-            ))}
-          </div>
-        )}
+          {/* Popular Tags Chips */}
+          {dynamicTags.length > 0 && (
+            <div className="flex items-center gap-1 overflow-x-auto pb-0.5 no-scrollbar text-[10px]">
+              <span className="text-slate-400 dark:text-slate-500 shrink-0 font-medium">Tags:</span>
+              {selectedTagFilter && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedTagFilter(null)}
+                  className="px-1.5 py-0.5 rounded font-medium bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 shrink-0"
+                >
+                  Limpar tag ✕
+                </button>
+              )}
+              {dynamicTags.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => setSelectedTagFilter(selectedTagFilter === t ? null : t)}
+                  className={`px-2 py-0.5 rounded font-medium shrink-0 transition-colors ${selectedTagFilter === t
+                      ? "bg-indigo-600 text-white"
+                      : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/60 dark:border-zinc-800"
+                    }`}
+                >
+                  #{t}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Status feedback message */}
         {statusMessage && (
@@ -814,10 +888,10 @@ export function LeftTasksQuadrant({
         )}
 
         {/* Item Type Selector Filter */}
-        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 text-[11px]">
+        <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5 text-[11px]">
           <button
             onClick={() => setItemTypeFilter("ALL")}
-            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap transition-colors ${itemTypeFilter === "ALL"
+            className={`px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md font-semibold whitespace-nowrap transition-colors shrink-0 cursor-pointer ${itemTypeFilter === "ALL"
                 ? "bg-indigo-600 text-white"
                 : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
@@ -826,7 +900,7 @@ export function LeftTasksQuadrant({
           </button>
           <button
             onClick={() => setItemTypeFilter("task")}
-            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${itemTypeFilter === "task"
+            className={`px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors shrink-0 cursor-pointer ${itemTypeFilter === "task"
                 ? "bg-blue-600 text-white"
                 : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
@@ -835,7 +909,7 @@ export function LeftTasksQuadrant({
           </button>
           <button
             onClick={() => setItemTypeFilter("activity")}
-            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${itemTypeFilter === "activity"
+            className={`px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors shrink-0 cursor-pointer ${itemTypeFilter === "activity"
                 ? "bg-purple-600 text-white"
                 : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
@@ -844,7 +918,7 @@ export function LeftTasksQuadrant({
           </button>
           <button
             onClick={() => setItemTypeFilter("reminder")}
-            className={`px-2 py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors ${itemTypeFilter === "reminder"
+            className={`px-2.5 py-1 sm:px-2 sm:py-0.5 rounded-md font-semibold whitespace-nowrap flex items-center gap-1 transition-colors shrink-0 cursor-pointer ${itemTypeFilter === "reminder"
                 ? "bg-amber-600 text-white"
                 : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
               }`}
@@ -855,7 +929,7 @@ export function LeftTasksQuadrant({
       </div>
 
       {/* Task List (Google Tasks Style) */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 pb-24 lg:pb-3">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 pb-28 lg:pb-3">
         {filteredTasks.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500">
             <Filter className="w-8 h-8 mb-2 opacity-30 text-indigo-500" />

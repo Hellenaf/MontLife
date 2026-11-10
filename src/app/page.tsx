@@ -503,6 +503,18 @@ export default function MontOpsDashboard() {
       }));
   }, [accounts]);
 
+  const navigateToTaskDetails = (task: Task) => {
+    setSelectedTaskId(task.id);
+    setActiveNav("tarefas");
+    setCentralActiveTab("details");
+    setMobileActiveView("details");
+  };
+
+  const openTasksCount = useMemo(
+    () => tasks.filter((t) => t.status !== "COMPLETED" && t.status !== "CANCELED").length,
+    [tasks]
+  );
+
   const hasConnectedAccount = safeAccounts.some((a) => Boolean(a.is_connected || a.access_token || a.refresh_token));
   const allCategories = useMemo(() => getAllCategories(tasks), [tasks]);
 
@@ -575,7 +587,7 @@ export default function MontOpsDashboard() {
       )}
 
       {/* 2. Main Area (Header on top, then 3 columns below) */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 pb-16 lg:pb-0">
+      <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
         {/* Header Command Bar */}
         <div className="no-print relative z-40 shrink-0">
           <HeaderCommandBar
@@ -583,11 +595,7 @@ export default function MontOpsDashboard() {
             tasks={tasks}
             availableCategories={allCategories}
             onTaskCreated={handleTaskCreated}
-            onSelectTask={(task) => {
-              setSelectedTaskId(task.id);
-              setActiveNav("tarefas");
-              setCentralActiveTab("details");
-            }}
+            onSelectTask={navigateToTaskDetails}
             onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
             onOpenReportModal={() => setActiveNav("relatorios")}
             onOpenNewTaskModal={(prefill) => {
@@ -600,18 +608,18 @@ export default function MontOpsDashboard() {
 
         {/* Banner if no account is connected */}
         {!hasConnectedAccount && accountsLoaded && (
-          <div className="no-print bg-purple-50 dark:bg-purple-950/60 border-b border-purple-200 dark:border-purple-800 px-4 py-2 flex items-center justify-between text-xs text-purple-900 dark:text-purple-200 shrink-0">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse" />
-              <p>
+          <div className="no-print bg-purple-50 dark:bg-purple-950/60 border-b border-purple-200 dark:border-purple-800 px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-purple-900 dark:text-purple-200 shrink-0">
+            <div className="flex items-start sm:items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse shrink-0 mt-1 sm:mt-0" />
+              <p className="leading-snug">
                 <strong>Nenhuma conta Google vinculada.</strong> Conecte suas contas para associar seus espaços de trabalho e autenticar com segurança.
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
               <button
                 type="button"
                 onClick={() => setIsAccountsModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-[11px] shadow-sm transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-[11px] shadow-sm transition-all cursor-pointer"
               >
                 + Vincular Conta Google
               </button>
@@ -621,11 +629,11 @@ export default function MontOpsDashboard() {
 
         {/* OAuth Feedback Toast Banner */}
         {oauthFeedback && (
-          <div className="bg-emerald-50 dark:bg-emerald-950/80 border-b border-emerald-200 dark:border-emerald-800 px-4 py-2 flex items-center justify-between text-xs text-emerald-800 dark:text-emerald-200 shrink-0">
-            <span>{oauthFeedback}</span>
+          <div className="bg-emerald-50 dark:bg-emerald-950/80 border-b border-emerald-200 dark:border-emerald-800 px-3 sm:px-4 py-2 flex items-center justify-between gap-2 text-xs text-emerald-800 dark:text-emerald-200 shrink-0">
+            <span className="leading-snug">{oauthFeedback}</span>
             <button
               onClick={() => setOauthFeedback(null)}
-              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-white px-2 py-0.5 rounded text-xs"
+              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-white px-2 py-0.5 rounded text-xs shrink-0"
             >
               ✕
             </button>
@@ -634,16 +642,12 @@ export default function MontOpsDashboard() {
 
         {/* Main Content: Dedicated Agenda do Dia View OR Wiki Técnica View OR 3 Columns Demand Grid */}
         {activeNav === "agenda" ? (
-          <main className="flex-1 overflow-y-auto p-3 sm:p-4 lg:p-3.5 pb-24 lg:pb-3.5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-4 lg:p-3.5 pb-20 lg:pb-3.5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <AgendaDoDiaView
               tasks={tasks}
               accountFilter={accountFilter}
               selectedTaskId={selectedTaskId}
-              onSelectTask={(task) => {
-                setSelectedTaskId(task.id);
-                setActiveNav("tarefas");
-                setCentralActiveTab("details");
-              }}
+              onSelectTask={navigateToTaskDetails}
               onOpenNewTaskModal={() => {
                 setNewTaskInitialText("");
                 setIsNewTaskModalOpen(true);
@@ -652,30 +656,23 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "wiki" ? (
-          <main className="flex-1 overflow-y-auto p-3 sm:p-5 pb-24 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-5 pb-20 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <WikiTechnicalView
               tasks={tasks}
-              onSelectTask={(task) => {
-                setSelectedTaskId(task.id);
-                setActiveNav("tarefas");
-                setCentralActiveTab("details");
-              }}
+              onSelectTask={navigateToTaskDetails}
               onBackToTasks={() => {
                 setActiveNav("tarefas");
                 setCentralActiveTab("details");
+                setMobileActiveView("tasks");
               }}
             />
           </main>
         ) : activeNav === "kanban" ? (
-          <main className="flex-1 overflow-hidden p-2.5 sm:p-5 pb-24 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-hidden p-2.5 sm:p-5 pb-4 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <KanbanView
               tasks={tasks}
               accountFilter={accountFilter}
-              onSelectTask={(task) => {
-                setSelectedTaskId(task.id);
-                setActiveNav("tarefas");
-                setCentralActiveTab("details");
-              }}
+              onSelectTask={navigateToTaskDetails}
               onUpdateStatus={handleUpdateStatus}
               onOpenNewTaskModal={() => {
                 setNewTaskInitialText("");
@@ -688,20 +685,64 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "relatorios" ? (
-          <main className="flex-1 overflow-y-auto p-3 sm:p-5 pb-24 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-5 pb-20 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <ReportsView
               tasks={tasks}
               accountFilter={accountFilter}
               onBackToTasks={() => {
                 setActiveNav("tarefas");
                 setCentralActiveTab("details");
+                setMobileActiveView("tasks");
               }}
             />
           </main>
         ) : (
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
+            {/* Mobile Sub-Navigation Pill Strip (Lista | Detalhes | Métricas) */}
+            <div className="lg:hidden px-2.5 py-2 bg-white dark:bg-[#101118] border-b border-slate-200 dark:border-zinc-800/80 flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => setMobileActiveView("tasks")}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  mobileActiveView === "tasks"
+                    ? "bg-purple-600 text-white shadow-xs"
+                    : "bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-slate-400"
+                }`}
+              >
+                <ListTodo className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Lista ({openTasksCount})</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setCentralActiveTab("details");
+                  setMobileActiveView("details");
+                }}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  mobileActiveView === "details"
+                    ? "bg-purple-600 text-white shadow-xs"
+                    : "bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-slate-400"
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Detalhes</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileActiveView("kpi")}
+                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                  mobileActiveView === "kpi"
+                    ? "bg-purple-600 text-white shadow-xs"
+                    : "bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-slate-400"
+                }`}
+              >
+                <TrendingUp className="w-3.5 h-3.5 shrink-0" />
+                <span className="truncate">Métricas</span>
+              </button>
+            </div>
+
             {/* Quadrante Esquerdo: Minhas Tarefas */}
-            <div className={`${mobileActiveView === "tasks" ? "flex" : "hidden"} lg:flex h-full w-full lg:w-auto shrink-0`}>
+            <div className={`${mobileActiveView === "tasks" ? "flex" : "hidden"} lg:flex flex-1 min-h-0 lg:flex-none lg:h-full w-full lg:w-auto lg:shrink-0`}>
               <LeftTasksQuadrant
                 tasks={tasks}
                 accounts={safeAccounts}
@@ -737,7 +778,7 @@ export default function MontOpsDashboard() {
             </div>
 
             {/* Quadrante Central: Detalhes da Demanda (sem duplicação de agenda) */}
-            <div className={`${mobileActiveView === "details" ? "flex" : "hidden"} lg:flex flex-1 h-full min-w-0`}>
+            <div className={`${mobileActiveView === "details" ? "flex" : "hidden"} lg:flex flex-1 min-h-0 lg:h-full min-w-0`}>
               <CentralQuadrant
                 selectedTask={selectedTask}
                 allTasks={tasks}
@@ -758,11 +799,7 @@ export default function MontOpsDashboard() {
                 onUpdateItemType={handleUpdateItemType}
                 onUpdateTaskFields={handleUpdateTaskFields}
                 onTransferTask={handleTransferTask}
-                onSelectTask={(task) => {
-                  setSelectedTaskId(task.id);
-                  setActiveNav("tarefas");
-                  setCentralActiveTab("details");
-                }}
+                onSelectTask={navigateToTaskDetails}
                 onOpenNewTaskModal={() => setIsNewTaskModalOpen(true)}
                 activeTab={centralActiveTab}
                 onTabChange={setCentralActiveTab}
@@ -771,7 +808,7 @@ export default function MontOpsDashboard() {
             </div>
 
             {/* Quadrante Direito: Métricas & Desempenho + Resumo Anual */}
-            <div className={`${mobileActiveView === "kpi" ? "flex" : "hidden"} lg:flex h-full w-full lg:w-auto shrink-0`}>
+            <div className={`${mobileActiveView === "kpi" ? "flex" : "hidden"} lg:flex flex-1 min-h-0 lg:flex-none lg:h-full w-full lg:w-auto lg:shrink-0`}>
               <RightKpiQuadrant
                 tasks={tasks}
                 onOpenReportModal={() => setActiveNav("relatorios")}
@@ -788,7 +825,7 @@ export default function MontOpsDashboard() {
           setNewTaskInitialText("");
           setIsNewTaskModalOpen(true);
         }}
-        className="lg:hidden fixed bottom-20 right-4 w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-xl shadow-purple-600/40 flex items-center justify-center z-40 active:scale-90 transition-transform"
+        className="lg:hidden fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] right-4 w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-xl shadow-purple-600/40 flex items-center justify-center z-40 active:scale-90 transition-transform"
         aria-label="Adicionar nova demanda"
         title="Nova Demanda"
       >
@@ -796,7 +833,7 @@ export default function MontOpsDashboard() {
       </button>
 
       {/* Mobile Bottom Navigation Bar (Fixed for PWA on Phones) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-white/95 dark:bg-[#10111a]/95 backdrop-blur-lg border-t border-slate-200 dark:border-zinc-800/80 px-2 flex items-center justify-around z-40 pb-safe">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 min-h-[64px] pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-white/95 dark:bg-[#10111a]/95 backdrop-blur-lg border-t border-slate-200 dark:border-zinc-800/80 px-2 flex items-center justify-around z-40">
         <button
           type="button"
           onClick={() => {
@@ -811,9 +848,9 @@ export default function MontOpsDashboard() {
         >
           <div className="relative">
             <ListTodo className="w-5 h-5" />
-            {tasks.filter((t) => t.status !== "COMPLETED" && t.status !== "CANCELED").length > 0 && (
+            {openTasksCount > 0 && (
               <span className="absolute -top-1 -right-2 px-1 text-[9px] font-bold rounded-full bg-purple-600 text-white">
-                {tasks.filter((t) => t.status !== "COMPLETED" && t.status !== "CANCELED").length}
+                {openTasksCount}
               </span>
             )}
           </div>
@@ -863,7 +900,7 @@ export default function MontOpsDashboard() {
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
           className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
-            isMobileMenuOpen || activeNav === "wiki"
+            isMobileMenuOpen || activeNav === "wiki" || activeNav === "config"
               ? "text-purple-600 dark:text-purple-400 font-bold"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
@@ -911,10 +948,8 @@ export default function MontOpsDashboard() {
         }}
         existingTasks={tasks}
         onSelectExistingTask={(task) => {
-          setSelectedTaskId(task.id);
+          navigateToTaskDetails(task);
           setIsNewTaskModalOpen(false);
-          setActiveNav("tarefas");
-          setCentralActiveTab("details");
         }}
         onTaskUpdated={(updatedTask) => {
           setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));

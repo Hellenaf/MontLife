@@ -291,34 +291,34 @@ function AccountsModalContent({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-xl rounded-3xl bg-white dark:bg-[#141326] border border-slate-200 dark:border-[#282647] shadow-2xl overflow-hidden transition-all max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-xl rounded-3xl bg-white dark:bg-[#141326] border border-slate-200 dark:border-[#282647] shadow-2xl overflow-hidden transition-all max-h-[92dvh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#100f1f] shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#100f1f] shrink-0">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 shrink-0">
               <ShieldCheck className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+            <div className="min-w-0">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
                 Contas Google Vinculadas
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
                 Perfil Mestre com suporte a múltiplas contas ilimitadas
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Master Profile Info Banner */}
-        <div className="px-6 pt-4 shrink-0">
-          <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/30 via-indigo-950/30 to-slate-900/40 border border-purple-500/20 text-xs text-slate-300 flex items-start gap-3">
+        <div className="px-4 sm:px-6 pt-3 sm:pt-4 shrink-0">
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/30 via-indigo-950/30 to-slate-900/40 border border-purple-500/20 text-xs text-slate-300 flex items-start gap-2.5 sm:gap-3">
             <Sparkles className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
             <div className="space-y-1">
               <span className="font-semibold text-white block">
@@ -333,11 +333,11 @@ function AccountsModalContent({
 
         {/* Feedback message */}
         {syncFeedback && (
-          <div className="mx-6 mt-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs flex items-center justify-between">
+          <div className="mx-4 sm:mx-6 mt-3 p-3 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 text-xs flex items-center justify-between gap-2">
             <span>{syncFeedback}</span>
             <button
               onClick={() => setSyncFeedback(null)}
-              className="text-purple-500 hover:text-purple-700"
+              className="text-purple-500 hover:text-purple-700 shrink-0"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -345,8 +345,8 @@ function AccountsModalContent({
         )}
 
         {/* Accounts List */}
-        <div className="p-6 space-y-3.5 overflow-y-auto custom-scrollbar flex-1">
-          <div className="flex items-center justify-between">
+        <div className="p-4 sm:p-6 space-y-3.5 overflow-y-auto custom-scrollbar flex-1">
+          <div className="flex flex-wrap items-center justify-between gap-2">
             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
               Contas Ativas ({totalConnected})
             </span>
@@ -393,9 +393,9 @@ function AccountsModalContent({
               return (
                 <div
                   key={accountKey}
-                  className="p-4 rounded-2xl bg-slate-50/70 dark:bg-[#18172e] border border-slate-200 dark:border-white/5 space-y-3 transition-all hover:border-purple-300 dark:hover:border-purple-500/30"
+                  className="p-3.5 sm:p-4 rounded-2xl bg-slate-50/70 dark:bg-[#18172e] border border-slate-200 dark:border-white/5 space-y-3 transition-all hover:border-purple-300 dark:hover:border-purple-500/30"
                 >
-                  <div className="flex items-start justify-between gap-3">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 sm:gap-3">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
                       <div className="w-9 h-9 rounded-xl bg-purple-500/10 flex items-center justify-center shrink-0 mt-0.5">
                         {getAccountIcon(acc.label)}
@@ -409,14 +409,14 @@ function AccountsModalContent({
                               value={editingLabel}
                               onChange={(e) => setEditingLabel(e.target.value)}
                               placeholder="Nome do rótulo..."
-                              className="h-7 px-2 text-xs font-bold rounded-lg bg-white dark:bg-[#121122] border border-purple-500 text-slate-900 dark:text-white focus:outline-none"
+                              className="h-7 px-2 text-xs font-bold rounded-lg bg-white dark:bg-[#121122] border border-purple-500 text-slate-900 dark:text-white focus:outline-none min-w-0 flex-1"
                               autoFocus
                             />
                             <button
                               type="button"
                               onClick={() => handleSaveLabel(acc)}
                               disabled={isSavingLabel}
-                              className="p-1 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500"
+                              className="p-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 shrink-0"
                               title="Salvar"
                             >
                               <Check className="w-3.5 h-3.5" />
@@ -424,7 +424,7 @@ function AccountsModalContent({
                             <button
                               type="button"
                               onClick={() => setEditingAccountId(null)}
-                              className="p-1 rounded-lg bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-slate-300"
+                              className="p-1.5 rounded-lg bg-slate-200 dark:bg-zinc-700 text-slate-700 dark:text-slate-300 shrink-0"
                               title="Cancelar"
                             >
                               <X className="w-3.5 h-3.5" />
@@ -452,7 +452,7 @@ function AccountsModalContent({
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 pl-12 sm:pl-0">
                       <span className="px-2.5 py-1 rounded-full text-[11px] font-semibold flex items-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-400 dark:border-emerald-500/30">
                         <CheckCircle className="w-3 h-3 text-emerald-500" />
                         <span>Conectada</span>
@@ -469,7 +469,7 @@ function AccountsModalContent({
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-200/60 dark:border-white/5">
+                  <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-400 dark:text-slate-500 pt-2 border-t border-slate-200/60 dark:border-white/5">
                     <span>
                       {formatSafeSyncDate(acc.last_sync_at)}
                     </span>
@@ -482,12 +482,12 @@ function AccountsModalContent({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#100f1f] flex items-center justify-between gap-3 shrink-0">
+        <div className="p-4 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#100f1f] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={handleSyncNow}
             disabled={isSyncing || connectedAccounts.length === 0}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md shadow-purple-600/30 transition-all disabled:opacity-40 cursor-pointer active:scale-95"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-md shadow-purple-600/30 transition-all disabled:opacity-40 cursor-pointer active:scale-95"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin" : ""}`} />
             <span>{isSyncing ? "Consolidando..." : "Consolidar e Atualizar Demandas"}</span>
@@ -504,8 +504,8 @@ function AccountsModalContent({
 
         {/* Safe Unlink Confirmation Modal (Zero Data Loss Safeguard) */}
         {accountToUnlink && (
-          <div className="absolute inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
-            <div className="w-full max-w-md bg-white dark:bg-[#151426] border border-amber-500/30 dark:border-amber-500/40 rounded-2xl shadow-2xl p-5 space-y-4 text-left">
+          <div className="absolute inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4 animate-in fade-in duration-150">
+            <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto bg-white dark:bg-[#151426] border border-amber-500/30 dark:border-amber-500/40 rounded-2xl shadow-2xl p-4 sm:p-5 space-y-4 text-left custom-scrollbar">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
                   <ShieldAlert className="w-5 h-5" />
@@ -563,7 +563,7 @@ function AccountsModalContent({
                 </select>
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
+              <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-white/5">
                 <button
                   type="button"
                   onClick={() => setAccountToUnlink(null)}
@@ -576,7 +576,7 @@ function AccountsModalContent({
                   type="button"
                   onClick={handleConfirmSafeUnlink}
                   disabled={isTransferring}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md shadow-amber-600/30 transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 rounded-xl bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold shadow-md shadow-amber-600/30 transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
                 >
                   {isTransferring ? (
                     <>

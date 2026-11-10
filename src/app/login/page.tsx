@@ -154,7 +154,7 @@ export default function LoginPage() {
               {/* Outer decorative gradient glow */}
               <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-indigo-500/30 via-purple-500/30 to-pink-500/30 blur-xl opacity-75" />
 
-              <div className="relative rounded-3xl bg-white/95 dark:bg-[#11121A]/95 backdrop-blur-xl border border-slate-200/90 dark:border-zinc-800/90 p-8 sm:p-10 shadow-2xl space-y-7">
+              <div className="relative rounded-3xl bg-white/95 dark:bg-[#11121A]/95 backdrop-blur-xl border border-slate-200/90 dark:border-zinc-800/90 p-6 sm:p-10 shadow-2xl space-y-6 sm:space-y-7">
                 {/* Auth Header */}
                 <div className="text-center space-y-2">
                   <div className="w-12 h-12 mx-auto rounded-2xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60 flex items-center justify-center shadow-xs">
@@ -228,7 +228,7 @@ export default function LoginPage() {
           <span>Sistemas Operacionais & TI</span>
         </div>
 
-        <div className="flex items-center gap-4 text-[11px]">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-center">
           <span>Privacidade Garantida</span>
           <span>&bull;</span>
           <span>Conformidade LGPD</span>

@@ -353,38 +353,47 @@ Relatório gerado via MontLife.`;
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
         id="printable-report"
-        className="relative w-full max-w-5xl max-h-[92vh] rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col overflow-hidden print:border-none print:shadow-none print:bg-white"
+        className="relative w-full max-w-5xl max-h-[94dvh] rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col overflow-hidden print:border-none print:shadow-none print:bg-white"
       >
         {/* Top Action Bar (Hidden when printing) */}
-        <div className="no-print flex items-center justify-between p-4 sm:p-5 border-b border-[#2E2B44] bg-[#0F0E17] shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-gradient-to-br from-[#7B61FF] to-[#9D8DF1] text-white shadow-lg shadow-[#7B61FF]/30">
-              <Award className="w-5 h-5 sm:w-6 sm:h-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base sm:text-lg font-bold text-[#EAE9FC]">
-                  Relatório & Prestação de Contas
-                </h2>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#7B61FF]/20 text-[#9D8DF1] border border-[#7B61FF]/30">
-                  {scopeFilter === "work"
-                    ? "Atividades Profissionais"
-                    : scopeFilter === "personal"
-                    ? "Atividades Pessoais"
-                    : "Consolidado Geral"}
-                </span>
+        <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 sm:p-5 border-b border-[#2E2B44] bg-[#0F0E17] shrink-0">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+              <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-br from-[#7B61FF] to-[#9D8DF1] text-white shadow-lg shadow-[#7B61FF]/30 shrink-0">
+                <Award className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
-              <p className="text-xs text-[#9490AC] hidden sm:block">
-                Painel analítico de produtividade, auditoria de SLA e volume de entregas
-              </p>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-sm sm:text-lg font-bold text-[#EAE9FC] truncate">
+                    Relatório & Prestação de Contas
+                  </h2>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-[#7B61FF]/20 text-[#9D8DF1] border border-[#7B61FF]/30 shrink-0">
+                    {scopeFilter === "work"
+                      ? "Atividades Profissionais"
+                      : scopeFilter === "personal"
+                      ? "Atividades Pessoais"
+                      : "Consolidado Geral"}
+                  </span>
+                </div>
+                <p className="text-xs text-[#9490AC] hidden sm:block">
+                  Painel analítico de produtividade, auditoria de SLA e volume de entregas
+                </p>
+              </div>
             </div>
+
+            <button
+              onClick={onClose}
+              className="sm:hidden p-2 rounded-xl text-[#9490AC] hover:text-white hover:bg-[#2E2B44] transition-colors shrink-0"
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
             <button
               onClick={handleGenerateAiSummary}
               disabled={isGeneratingAi}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:opacity-90 text-xs font-bold text-white shadow-md shadow-[#7B61FF]/20 transition-all disabled:opacity-50"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#7B61FF] to-[#9D8DF1] hover:opacity-90 text-xs font-bold text-white shadow-md shadow-[#7B61FF]/20 transition-all disabled:opacity-50"
               title="Gerar relatório textual formal com Google Gemini"
             >
               {isGeneratingAi ? (
@@ -397,7 +406,7 @@ Relatório gerado via MontLife.`;
 
             <button
               onClick={handleCopyEmailReport}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2E2B44] hover:bg-[#3B3857] text-xs text-[#EAE9FC] transition-colors"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#2E2B44] hover:bg-[#3B3857] text-xs text-[#EAE9FC] transition-colors"
               title="Copiar texto formatado para enviar por e-mail"
             >
               {copiedFeedback ? (
@@ -415,7 +424,7 @@ Relatório gerado via MontLife.`;
 
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2E2B44] hover:bg-[#3B3857] text-xs text-[#EAE9FC] transition-colors"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#2E2B44] hover:bg-[#3B3857] text-xs text-[#EAE9FC] transition-colors"
               title="Imprimir ou Salvar como PDF"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -424,7 +433,7 @@ Relatório gerado via MontLife.`;
 
             <button
               onClick={handleExportCsv}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2E2B44] hover:bg-[#3B3857] text-xs text-[#EAE9FC] transition-colors"
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-[#2E2B44] hover:bg-[#3B3857] text-xs text-[#EAE9FC] transition-colors"
               title="Exportar planilha CSV"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -433,7 +442,7 @@ Relatório gerado via MontLife.`;
 
             <button
               onClick={onClose}
-              className="p-2 rounded-xl text-[#9490AC] hover:text-white hover:bg-[#2E2B44] transition-colors ml-1"
+              className="hidden sm:block p-2 rounded-xl text-[#9490AC] hover:text-white hover:bg-[#2E2B44] transition-colors ml-1"
             >
               <X className="w-5 h-5" />
             </button>
@@ -441,15 +450,15 @@ Relatório gerado via MontLife.`;
         </div>
 
         {/* Filter Bar: Scope (Strict Isolation) + Year + Month */}
-        <div className="no-print px-4 sm:px-6 py-3 border-b border-[#2E2B44] bg-[#0B0A10] flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="no-print px-3.5 sm:px-6 py-2.5 sm:py-3 border-b border-[#2E2B44] bg-[#0B0A10] flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 shrink-0">
           {/* Scope Selector: Work vs Personal vs All */}
-          <div className="flex items-center gap-1 bg-[#1A1829] p-1 rounded-xl border border-[#2E2B44]">
+          <div className="flex items-center gap-1 bg-[#1A1829] p-1 rounded-xl border border-[#2E2B44] overflow-x-auto no-scrollbar max-w-full">
             <button
               onClick={() => {
                 setScopeFilter("work");
                 setAiSummary(null);
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all shrink-0 ${
                 scopeFilter === "work"
                   ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
                   : "text-[#9490AC] hover:text-[#EAE9FC]"
@@ -464,7 +473,7 @@ Relatório gerado via MontLife.`;
                 setScopeFilter("personal");
                 setAiSummary(null);
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all shrink-0 ${
                 scopeFilter === "personal"
                   ? "bg-purple-600 text-white shadow-md shadow-purple-600/30"
                   : "text-[#9490AC] hover:text-[#EAE9FC]"
@@ -479,7 +488,7 @@ Relatório gerado via MontLife.`;
                 setScopeFilter("all");
                 setAiSummary(null);
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all shrink-0 ${
                 scopeFilter === "all"
                   ? "bg-[#2E2B44] text-[#EAE9FC]"
                   : "text-[#9490AC] hover:text-[#EAE9FC]"
@@ -490,13 +499,13 @@ Relatório gerado via MontLife.`;
           </div>
 
           {/* Period Selector: Year & Months */}
-          <div className="flex items-center gap-2 overflow-x-auto">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full sm:w-auto">
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value === "ALL" ? "ALL" : Number(e.target.value))}
-              className="h-8 px-2.5 rounded-lg bg-[#1A1829] border border-[#2E2B44] text-xs font-bold text-[#EAE9FC] focus:outline-none focus:border-[#9D8DF1]"
+              className="h-8 px-2.5 rounded-lg bg-[#1A1829] border border-[#2E2B44] text-xs font-bold text-[#EAE9FC] focus:outline-none focus:border-[#9D8DF1] shrink-0"
             >
-              <option value="ALL">Todos os Anos (Compilado Geral)</option>
+              <option value="ALL">Todos os Anos</option>
               {availableYears.map((yr) => (
                 <option key={yr} value={yr}>
                   {yr}
@@ -504,12 +513,12 @@ Relatório gerado via MontLife.`;
               ))}
             </select>
 
-            <div className="flex items-center gap-0.5 bg-[#1A1829] p-0.5 rounded-lg border border-[#2E2B44] text-[11px]">
+            <div className="flex items-center gap-0.5 bg-[#1A1829] p-0.5 rounded-lg border border-[#2E2B44] text-[11px] shrink-0">
               {months.map((m) => (
                 <button
                   key={String(m.value)}
                   onClick={() => setSelectedMonth(m.value as any)}
-                  className={`px-2 py-1 rounded font-medium transition-colors ${
+                  className={`px-2 py-1 rounded font-medium transition-colors shrink-0 ${
                     selectedMonth === m.value
                       ? "bg-[#9D8DF1] text-black font-bold shadow"
                       : "text-[#9490AC] hover:text-[#EAE9FC]"
@@ -523,10 +532,10 @@ Relatório gerado via MontLife.`;
         </div>
 
         {/* Security & Scope Banner */}
-        <div className="no-print px-4 sm:px-6 py-2 bg-[#141221] border-b border-[#2E2B44] flex flex-wrap items-center justify-between text-xs gap-2">
+        <div className="no-print px-3.5 sm:px-6 py-2 bg-[#141221] border-b border-[#2E2B44] flex flex-wrap items-center justify-between text-xs gap-2">
           <div className="flex items-center gap-2">
             <ShieldCheck
-              className={`w-4 h-4 ${
+              className={`w-4 h-4 shrink-0 ${
                 scopeFilter === "work"
                   ? "text-emerald-400"
                   : scopeFilter === "personal"
@@ -552,10 +561,10 @@ Relatório gerado via MontLife.`;
           </div>
 
           {/* Sub-tabs */}
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar w-full sm:w-auto">
             <button
               onClick={() => setActiveTab("dashboard")}
-              className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${
+              className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors shrink-0 whitespace-nowrap ${
                 activeTab === "dashboard"
                   ? "bg-[#2E2B44] text-[#EAE9FC]"
                   : "text-[#9490AC] hover:text-[#EAE9FC]"
@@ -565,7 +574,7 @@ Relatório gerado via MontLife.`;
             </button>
             <button
               onClick={() => setActiveTab("activities")}
-              className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors ${
+              className={`px-2.5 py-1 text-xs rounded-lg font-medium transition-colors shrink-0 whitespace-nowrap ${
                 activeTab === "activities"
                   ? "bg-[#2E2B44] text-[#EAE9FC]"
                   : "text-[#9490AC] hover:text-[#EAE9FC]"
@@ -576,7 +585,7 @@ Relatório gerado via MontLife.`;
             {aiSummary && (
               <button
                 onClick={() => setActiveTab("ai_summary")}
-                className={`px-2.5 py-1 text-xs rounded-lg font-bold flex items-center gap-1 text-[#9D8DF1] ${
+                className={`px-2.5 py-1 text-xs rounded-lg font-bold flex items-center gap-1 text-[#9D8DF1] shrink-0 whitespace-nowrap ${
                   activeTab === "ai_summary" ? "bg-[#2E2B44]" : ""
                 }`}
               >

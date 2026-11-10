@@ -128,8 +128,8 @@ export function ClassifyAccountModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg rounded-3xl bg-white dark:bg-[#141326] border border-slate-200 dark:border-[#282647] shadow-2xl p-6 sm:p-7 space-y-5 text-left transition-all">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-3xl bg-white dark:bg-[#141326] border border-slate-200 dark:border-[#282647] shadow-2xl p-4 sm:p-7 space-y-4 sm:space-y-5 text-left transition-all custom-scrollbar">
         {/* Top Header */}
         <div className="flex items-center gap-3.5 border-b border-slate-100 dark:border-white/5 pb-4">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center font-black text-xl text-white shadow-md shadow-purple-600/30 shrink-0">

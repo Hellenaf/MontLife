@@ -158,15 +158,15 @@ export function WikiTechnicalView({
   }, [allResolutions, selectedCategory, q]);
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4 pb-8 animate-in fade-in duration-200">
+    <div className="max-w-7xl mx-auto space-y-4 pb-24 lg:pb-8 animate-in fade-in duration-200">
       {/* 1. Header Toolbar */}
-      <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-purple-600/30">
+      <div className="p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-blue-500 flex items-center justify-center text-white shadow-lg shadow-purple-600/30 shrink-0">
             <BookOpen className="w-5 h-5" />
           </div>
-          <div>
-            <div className="flex items-center gap-2">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white">
                 Wiki Técnica & Base de Conhecimento
               </h2>
@@ -193,47 +193,47 @@ export function WikiTechnicalView({
       </div>
 
       {/* 2. Top Metric KPI Badges */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {/* Metric 1 */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60 flex items-center justify-center shrink-0">
+        <div className="p-2.5 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60 flex items-center justify-center shrink-0">
             <Youtube className="w-4 h-4" />
           </div>
-          <div>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
-              Vídeos & Tutoriais Curados
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400 block leading-tight">
+              Vídeos & Tutoriais
             </span>
-            <span className="text-lg font-bold text-slate-900 dark:text-white">
+            <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
               {allVideos.length}
             </span>
           </div>
         </div>
 
         {/* Metric 2 */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center shrink-0">
+        <div className="p-2.5 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800/60 flex items-center justify-center shrink-0">
             <Lightbulb className="w-4 h-4" />
           </div>
-          <div>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
-              Tópicos de Estudo da IA
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400 block leading-tight">
+              Tópicos de Estudo
             </span>
-            <span className="text-lg font-bold text-slate-900 dark:text-white">
+            <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
               {allQueries.length}
             </span>
           </div>
         </div>
 
         {/* Metric 3 */}
-        <div className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center shrink-0">
+        <div className="p-2.5 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+          <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-4 h-4" />
           </div>
-          <div>
-            <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 block">
-              Soluções Técnicas Catalogadas
+          <div className="min-w-0">
+            <span className="text-[10px] sm:text-[11px] font-medium text-slate-500 dark:text-slate-400 block leading-tight">
+              Soluções Técnicas
             </span>
-            <span className="text-lg font-bold text-slate-900 dark:text-white">
+            <span className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
               {allResolutions.length}
             </span>
           </div>
@@ -241,7 +241,7 @@ export function WikiTechnicalView({
       </div>
 
       {/* 3. Search & Category Filters */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-3">
+      <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           {/* Search Input */}
           <div className="relative flex-1">
@@ -282,11 +282,11 @@ export function WikiTechnicalView({
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5 text-xs">
           <button
             type="button"
             onClick={() => setActiveTab("all")}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-xl font-semibold transition-all shrink-0 whitespace-nowrap ${
               activeTab === "all"
                 ? "bg-purple-600 text-white shadow-sm"
                 : "bg-slate-50 dark:bg-[#16152a] text-slate-600 dark:text-slate-400 hover:text-white border border-slate-200 dark:border-zinc-800"
@@ -297,7 +297,7 @@ export function WikiTechnicalView({
           <button
             type="button"
             onClick={() => setActiveTab("articles")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all shrink-0 whitespace-nowrap ${
               activeTab === "articles"
                 ? "bg-sky-600 text-white shadow-sm"
                 : "bg-slate-50 dark:bg-[#16152a] text-slate-600 dark:text-slate-400 hover:text-white border border-slate-200 dark:border-zinc-800"
@@ -309,7 +309,7 @@ export function WikiTechnicalView({
           <button
             type="button"
             onClick={() => setActiveTab("videos")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all shrink-0 whitespace-nowrap ${
               activeTab === "videos"
                 ? "bg-rose-600 text-white shadow-sm"
                 : "bg-slate-50 dark:bg-[#16152a] text-slate-600 dark:text-slate-400 hover:text-white border border-slate-200 dark:border-zinc-800"
@@ -321,7 +321,7 @@ export function WikiTechnicalView({
           <button
             type="button"
             onClick={() => setActiveTab("queries")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all shrink-0 whitespace-nowrap ${
               activeTab === "queries"
                 ? "bg-indigo-600 text-white shadow-sm"
                 : "bg-slate-50 dark:bg-[#16152a] text-slate-600 dark:text-slate-400 hover:text-white border border-slate-200 dark:border-zinc-800"
@@ -333,7 +333,7 @@ export function WikiTechnicalView({
           <button
             type="button"
             onClick={() => setActiveTab("resolutions")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all shrink-0 whitespace-nowrap ${
               activeTab === "resolutions"
                 ? "bg-emerald-600 text-white shadow-sm"
                 : "bg-slate-50 dark:bg-[#16152a] text-slate-600 dark:text-slate-400 hover:text-white border border-slate-200 dark:border-zinc-800"
@@ -404,10 +404,10 @@ export function WikiTechnicalView({
                       )}
                     </div>
 
-                    <div className="pt-2.5 mt-2.5 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px]">
+                    <div className="pt-2.5 mt-2.5 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 text-[10px]">
                       <span
                         onClick={() => onSelectTask?.(task)}
-                        className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer truncate max-w-[180px]"
+                        className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer truncate min-w-0 flex-1"
                         title={`Origem: ${task.title}`}
                       >
                         📌 {task.title}
@@ -481,10 +481,10 @@ export function WikiTechnicalView({
                         </p>
                       </div>
 
-                      <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between text-[10px]">
+                      <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 text-[10px]">
                         <span
                           onClick={() => onSelectTask?.(task)}
-                          className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer truncate max-w-[180px]"
+                          className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer truncate min-w-0 flex-1"
                           title={`Origem: ${task.title}`}
                         >
                           📌 {task.title}
@@ -591,10 +591,10 @@ export function WikiTechnicalView({
                 {filteredResolutions.map((task) => (
                   <div
                     key={task.id}
-                    className="p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 hover:border-emerald-500/40 transition-all space-y-3 shadow-xs"
+                    className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 hover:border-emerald-500/40 transition-all space-y-3 shadow-xs"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
+                      <div className="space-y-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                             Resolvida
@@ -619,7 +619,7 @@ export function WikiTechnicalView({
                       <button
                         type="button"
                         onClick={() => onSelectTask?.(task)}
-                        className="flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shrink-0"
+                        className="self-start flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-semibold text-purple-600 dark:text-purple-400 bg-purple-50/70 dark:bg-purple-950/40 hover:bg-purple-100 dark:hover:bg-purple-950/60 transition-colors shrink-0"
                       >
                         <span>Ver Demanda</span>
                         <ArrowRight className="w-3.5 h-3.5" />

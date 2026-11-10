@@ -12,6 +12,7 @@ import {
   Paperclip,
   CheckSquare,
   Repeat,
+  ChevronLeft,
   ChevronRight,
   ExternalLink,
   Briefcase,
@@ -172,6 +173,12 @@ export function KanbanView({
   // Dynamic columns state with local persistence
   const [columns, setColumns] = useState<ColumnDef[]>(DEFAULT_COLUMNS);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [activeMobileColId, setActiveMobileColId] = useState<string>("todo");
+
+  const effectiveMobileColId = useMemo(
+    () => (columns.some((c) => c.id === activeMobileColId) ? activeMobileColId : columns[0]?.id || "todo"),
+    [columns, activeMobileColId]
+  );
 
   // Column Title Editing State
   const [editingColId, setEditingColId] = useState<string | null>(null);
@@ -408,7 +415,7 @@ export function KanbanView({
         </div>
 
         {/* Filter Pills and Action Buttons */}
-        <div className="flex items-center gap-2 overflow-x-auto flex-wrap">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar sm:flex-wrap">
           {/* Priority Quick Filter */}
           <select
             value={priorityFilter}
@@ -458,12 +465,44 @@ export function KanbanView({
         </div>
       </div>
 
-      {/* Kanban Horizontal Scrollable Columns Container (Occupies 100% width, dynamic flex sizing with mobile swipe snap) */}
-      <div className="w-full flex-1 flex gap-3 sm:gap-4 min-h-0 overflow-x-auto pb-4 items-stretch custom-scrollbar snap-x snap-mandatory sm:snap-none">
+      {/* Mobile Stage Selector Tabs (< md) */}
+      <div className="md:hidden flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 pb-0.5">
+        {columns.map((col) => {
+          const count = filteredTasks.filter((t) => col.statuses.includes(t.status)).length;
+          const isActive = effectiveMobileColId === col.id;
+          return (
+            <button
+              key={col.id}
+              type="button"
+              onClick={() => setActiveMobileColId(col.id)}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all shrink-0 cursor-pointer ${
+                isActive
+                  ? "bg-indigo-600 text-white border-indigo-500 shadow-xs"
+                  : "bg-white dark:bg-[#0b0c10] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-zinc-800"
+              }`}
+            >
+              <span className="truncate max-w-[140px]">{col.title}</span>
+              <span
+                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
+                  isActive
+                    ? "bg-white/20 text-white"
+                    : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400"
+                }`}
+              >
+                {count}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Kanban Columns Container (Single Active Column on Mobile, Horizontal Multi-Column on md+) */}
+      <div className="w-full flex-1 flex gap-3 sm:gap-4 min-h-0 overflow-x-hidden md:overflow-x-auto pb-2 md:pb-4 items-stretch custom-scrollbar">
         {columns.map((col) => {
           const colTasks = filteredTasks.filter((t) => col.statuses.includes(t.status));
           const isOverThisCol = draggedOverColId === col.id;
           const isEditing = editingColId === col.id;
+          const isMobileActiveCol = effectiveMobileColId === col.id;
 
           return (
             <div
@@ -489,7 +528,9 @@ export function KanbanView({
                   handleDropOnColumn(taskId, col);
                 }
               }}
-              className={`flex flex-col rounded-2xl bg-slate-100/90 dark:bg-[#0b0c10] border transition-all duration-200 overflow-hidden flex-1 min-w-[85vw] sm:min-w-[280px] snap-center sm:snap-align-none shadow-xs ${
+              className={`${
+                isMobileActiveCol ? "flex" : "hidden"
+              } md:flex flex-col rounded-2xl bg-slate-100/90 dark:bg-[#0b0c10] border transition-all duration-200 overflow-hidden flex-1 w-full min-w-0 md:min-w-[270px] shadow-xs ${
                 isOverThisCol
                   ? "border-indigo-500 ring-2 ring-indigo-500/50 bg-indigo-50/50 dark:bg-[#10121d]"
                   : "border-slate-200/90 dark:border-zinc-800/80"
@@ -582,12 +623,12 @@ export function KanbanView({
               </div>
 
               {/* Column Cards Container */}
-              <div className="flex-1 overflow-y-auto p-2.5 space-y-2.5 custom-scrollbar transition-colors">
+              <div className="flex-1 overflow-y-auto p-2.5 pb-20 md:pb-2.5 space-y-2.5 custom-scrollbar transition-colors">
                 {colTasks.length === 0 && !isOverThisCol ? (
                   <div className="h-32 flex flex-col items-center justify-center text-center p-4 border border-dashed border-slate-200 dark:border-zinc-800/80 rounded-xl text-slate-400 dark:text-zinc-500 text-xs bg-white/40 dark:bg-transparent">
                     <span>Nenhuma demanda nesta etapa</span>
                     <span className="text-[10px] text-slate-400 dark:text-zinc-600 mt-1">
-                      Arraste uma demanda para cá
+                      Mova ou adicione uma demanda para cá
                     </span>
                   </div>
                 ) : (
@@ -691,8 +732,8 @@ export function KanbanView({
                           </div>
                         )}
 
-                        {/* Bottom Row: Due Date + Indicators + Quick Move */}
-                        <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-zinc-800/60 text-[10px] text-slate-500 dark:text-zinc-400">
+                        {/* Bottom Row: Due Date + Indicators + Quick Stage Controls */}
+                        <div className="flex items-center justify-between flex-wrap gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800/60 text-[10px] text-slate-500 dark:text-zinc-400">
                           <div className="flex items-center gap-2 min-w-0">
                             {renderDueDateBadge(task.current_due_date)}
                             {attachmentsCount > 0 && (
@@ -706,19 +747,39 @@ export function KanbanView({
                             )}
                           </div>
 
-                          {/* Quick Advance Button */}
+                          {/* Quick Move Buttons (Back / Cancel / Advance) */}
                           <div
                             onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity"
+                            className="flex items-center gap-1 opacity-100 md:opacity-75 md:group-hover:opacity-100 transition-opacity ml-auto"
                           >
                             {onRequestCancelTask && (
                               <button
                                 type="button"
                                 onClick={() => onRequestCancelTask(task)}
-                                className="p-1 rounded bg-slate-100 dark:bg-zinc-800/80 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-600 dark:hover:text-rose-400 text-slate-500 dark:text-zinc-400 border border-slate-200 dark:border-transparent transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer"
+                                className="px-1.5 py-1 md:p-1 rounded bg-slate-100 dark:bg-zinc-800/80 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-600 dark:hover:text-rose-400 text-slate-500 dark:text-zinc-400 border border-slate-200 dark:border-transparent transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer"
                                 title="Cancelar esta demanda"
                               >
-                                <Ban className="w-2.5 h-2.5" />
+                                <Ban className="w-3 h-3 md:w-2.5 md:h-2.5" />
+                              </button>
+                            )}
+
+                            {task.status !== "TODO" && task.status !== "TRIAGE" && (
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (task.status === "IN_PROGRESS") {
+                                    onUpdateStatus(task.id, "TODO");
+                                  } else if (task.status === "WAITING") {
+                                    onUpdateStatus(task.id, "IN_PROGRESS");
+                                  } else if (task.status === "COMPLETED") {
+                                    onUpdateStatus(task.id, "WAITING");
+                                  }
+                                }}
+                                className="px-2 py-1 md:p-1 rounded bg-slate-100 dark:bg-zinc-800/80 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-600 dark:text-zinc-300 border border-slate-200 dark:border-transparent transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer"
+                                title="Voltar para a etapa anterior"
+                              >
+                                <ChevronLeft className="w-3 h-3 md:w-2.5 md:h-2.5" />
+                                <span className="md:hidden">Voltar</span>
                               </button>
                             )}
 
@@ -734,11 +795,11 @@ export function KanbanView({
                                     onUpdateStatus(task.id, "COMPLETED");
                                   }
                                 }}
-                                className="p-1 rounded bg-slate-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-white border border-slate-200 dark:border-transparent transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer"
+                                className="px-2 py-1 md:p-1 rounded bg-slate-100 dark:bg-zinc-800/80 hover:bg-indigo-50 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-white border border-slate-200 dark:border-transparent transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer font-semibold"
                                 title="Avançar status para a próxima etapa"
                               >
                                 <span>Avançar</span>
-                                <ChevronRight className="w-2.5 h-2.5" />
+                                <ChevronRight className="w-3 h-3 md:w-2.5 md:h-2.5" />
                               </button>
                             )}
                           </div>
@@ -763,8 +824,8 @@ export function KanbanView({
 
       {/* Modal: Adicionar Nova Seção */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs p-4 animate-in fade-in">
-          <div className="bg-white dark:bg-[#12131c] border border-slate-200 dark:border-zinc-800 w-full max-w-md rounded-2xl p-5 shadow-2xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs p-2.5 sm:p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#12131c] border border-slate-200 dark:border-zinc-800 w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4">
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-zinc-800">
               <div className="flex items-center gap-2">
@@ -830,7 +891,7 @@ export function KanbanView({
                 <label className="block text-xs font-semibold text-slate-700 dark:text-zinc-300 mb-1.5">
                   Tema Visual da Seção
                 </label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {COLOR_PRESETS.map((preset, idx) => (
                     <button
                       key={idx}
