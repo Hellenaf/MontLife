@@ -88,6 +88,8 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+const SHORT_WEEKDAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"] as const;
+
 interface CentralQuadrantProps {
   selectedTask: Task | null;
   allTasks: Task[];
@@ -660,7 +662,7 @@ export function CentralQuadrant({
       </div>
 
       {/* Main Tab Content */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-5 pb-28 lg:pb-5">
+      <div className="flex-1 overflow-y-auto p-3 sm:p-5 pb-6 lg:pb-5">
         {/* TAB 2: DETAILS OF SELECTED ITEM (ABOVE) & AGENDA DO DIA (BELOW) */}
         {activeTab === "details" && (
           <div className="max-w-4xl mx-auto space-y-4">
@@ -1933,9 +1935,19 @@ export function CentralQuadrant({
               <div className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-300">
                 <Clock className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>
-                  {format(parseISO(getTaskScheduleDate(previewTask)), "EEEE, d 'de' MMMM 'às' HH:mm", {
-                    locale: ptBR,
-                  })}
+                  <span className="sm:hidden">
+                    {(() => {
+                      const d = parseISO(getTaskScheduleDate(previewTask));
+                      return `${SHORT_WEEKDAYS[d.getDay()]}, ${format(d, "d 'de' MMM 'às' HH:mm", {
+                        locale: ptBR,
+                      })}`;
+                    })()}
+                  </span>
+                  <span className="hidden sm:inline">
+                    {format(parseISO(getTaskScheduleDate(previewTask)), "EEEE, d 'de' MMMM 'às' HH:mm", {
+                      locale: ptBR,
+                    })}
+                  </span>
                 </span>
               </div>
 

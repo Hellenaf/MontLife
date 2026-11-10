@@ -553,7 +553,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4 pb-24 lg:pb-12 animate-in fade-in duration-200">
+    <div className="max-w-7xl mx-auto space-y-4 pb-8 lg:pb-12 animate-in fade-in duration-200">
       {/* 1. Header Toolbar (Hidden when printing) */}
       <div className="no-print p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">

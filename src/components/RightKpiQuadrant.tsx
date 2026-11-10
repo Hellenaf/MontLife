@@ -123,7 +123,7 @@ export function RightKpiQuadrant({
       </div>
 
       {/* Scrollable KPIs container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3.5 pb-28 lg:pb-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-3.5 pb-6 lg:pb-4">
         {/* Core 4-KPI Grid */}
         <div className="grid grid-cols-2 gap-2">
           {/* Total */}

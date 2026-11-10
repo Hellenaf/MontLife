@@ -45,6 +45,8 @@ import {
 } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
+const SHORT_WEEKDAYS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"] as const;
+
 interface AgendaDoDiaViewProps {
   tasks: Task[];
   accountFilter?: "all" | string;
@@ -345,7 +347,16 @@ export function AgendaDoDiaView({
             <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize leading-tight truncate">
               Dia em foco:{" "}
               <strong className="text-indigo-600 dark:text-indigo-400 font-bold">
-                {format(calendarDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                <span className="sm:hidden">
+                  {`${SHORT_WEEKDAYS[calendarDate.getDay()]}, ${format(
+                    calendarDate,
+                    "d 'de' MMM",
+                    { locale: ptBR }
+                  )}`}
+                </span>
+                <span className="hidden sm:inline">
+                  {format(calendarDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                </span>
               </strong>
             </p>
           </div>
@@ -459,7 +470,7 @@ export function AgendaDoDiaView({
               {["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"].map((wd) => (
                 <div
                   key={wd}
-                  className="py-1.5 sm:py-2 text-[10px] sm:text-[11px] font-black text-slate-600 dark:text-slate-300 tracking-wider"
+                  className="py-1.5 sm:py-2 text-[10px] sm:text-[11px] font-black text-slate-600 dark:text-slate-300 tracking-normal sm:tracking-wider"
                 >
                   {wd}
                 </div>
@@ -647,8 +658,11 @@ export function AgendaDoDiaView({
                           : "bg-white dark:bg-[#0c0d13] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border border-slate-200/60 dark:border-zinc-800/60"
                       }`}
                     >
-                      <span className="text-[9px] sm:text-[10px] uppercase tracking-wider opacity-80 mb-0.5 font-medium">
-                        {format(day, "EEE", { locale: ptBR })}
+                      <span className="text-[10px] uppercase tracking-normal sm:tracking-wider opacity-80 mb-0.5 font-semibold sm:font-medium">
+                        <span className="sm:hidden">{SHORT_WEEKDAYS[day.getDay()]}</span>
+                        <span className="hidden sm:inline">
+                          {format(day, "EEE", { locale: ptBR })}
+                        </span>
                       </span>
                       <span className="text-xs sm:text-sm font-black leading-tight">
                         {format(day, "d")}
@@ -676,7 +690,16 @@ export function AgendaDoDiaView({
                 </div>
                 <div className="min-w-0">
                   <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white capitalize leading-tight truncate">
-                    {format(calendarDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                    <span className="sm:hidden">
+                      {`${SHORT_WEEKDAYS[calendarDate.getDay()]}, ${format(
+                        calendarDate,
+                        "d 'de' MMM",
+                        { locale: ptBR }
+                      )}`}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {format(calendarDate, "EEEE, d 'de' MMMM", { locale: ptBR })}
+                    </span>
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
                     {totalItemsForSelectedDay === 0

@@ -623,7 +623,7 @@ export function KanbanView({
               </div>
 
               {/* Column Cards Container */}
-              <div className="flex-1 overflow-y-auto p-2.5 pb-20 md:pb-2.5 space-y-2.5 custom-scrollbar transition-colors">
+              <div className="flex-1 overflow-y-auto p-2.5 pb-4 md:pb-2.5 space-y-2.5 custom-scrollbar transition-colors">
                 {colTasks.length === 0 && !isOverThisCol ? (
                   <div className="h-32 flex flex-col items-center justify-center text-center p-4 border border-dashed border-slate-200 dark:border-zinc-800/80 rounded-xl text-slate-400 dark:text-zinc-500 text-xs bg-white/40 dark:bg-transparent">
                     <span>Nenhuma demanda nesta etapa</span>

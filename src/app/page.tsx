@@ -18,7 +18,7 @@ import { ReportsView } from "@/components/ReportsView";
 import { KanbanView } from "@/components/KanbanView";
 import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
 import { getAllCategories } from "@/lib/categories";
-import { ExternalLink, ListTodo, FileText, Calendar, TrendingUp, User, Plus, Kanban, BarChart3, Menu, Layers, X } from "lucide-react";
+import { ExternalLink, ListTodo, FileText, Calendar, TrendingUp, User, Kanban, BarChart3, Menu, Layers, X } from "lucide-react";
 
 export default function MontOpsDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -641,7 +641,7 @@ export default function MontOpsDashboard() {
 
         {/* Main Content: Dedicated Agenda do Dia View OR Wiki Técnica View OR 3 Columns Demand Grid */}
         {activeNav === "agenda" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-4 lg:p-3.5 pb-20 lg:pb-3.5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-4 lg:p-3.5 pb-4 lg:pb-3.5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <AgendaDoDiaView
               tasks={tasks}
               accountFilter={accountFilter}
@@ -655,7 +655,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "wiki" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-5 pb-20 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-5 pb-4 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <WikiTechnicalView
               tasks={tasks}
               onSelectTask={navigateToTaskDetails}
@@ -684,7 +684,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "relatorios" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-5 pb-20 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-5 pb-4 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
             <ReportsView
               tasks={tasks}
               accountFilter={accountFilter}
@@ -816,20 +816,6 @@ export default function MontOpsDashboard() {
           </div>
         )}
       </div>
-
-      {/* Mobile Floating Action Button (FAB) */}
-      <button
-        type="button"
-        onClick={() => {
-          setNewTaskInitialText("");
-          setIsNewTaskModalOpen(true);
-        }}
-        className="lg:hidden fixed bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] right-4 w-12 h-12 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-xl shadow-purple-600/40 flex items-center justify-center z-40 active:scale-90 transition-transform"
-        aria-label="Adicionar nova demanda"
-        title="Nova Demanda"
-      >
-        <Plus className="w-6 h-6 stroke-[2.5]" />
-      </button>
 
       {/* Mobile Bottom Navigation Bar (Fixed for PWA on Phones) */}
       <nav className="lg:hidden fixed bottom-0 left-0 right-0 min-h-[64px] pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-white/95 dark:bg-[#10111a]/95 backdrop-blur-lg border-t border-slate-200 dark:border-zinc-800/80 px-2 flex items-center justify-around z-40">
