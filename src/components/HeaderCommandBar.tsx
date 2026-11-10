@@ -31,7 +31,6 @@ import {
   Trash2,
   Repeat,
   RotateCcw,
-  Menu,
 } from "lucide-react";
 import { findSimilarTasks } from "@/lib/taskDeduplication";
 import {
@@ -63,7 +62,6 @@ interface HeaderCommandBarProps {
   onOpenReportModal: () => void;
   onOpenNewTaskModal?: (initialText?: string) => void;
   onSelectTask?: (task: Task) => void;
-  onToggleMobileMenu?: () => void;
 }
 
 export function HeaderCommandBar({
@@ -75,7 +73,6 @@ export function HeaderCommandBar({
   onOpenReportModal,
   onOpenNewTaskModal,
   onSelectTask,
-  onToggleMobileMenu,
 }: HeaderCommandBarProps) {
   const { theme, toggleTheme } = useTheme();
   const categoriesList = useMemo(() => {
@@ -467,19 +464,8 @@ export function HeaderCommandBar({
   return (
     <>
       <header className="relative z-40 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-3 sm:px-6 py-2 md:py-0 md:h-16 flex flex-wrap md:flex-nowrap items-center justify-between shadow-sm transition-colors duration-200 gap-x-2 gap-y-2 md:gap-4">
-      {/* Brand & Menu (visible on mobile where sidebar is hidden) */}
+      {/* Brand (visible on mobile/tablet where sidebar is hidden) */}
       <div className="order-1 flex items-center gap-2 shrink-0 lg:hidden">
-        {onToggleMobileMenu && (
-          <button
-            type="button"
-            onClick={onToggleMobileMenu}
-            className="p-1.5 -ml-1 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
-            title="Abrir menu de navegação e espaços"
-            aria-label="Menu principal"
-          >
-            <Menu className="w-5 h-5" />
-          </button>
-        )}
         <MontLifeLogo size="sm" showText={false} />
         <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white md:hidden">
           MontLife

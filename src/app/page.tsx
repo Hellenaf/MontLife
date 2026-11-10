@@ -602,7 +602,6 @@ export default function MontOpsDashboard() {
               setNewTaskInitialText(prefill || "");
               setIsNewTaskModalOpen(true);
             }}
-            onToggleMobileMenu={() => setIsMobileMenuOpen(true)}
           />
         </div>
 
