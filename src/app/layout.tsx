@@ -24,8 +24,9 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/brand-logo-square.png?v=4", type: "image/png" },
+      { url: "/icon-192x192.png?v=4", sizes: "192x192", type: "image/png" },
       { url: "/favicon-32x32.png?v=4", sizes: "32x32", type: "image/png" },
-      { url: "/icon.png?v=4", type: "image/png" },
+      { url: "/icon.png?v=4", sizes: "512x512", type: "image/png" },
       { url: "/favicon.ico?v=4" },
     ],
     shortcut: "/brand-logo-square.png?v=4",

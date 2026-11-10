@@ -10,9 +10,11 @@ export function middleware(request: NextRequest) {
     pathname.startsWith("/api/google/auth") ||
     pathname.startsWith("/api/google/callback") ||
     pathname.startsWith("/api/auth/logout") ||
-    pathname === "/favicon.ico" ||
-    pathname === "/icon.png" ||
-    pathname === "/icon.svg"
+    pathname === "/manifest.json" ||
+    pathname === "/sw.js" ||
+    pathname === "/robots.txt" ||
+    pathname === "/sitemap.xml" ||
+    /\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot)$/i.test(pathname)
   ) {
     return NextResponse.next();
   }
@@ -53,9 +55,9 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     /*
-     * Match all request paths except static files
+     * Match all request paths except static files and PWA manifest
      */
-    "/((?!_next/static|_next/image|favicon.ico|icon.png|icon.svg).*)",
+    "/((?!_next/static|_next/image|manifest\\.json|sw\\.js|robots\\.txt|sitemap\\.xml|.*\\.(?:png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf|eot)$).*)",
   ],
 };
 
