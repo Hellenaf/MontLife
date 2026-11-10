@@ -92,6 +92,9 @@ export function HeaderCommandBar({
   const [similarResolutions, setSimilarResolutions] = useState<SimilarResolution[]>([]);
   const [learningResources, setLearningResources] = useState<LearningResources | null>(null);
   const [calculatedDueDate, setCalculatedDueDate] = useState<string>("");
+  const [triageAiSource, setTriageAiSource] = useState<"gemini" | "cache" | "fallback" | null>(null);
+  const [triageError, setTriageError] = useState<string | null>(null);
+  const [isRefiningAI, setIsRefiningAI] = useState(false);
 
   // Editable fields in confirmation card
   const [editTitle, setEditTitle] = useState("");
@@ -275,12 +278,48 @@ export function HeaderCommandBar({
     }
   };
 
+  const applyTriageResult = (data: any) => {
+    const triage: GeminiTriageResponse = data.triage;
+    setTriageData(triage);
+    setSimilarResolutions(data.similar_resolutions || []);
+    setLearningResources(data.learning_resources || null);
+    setCalculatedDueDate(data.calculated_due_date);
+
+    const detectedSource =
+      data.optimization?.ai_source ||
+      (data.optimization?.ai_used === false ? "fallback" : "gemini");
+    setTriageAiSource(detectedSource);
+
+    // Populate editable confirmation card
+    setEditTitle(triage.refined_title);
+    setEditDescription(triage.structured_description);
+    setEditAccountType(triage.account_type);
+    setEditItemType(preferredType !== "auto" ? preferredType : triage.item_type || "task");
+    setEditCategory(triage.category);
+    setEditPriority(triage.priority);
+    setEditDueDate(triage.extracted_due_date_iso || data.calculated_due_date);
+
+    if (triage.validation_steps?.length) {
+      setEditValidationSteps(
+        triage.validation_steps.map((text, idx) => ({
+          id: `step-${Date.now()}-${idx}`,
+          text: text.replace(/^\s*(?:\d+[.)]\s*|[-*•]+\s*)+/, "").trim(),
+          completed: false,
+        }))
+      );
+    } else {
+      setEditValidationSteps([]);
+    }
+  };
+
   const handleRunTriage = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!input.trim() || isProcessing) return;
 
     setIsProcessing(true);
     setIsSimilarityDismissed(false);
+    setTriageError(null);
+    setCreateError(null);
     try {
       const res = await fetch("/api/triage", {
         method: "POST",
@@ -289,38 +328,51 @@ export function HeaderCommandBar({
       });
 
       const data = await res.json();
-      if (data.success && data.triage) {
-        const triage: GeminiTriageResponse = data.triage;
-        setTriageData(triage);
-        setSimilarResolutions(data.similar_resolutions || []);
-        setLearningResources(data.learning_resources || null);
-        setCalculatedDueDate(data.calculated_due_date);
-
-        // Populate editable confirmation card
-        setEditTitle(triage.refined_title);
-        setEditDescription(triage.structured_description);
-        setEditAccountType(triage.account_type);
-        setEditItemType(preferredType !== "auto" ? preferredType : triage.item_type || "task");
-        setEditCategory(triage.category);
-        setEditPriority(triage.priority);
-        setEditDueDate(triage.extracted_due_date_iso || data.calculated_due_date);
-
-        if (triage.validation_steps?.length) {
-          setEditValidationSteps(
-            triage.validation_steps.map((text, idx) => ({
-              id: `step-${Date.now()}-${idx}`,
-              text,
-              completed: false,
-            }))
-          );
-        } else {
-          setEditValidationSteps([]);
-        }
+      if (res.ok && data.success && data.triage) {
+        applyTriageResult(data);
+      } else {
+        setTriageError(
+          data?.error || "Não foi possível processar a demanda com IA. Tente novamente."
+        );
       }
     } catch (err) {
       console.error("Triage failed:", err);
+      setTriageError("Falha de comunicação com o servidor de IA. Tente novamente.");
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const handleRefineAgainWithAI = async (customRawText?: string) => {
+    const rawText = (
+      customRawText ||
+      (editDescription && editTitle && !editDescription.toLowerCase().startsWith(editTitle.toLowerCase())
+        ? `${editTitle}\n${editDescription}`
+        : editDescription || editTitle || input)
+    ).trim();
+    if (!rawText || isRefiningAI) return;
+
+    setIsRefiningAI(true);
+    setCreateError(null);
+    try {
+      const res = await fetch("/api/triage", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ raw_input: rawText, force_fresh_ai: true }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.triage) {
+        applyTriageResult(data);
+      } else {
+        setCreateError(
+          data?.error || "Não foi possível reprocessar com IA agora. Você pode editar manualmente ou tentar novamente."
+        );
+      }
+    } catch (err) {
+      console.error("Re-triage failed:", err);
+      setCreateError("Falha de comunicação ao consultar a IA para reprocessamento.");
+    } finally {
+      setIsRefiningAI(false);
     }
   };
 
@@ -404,6 +456,8 @@ export function HeaderCommandBar({
     setLearningResources(null);
     setIsSimilarityDismissed(false);
     setCreateError(null);
+    setTriageError(null);
+    setTriageAiSource(null);
   };
 
   const connectedAccountsCount = (Array.isArray(accounts) ? accounts : []).filter(
@@ -696,6 +750,19 @@ export function HeaderCommandBar({
       </div>
     </header>
 
+    {triageError && (
+      <div className="bg-rose-50 dark:bg-rose-950/70 border-b border-rose-200 dark:border-rose-800 px-4 py-2 flex items-center justify-between text-xs text-rose-700 dark:text-rose-200">
+        <span>{triageError}</span>
+        <button
+          type="button"
+          onClick={() => setTriageError(null)}
+          className="px-2 py-0.5 rounded hover:bg-rose-100 dark:hover:bg-rose-900/50 font-semibold"
+        >
+          ✕
+        </button>
+      </div>
+    )}
+
     {/* Floating Confirmation Modal with Backdrop - Rendered outside header to avoid backdrop-filter coordinate containment */}
     {triageData && (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
@@ -788,13 +855,18 @@ export function HeaderCommandBar({
                 </div>
 
                 {/* Demanda sendo digitada agora */}
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#10111a] border border-slate-200 dark:border-zinc-800 space-y-1">
+                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#10111a] border border-slate-200 dark:border-zinc-800 space-y-1.5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                    Sua nova solicitação:
+                    Sua nova solicitação {triageAiSource === "fallback" ? "(aguardando refinamento IA)" : "(estruturada pela IA)"}:
                   </span>
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 italic">
-                    &quot;{editTitle || input}&quot;
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    {editTitle || input}
                   </p>
+                  {editDescription && editDescription !== editTitle && (
+                    <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                      {editDescription}
+                    </p>
+                  )}
                 </div>
 
                 {/* 3 Ações Solicitadas: Recorrência, Reabrir ou Criação Independente */}
@@ -807,7 +879,7 @@ export function HeaderCommandBar({
                     {/* Botão 1: Registrar Recorrência */}
                     <button
                       type="button"
-                      disabled={isRegisteringRecurrence}
+                      disabled={isRegisteringRecurrence || isRefiningAI}
                       onClick={async () => {
                         setIsRegisteringRecurrence(true);
                         try {
@@ -831,7 +903,7 @@ export function HeaderCommandBar({
                           setIsRegisteringRecurrence(false);
                         }
                       }}
-                      className="p-3 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-left transition-all cursor-pointer shadow-xs group"
+                      className="p-3 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-left transition-all cursor-pointer shadow-xs group disabled:opacity-60"
                     >
                       <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-1">
                         {isRegisteringRecurrence ? (
@@ -849,9 +921,9 @@ export function HeaderCommandBar({
                     {/* Botão 2: Reabrir Demanda */}
                     <button
                       type="button"
-                      disabled={isReopeningTask}
+                      disabled={isReopeningTask || isRefiningAI}
                       onClick={handleReopenSimilarTask}
-                      className="p-3 rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-left transition-all cursor-pointer shadow-xs group"
+                      className="p-3 rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-left transition-all cursor-pointer shadow-xs group disabled:opacity-60"
                     >
                       <div className="flex items-center gap-1.5 text-xs font-bold text-blue-800 dark:text-blue-300 mb-1">
                         {isReopeningTask ? (
@@ -871,15 +943,25 @@ export function HeaderCommandBar({
                     {/* Botão 3: Continuar Criação Independente */}
                     <button
                       type="button"
-                      onClick={() => setIsSimilarityDismissed(true)}
-                      className="p-3 rounded-xl border border-indigo-300 dark:border-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-left transition-all cursor-pointer shadow-xs group"
+                      disabled={isRefiningAI}
+                      onClick={async () => {
+                        if (triageAiSource === "fallback") {
+                          await handleRefineAgainWithAI(input);
+                        }
+                        setIsSimilarityDismissed(true);
+                      }}
+                      className="p-3 rounded-xl border border-indigo-300 dark:border-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-left transition-all cursor-pointer shadow-xs group disabled:opacity-70"
                     >
                       <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-1">
-                        <Plus className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 group-hover:scale-125 transition-transform" />
-                        <span>Criação Independente</span>
+                        {isRefiningAI ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
+                        ) : (
+                          <Plus className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 group-hover:scale-125 transition-transform" />
+                        )}
+                        <span>{isRefiningAI ? "Estruturando com IA..." : "Criação Independente"}</span>
                       </div>
                       <p className="text-[10px] text-indigo-700/80 dark:text-indigo-400 leading-tight">
-                        Ignorar similaridade e avançar para cadastrar como nova demanda avulsa.
+                        Ignorar similaridade e avançar para cadastrar como nova demanda avulsa com a IA.
                       </p>
                     </button>
                   </div>
@@ -893,8 +975,19 @@ export function HeaderCommandBar({
 
               {/* Classification selector */}
               <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
-                <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Classificação:
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Classificação:
+                  </span>
+                  {triageAiSource === "fallback" ? (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800">
+                      Modo assistido (tente Refinar com IA)
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                      Texto reescrito pela IA
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-1 bg-white dark:bg-[#161722] p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
@@ -954,9 +1047,30 @@ export function HeaderCommandBar({
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                    Descrição & Notas:
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block">
+                      Descrição & Notas:
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => handleRefineAgainWithAI()}
+                      disabled={isRefiningAI || (!editTitle.trim() && !editDescription.trim())}
+                      className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-all disabled:opacity-40 cursor-pointer"
+                      title="Reprocessar e melhorar título, texto e etapas usando IA"
+                    >
+                      {isRefiningAI ? (
+                        <>
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                          <span>Refinando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-3 h-3" />
+                          <span>Refinar com IA</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                   <textarea
                     rows={4}
                     value={editDescription}

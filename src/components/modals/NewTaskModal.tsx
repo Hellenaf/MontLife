@@ -42,7 +42,7 @@ import { format } from "date-fns";
 import { getAllCategories } from "@/lib/categories";
 import { CategoryCombobox } from "@/components/CategoryCombobox";
 import { AttachmentManager } from "@/components/AttachmentManager";
-import { findSimilarTasks } from "@/lib/taskDeduplication";
+import { findSimilarTasks, SimilarTaskMatch } from "@/lib/taskDeduplication";
 
 interface NewTaskModalProps {
   isOpen: boolean;
@@ -54,6 +54,18 @@ interface NewTaskModalProps {
   existingTasks?: Task[];
   onSelectExistingTask?: (task: Task) => void;
   onTaskUpdated?: (task: Task) => void;
+}
+
+function buildRawInputForAI(rawTitle: string, rawDescription: string): string {
+  const t = rawTitle.trim();
+  const d = rawDescription.trim();
+  if (!t) return d;
+  if (!d) return t;
+  const tNorm = t.replace(/\.{3}$/, "").trim().toLowerCase();
+  const dNorm = d.toLowerCase();
+  if (dNorm === tNorm || dNorm.startsWith(tNorm)) return d;
+  if (tNorm.startsWith(dNorm)) return t;
+  return `${t}\n${d}`;
 }
 
 export function NewTaskModal({
@@ -89,25 +101,51 @@ export function NewTaskModal({
   const [isAnalyzingAI, setIsAnalyzingAI] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<GeminiTriageResponse | null>(null);
+  const [autoEnhanceWithAI, setAutoEnhanceWithAI] = useState(true);
+  const [hasAiEnhancedDraft, setHasAiEnhancedDraft] = useState(false);
+  const [aiSource, setAiSource] = useState<"gemini" | "cache" | "fallback" | null>(null);
+  const [originalRawInput, setOriginalRawInput] = useState("");
+
+  // Track which fields user manually changed before AI runs on submit
+  const touchedFieldsRef = useRef<{
+    itemType: boolean;
+    accountType: boolean;
+    category: boolean;
+    priority: boolean;
+    dueDate: boolean;
+    validationSteps: boolean;
+  }>({
+    itemType: false,
+    accountType: false,
+    category: false,
+    priority: false,
+    dueDate: false,
+    validationSteps: false,
+  });
 
   // Deduplication & Recurrence detection state
   const [isSimilarityDismissed, setIsSimilarityDismissed] = useState(false);
+  const [showSimilarityScreen, setShowSimilarityScreen] = useState(false);
+  const [serverSimilarMatch, setServerSimilarMatch] = useState<SimilarTaskMatch | null>(null);
   const [isRegisteringRecurrence, setIsRegisteringRecurrence] = useState(false);
   const [isReopeningTask, setIsReopeningTask] = useState(false);
 
   const similarMatches = useMemo(() => {
     const cleanTitle = title.trim();
-    if (!cleanTitle || cleanTitle.length < 8 || cleanTitle.split(/\s+/).length < 2 || !existingTasks || existingTasks.length === 0) {
+    const cleanDesc = description.trim();
+    const probeTitle = cleanTitle || cleanDesc.split(/\n/)[0]?.slice(0, 90) || "";
+    if (!probeTitle || probeTitle.length < 8 || probeTitle.split(/\s+/).length < 2 || !existingTasks || existingTasks.length === 0) {
       return [];
     }
-    return findSimilarTasks(cleanTitle, description, existingTasks, 0.65);
+    return findSimilarTasks(probeTitle, cleanDesc, existingTasks, 0.65);
   }, [title, description, existingTasks]);
 
-  const topSimilar =
-    !isSimilarityDismissed && similarMatches.length > 0
-      ? similarMatches[0]
-      : null;
+  const rawTopSimilar = similarMatches[0] || serverSimilarMatch || null;
+  const topSimilar = !isSimilarityDismissed ? rawTopSimilar : null;
+
+  const isInterstitialVisible = Boolean(showSimilarityScreen && topSimilar);
 
   const handleReopenSimilarTask = async () => {
     if (!topSimilar) return;
@@ -137,15 +175,32 @@ export function NewTaskModal({
   useEffect(() => {
     if (isOpen) {
       setIsSimilarityDismissed(false);
+      setShowSimilarityScreen(false);
+      setServerSimilarMatch(null);
       setSubmitError(null);
+      setAiError(null);
+      setAutoEnhanceWithAI(true);
+      setHasAiEnhancedDraft(false);
+      setAiSource(null);
+      touchedFieldsRef.current = {
+        itemType: false,
+        accountType: false,
+        category: false,
+        priority: false,
+        dueDate: false,
+        validationSteps: false,
+      };
       if (initialText) {
-        if (initialText.includes("\n") || initialText.length > 60) {
-          setDescription(initialText);
-          const firstLine = initialText.split("\n")[0].trim().substring(0, 80);
-          setTitle(firstLine);
+        const cleanInitial = initialText.trim();
+        setOriginalRawInput(cleanInitial);
+        if (cleanInitial.includes("\n") || cleanInitial.length > 60) {
+          setDescription(cleanInitial);
+          setTitle("");
         } else {
-          setTitle(initialText);
+          setTitle(cleanInitial);
         }
+      } else {
+        setOriginalRawInput("");
       }
       setItemType(initialType);
       const defaultDate = calculateSlaDueDate("P3");
@@ -164,13 +219,20 @@ export function NewTaskModal({
       setNewStepText("");
       setIsAddingStep(false);
       setIsSimilarityDismissed(false);
+      setShowSimilarityScreen(false);
+      setServerSimilarMatch(null);
       setSubmitError(null);
+      setAiError(null);
+      setHasAiEnhancedDraft(false);
+      setAiSource(null);
+      setOriginalRawInput("");
     }
   }, [isOpen, initialText, initialType]);
 
   const handleAddValidationStep = () => {
     const clean = newStepText.trim();
     if (!clean) return;
+    touchedFieldsRef.current.validationSteps = true;
     setValidationSteps((prev) => [
       ...prev,
       {
@@ -184,123 +246,240 @@ export function NewTaskModal({
   };
 
   const handleRemoveValidationStep = (id: string) => {
+    touchedFieldsRef.current.validationSteps = true;
     setValidationSteps((prev) => prev.filter((s) => s.id !== id));
   };
 
   const handleUpdateValidationStepText = (id: string, text: string) => {
+    touchedFieldsRef.current.validationSteps = true;
     setValidationSteps((prev) =>
       prev.map((s) => (s.id === id ? { ...s, text } : s))
     );
   };
 
   const handleClearValidationSteps = () => {
+    touchedFieldsRef.current.validationSteps = true;
     setValidationSteps([]);
   };
 
   if (!isOpen) return null;
 
   const handlePriorityChange = (newP: Priority) => {
+    touchedFieldsRef.current.priority = true;
     setPriority(newP);
   };
 
-  const handleAnalyzeWithAI = async () => {
-    const textToAnalyze = `${title}\n${description}`.trim();
-    if (!textToAnalyze || isAnalyzingAI) return;
+  const formatDateForInput = (isoOrDate: string): string => {
+    try {
+      const d = new Date(isoOrDate);
+      if (!isNaN(d.getTime())) {
+        return format(d, "yyyy-MM-dd'T'HH:mm");
+      }
+    } catch {
+      // ignore
+    }
+    return isoOrDate.substring(0, 16);
+  };
+
+  const runTriageOnDraft = async (opts?: { respectTouchedFields?: boolean }) => {
+    const rawText = buildRawInputForAI(title, description);
+    if (!rawText) return null;
+
+    if (!originalRawInput) {
+      setOriginalRawInput(rawText);
+    }
 
     setIsAnalyzingAI(true);
+    setAiError(null);
     try {
       const res = await fetch("/api/triage", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ raw_input: textToAnalyze, force_fresh_ai: true }),
+        body: JSON.stringify({ raw_input: rawText, force_fresh_ai: true }),
       });
       const data = await res.json();
-      if (data.success && data.triage) {
-        const triage: GeminiTriageResponse = data.triage;
-        setAiSuggestions(triage);
-        setIsSimilarityDismissed(true);
+      if (!res.ok || !data.success || !data.triage) {
+        setAiError(
+          data?.error || "Não foi possível melhorar o texto com IA agora. Verifique e tente novamente."
+        );
+        return null;
+      }
 
-        if (triage.refined_title) {
-          setTitle(triage.refined_title);
-        }
+      const triage: GeminiTriageResponse = data.triage;
+      const source: "gemini" | "cache" | "fallback" =
+        data.optimization?.ai_source ||
+        (data.optimization?.ai_used === false ? "fallback" : "gemini");
 
-        if (triage.structured_description) {
-          setDescription(triage.structured_description);
-        }
+      setAiSuggestions(triage);
+      setAiSource(source);
+      if (source !== "fallback") {
+        setHasAiEnhancedDraft(true);
+      }
 
-        if (triage.validation_steps?.length) {
-          setValidationSteps(
-            triage.validation_steps.map((stepText, idx) => ({
+      const respect = Boolean(opts?.respectTouchedFields);
+      const touched = touchedFieldsRef.current;
+
+      const finalTitle = triage.refined_title?.trim() || title.trim();
+      const finalDescription = triage.structured_description?.trim() || description.trim();
+      const finalSteps: ValidationStep[] =
+        triage.validation_steps?.length
+          ? triage.validation_steps.map((stepText, idx) => ({
               id: `step-${Date.now()}-${idx}`,
-              text: stepText,
+              text: stepText.replace(/^\s*(?:\d+[.)]\s*|[-*•]+\s*)+/, "").trim(),
               completed: false,
             }))
-          );
-        }
+          : validationSteps;
 
-        if (triage.item_type) {
-          setItemType(triage.item_type);
-        }
+      const finalItemType = respect && touched.itemType ? itemType : (triage.item_type || itemType);
+      const finalCategory = respect && touched.category ? category : (triage.category || category);
+      const finalPriority = respect && touched.priority ? priority : (triage.priority || priority);
+      const finalAccountType = respect && touched.accountType ? accountType : (triage.account_type || accountType);
+      const finalTags =
+        tagsInput.trim().length > 0
+          ? tagsInput
+              .split(",")
+              .map((t) => t.trim().replace(/^#/, ""))
+              .filter(Boolean)
+          : triage.search_tags || [];
+      const targetDueIso =
+        respect && touched.dueDate && dueDate
+          ? new Date(dueDate).toISOString()
+          : triage.extracted_due_date_iso || data.calculated_due_date || calculateSlaDueDate(finalPriority);
 
-        if (triage.category) {
-          setCategory(triage.category);
-        }
-
-        if (triage.priority) {
-          setPriority(triage.priority);
-        }
-
-        if (triage.account_type) {
-          setAccountType(triage.account_type);
-        }
-
-        if (triage.search_tags?.length) {
-          setTagsInput(triage.search_tags.join(", "));
-        }
-
-        const targetDueDate = triage.extracted_due_date_iso || data.calculated_due_date;
-        if (targetDueDate) {
-          try {
-            setDueDate(format(new Date(targetDueDate), "yyyy-MM-dd'T'HH:mm"));
-          } catch {
-            setDueDate(targetDueDate.substring(0, 16));
-          }
-        }
+      if (finalTitle) setTitle(finalTitle);
+      if (finalDescription) setDescription(finalDescription);
+      const shouldUpdateSteps =
+        Boolean(triage.validation_steps?.length) &&
+        (!respect || !touched.validationSteps || validationSteps.length === 0);
+      if (shouldUpdateSteps) {
+        setValidationSteps(finalSteps);
       }
+      if (!respect || !touched.itemType) setItemType(finalItemType);
+      if (!respect || !touched.category) setCategory(finalCategory);
+      if (!respect || !touched.priority) setPriority(finalPriority);
+      if (!respect || !touched.accountType) setAccountType(finalAccountType);
+      if (!tagsInput.trim() && triage.search_tags?.length) {
+        setTagsInput(triage.search_tags.join(", "));
+      }
+      if ((!respect || !touched.dueDate) && targetDueIso) {
+        setDueDate(formatDateForInput(targetDueIso));
+      }
+
+      return {
+        rawText,
+        triage,
+        source,
+        similarTasksFromServer: Array.isArray(data.similar_tasks) ? data.similar_tasks : [],
+        finalTitle,
+        finalDescription,
+        finalSteps: shouldUpdateSteps ? finalSteps : validationSteps,
+        finalItemType,
+        finalCategory,
+        finalPriority,
+        finalAccountType,
+        finalTags,
+        targetDueIso,
+      };
     } catch (err) {
       console.error("Erro na análise da IA:", err);
+      setAiError("Falha de comunicação ao consultar a IA.");
+      return null;
     } finally {
       setIsAnalyzingAI(false);
     }
   };
 
+  const handleAnalyzeWithAI = async () => {
+    touchedFieldsRef.current.validationSteps = false;
+    await runTriageOnDraft({ respectTouchedFields: false });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim() || isSubmitting) return;
+    const rawDraft = buildRawInputForAI(title, description);
+    if (!rawDraft || isSubmitting || isAnalyzingAI) return;
+    if (!title.trim() && !(autoEnhanceWithAI && description.trim())) return;
 
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const parsedTags = tagsInput
+      const capturedRawInput = originalRawInput || rawDraft;
+
+      let effectiveTitle = title.trim();
+      let effectiveDescription = description.trim();
+      let effectiveAccountType = accountType;
+      let effectiveItemType = itemType;
+      let effectiveCategory = category;
+      let effectivePriority = priority;
+      let effectiveSteps = validationSteps;
+      let effectiveTags = tagsInput
         ? tagsInput
             .split(",")
             .map((t) => t.trim().replace(/^#/, ""))
             .filter(Boolean)
         : aiSuggestions?.search_tags || [];
 
-      const finalDueDateIso = dueDate ? new Date(dueDate).toISOString() : calculateSlaDueDate(priority);
+      let finalDueDateIso =
+        dueDate && !isNaN(new Date(dueDate).getTime())
+          ? new Date(dueDate).toISOString()
+          : calculateSlaDueDate(effectivePriority);
+
+      let serverSimilarMatches: SimilarTaskMatch[] = [];
+
+      // Automatically optimize raw message with AI when enabled and not yet enhanced
+      if (autoEnhanceWithAI && !hasAiEnhancedDraft) {
+        const aiRes = await runTriageOnDraft({ respectTouchedFields: true });
+        if (aiRes) {
+          effectiveTitle = aiRes.finalTitle || effectiveTitle;
+          effectiveDescription = aiRes.finalDescription || effectiveDescription;
+          effectiveAccountType = aiRes.finalAccountType;
+          effectiveItemType = aiRes.finalItemType;
+          effectiveCategory = aiRes.finalCategory;
+          effectivePriority = aiRes.finalPriority;
+          effectiveSteps = aiRes.finalSteps;
+          effectiveTags = aiRes.finalTags;
+          if (aiRes.targetDueIso && !isNaN(new Date(aiRes.targetDueIso).getTime())) {
+            finalDueDateIso = aiRes.targetDueIso;
+          }
+          serverSimilarMatches = aiRes.similarTasksFromServer || [];
+          setHasAiEnhancedDraft(aiRes.source !== "fallback");
+        }
+      }
+
+      if (!effectiveTitle) {
+        setSubmitError("Informe um título para a demanda.");
+        return;
+      }
+
+      // Check similarity BEFORE persisting if not already dismissed by user
+      if (!isSimilarityDismissed) {
+        const postAiMatches = findSimilarTasks(
+          effectiveTitle,
+          effectiveDescription,
+          existingTasks,
+          0.65
+        );
+        if (postAiMatches.length > 0 || serverSimilarMatches.length > 0) {
+          if (postAiMatches.length === 0 && serverSimilarMatches.length > 0) {
+            setServerSimilarMatch(serverSimilarMatches[0]);
+          }
+          setShowSimilarityScreen(true);
+          return;
+        }
+      }
 
       const payload = {
-        title: title.trim(),
-        description: description.trim(),
-        account_type: accountType,
-        item_type: itemType,
-        category,
-        priority,
+        raw_input: capturedRawInput,
+        title: effectiveTitle,
+        description: effectiveDescription,
+        account_type: effectiveAccountType,
+        item_type: effectiveItemType,
+        category: effectiveCategory,
+        priority: effectivePriority,
         due_date: finalDueDateIso,
-        tags: parsedTags,
+        tags: effectiveTags,
         attachments,
-        validation_steps: validationSteps,
+        validation_steps: effectiveSteps,
         learning_resources: {
           youtube_videos: [],
           search_queries: [],
@@ -345,11 +524,11 @@ export function NewTaskModal({
         <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-xl border shrink-0 ${
-              topSimilar && !isSimilarityDismissed
+              isInterstitialVisible
                 ? "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800"
                 : "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800"
             }`}>
-              {topSimilar && !isSimilarityDismissed ? (
+              {isInterstitialVisible ? (
                 <Lightbulb className="w-5 h-5 text-amber-500" />
               ) : (
                 <Plus className="w-5 h-5" />
@@ -357,14 +536,14 @@ export function NewTaskModal({
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
-                {topSimilar && !isSimilarityDismissed
+                {isInterstitialVisible
                   ? "Demanda Semelhante / Existente Detectada"
                   : "Nova Demanda & Atividade"}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {topSimilar && !isSimilarityDismissed
+                {isInterstitialVisible && topSimilar
                   ? `Identificamos uma demanda existente com ${Math.round(topSimilar.similarityScore * 100)}% de similaridade.`
-                  : "Cadastre solicitações com SLA, etapas de validação e anexos."}
+                  : "Cole ou digite sua solicitação; a IA melhora o texto, cria o título e gera etapas."}
               </p>
             </div>
           </div>
@@ -378,7 +557,7 @@ export function NewTaskModal({
         </div>
 
         {/* Modal Body: Tela Intersticial OU Formulário Completo */}
-        {topSimilar && !isSimilarityDismissed ? (
+        {isInterstitialVisible && topSimilar ? (
           /* ========================================================= */
           /* 1. TELA INTERSTICIAL DE DEMANDA SEMELHANTE                */
           /* ========================================================= */
@@ -429,13 +608,18 @@ export function NewTaskModal({
             </div>
 
             {/* Demanda sendo digitada */}
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#10111a] border border-slate-200 dark:border-zinc-800 space-y-1">
+            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#10111a] border border-slate-200 dark:border-zinc-800 space-y-1.5">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                Sua nova solicitação:
+                Sua nova solicitação {hasAiEnhancedDraft && aiSource !== "fallback" ? "(estruturada pela IA)" : ""}:
               </span>
-              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 italic">
-                &quot;{title}&quot;
+              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                {title.trim() || description.trim().slice(0, 100)}
               </p>
+              {description.trim() && description.trim() !== title.trim() && (
+                <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                  {description.trim()}
+                </p>
+              )}
             </div>
 
             {/* 3 Ações Solicitadas: Recorrência, Reabrir ou Criação Independente */}
@@ -448,7 +632,7 @@ export function NewTaskModal({
                 {/* Botão 1: Registrar Recorrência */}
                 <button
                   type="button"
-                  disabled={isRegisteringRecurrence}
+                  disabled={isRegisteringRecurrence || isAnalyzingAI}
                   onClick={async () => {
                     setIsRegisteringRecurrence(true);
                     try {
@@ -456,7 +640,7 @@ export function NewTaskModal({
                         method: "POST",
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify({
-                          notes: `Nova ocorrência registrada na criação de demanda: "${title}"`,
+                          notes: `Nova ocorrência registrada na criação de demanda: "${title || originalRawInput}"`,
                           method: topSimilar.previousResolutionNotes || undefined,
                           reopen_status: topSimilar.task.status === "COMPLETED" ? undefined : topSimilar.task.status,
                         }),
@@ -473,7 +657,7 @@ export function NewTaskModal({
                       setIsRegisteringRecurrence(false);
                     }
                   }}
-                  className="p-3 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-left transition-all cursor-pointer shadow-xs group"
+                  className="p-3 rounded-xl border border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-left transition-all cursor-pointer shadow-xs group disabled:opacity-60"
                 >
                   <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-800 dark:text-emerald-300 mb-1">
                     {isRegisteringRecurrence ? (
@@ -491,9 +675,9 @@ export function NewTaskModal({
                 {/* Botão 2: Reabrir Demanda */}
                 <button
                   type="button"
-                  disabled={isReopeningTask}
+                  disabled={isReopeningTask || isAnalyzingAI}
                   onClick={handleReopenSimilarTask}
-                  className="p-3 rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-left transition-all cursor-pointer shadow-xs group"
+                  className="p-3 rounded-xl border border-blue-300 dark:border-blue-800 bg-blue-50/70 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-left transition-all cursor-pointer shadow-xs group disabled:opacity-60"
                 >
                   <div className="flex items-center gap-1.5 text-xs font-bold text-blue-800 dark:text-blue-300 mb-1">
                     {isReopeningTask ? (
@@ -513,21 +697,28 @@ export function NewTaskModal({
                 {/* Botão 3: Continuar Criação Independente */}
                 <button
                   type="button"
+                  disabled={isAnalyzingAI}
                   onClick={async () => {
-                    setIsSimilarityDismissed(true);
-                    // Dispara a IA para estruturar título e descrição concisa em texto corrido se ainda não sintetizado
-                    if (!aiSuggestions && (title.trim() || description.trim())) {
-                      await handleAnalyzeWithAI();
+                    // Garante que a IA atue exatamente como na criação normal antes de exibir o formulário
+                    if ((!hasAiEnhancedDraft || aiSource === "fallback") && (title.trim() || description.trim())) {
+                      await runTriageOnDraft({ respectTouchedFields: true });
                     }
+                    setIsSimilarityDismissed(true);
+                    setShowSimilarityScreen(false);
+                    setServerSimilarMatch(null);
                   }}
-                  className="p-3 rounded-xl border border-indigo-300 dark:border-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-left transition-all cursor-pointer shadow-xs group"
+                  className="p-3 rounded-xl border border-indigo-300 dark:border-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-left transition-all cursor-pointer shadow-xs group disabled:opacity-70"
                 >
                   <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-1">
-                    <Plus className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 group-hover:scale-125 transition-transform" />
-                    <span>Criação Independente</span>
+                    {isAnalyzingAI ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
+                    ) : (
+                      <Plus className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 group-hover:scale-125 transition-transform" />
+                    )}
+                    <span>{isAnalyzingAI ? "Estruturando com IA..." : "Criação Independente"}</span>
                   </div>
                   <p className="text-[10px] text-indigo-700/80 dark:text-indigo-400 leading-tight">
-                    Ignorar similaridade e avançar para cadastrar como nova demanda avulsa com auxílio da IA.
+                    Ignorar similaridade e avançar para cadastrar como nova demanda avulsa com a IA.
                   </p>
                 </button>
               </div>
@@ -542,6 +733,24 @@ export function NewTaskModal({
             onSubmit={handleSubmit}
             className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-left custom-scrollbar"
           >
+          {/* Non-blocking similarity alert banner while editing */}
+          {topSimilar && (
+            <div className="p-3 rounded-2xl bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <Lightbulb className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <p className="text-[11px] text-amber-900 dark:text-amber-200 leading-snug truncate">
+                  <strong>Demanda semelhante ({Math.round(topSimilar.similarityScore * 100)}%):</strong> {topSimilar.task.title}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowSimilarityScreen(true)}
+                className="px-2.5 py-1 rounded-lg bg-amber-600 hover:bg-amber-500 text-white text-[11px] font-semibold shrink-0 transition-colors cursor-pointer"
+              >
+                Comparar / Vincular
+              </button>
+            </div>
+          )}
 
           {/* Tipo de Item & Contexto da Conta */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -553,7 +762,10 @@ export function NewTaskModal({
               <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 dark:bg-[#0c0d13] rounded-xl border border-slate-200 dark:border-zinc-800">
                 <button
                   type="button"
-                  onClick={() => setItemType("task")}
+                  onClick={() => {
+                    touchedFieldsRef.current.itemType = true;
+                    setItemType("task");
+                  }}
                   className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
                     itemType === "task"
                       ? "bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
@@ -565,7 +777,10 @@ export function NewTaskModal({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setItemType("activity")}
+                  onClick={() => {
+                    touchedFieldsRef.current.itemType = true;
+                    setItemType("activity");
+                  }}
                   className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
                     itemType === "activity"
                       ? "bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm"
@@ -577,7 +792,10 @@ export function NewTaskModal({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setItemType("reminder")}
+                  onClick={() => {
+                    touchedFieldsRef.current.itemType = true;
+                    setItemType("reminder");
+                  }}
                   className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
                     itemType === "reminder"
                       ? "bg-white dark:bg-zinc-800 text-amber-600 dark:text-amber-400 shadow-sm"
@@ -598,7 +816,10 @@ export function NewTaskModal({
               <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-[#0c0d13] rounded-xl border border-slate-200 dark:border-zinc-800">
                 <button
                   type="button"
-                  onClick={() => setAccountType("work")}
+                  onClick={() => {
+                    touchedFieldsRef.current.accountType = true;
+                    setAccountType("work");
+                  }}
                   className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
                     accountType === "work"
                       ? "bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
@@ -610,7 +831,10 @@ export function NewTaskModal({
                 </button>
                 <button
                   type="button"
-                  onClick={() => setAccountType("personal")}
+                  onClick={() => {
+                    touchedFieldsRef.current.accountType = true;
+                    setAccountType("personal");
+                  }}
                   className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
                     accountType === "personal"
                       ? "bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm"
@@ -626,22 +850,33 @@ export function NewTaskModal({
 
           {/* Título da Demanda */}
           <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
-              2. Título da Demanda:
-            </label>
+            <div className="flex items-center justify-between gap-2">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+                2. Título da Demanda:
+              </label>
+              {hasAiEnhancedDraft && (
+                <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${
+                  aiSource === "fallback"
+                    ? "bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                    : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                }`}>
+                  {aiSource === "fallback" ? "Modo assistido (tente Melhorar com IA)" : "Otimizado pela IA"}
+                </span>
+              )}
+            </div>
             <input
               type="text"
-              required
+              required={!autoEnhanceWithAI || !description.trim()}
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="Ex: Ajuste de relatórios no TOTVS RM / Reunião de equipe..."
+              placeholder="Digite um título ou cole a mensagem abaixo para a IA criar automaticamente..."
               className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
             />
           </div>
 
           {/* Descrição Detalhada */}
-          <div className="space-y-1">
-            <div className="flex items-center justify-between">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
               <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
                 3. Detalhes / Conteúdo da Mensagem:
               </label>
@@ -649,29 +884,47 @@ export function NewTaskModal({
                 type="button"
                 onClick={handleAnalyzeWithAI}
                 disabled={isAnalyzingAI || (!title.trim() && !description.trim())}
-                className="flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-medium bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-all disabled:opacity-40 cursor-pointer"
-                title="A IA analisa o texto para sugerir título, categoria, prioridade e tags sem apagar seu texto"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-all disabled:opacity-40 cursor-pointer"
+                title="Reescreve a mensagem de forma objetiva, cria um título apropriado e gera tarefas de conclusão com IA"
               >
                 {isAnalyzingAI ? (
                   <>
                     <Loader2 className="w-3 h-3 animate-spin" />
-                    <span>Analisando...</span>
+                    <span>Melhorando com IA...</span>
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-3 h-3" />
-                    <span>Sugerir Metadados com IA</span>
+                    <span>{hasAiEnhancedDraft ? "Reprocessar com IA" : "Melhorar com IA agora"}</span>
                   </>
                 )}
               </button>
             </div>
             <textarea
-              rows={3}
+              rows={4}
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Cole aqui o e-mail completo, mensagem encaminhada, orientações recebidas ou anotações detalhadas..."
-              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 leading-relaxed resize-none font-sans"
+              placeholder="Cole aqui o e-mail completo, mensagem encaminhada, orientações recebidas ou rascunho informal..."
+              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 leading-relaxed resize-y font-sans"
             />
+
+            <label className="flex items-center gap-2 pt-0.5 text-[11px] text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={autoEnhanceWithAI}
+                onChange={(e) => setAutoEnhanceWithAI(e.target.checked)}
+                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <span>
+                Aprimorar automaticamente título, texto objetivo e tarefas de conclusão com IA ao criar
+              </span>
+            </label>
+
+            {aiError && (
+              <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800 text-[11px] text-amber-800 dark:text-amber-300">
+                {aiError}
+              </div>
+            )}
           </div>
 
           {/* Pontos de Validação & Etapas Sugeridas pela IA */}
@@ -706,7 +959,7 @@ export function NewTaskModal({
 
             {validationSteps.length === 0 ? (
               <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                Clique em <strong className="text-indigo-600 dark:text-indigo-400">"Sugerir Metadados com IA"</strong> acima para gerar automaticamente as etapas de execução, ou adicione etapas manuais para guiar a finalização.
+                Clique em <strong className="text-indigo-600 dark:text-indigo-400">&quot;Melhorar com IA agora&quot;</strong> acima (ou finalize criando a demanda) para gerar automaticamente as tarefas práticas de conclusão, ou adicione etapas manualmente.
               </p>
             ) : (
               <div className="space-y-1.5 pt-1">
@@ -779,7 +1032,10 @@ export function NewTaskModal({
               <CategoryCombobox
                 categories={categoriesList}
                 value={category}
-                onChange={setCategory}
+                onChange={(val) => {
+                  touchedFieldsRef.current.category = true;
+                  setCategory(val);
+                }}
               />
             </div>
 
@@ -822,7 +1078,10 @@ export function NewTaskModal({
               <input
                 type="datetime-local"
                 value={dueDate}
-                onChange={(e) => setDueDate(e.target.value)}
+                onChange={(e) => {
+                  touchedFieldsRef.current.dueDate = true;
+                  setDueDate(e.target.value);
+                }}
                 className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-hidden focus:border-indigo-500 font-mono"
               />
             </div>
@@ -860,7 +1119,7 @@ export function NewTaskModal({
       )}
 
       {/* Footer Actions - Visible when filling form */}
-        {(!topSimilar || isSimilarityDismissed) && (
+        {!isInterstitialVisible && (
           <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
             <button
               type="button"
@@ -873,13 +1132,13 @@ export function NewTaskModal({
             <button
               type="submit"
               form="new-task-form"
-              disabled={isSubmitting || !title.trim()}
+              disabled={isSubmitting || isAnalyzingAI || (!title.trim() && !(autoEnhanceWithAI && description.trim()))}
               className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] cursor-pointer"
             >
-              {isSubmitting ? (
+              {isSubmitting || isAnalyzingAI ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Criando Demanda...</span>
+                  <span>{isAnalyzingAI ? "Otimizando com IA..." : "Criando Demanda..."}</span>
                 </>
               ) : (
                 <>

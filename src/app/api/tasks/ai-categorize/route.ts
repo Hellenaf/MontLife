@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTasksFromDb, saveTaskToDb } from "@/services/taskService";
 import { categorizeTaskWithAI } from "@/services/geminiService";
 import { fetchYouTubeResources } from "@/services/googleService";
-import { aiCache } from "@/lib/aiCache";
 import { getSessionUser } from "@/lib/session";
 import { normalizeCategory } from "@/lib/categories";
 
@@ -17,7 +16,6 @@ export async function POST(req: NextRequest) {
 
     const tasks = await getTasksFromDb(userId);
     let updatedCount = 0;
-    let tokensSaved = 0;
 
     // Filter to ONLY process tasks that genuinely need categorization (generic or missing tags)
     // Skips already established categories to prevent redundant token burning
@@ -37,21 +35,11 @@ export async function POST(req: NextRequest) {
       .slice(0, 5);
 
     for (const task of tasksToProcess) {
-      const cacheKey = `cat:${task.title}:${task.description || ""}:${task.account_type}`;
-      const cached = await aiCache.getAsync<any>(cacheKey);
-
-      let aiData;
-      if (cached) {
-        aiData = cached.data;
-        tokensSaved += cached.tokensSaved;
-      } else {
-        aiData = await categorizeTaskWithAI(
-          task.title,
-          task.description,
-          task.account_type
-        );
-        aiCache.set(cacheKey, aiData, 75);
-      }
+      const aiData = await categorizeTaskWithAI(
+        task.title,
+        task.description,
+        task.account_type
+      );
 
       let hasChanges = false;
 
@@ -91,7 +79,7 @@ export async function POST(req: NextRequest) {
       success: true,
       updated_count: updatedCount,
       evaluated_count: tasksToProcess.length,
-      tokens_saved_estimate: tokensSaved,
+      tokens_saved_estimate: 0,
       message: `${updatedCount} tarefas refinadas com sucesso.`,
     });
   } catch (error: unknown) {

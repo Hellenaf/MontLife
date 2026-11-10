@@ -23,16 +23,32 @@ class AICacheManager {
     totalTokensSaved: 0,
   };
 
+  private hashString(str: string): string {
+    let h1 = 0xdeadbeef;
+    let h2 = 0x41c6ce57;
+    for (let i = 0; i < str.length; i++) {
+      const ch = str.charCodeAt(i);
+      h1 = Math.imul(h1 ^ ch, 2654435761);
+      h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return (h2 >>> 0).toString(16).padStart(8, "0") + (h1 >>> 0).toString(16).padStart(8, "0");
+  }
+
   /**
-   * Normalizes raw natural language queries to maximize cache hit rates.
+   * Normalizes raw natural language queries and appends a full-string hash
+   * so long emails or commands sharing the same opening never collide in memory or Firestore.
    */
   public normalizeKey(raw: string): string {
-    return raw
+    const normalized = raw
       .toLowerCase()
       .trim()
       .replace(/\s+/g, " ")
-      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "")
-      .slice(0, 150);
+      .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, "");
+    const hash = this.hashString(normalized);
+    const prefix = normalized.replace(/[^a-z0-9]/g, "_").slice(0, 56);
+    return `${prefix}_${hash}`;
   }
 
   get<T>(query: string): { data: T; tokensSaved: number } | null {

@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { triageInputWithGemini } from "@/services/geminiService";
+import { triageInputWithGeminiDetailed } from "@/services/geminiService";
 import { findSimilarCompletedTasks, getTasksFromDb } from "@/services/taskService";
 import { fetchYouTubeResources } from "@/services/googleService";
 import { calculateSlaDueDate } from "@/lib/sla";
-import { aiCache } from "@/lib/aiCache";
 import { findSimilarTasks } from "@/lib/taskDeduplication";
 import { getSessionUser } from "@/lib/session";
 import { GeminiTriageResponse } from "@/types";
@@ -53,24 +52,18 @@ export async function POST(req: NextRequest) {
     }
 
     const cleanInput = raw_input.trim();
-    let triage: GeminiTriageResponse;
-    let fromCache = false;
-    let tokensSaved = 0;
 
-    // 1. In-Memory AI Cache Lookup: Check if this exact input was recently triaged (unless user forced fresh)
-    if (!force_fresh_ai) {
-      const cached = aiCache.get<GeminiTriageResponse>(cleanInput);
-      if (cached) {
-        fromCache = true;
-        tokensSaved = cached.tokensSaved;
-        triage = cached.data;
-      } else {
-        triage = await triageInputWithGemini(cleanInput);
-        aiCache.set(cleanInput, triage, 450);
-      }
-    } else {
-      triage = await triageInputWithGemini(cleanInput);
-      aiCache.set(cleanInput, triage, 450);
+    // 1. Run Gemini Triage (versioned cache, respects force_fresh_ai, never caches fallback errors)
+    const triageResult = await triageInputWithGeminiDetailed(cleanInput, undefined, {
+      forceFresh: Boolean(force_fresh_ai),
+    });
+    const triage: GeminiTriageResponse = triageResult.triage;
+    const fromCache = triageResult.source === "cache";
+    const aiUsed = triageResult.source === "gemini" || triageResult.source === "cache";
+    const tokensSaved = fromCache ? 450 : 0;
+
+    if (triageResult.source === "fallback" && triageResult.errorReason) {
+      console.warn("[POST /api/triage] Fallback heuristic used:", triageResult.errorReason);
     }
 
     // 2. High-precision semantic deduplication & similarity scan against database
@@ -118,6 +111,10 @@ export async function POST(req: NextRequest) {
         from_cache: fromCache,
         from_db: false,
         tokens_saved: tokensSaved,
+        ai_used: aiUsed,
+        ai_source: triageResult.source,
+        model_used: triageResult.modelUsed || null,
+        warning: triageResult.errorReason || null,
       },
     });
   } catch (error: unknown) {

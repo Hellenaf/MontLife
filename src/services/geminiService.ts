@@ -4,61 +4,47 @@ import { aiCache } from "@/lib/aiCache";
 import { normalizeCategory, STANDARD_CATEGORIES } from "@/lib/categories";
 
 const SYSTEM_PROMPT = `Você é o assistente executivo e arquiteto de demandas sênior do MontLife.
-Sua missão é transformar qualquer entrada em linguagem natural (áudios transcritos, mensagens informais de WhatsApp/Teams, rascunhos rápidos ou comandos falados com gírias e vícios) em uma demanda corporativa impecável de alto nível executivo.
+Sua missão é REESCREVER e ESTRUTURAR qualquer entrada em linguagem natural (áudios transcritos, mensagens informais de WhatsApp/Teams, rascunhos confusos ou relatos longos) em uma demanda objetiva, direta ao ponto, com título apropriado e sub-tarefas práticas de execução.
 
-CRITÉRIOS OBRIGATÓRIOS DE QUALIDADE:
+REGRAS CRÍTICAS DE TRANSFORMAÇÃO (OBRIGATÓRIO):
+- NUNCA copie, repita ou apenas corrija vírgulas do texto original mantendo a mesma redação coloquial do usuário.
+- Você DEVE reescrever ativamente a mensagem para deixá-la MAIS OBJETIVA, CLARA, DIRETA e PROFISSIONAL do que o rascunho original.
+- Elimine saudações, rodeios, hesitações, repetições e expressões informais (ex: "gostaria de", "preciso que", "seria algo assim", "resumindo", "tipo", "me ajuda", "ver esse negócio", "a forma que eles fazem").
+- Mantenha 100% dos dados técnicos reais mencionados (nomes de sistemas, códigos de relatórios como 1207/1215, tabelas, regras de cálculo, métricas, áreas ou pessoas envolvidas).
 
-1. TÍTULO CLARO, PROFISSIONAL & ACIONÁVEL ('refined_title'):
-   - Crie um título conciso, elegante e orientado ao entregável final (máximo 70 caracteres).
-   - Inicie sempre com verbo de ação ou substantivo técnico forte (ex: "Implementar", "Parametrizar", "Atualizar", "Corrigir", "Homologar").
-   - Exemplos de excelência:
-     • Entrada informal: "No power bi de suprimentos inserir atualização do Tempo (Lead Time)... média de NFs de mês para dia"
-       -> Título: "Implementar Métricas de Lead Time e Média Diária de NFs no Power BI de Suprimentos"
-     • Entrada informal: "Ajustar o relatório 1207 do totvs que tá travando a saída"
-       -> Título: "Otimizar e Parametrizar Consulta/Relatório 1207 no TOTVS RM"
-   - JAMAIS repita construções coloquiais ("No power bi inserir...", "seria algo assim", "resumindo", "fazer tal coisa").
+1. TÍTULO APROPRIADO, CLARO & ACIONÁVEL ('refined_title'):
+   - Crie um título conciso, específico e orientado ao entregável final (máximo 70 caracteres).
+   - Comece sempre com verbo no infinitivo ou substantivo técnico direto (ex: "Implementar", "Corrigir", "Parametrizar", "Atualizar", "Revisar", "Configurar", "Pagar", "Solicitar").
+   - Nunca reutilize aberturas informais do prompt original (jamais comece com "No power bi inserir...", "Preciso atualizar...", "Ver erro de...").
+   - Exemplos:
+     • Entrada: "No power bi de suprimentos inserir atualização do Tempo (Lead Time), seria data emissão x data de saida, tem no totvs no 1207 e no 1215 resumindo... média de NFs de mês para dia"
+       -> Título: "Implementar Lead Time e Média Diária de NFs no Power BI de Suprimentos"
+     • Entrada: "Ajustar o relatório 1207 do totvs que tá travando quando puxa saída"
+       -> Título: "Otimizar Desempenho e Parâmetros do Relatório 1207 no TOTVS RM"
 
-2. DESCRIÇÃO SIMPLES, CONCISA E EM TEXTO CORRIDO ('structured_description'):
-   - A descrição DEVE ser redigida OBRIGATORIAMENTE em TEXTO CORRIDO (prosa fluida contínua em 1 ou 2 parágrafos).
-   - Deve ser uma mensagem simples, direta e concisa, sem enrolação e sem jargões vazios.
-   - Traga TODOS os pontos, especificações, sistemas e requisitos mencionados pelo usuário, sem omitir detalhes.
-   - Melhore integralmente a ortografia, pontuação, acentuação e concordância do texto original (corrigindo gírias, erros de digitação e termos truncados).
+2. DESCRIÇÃO OBJETIVA, DIRETA E EM TEXTO CORRIDO ('structured_description'):
+   - Reescreva a solicitação do zero em 1 parágrafo objetivo e direto (ou no máximo 2 parágrafos curtos caso envolva frentes distintas), sempre em TEXTO CORRIDO fluido.
+   - Vá direto ao que precisa ser feito, com qual sistema/regra, por quê e para quem validar — sem redundâncias e sem frases vagas.
+   - Garanta ortografia, pontuação e concordância perfeitas em português corporativo claro.
    - É ESTRITAMENTE PROIBIDO usar:
-     • Marcadores de tópicos ou listas com traços, asteriscos ou hífens (ex: '-', '*', '•').
-     • Listas numeradas (ex: '1.', '2.').
-     • Linhas divisórias (ex: '---').
-     • Títulos artificiais, seções em negrito ou emojis de cabeçalho (como '📋 Resumo Executivo:', '🎯 Requisitos:', '🔗 Sistemas:').
-   - Exemplo de excelência em texto corrido:
-     "Desenvolver e atualizar o painel analítico de Suprimentos no Power BI com a implementação do indicador de Lead Time de faturamento, calculado a partir da diferença entre a data de saída e a emissão das notas fiscais. Além disso, ajustar a granularidade da medida de emissão de NFs de periodicidade mensal para apuração diária, integrando as regras com base nas consultas operacionais 1207 e 1215 do TOTVS RM para validação junto ao setor de Suprimentos e Expedição."
+     • Marcadores ou listas com '-', '*', '•' ou números ('1.', '2.').
+     • Linhas divisórias ('---'), markdown em negrito ('**'), cabeçalhos ou emojis decorativos.
+   - Exemplo de reescrita objetiva:
+     "Atualizar o painel de Suprimentos no Power BI para incluir o indicador de Lead Time de faturamento (intervalo entre data de emissão e data de saída das notas fiscais) e alterar a medida de média de NFs de mensal para diária. Os dados e regras devem ser conciliados com as consultas 1207 e 1215 do TOTVS RM e validados com Suprimentos e Faturamento."
 
-3. PONTOS DE VALIDAÇÃO & CHECKLIST ('validation_steps'):
-   - Gere de 3 a 5 etapas práticas, sequenciais e técnicas para que a demanda seja homologada e concluída com sucesso:
-     • Mapear fontes de dados ou tabelas necessárias no sistema...
-     • Desenvolver regra de negócio / medida DAX / código...
-     • Testar amostragem confrontando com o ERP/base real...
-     • Homologar com o solicitante / equipe responsável e publicar...
+3. TAREFAS PRÁTICAS PARA CONCLUIR A DEMANDA ('validation_steps'):
+   - Gere de 3 a 5 tarefas objetivas, sequenciais e específicas para este caso real, guiando o usuário desde o diagnóstico/levantamento até a validação final e entrega.
+   - Mencione os sistemas, códigos, telas ou validações citados pelo usuário em vez de frases genéricas vazias.
+   - Escreva cada item SEM numeração no início (NÃO coloque "1. ", "2. " nem "-" no texto da etapa).
 
 4. CONTEXTO & CLASSIFICAÇÃO:
-   - 'account_type': 'work' (TOTVS, Power BI, relatórios, contratos, TI, rotinas escolares) ou 'personal' (saúde, finanças pessoais, compras).
-   - 'item_type': 'task' (demanda técnica/operacional), 'activity' (reunião/evento) ou 'reminder' (lembrete).
-   - 'category': DEVE ser OBRIGATORIAMENTE uma destas categorias padronizadas do MontLife:
-     • 'Sistemas ERP' (TOTVS RM, Protheus, Patches, ERP)
-     • 'BI & Analytics' (Power BI, Relatórios, Metabase, Dashboards, DAX)
-     • 'Finanças & Tesouraria' (Tesouraria, Contas, Pagamentos, Faturamento, Boletos)
-     • 'Recursos Humanos & DP' (RH, DP, Colaboradores, Folha, Ponto)
-     • 'Secretaria & Acadêmico' (Secretaria, Matrículas, Alunos, Histórico, Biblioteca)
-     • 'Infraestrutura & TI' (Redes, Servidores, Hardware, Suporte Técnico, Wifi)
-     • 'Comunicação & Avisos' (Classapp, Mensagens, E-mails, Notificações)
-     • 'Gestão & Contratos' (Contratos, Jurídico, Compras, Suprimentos)
-     • 'Automações & Scripts' (Python, Scripts, APIs, Bots, Automações)
-     • 'Vida Pessoal & Casa' (Casa, Família, Mercado, Finanças Pessoais)
-     • 'Saúde & Bem-estar' (Médicos, Treino, Consultas, Exames, Remédios)
-     • 'Estudos & Carreira' (Cursos, Livros, Certificações, Idiomas)
-     • 'Operações & Demandas' (Demandas gerais, suporte operacional, rotinas)
-     NUNCA invente sinônimos ou variações livres. Escolha sempre a categoria que melhor se alinha à lista acima.
-   - 'priority': 'P1' (crítica), 'P2' (alta), 'P3' (média/padrão), 'P4' (baixa/planejada).
-   - 'search_tags': Array com 3 a 5 tags técnicas limpas (ex: ["PowerBI", "TOTVS-RM", "Suprimentos", "LeadTime", "DAX"]).
-   - 'learning_queries': 2 buscas focadas para tutoriais e melhores práticas.`;
+   - 'account_type': 'work' (TOTVS, Power BI, relatórios, TI, rotinas corporativas/escolares) ou 'personal' (saúde, casa, compras, finanças pessoais).
+   - 'item_type': 'task' (demanda operacional/técnica), 'activity' (reunião/compromisso/evento) ou 'reminder' (lembrete pontual).
+   - 'category': Escolha OBRIGATORIAMENTE uma destas categorias oficiais do MontLife:
+     • 'Sistemas ERP' | 'BI & Analytics' | 'Finanças & Tesouraria' | 'Recursos Humanos & DP' | 'Secretaria & Acadêmico' | 'Infraestrutura & TI' | 'Comunicação & Avisos' | 'Gestão & Contratos' | 'Automações & Scripts' | 'Vida Pessoal & Casa' | 'Saúde & Bem-estar' | 'Estudos & Carreira' | 'Operações & Demandas'
+   - 'priority': 'P1' (crítica/parado), 'P2' (alta), 'P3' (média/padrão), 'P4' (baixa/planejada).
+   - 'search_tags': 3 a 5 tags técnicas limpas e curtas.
+   - 'learning_queries': 2 termos de busca objetivos para documentação ou tutoriais relacionados.`;
 
 const RESPONSE_SCHEMA = {
   type: Type.OBJECT,
@@ -686,8 +672,23 @@ export function synthesizeStructuredDescription(
     return `Parametrização e ajuste técnico ${reportPart} do TOTVS RM, revisando filtros, parâmetros de consulta e consistência dos dados gerados frente às tabelas do ERP para garantir a integridade das informações gerenciais.`;
   }
 
-  // Fallback geral em texto corrido simples e conciso
-  return cleanToContinuousProse(clean);
+  // Fallback geral em texto corrido objetivo e direto
+  const condensed = clean
+    .replace(/^(?:oi|olá|ola|bom dia|boa tarde|boa noite|pessoal)[,!\s]+/i, "")
+    .replace(/^(?:gostaria\s+(?:de\s+)?|preciso\s+(?:que\s+|de\s+)?|queria\s+(?:que\s+)?|solicito\s+(?:que\s+)?|seria\s+bom\s+(?:se\s+)?|por\s+favor[,]?\s*|favor\s+|tem\s+como\s+|pode(?:ria)?\s+)+/i, "")
+    .replace(/\b(?:resumindo|algo\s+assim|tipo\s+assim|mais\s+ou\s+menos|na\s+verdade)\b[,:\s]*/gi, " ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  const polished = cleanToContinuousProse(condensed || clean);
+  if (!polished) return "";
+  return polished.charAt(0).toUpperCase() + polished.slice(1);
+}
+
+function cleanStepPrefix(step: string): string {
+  return (step || "")
+    .replace(/^\s*(?:\d+[.)]\s*|[-*•]+\s*)+/, "")
+    .trim();
 }
 
 /**
@@ -718,42 +719,43 @@ export function synthesizeValidationSteps(rawInput: string, title: string): stri
   // 2. TOTVS RM (ERP Geral / Relatórios / Fiscal)
   if (t.includes("totvs") || t.includes(" rm") || t.includes("patch") || t.includes("protheus")) {
     if (t.includes("patch") || t.includes("release")) {
-      steps.push("1. Baixar o pacote de atualização e verificar documentação de notas de release.");
-      steps.push("2. Aplicar o patch no ambiente de homologação e validar a integridade dos serviços.");
-      steps.push("3. Executar testes regressivos nas principais rotinas impactadas.");
-      steps.push("4. Agendar a aplicação em produção e notificar a equipe.");
+      steps.push("Baixar o pacote de atualização e verificar documentação de notas de release.");
+      steps.push("Aplicar o patch no ambiente de homologação e validar a integridade dos serviços.");
+      steps.push("Executar testes regressivos nas principais rotinas impactadas.");
+      steps.push("Agendar a aplicação em produção e notificar a equipe.");
     } else {
-      steps.push("1. Inspecionar as regras de negócio, tabelas e parâmetros da rotina no TOTVS RM.");
-      steps.push("2. Aplicar os ajustes ou configurações necessárias em ambiente de homologação.");
-      steps.push("3. Executar testes de validação dos processos e relatórios impactados.");
-      steps.push("4. Confirmar o funcionamento correto com o usuário solicitante e documentar na Wiki.");
+      steps.push("Inspecionar as regras de negócio, tabelas e parâmetros da rotina no TOTVS RM.");
+      steps.push("Aplicar os ajustes ou configurações necessárias em ambiente de homologação.");
+      steps.push("Executar testes de validação dos processos e relatórios impactados.");
+      steps.push("Confirmar o funcionamento correto com o usuário solicitante e documentar na Wiki.");
     }
     return steps;
   }
 
   // 3. Recursos Humanos / DP
   if (/\brh\b/.test(t) || t.includes("recursos humanos") || t.includes("folha") || t.includes("colaborador")) {
-    steps.push("1. Alinhar com o setor de Recursos Humanos os requisitos e critérios da demanda.");
-    steps.push("2. Parametrizar e validar os registros no módulo de RH do sistema.");
-    steps.push("3. Realizar testes de consistência em ambiente de testes.");
-    steps.push("4. Confirmar homologação com a equipe de RH.");
+    steps.push("Alinhar com o setor de Recursos Humanos os requisitos e critérios da demanda.");
+    steps.push("Parametrizar e validar os registros no módulo de RH do sistema.");
+    steps.push("Realizar testes de consistência em ambiente de testes.");
+    steps.push("Confirmar homologação com a equipe de RH.");
     return steps;
   }
 
   // 4. Finanças & Tesouraria
   if (t.includes("pagar") || t.includes("comprar") || t.includes("financeir") || t.includes("tesouraria") || t.includes("boleto")) {
-    steps.push("1. Conferir os valores, comprovantes fiscais e datas de vencimento.");
-    steps.push("2. Obter autorização da coordenação / diretoria responsável.");
-    steps.push("3. Executar o pagamento / lançamento e realizar a conciliação bancária.");
-    steps.push("4. Arquivar o comprovante e notificar os envolvidos.");
+    steps.push("Conferir os valores, comprovantes fiscais e datas de vencimento.");
+    steps.push("Obter autorização da coordenação ou área responsável.");
+    steps.push("Executar o pagamento ou lançamento e realizar a conciliação.");
+    steps.push("Arquivar o comprovante e notificar os envolvidos.");
     return steps;
   }
 
   // 5. Demanda Geral
-  steps.push("1. Analisar o escopo detalhado e dependências da demanda.");
-  steps.push("2. Executar as ações e configurações necessárias no ambiente.");
-  steps.push("3. Realizar testes de homologação e validação técnica.");
-  steps.push("4. Confirmar a conclusão e alinhar com o solicitante.");
+  const focus = title && title.length <= 55 ? ` (${title})` : "";
+  steps.push(`Levantar o escopo técnico, pré-requisitos e acessos necessários${focus}.`);
+  steps.push("Executar os ajustes, configurações ou tratativas principais da solicitação.");
+  steps.push("Realizar testes práticos para confirmar o resultado esperado.");
+  steps.push("Validar a entrega com os envolvidos e encerrar a demanda.");
 
   return steps;
 }
@@ -767,7 +769,7 @@ function fallbackTriage(rawInput: string): GeminiTriageResponse {
 
   const title = synthesizeRefinedTitle(rawInput);
   const description = synthesizeStructuredDescription(rawInput, title, heuristic.category);
-  const validationSteps = synthesizeValidationSteps(rawInput, title);
+  const validationSteps = synthesizeValidationSteps(rawInput, title).map(cleanStepPrefix).filter(Boolean);
 
   return {
     refined_title: title,
@@ -783,105 +785,301 @@ function fallbackTriage(rawInput: string): GeminiTriageResponse {
   };
 }
 
+// Active production Gemini model cascade (explicit 3.x models first, then floating alias & 2.5 fallback)
+const PRIMARY_FLASH_MODELS = [
+  "gemini-3.8-flash",
+  "gemini-3.7-flash",
+  "gemini-3.6-flash",
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-flash-latest",
+  "gemini-flash-lite-latest",
+  "gemini-2.5-flash",
+];
+
+let cachedWorkingModel: string | null = null;
+let cachedDiscoveredModels: { models: string[]; fetchedAt: number } | null = null;
+
+async function discoverLiveFlashModels(ai: GoogleGenAI): Promise<string[]> {
+  const now = Date.now();
+  if (cachedDiscoveredModels && now - cachedDiscoveredModels.fetchedAt < 60 * 60 * 1000) {
+    return cachedDiscoveredModels.models;
+  }
+
+  try {
+    const pager = await ai.models.list({ config: { pageSize: 50 } });
+    const rawModels = Array.isArray(pager?.page) ? pager.page : [];
+    const textModels = rawModels
+      .filter((m) => {
+        const name = (m.name || "").toLowerCase();
+        const supportsGenerate =
+          !Array.isArray(m.supportedActions) ||
+          m.supportedActions.includes("generateContent");
+        return (
+          supportsGenerate &&
+          name.includes("gemini") &&
+          !name.includes("embedding") &&
+          !name.includes("image") &&
+          !name.includes("audio") &&
+          !name.includes("tts") &&
+          !name.includes("veo") &&
+          !name.includes("robotics") &&
+          !name.includes("live") &&
+          !name.includes("gemini-1.") &&
+          !name.includes("gemini-2.0")
+        );
+      })
+      .map((m) => (m.name || "").replace(/^models\//, ""))
+      .filter(Boolean);
+
+    // Prioritize flash models first, newest sorted descending
+    const sorted = textModels.sort((a, b) => {
+      const aFlash = a.includes("flash") ? 1 : 0;
+      const bFlash = b.includes("flash") ? 1 : 0;
+      if (aFlash !== bFlash) return bFlash - aFlash;
+      return b.localeCompare(a);
+    });
+
+    const top = sorted.slice(0, 5);
+    cachedDiscoveredModels = { models: top, fetchedAt: now };
+    return top;
+  } catch (err) {
+    console.warn("Failed to dynamically list Gemini models:", err);
+    return [];
+  }
+}
+
+function extractRawText(response: any): string {
+  if (!response) return "";
+  const raw = typeof response.text === "function" ? response.text() : response.text;
+  return typeof raw === "string" ? raw : "";
+}
+
+function extractJsonObject(raw: string): string | null {
+  if (!raw) return null;
+  let cleaned = raw.trim();
+  // Strip optional markdown code fences
+  cleaned = cleaned.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+  if (cleaned.startsWith("{") && cleaned.endsWith("}")) {
+    return cleaned;
+  }
+  const firstBrace = cleaned.indexOf("{");
+  const lastBrace = cleaned.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    return cleaned.slice(firstBrace, lastBrace + 1);
+  }
+  return null;
+}
+
+async function generateWithActiveGeminiModels(
+  ai: GoogleGenAI,
+  contents: string,
+  config: Record<string, any>
+): Promise<{ text: string; modelUsed: string } | null> {
+  const orderedCandidates = Array.from(
+    new Set([
+      ...(cachedWorkingModel ? [cachedWorkingModel] : []),
+      ...PRIMARY_FLASH_MODELS,
+    ])
+  );
+
+  for (const modelName of orderedCandidates) {
+    try {
+      const response = await ai.models.generateContent({
+        model: modelName,
+        contents,
+        config,
+      });
+      const respText = extractRawText(response).trim();
+      if (respText) {
+        cachedWorkingModel = modelName;
+        return { text: respText, modelUsed: modelName };
+      }
+    } catch (modelErr: any) {
+      if (cachedWorkingModel === modelName) {
+        cachedWorkingModel = null;
+      }
+      const msg = modelErr?.message || String(modelErr);
+      console.warn(`[Gemini] Model ${modelName} failed:`, msg.slice(0, 220));
+    }
+  }
+
+  // Last-resort dynamic discovery in case project/region uses a different active alias
+  const discovered = await discoverLiveFlashModels(ai);
+  for (const modelName of discovered) {
+    if (orderedCandidates.includes(modelName)) continue;
+    try {
+      const response = await ai.models.generateContent({
+        model: modelName,
+        contents,
+        config,
+      });
+      const respText = extractRawText(response).trim();
+      if (respText) {
+        cachedWorkingModel = modelName;
+        return { text: respText, modelUsed: modelName };
+      }
+    } catch (modelErr: any) {
+      const msg = modelErr?.message || String(modelErr);
+      console.warn(`[Gemini] Discovered model ${modelName} failed:`, msg.slice(0, 220));
+    }
+  }
+
+  return null;
+}
+
+export interface TriageExecutionResult {
+  triage: GeminiTriageResponse;
+  source: "gemini" | "cache" | "fallback";
+  modelUsed?: string;
+  errorReason?: string;
+}
+
 /**
- * Triages free-text input using Gemini with schema enforcement,
- * falling back gracefully to heuristic classification if key has no quota.
+ * Triages free-text input using Gemini with schema enforcement and full diagnostics.
+ * Cache key is versioned (triage_v2:) and NEVER persists offline/error fallbacks.
  */
-export async function triageInputWithGemini(
+export async function triageInputWithGeminiDetailed(
   rawInput: string,
-  apiKey?: string
-): Promise<GeminiTriageResponse> {
+  apiKey?: string,
+  options?: { forceFresh?: boolean }
+): Promise<TriageExecutionResult> {
   const cleanInput = (rawInput || "").trim();
-  if (!cleanInput) {
-    return fallbackTriage("");
+  if (!cleanInput || cleanInput.length < 3) {
+    return {
+      triage: fallbackTriage(cleanInput),
+      source: "fallback",
+      errorReason: cleanInput ? "Entrada muito curta para triagem por IA." : "Entrada vazia.",
+    };
   }
 
-  // 1. Check persistent AI Cache (0 TOKENS)
-  const cached = await aiCache.getAsync<GeminiTriageResponse>(cleanInput);
-  if (cached) {
-    return cached.data;
+  const cacheKey = `triage_v2:${cleanInput}`;
+
+  // 1. Check persistent AI Cache (ONLY when not forcing fresh AI)
+  if (!options?.forceFresh) {
+    const cached = await aiCache.getAsync<GeminiTriageResponse>(cacheKey);
+    if (cached && cached.tokensSaved > 0 && cached.data?.refined_title) {
+      return {
+        triage: cached.data,
+        source: "cache",
+      };
+    }
   }
 
-  // 2. Ultra-fast Zero-Token Path for micro-commands (0 TOKENS)
-  // Somente desvia para heurística comandos ultra curtos (<= 2 palavras, ex: "Comprar café") sem identificadores técnicos
-  const words = cleanInput.split(/\s+/).filter(Boolean);
-  const isMicroSimple = words.length <= 2 && !cleanInput.includes("\n") && !/[0-9]/.test(cleanInput);
-  if (isMicroSimple) {
-    const fastResult = fallbackTriage(cleanInput);
-    aiCache.set(cleanInput, fastResult, 0);
-    return fastResult;
-  }
-
-  const key = apiKey || process.env.GEMINI_API_KEY;
+  const key = (apiKey || process.env.GEMINI_API_KEY || "").trim();
   if (!key || key === "sua_chave_da_gemini_api") {
-    const fallback = fallbackTriage(cleanInput);
-    aiCache.set(cleanInput, fallback, 0);
-    return fallback;
+    return {
+      triage: fallbackTriage(cleanInput),
+      source: "fallback",
+      errorReason: "Chave GEMINI_API_KEY não configurada no ambiente.",
+    };
   }
 
   try {
     const now = new Date();
     const promptWithContext = `Data e hora atual de referência: ${now.toISOString()} (${now.toLocaleDateString("pt-BR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} às ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}).
 
-Analise o texto a seguir, crie um título profissional, estruture a descrição, extraia o prazo exato se mencionado (ou null se nenhum prazo foi informado), e gere etapas de validação para a finalização da demanda:
+Reescreva e estruture a solicitação abaixo tornando o texto objetivo e direto (sem copiar a redação informal), crie um título apropriado começando com verbo de ação, extraia o prazo se houver e gere 3 a 5 sub-tarefas práticas específicas para ajudar o usuário a concluir esta demanda:
 
-"${cleanInput}"`;
+"""
+${cleanInput}
+"""`;
 
     const ai = new GoogleGenAI({ apiKey: key });
-    let text: string | null = null;
-    const candidateModels = ["gemini-1.5-flash", "gemini-2.0-flash", "gemini-1.5-pro"];
+    const generation = await generateWithActiveGeminiModels(ai, promptWithContext, {
+      systemInstruction: SYSTEM_PROMPT,
+      responseMimeType: "application/json",
+      responseSchema: RESPONSE_SCHEMA,
+      temperature: 0.25,
+      maxOutputTokens: 2048,
+    });
 
-    for (const modelName of candidateModels) {
-      try {
-        const response = await ai.models.generateContent({
-          model: modelName,
-          contents: promptWithContext,
-          config: {
-            systemInstruction: SYSTEM_PROMPT,
-            responseMimeType: "application/json",
-            responseSchema: RESPONSE_SCHEMA,
-            temperature: 0.2,
-            maxOutputTokens: 850,
-          },
-        });
-        const respText = typeof response.text === "function" ? (response.text as any)() : response.text;
-        if (respText && respText.trim().startsWith("{")) {
-          text = respText;
-          break;
-        }
-      } catch (modelErr) {
-        console.warn(`Model ${modelName} call failed, trying next candidate:`, modelErr);
-      }
-    }
-    if (!text) {
-      const fallback = fallbackTriage(cleanInput);
-      aiCache.set(cleanInput, fallback, 0);
-      return fallback;
+    if (!generation) {
+      return {
+        triage: fallbackTriage(cleanInput),
+        source: "fallback",
+        errorReason: "Nenhum modelo Gemini ativo respondeu à requisição.",
+      };
     }
 
-    const parsed = JSON.parse(text) as GeminiTriageResponse;
+    const jsonStr = extractJsonObject(generation.text);
+    if (!jsonStr) {
+      return {
+        triage: fallbackTriage(cleanInput),
+        source: "fallback",
+        modelUsed: generation.modelUsed,
+        errorReason: "Resposta do modelo Gemini não retornou JSON válido.",
+      };
+    }
+
+    const parsed = JSON.parse(jsonStr) as GeminiTriageResponse;
+    const heuristicFallback = fallbackTriage(cleanInput);
+
+    parsed.refined_title =
+      (parsed.refined_title || "")
+        .replace(/^\*\*|\*\*$/g, "")
+        .replace(/\.+$/, "")
+        .trim() || heuristicFallback.refined_title;
+
     if (parsed.structured_description) {
       parsed.structured_description = cleanToContinuousProse(parsed.structured_description);
+    } else {
+      parsed.structured_description = heuristicFallback.structured_description;
     }
+
     if (!parsed.item_type) {
-      parsed.item_type = fallbackTriage(cleanInput).item_type;
+      parsed.item_type = heuristicFallback.item_type;
     }
-    parsed.category = normalizeCategory(parsed.category || fallbackTriage(cleanInput).category);
-    if (!parsed.validation_steps || parsed.validation_steps.length === 0) {
-      parsed.validation_steps = fallbackTriage(cleanInput).validation_steps;
-    }
+
+    parsed.category = normalizeCategory(parsed.category || heuristicFallback.category);
+
+    const cleanedSteps = Array.isArray(parsed.validation_steps)
+      ? parsed.validation_steps.map(cleanStepPrefix).filter(Boolean)
+      : [];
+    parsed.validation_steps =
+      cleanedSteps.length > 0 ? cleanedSteps : heuristicFallback.validation_steps;
+
     if (!parsed.extracted_due_date_iso) {
       parsed.extracted_due_date_iso = extractDeadlinesHeuristic(cleanInput);
     }
 
-    aiCache.set(cleanInput, parsed, 420);
-    return parsed;
-  } catch (error) {
+    if (!Array.isArray(parsed.search_tags) || parsed.search_tags.length === 0) {
+      parsed.search_tags = heuristicFallback.search_tags;
+    }
+
+    if (!Array.isArray(parsed.learning_queries) || parsed.learning_queries.length === 0) {
+      parsed.learning_queries = heuristicFallback.learning_queries;
+    }
+
+    // Cache ONLY genuine Gemini responses
+    aiCache.set(cacheKey, parsed, 450);
+
+    return {
+      triage: parsed,
+      source: "gemini",
+      modelUsed: generation.modelUsed,
+    };
+  } catch (error: any) {
     console.warn("Gemini API call failed, using autonomous heuristic classifier:", error);
-    const fallback = fallbackTriage(cleanInput);
-    aiCache.set(cleanInput, fallback, 0);
-    return fallback;
+    return {
+      triage: fallbackTriage(cleanInput),
+      source: "fallback",
+      errorReason: error?.message || "Erro na chamada à API do Gemini.",
+    };
   }
+}
+
+/**
+ * Triages free-text input using Gemini with schema enforcement,
+ * falling back gracefully to heuristic classification if key has no quota.
+ */
+export async function triageInputWithGemini(
+  rawInput: string,
+  apiKey?: string,
+  options?: { forceFresh?: boolean }
+): Promise<GeminiTriageResponse> {
+  const result = await triageInputWithGeminiDetailed(rawInput, apiKey, options);
+  return result.triage;
 }
 
 /**
@@ -923,57 +1121,41 @@ export async function categorizeTaskWithAI(
   }
 
   // 2. CACHE PATH (0 TOKENS): Check Persistent AI Cache
-  const cacheKey = `cat:${cleanTitle}:${cleanNotes.slice(0, 40)}:${accountTypeHint || ""}`;
+  const cacheKey = `cat_v2:${cleanTitle}:${cleanNotes.slice(0, 40)}:${accountTypeHint || ""}`;
   const cached = await aiCache.getAsync<any>(cacheKey);
-  if (cached) {
+  if (cached && cached.tokensSaved > 0) {
     return cached.data;
   }
 
   // 3. SHORT OR TRIVIAL TITLES (0 TOKENS): Skip LLM calls
   if (cleanTitle.length <= 4 || /^(ok|teste|tarefa|item|\d+)$/i.test(cleanTitle)) {
-    const trivialResult = {
+    return {
       category: heuristic.category,
       tags: heuristic.tags.length > 0 ? heuristic.tags : ["Geral"],
       priority: heuristic.priority,
       item_type: heuristic.item_type,
       learning_queries: heuristic.learning_queries,
     };
-    aiCache.set(cacheKey, trivialResult, 0);
-    return trivialResult;
   }
 
-  // 4. MICRO-PROMPT LLM PATH (~80 TOKENS vs ~1500 tokens):
-  const key = apiKey || process.env.GEMINI_API_KEY;
+  // 4. MICRO-PROMPT LLM PATH
+  const key = (apiKey || process.env.GEMINI_API_KEY || "").trim();
   if (key && key !== "sua_chave_da_gemini_api" && key.length > 10) {
     try {
       const ai = new GoogleGenAI({ apiKey: key });
-      const prompt = `Título: ${cleanTitle}\nNotas: ${cleanNotes.slice(0, 100)}\nContexto: ${accountTypeHint || "work"}`;
+      const prompt = `Título: ${cleanTitle}\nNotas: ${cleanNotes.slice(0, 120)}\nContexto: ${accountTypeHint || "work"}`;
 
-      let text: string | null = null;
-      for (const m of ["gemini-1.5-flash", "gemini-2.0-flash"]) {
-        try {
-          const response = await ai.models.generateContent({
-            model: m,
-            contents: prompt,
-            config: {
-              systemInstruction: MICRO_CATEGORIZATION_PROMPT,
-              responseMimeType: "application/json",
-              responseSchema: MICRO_CATEGORIZATION_SCHEMA,
-              temperature: 0.1,
-              maxOutputTokens: 90,
-            },
-          });
-          const respText = typeof response.text === "function" ? (response.text as any)() : response.text;
-          if (respText) {
-            text = respText;
-            break;
-          }
-        } catch {
-          // Try next model
-        }
-      }
-      if (text) {
-        const parsed = JSON.parse(text);
+      const generation = await generateWithActiveGeminiModels(ai, prompt, {
+        systemInstruction: MICRO_CATEGORIZATION_PROMPT,
+        responseMimeType: "application/json",
+        responseSchema: MICRO_CATEGORIZATION_SCHEMA,
+        temperature: 0.1,
+        maxOutputTokens: 400,
+      });
+
+      const jsonStr = generation ? extractJsonObject(generation.text) : null;
+      if (jsonStr) {
+        const parsed = JSON.parse(jsonStr);
         if (parsed.category) {
           const result = {
             category: normalizeCategory(parsed.category),
@@ -994,16 +1176,14 @@ export async function categorizeTaskWithAI(
     }
   }
 
-  // 5. Fallback Heuristic
-  const fallbackResult = {
+  // 5. Fallback Heuristic (do not persist fallback into AI cache)
+  return {
     category: heuristic.category,
     tags: heuristic.tags.length > 0 ? heuristic.tags : ["Geral"],
     priority: heuristic.priority,
     item_type: heuristic.item_type,
     learning_queries: heuristic.learning_queries,
   };
-  aiCache.set(cacheKey, fallbackResult, 0);
-  return fallbackResult;
 }
 
 export async function generateExecutiveSummary(
@@ -1028,7 +1208,7 @@ No período analisado (${periodLabel}), foram registradas e gerenciadas **${task
 
 *Relatório consolidado pelo MontLife Intelligence.*`;
 
-  const key = apiKey || process.env.GEMINI_API_KEY;
+  const key = (apiKey || process.env.GEMINI_API_KEY || "").trim();
   if (!key || key === "sua_chave_da_gemini_api") {
     return fallbackSummary;
   }
@@ -1043,26 +1223,12 @@ Categorias presentes: ${Array.from(new Set(tasks.map((t) => t.category))).join("
 Títulos de exemplo: ${tasks.slice(0, 10).map((t) => t.title).join("; ")}
 Use tom executivo, claro e objetivo.`;
 
-    let text: string | null = null;
-    for (const m of ["gemini-1.5-flash", "gemini-2.0-flash"]) {
-      try {
-        const response = await ai.models.generateContent({
-          model: m,
-          contents: prompt,
-          config: {
-            temperature: 0.3,
-          },
-        });
-        const respText = typeof response.text === "function" ? (response.text as any)() : response.text;
-        if (respText) {
-          text = respText;
-          break;
-        }
-      } catch {
-        // Try next candidate
-      }
-    }
-    return text || fallbackSummary;
+    const generation = await generateWithActiveGeminiModels(ai, prompt, {
+      temperature: 0.3,
+      maxOutputTokens: 1200,
+    });
+
+    return generation?.text || fallbackSummary;
   } catch (err) {
     console.warn("Failed to generate executive summary with Gemini:", err);
     return fallbackSummary;
