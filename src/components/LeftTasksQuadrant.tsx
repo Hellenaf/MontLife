@@ -30,6 +30,13 @@ import {
 import { Task, TaskStatus, Priority, AccountType, ItemType, ConnectedAccount } from "@/types";
 import { isTaskOverdue } from "@/lib/sla";
 import { getAllCategories } from "@/lib/categories";
+import {
+  formatReminderLeadTime,
+  formatTaskTimeRange,
+  getTaskScheduleDate,
+  hasScheduledTimeRange,
+  isTaskAllDay,
+} from "@/lib/taskSchedule";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -424,9 +431,12 @@ export function LeftTasksQuadrant({
 
     let dueFormatted = "";
     try {
-      dueFormatted = format(parseISO(task.current_due_date), "dd/MM/yy", {
-        locale: ptBR,
-      });
+      const schedIso = getTaskScheduleDate(task);
+      const parsedSched = parseISO(schedIso);
+      const hasExplicitRange = hasScheduledTimeRange(task) || (Boolean(task.scheduled_start) && !isTaskAllDay(task));
+      dueFormatted = hasExplicitRange
+        ? `${format(parsedSched, "dd/MM", { locale: ptBR })} • ${formatTaskTimeRange(task)}`
+        : format(parsedSched, "dd/MM/yy", { locale: ptBR });
     } catch {
       dueFormatted = "Data indefinida";
     }
@@ -579,11 +589,21 @@ export function LeftTasksQuadrant({
             )}
 
             {/* Footer Metadata */}
-            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 mt-2 pt-1 border-t border-slate-100 dark:border-zinc-800/60">
-              <span className="flex items-center gap-1 font-mono">
-                <Clock className="w-3 h-3 text-slate-400" />
-                {dueFormatted}
-              </span>
+            <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 mt-2 pt-1 border-t border-slate-100 dark:border-zinc-800/60 gap-1.5">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="flex items-center gap-1 font-mono truncate">
+                  <Clock className="w-3 h-3 text-slate-400 shrink-0" />
+                  {dueFormatted}
+                </span>
+                {task.reminder_enabled && (
+                  <span
+                    className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 border border-purple-200/70 dark:border-purple-800/60 font-semibold shrink-0"
+                    title={`Lembrete: ${formatReminderLeadTime(task.reminder_minutes_before ?? 30)}`}
+                  >
+                    <Bell className="w-2.5 h-2.5" />
+                  </span>
+                )}
+              </div>
 
               <div className="flex items-center gap-1.5">
                 {isWorkTask(task) ? (

@@ -60,11 +60,18 @@ import { calculateSlaDueDate } from "@/lib/sla";
 import { getAllCategories } from "@/lib/categories";
 import { FormattedText } from "@/components/FormattedText";
 import { CategoryCombobox } from "@/components/CategoryCombobox";
+import { ScheduleReminderFields } from "@/components/ScheduleReminderFields";
 import {
+  formatReminderLeadTime,
+  formatTaskTimeRange,
+  getTaskReminderDate,
   getTaskScheduleDate,
+  getTaskScheduleEnd,
+  hasScheduledTimeRange,
   isTaskScheduledForDay,
   isTaskAllDay,
   isTaskAllDay as checkTaskIsAllDay,
+  isValidIsoDate,
 } from "@/lib/taskSchedule";
 import {
   format,
@@ -534,11 +541,48 @@ export function CentralQuadrant({
     });
   };
 
-  // Change deadline directly in details (independent of priority)
+  // Change deadline / scheduled start directly in details (preserves event duration if scheduled_end exists)
   const handleChangeDetailDueDate = async (newDueDateIso: string) => {
     if (!selectedTask || !onUpdateTaskFields || !newDueDateIso) return;
-    await onUpdateTaskFields(selectedTask.id, {
+    const patch: Partial<Task> = {
       current_due_date: newDueDateIso,
+      scheduled_start: newDueDateIso,
+    };
+
+    const existingStart = selectedTask.scheduled_start || selectedTask.current_due_date;
+    const existingEnd = getTaskScheduleEnd(selectedTask);
+    if (existingEnd && isValidIsoDate(existingStart)) {
+      const durationMs = new Date(existingEnd).getTime() - new Date(existingStart).getTime();
+      if (durationMs > 0) {
+        patch.scheduled_end = new Date(new Date(newDueDateIso).getTime() + durationMs).toISOString();
+      }
+    }
+
+    await onUpdateTaskFields(selectedTask.id, patch);
+  };
+
+  const handleChangeDetailEndDate = async (newEndIso: string) => {
+    if (!selectedTask || !onUpdateTaskFields) return;
+    await onUpdateTaskFields(selectedTask.id, {
+      scheduled_end: isValidIsoDate(newEndIso) ? newEndIso : null,
+    });
+  };
+
+  const handleChangeDetailReminderEnabled = async (enabled: boolean) => {
+    if (!selectedTask || !onUpdateTaskFields) return;
+    await onUpdateTaskFields(selectedTask.id, {
+      reminder_enabled: enabled,
+      reminder_minutes_before: enabled
+        ? (selectedTask.reminder_minutes_before ?? 30)
+        : null,
+    });
+  };
+
+  const handleChangeDetailReminderMinutes = async (minutes: number) => {
+    if (!selectedTask || !onUpdateTaskFields) return;
+    await onUpdateTaskFields(selectedTask.id, {
+      reminder_enabled: true,
+      reminder_minutes_before: minutes,
     });
   };
 
@@ -827,6 +871,31 @@ export function CentralQuadrant({
                       )}
                     </div>
                   </div>
+
+                  {/* Schedule & Reminder quick summary strip */}
+                  {(hasScheduledTimeRange(selectedTask) || selectedTask.reminder_enabled) && (
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/70">
+                        <Clock className="w-3.5 h-3.5" />
+                        <span>
+                          {format(parseISO(getTaskScheduleDate(selectedTask)), "dd/MM/yyyy", { locale: ptBR })} •{" "}
+                          {formatTaskTimeRange(selectedTask)}
+                        </span>
+                      </span>
+                      {selectedTask.reminder_enabled && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/70">
+                          <Bell className="w-3.5 h-3.5" />
+                          <span>
+                            Lembrete: {formatReminderLeadTime(selectedTask.reminder_minutes_before ?? 30)}
+                            {(() => {
+                              const remDate = getTaskReminderDate(selectedTask);
+                              return remDate ? ` (às ${format(remDate, "HH:mm")})` : "";
+                            })()}
+                          </span>
+                        </span>
+                      )}
+                    </div>
+                  )}
 
                   {/* Banner if Task is Canceled */}
                   {selectedTask.status === "CANCELED" && (
@@ -1287,10 +1356,10 @@ export function CentralQuadrant({
                     )}
                   </div>
 
-                  {/* Priority & Deadline Control - Separated and Independent */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Priority & Schedule + Reminder Controls */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
                     {/* Priority Selector (Independent) */}
-                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-2">
+                    <div className="lg:col-span-5 p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                           Nível de Prioridade:
@@ -1323,82 +1392,78 @@ export function CentralQuadrant({
                           );
                         })}
                       </div>
+
+                      <div className="pt-1 border-t border-slate-200/70 dark:border-zinc-800/80">
+                        <span className="text-[10px] font-medium text-slate-400 block mb-1.5">
+                          Atalhos rápidos de início/prazo:
+                        </span>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const d = new Date();
+                              d.setHours(18, 0, 0, 0);
+                              handleChangeDetailDueDate(d.toISOString());
+                            }}
+                            className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
+                          >
+                            Hoje 18h
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const d = new Date();
+                              d.setDate(d.getDate() + 1);
+                              d.setHours(18, 0, 0, 0);
+                              handleChangeDetailDueDate(d.toISOString());
+                            }}
+                            className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
+                          >
+                            Amanhã
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const d = new Date();
+                              d.setDate(d.getDate() + 4);
+                              d.setHours(18, 0, 0, 0);
+                              handleChangeDetailDueDate(d.toISOString());
+                            }}
+                            className="px-2 py-0.5 rounded text-[10px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800"
+                            title="Definir prazo para 4 dias"
+                          >
+                            +4 dias
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const d = new Date();
+                              d.setDate(d.getDate() + 7);
+                              d.setHours(18, 0, 0, 0);
+                              handleChangeDetailDueDate(d.toISOString());
+                            }}
+                            className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
+                          >
+                            +1 semana
+                          </button>
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Deadline / Due Date Editor (Independent) */}
-                    <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          Prazo / Limite da Demanda:
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                          Data limite independente
-                        </span>
-                      </div>
-                      <input
-                        type="datetime-local"
-                        value={
-                          selectedTask.current_due_date
-                            ? format(parseISO(selectedTask.current_due_date), "yyyy-MM-dd'T'HH:mm")
-                            : ""
-                        }
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            handleChangeDetailDueDate(new Date(e.target.value).toISOString());
-                          }
-                        }}
-                        className="w-full h-8 px-2.5 text-xs rounded-lg bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-medium"
+                    {/* Schedule (Start / End) & Reminder Editor */}
+                    <div className="lg:col-span-7">
+                      <ScheduleReminderFields
+                        valueFormat="iso"
+                        itemType={selectedTask.item_type}
+                        startValue={selectedTask.scheduled_start || selectedTask.current_due_date || ""}
+                        endValue={selectedTask.scheduled_end || ""}
+                        onChangeStart={handleChangeDetailDueDate}
+                        onChangeEnd={handleChangeDetailEndDate}
+                        reminderEnabled={Boolean(selectedTask.reminder_enabled)}
+                        reminderMinutesBefore={selectedTask.reminder_minutes_before ?? 30}
+                        onChangeReminderEnabled={handleChangeDetailReminderEnabled}
+                        onChangeReminderMinutes={handleChangeDetailReminderMinutes}
                       />
-                      <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const d = new Date();
-                            d.setHours(18, 0, 0, 0);
-                            handleChangeDetailDueDate(d.toISOString());
-                          }}
-                          className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
-                        >
-                          Hoje 18h
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const d = new Date();
-                            d.setDate(d.getDate() + 1);
-                            d.setHours(18, 0, 0, 0);
-                            handleChangeDetailDueDate(d.toISOString());
-                          }}
-                          className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
-                        >
-                          Amanhã
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const d = new Date();
-                            d.setDate(d.getDate() + 4);
-                            d.setHours(18, 0, 0, 0);
-                            handleChangeDetailDueDate(d.toISOString());
-                          }}
-                          className="px-2 py-0.5 rounded text-[10px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800"
-                          title="Definir prazo para 4 dias"
-                        >
-                          +4 dias
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const d = new Date();
-                            d.setDate(d.getDate() + 7);
-                            d.setHours(18, 0, 0, 0);
-                            handleChangeDetailDueDate(d.toISOString());
-                          }}
-                          className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
-                        >
-                          +1 semana
-                        </button>
-                      </div>
                     </div>
                   </div>
                 </div>
@@ -1931,24 +1996,35 @@ export function CentralQuadrant({
                 </button>
               </div>
 
-              {/* Time & Date */}
-              <div className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-300">
-                <Clock className="w-4 h-4 text-slate-400 shrink-0" />
-                <span>
-                  <span className="sm:hidden">
-                    {(() => {
-                      const d = parseISO(getTaskScheduleDate(previewTask));
-                      return `${SHORT_WEEKDAYS[d.getDay()]}, ${format(d, "d 'de' MMM 'às' HH:mm", {
+              {/* Time & Date + Reminder */}
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2.5 text-xs text-slate-600 dark:text-slate-300">
+                  <Clock className="w-4 h-4 text-slate-400 shrink-0" />
+                  <span>
+                    <span className="sm:hidden">
+                      {(() => {
+                        const d = parseISO(getTaskScheduleDate(previewTask));
+                        return `${SHORT_WEEKDAYS[d.getDay()]}, ${format(d, "d 'de' MMM", {
+                          locale: ptBR,
+                        })} • ${formatTaskTimeRange(previewTask)}`;
+                      })()}
+                    </span>
+                    <span className="hidden sm:inline">
+                      {format(parseISO(getTaskScheduleDate(previewTask)), "EEEE, d 'de' MMMM", {
                         locale: ptBR,
-                      })}`;
-                    })()}
+                      })}{" "}
+                      • {formatTaskTimeRange(previewTask)}
+                    </span>
                   </span>
-                  <span className="hidden sm:inline">
-                    {format(parseISO(getTaskScheduleDate(previewTask)), "EEEE, d 'de' MMMM 'às' HH:mm", {
-                      locale: ptBR,
-                    })}
-                  </span>
-                </span>
+                </div>
+                {previewTask.reminder_enabled && (
+                  <div className="flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400 font-medium">
+                    <Bell className="w-4 h-4 shrink-0" />
+                    <span>
+                      Lembrete configurado: {formatReminderLeadTime(previewTask.reminder_minutes_before ?? 30)}
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Category & Tags */}

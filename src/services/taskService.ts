@@ -1226,7 +1226,20 @@ export async function extendTaskDeadline(
   const task = tasks.find((t) => t.id === taskId);
   if (!task) return null;
 
-  const previousDate = task.current_due_date;
+  const previousDate = task.scheduled_start || task.current_due_date;
+  // Preserve scheduled duration if both start and end exist
+  if (task.scheduled_end && previousDate) {
+    const prevStartMs = new Date(previousDate).getTime();
+    const prevEndMs = new Date(task.scheduled_end).getTime();
+    const newStartMs = new Date(newDueDateIso).getTime();
+    if (!isNaN(prevStartMs) && !isNaN(prevEndMs) && !isNaN(newStartMs) && prevEndMs > prevStartMs) {
+      const durationMs = prevEndMs - prevStartMs;
+      task.scheduled_end = new Date(newStartMs + durationMs).toISOString();
+    }
+  }
+  if (task.scheduled_start) {
+    task.scheduled_start = newDueDateIso;
+  }
   task.current_due_date = newDueDateIso;
   task.extension_count = (task.extension_count || 0) + 1;
 

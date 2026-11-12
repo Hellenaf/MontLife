@@ -47,11 +47,20 @@ import {
 } from "@/types";
 import { MontLifeLogo } from "@/components/MontLifeLogo";
 import { calculateSlaDueDate } from "@/lib/sla";
-import { format, parseISO, isPast, isSameDay, differenceInHours } from "date-fns";
+import {
+  formatReminderLeadTime,
+  formatTaskTimeRange,
+  getTaskReminderDate,
+  getTaskScheduleDate,
+  getTaskScheduleEnd,
+  isValidIsoDate,
+} from "@/lib/taskSchedule";
+import { format, parseISO, isPast, isSameDay, differenceInHours, differenceInMinutes } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useTheme } from "@/context/ThemeContext";
 import { getAllCategories } from "@/lib/categories";
 import { CategoryCombobox } from "@/components/CategoryCombobox";
+import { ScheduleReminderFields } from "@/components/ScheduleReminderFields";
 
 interface HeaderCommandBarProps {
   accounts: ConnectedAccount[];
@@ -101,6 +110,9 @@ export function HeaderCommandBar({
   const [editCategory, setEditCategory] = useState<TaskCategory>("Suporte TI");
   const [editPriority, setEditPriority] = useState<Priority>("P3");
   const [editDueDate, setEditDueDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
+  const [editReminderEnabled, setEditReminderEnabled] = useState(false);
+  const [editReminderMinutesBefore, setEditReminderMinutesBefore] = useState(30);
   const [editValidationSteps, setEditValidationSteps] = useState<ValidationStep[]>([]);
   const [newHeaderStep, setNewHeaderStep] = useState("");
   const [isAddingHeaderStep, setIsAddingHeaderStep] = useState(false);
@@ -213,9 +225,10 @@ export function HeaderCommandBar({
     return tasks
       .filter((t) => {
         if (t.status === "COMPLETED" || t.status === "CANCELED") return false;
-        if (!t.current_due_date) return false;
+        const sched = getTaskScheduleDate(t);
+        if (!t.current_due_date && !t.scheduled_start) return false;
         try {
-          const dueDate = parseISO(t.current_due_date);
+          const dueDate = parseISO(sched);
           return (
             isPast(dueDate) ||
             isSameDay(dueDate, now) ||
@@ -225,8 +238,131 @@ export function HeaderCommandBar({
           return false;
         }
       })
-      .sort((a, b) => new Date(a.current_due_date).getTime() - new Date(b.current_due_date).getTime());
+      .sort((a, b) => new Date(getTaskScheduleDate(a)).getTime() - new Date(getTaskScheduleDate(b)).getTime());
   }, [tasks]);
+
+  // ==========================================
+  // Real-time Scheduled Reminder Engine
+  // ==========================================
+  const DISMISSED_REMINDERS_KEY = "montlife_dismissed_reminders_v1";
+  const [dismissedReminders, setDismissedReminders] = useState<Record<string, number>>(() => {
+    if (typeof window === "undefined") return {};
+    try {
+      const raw = localStorage.getItem(DISMISSED_REMINDERS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  });
+  const [snoozedUntilMap, setSnoozedUntilMap] = useState<Record<string, number>>({});
+  const [notifPermission, setNotifPermission] = useState<NotificationPermission | "unsupported">("default");
+  const firedBrowserNotifRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setNotifPermission("unsupported");
+      return;
+    }
+    setNotifPermission(Notification.permission);
+  }, []);
+
+  const requestBrowserNotifications = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    try {
+      const result = await Notification.requestPermission();
+      setNotifPermission(result);
+    } catch {
+      // ignore
+    }
+  };
+
+  const reminderItems = useMemo(() => {
+    const nowMs = currentTime.getTime();
+    return tasks
+      .filter((t) => t.status !== "COMPLETED" && t.status !== "CANCELED" && t.reminder_enabled === true)
+      .map((t) => {
+        const triggerDate = getTaskReminderDate(t);
+        if (!triggerDate) return null;
+        const startStr = getTaskScheduleDate(t);
+        const startDate = new Date(startStr);
+        const endStr = getTaskScheduleEnd(t);
+        const endMs = endStr ? new Date(endStr).getTime() : startDate.getTime() + 120 * 60_000;
+        const triggerMs = triggerDate.getTime();
+        const isActive = nowMs >= triggerMs && nowMs <= Math.max(endMs, triggerMs + 15 * 60_000);
+        const hoursUntilTrigger = differenceInHours(triggerDate, currentTime);
+        const isUpcomingSoon = triggerMs > nowMs && hoursUntilTrigger <= 24;
+
+        if (!isActive && !isUpcomingSoon) return null;
+        return {
+          task: t,
+          triggerDate,
+          startDate,
+          endStr,
+          isActive,
+          occurrenceKey: `${t.id}__${triggerDate.toISOString()}`,
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => Boolean(item))
+      .sort((a, b) => {
+        if (a.isActive !== b.isActive) return a.isActive ? -1 : 1;
+        return a.triggerDate.getTime() - b.triggerDate.getTime();
+      });
+  }, [tasks, currentTime]);
+
+  const activeToastReminders = useMemo(() => {
+    const nowMs = currentTime.getTime();
+    return reminderItems.filter((item) => {
+      if (!item.isActive) return false;
+      if (dismissedReminders[item.occurrenceKey]) return false;
+      const snoozedUntil = snoozedUntilMap[item.occurrenceKey];
+      if (snoozedUntil && nowMs < snoozedUntil) return false;
+      return true;
+    });
+  }, [reminderItems, dismissedReminders, snoozedUntilMap, currentTime]);
+
+  const dismissReminderOccurrence = (occurrenceKey: string) => {
+    setDismissedReminders((prev) => {
+      const next = { ...prev, [occurrenceKey]: Date.now() };
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(DISMISSED_REMINDERS_KEY, JSON.stringify(next));
+        } catch {}
+      }
+      return next;
+    });
+  };
+
+  const snoozeReminderOccurrence = (occurrenceKey: string, minutes = 5) => {
+    setSnoozedUntilMap((prev) => ({
+      ...prev,
+      [occurrenceKey]: Date.now() + minutes * 60_000,
+    }));
+  };
+
+  // Trigger browser Notification & soft chime when a new reminder enters active window
+  useEffect(() => {
+    for (const item of activeToastReminders) {
+      if (firedBrowserNotifRef.current.has(item.occurrenceKey)) continue;
+      firedBrowserNotifRef.current.add(item.occurrenceKey);
+
+      if (typeof window !== "undefined" && "Notification" in window && Notification.permission === "granted") {
+        try {
+          const timeRange = formatTaskTimeRange(item.task);
+          const leadLabel = formatReminderLeadTime(item.task.reminder_minutes_before ?? 30);
+          new Notification(`Lembrete MontLife: ${item.task.title}`, {
+            body: `${timeRange} • Aviso (${leadLabel})`,
+          });
+        } catch {}
+      }
+    }
+  }, [activeToastReminders]);
+
+  const totalBadgeAlertsCount = useMemo(() => {
+    const ids = new Set<string>();
+    for (const t of deadlineAlertTasks) ids.add(t.id);
+    for (const r of reminderItems) ids.add(r.task.id);
+    return ids.size;
+  }, [deadlineAlertTasks, reminderItems]);
 
   const recognitionRef = useRef<any>(null);
 
@@ -287,14 +423,31 @@ export function HeaderCommandBar({
       (data.optimization?.ai_used === false ? "fallback" : "gemini");
     setTriageAiSource(detectedSource);
 
-    // Populate editable confirmation card
+    const nextItemType = preferredType !== "auto" ? preferredType : triage.item_type || "task";
+    const nextStartIso = triage.extracted_due_date_iso || data.calculated_due_date;
+
     setEditTitle(triage.refined_title);
     setEditDescription(triage.structured_description);
     setEditAccountType(triage.account_type);
-    setEditItemType(preferredType !== "auto" ? preferredType : triage.item_type || "task");
+    setEditItemType(nextItemType);
     setEditCategory(triage.category);
     setEditPriority(triage.priority);
-    setEditDueDate(triage.extracted_due_date_iso || data.calculated_due_date);
+    setEditDueDate(nextStartIso);
+
+    if (triage.extracted_end_date_iso && isValidIsoDate(triage.extracted_end_date_iso)) {
+      setEditEndDate(triage.extracted_end_date_iso);
+      setEditReminderEnabled(true);
+      setEditReminderMinutesBefore(30);
+    } else if (nextItemType === "activity" && isValidIsoDate(nextStartIso)) {
+      const endDefault = new Date(new Date(nextStartIso).getTime() + 60 * 60_000);
+      setEditEndDate(endDefault.toISOString());
+      setEditReminderEnabled(true);
+      setEditReminderMinutesBefore(30);
+    } else {
+      setEditEndDate("");
+      setEditReminderEnabled(false);
+      setEditReminderMinutesBefore(30);
+    }
 
     if (triage.validation_steps?.length) {
       setEditValidationSteps(
@@ -402,6 +555,15 @@ export function HeaderCommandBar({
     setCreateError(null);
 
     try {
+      const resolvedDue = editDueDate || calculatedDueDate;
+      const validEnd =
+        editEndDate &&
+        isValidIsoDate(editEndDate) &&
+        isValidIsoDate(resolvedDue) &&
+        new Date(editEndDate).getTime() > new Date(resolvedDue).getTime()
+          ? editEndDate
+          : null;
+
       const payload = {
         raw_input: input,
         title: editTitle,
@@ -410,7 +572,11 @@ export function HeaderCommandBar({
         item_type: editItemType,
         category: editCategory,
         priority: editPriority,
-        due_date: editDueDate || calculatedDueDate,
+        due_date: resolvedDue,
+        scheduled_start: isValidIsoDate(resolvedDue) ? resolvedDue : null,
+        scheduled_end: validEnd,
+        reminder_enabled: editReminderEnabled,
+        reminder_minutes_before: editReminderEnabled ? editReminderMinutesBefore : null,
         tags: triageData.search_tags || [],
         validation_steps: editValidationSteps,
         learning_resources: learningResources || {
@@ -451,6 +617,9 @@ export function HeaderCommandBar({
     setTriageData(null);
     setSimilarResolutions([]);
     setLearningResources(null);
+    setEditEndDate("");
+    setEditReminderEnabled(false);
+    setEditReminderMinutesBefore(30);
     setIsSimilarityDismissed(false);
     setCreateError(null);
     setTriageError(null);
@@ -574,9 +743,9 @@ export function HeaderCommandBar({
             title="Alertas de Vencimento e Prazos"
           >
             <Bell className="w-4 h-4" />
-            {deadlineAlertTasks.length > 0 && (
+            {totalBadgeAlertsCount > 0 && (
               <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs animate-pulse">
-                {deadlineAlertTasks.length}
+                {totalBadgeAlertsCount}
               </span>
             )}
           </button>
@@ -602,10 +771,12 @@ export function HeaderCommandBar({
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                        Alertas de Prazos
+                        Central de Alertas & Lembretes
                       </h4>
                       <p className="text-[10px] text-slate-500 dark:text-slate-400">
-                        Demandas no último dia ou com prazo atingido ({deadlineAlertTasks.length})
+                        {reminderItems.length > 0
+                          ? `${reminderItems.length} lembrete${reminderItems.length > 1 ? "s" : ""} e ${deadlineAlertTasks.length} prazo${deadlineAlertTasks.length !== 1 ? "s" : ""}`
+                          : `Demandas no último dia ou com prazo atingido (${deadlineAlertTasks.length})`}
                       </p>
                     </div>
                   </div>
@@ -618,8 +789,89 @@ export function HeaderCommandBar({
                   </button>
                 </div>
 
-                <div className="max-h-80 overflow-y-auto p-2 space-y-1.5 custom-scrollbar">
-                  {deadlineAlertTasks.length === 0 ? (
+                {notifPermission === "default" && (
+                  <div className="px-3 py-2 bg-purple-50/80 dark:bg-purple-950/30 border-b border-purple-100 dark:border-purple-900/40 flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-purple-800 dark:text-purple-200 leading-tight">
+                      Ative alertas do navegador para não perder reuniões.
+                    </span>
+                    <button
+                      type="button"
+                      onClick={requestBrowserNotifications}
+                      className="shrink-0 px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold transition-colors cursor-pointer"
+                    >
+                      Ativar
+                    </button>
+                  </div>
+                )}
+
+                <div className="max-h-80 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+                  {reminderItems.length > 0 && (
+                    <div className="space-y-1.5">
+                      <div className="px-1.5 pt-0.5 flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
+                          🔔 Lembretes de Horário ({reminderItems.length})
+                        </span>
+                      </div>
+                      {reminderItems.map((item) => {
+                        const isDismissed = Boolean(dismissedReminders[item.occurrenceKey]);
+                        const rangeLabel = formatTaskTimeRange(item.task);
+                        const leadLabel = formatReminderLeadTime(item.task.reminder_minutes_before ?? 30);
+                        return (
+                          <div
+                            key={`rem-${item.task.id}`}
+                            onClick={() => {
+                              onSelectTask?.(item.task);
+                              setIsNotificationOpen(false);
+                            }}
+                            className={`p-2.5 rounded-xl border cursor-pointer transition-all space-y-1 ${
+                              item.isActive && !isDismissed
+                                ? "border-purple-300 dark:border-purple-500/50 bg-purple-50/70 dark:bg-purple-950/30 hover:bg-purple-100/60 dark:hover:bg-purple-950/45"
+                                : "border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#18172e]/60 hover:border-purple-300 dark:hover:border-purple-500/40"
+                            }`}
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                                  item.isActive && !isDismissed
+                                    ? "bg-purple-600 text-white"
+                                    : "bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
+                                }`}
+                              >
+                                {item.isActive && !isDismissed
+                                  ? "🔔 Lembrete Ativo"
+                                  : `⏰ Aviso às ${format(item.triggerDate, "HH:mm")}`}
+                              </span>
+                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                                {format(item.startDate, "dd/MM")} • {rangeLabel}
+                              </span>
+                            </div>
+                            <h5 className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2">
+                              {item.task.title}
+                            </h5>
+                            <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+                              <span>
+                                Antecedência: <strong className="text-purple-600 dark:text-purple-400">{leadLabel}</strong>
+                              </span>
+                              {item.isActive && !isDismissed && (
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    dismissReminderOccurrence(item.occurrenceKey);
+                                  }}
+                                  className="px-2 py-0.5 rounded-md bg-white dark:bg-[#121122] border border-purple-200 dark:border-purple-800 text-[10px] font-semibold text-purple-700 dark:text-purple-300 hover:bg-purple-50"
+                                >
+                                  Dispensar
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {deadlineAlertTasks.length === 0 && reminderItems.length === 0 ? (
                     <div className="py-8 text-center text-slate-400 space-y-1.5">
                       <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-500 opacity-60" />
                       <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
@@ -629,55 +881,65 @@ export function HeaderCommandBar({
                         Nenhuma demanda atingindo o limite de prazo no momento.
                       </p>
                     </div>
-                  ) : (
-                    deadlineAlertTasks.map((t) => {
-                      const dueDate = parseISO(t.current_due_date);
-                      const nowTime = new Date();
-                      const isOverdue = isPast(dueDate) && !isSameDay(dueDate, nowTime);
-                      const isDueToday = isSameDay(dueDate, nowTime);
-
-                      return (
-                        <div
-                          key={t.id}
-                          onClick={() => {
-                            onSelectTask?.(t);
-                            setIsNotificationOpen(false);
-                          }}
-                          className="p-2.5 rounded-xl border border-slate-100 dark:border-white/5 hover:border-purple-300 dark:hover:border-purple-500/40 bg-slate-50/50 dark:bg-[#18172e]/60 hover:bg-purple-50/30 dark:hover:bg-[#1e1c38] cursor-pointer transition-all space-y-1"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span
-                              className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
-                                isOverdue
-                                  ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800"
-                                  : isDueToday
-                                  ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
-                                  : "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800"
-                              }`}
-                            >
-                              {isOverdue
-                                ? "🚨 Atrasada"
-                                : isDueToday
-                                ? "⚠️ Vence Hoje"
-                                : "⏳ Vence em 24h"}
-                            </span>
-                            <span className="text-[10px] text-slate-400 font-mono">
-                              {format(dueDate, "dd/MM 'às' HH:mm")}
-                            </span>
-                          </div>
-                          <h5 className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2">
-                            {t.title}
-                          </h5>
-                          <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
-                            <span className="truncate max-w-[180px]">{t.category}</span>
-                            <span className="font-bold text-purple-600 dark:text-purple-400">
-                              {t.priority}
-                            </span>
-                          </div>
+                  ) : deadlineAlertTasks.length > 0 ? (
+                    <div className="space-y-1.5">
+                      {reminderItems.length > 0 && (
+                        <div className="px-1.5 pt-1">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                            ⏳ Prazos Próximos ou Atrasados ({deadlineAlertTasks.length})
+                          </span>
                         </div>
-                      );
-                    })
-                  )}
+                      )}
+                      {deadlineAlertTasks.map((t) => {
+                        const schedStr = getTaskScheduleDate(t);
+                        const dueDate = parseISO(schedStr);
+                        const nowTime = new Date();
+                        const isOverdue = isPast(dueDate) && !isSameDay(dueDate, nowTime);
+                        const isDueToday = isSameDay(dueDate, nowTime);
+
+                        return (
+                          <div
+                            key={t.id}
+                            onClick={() => {
+                              onSelectTask?.(t);
+                              setIsNotificationOpen(false);
+                            }}
+                            className="p-2.5 rounded-xl border border-slate-100 dark:border-white/5 hover:border-purple-300 dark:hover:border-purple-500/40 bg-slate-50/50 dark:bg-[#18172e]/60 hover:bg-purple-50/30 dark:hover:bg-[#1e1c38] cursor-pointer transition-all space-y-1"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span
+                                className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                                  isOverdue
+                                    ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800"
+                                    : isDueToday
+                                    ? "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/60 dark:text-amber-400 dark:border-amber-800"
+                                    : "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/60 dark:text-blue-400 dark:border-blue-800"
+                                }`}
+                              >
+                                {isOverdue
+                                  ? "🚨 Atrasada"
+                                  : isDueToday
+                                  ? "⚠️ Vence Hoje"
+                                  : "⏳ Vence em 24h"}
+                              </span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {format(dueDate, "dd/MM")} • {formatTaskTimeRange(t)}
+                              </span>
+                            </div>
+                            <h5 className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2">
+                              {t.title}
+                            </h5>
+                            <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+                              <span className="truncate max-w-[180px]">{t.category}</span>
+                              <span className="font-bold text-purple-600 dark:text-purple-400">
+                                {t.priority}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Popover Footer */}
@@ -693,7 +955,7 @@ export function HeaderCommandBar({
                     Ver Relatório Completo de SLA
                   </button>
                   <span className="text-[10px] text-slate-400">
-                    {deadlineAlertTasks.length} alertas ativos
+                    {totalBadgeAlertsCount} {totalBadgeAlertsCount === 1 ? "alerta ativo" : "alertas ativos"}
                   </span>
                 </div>
               </div>,
@@ -998,7 +1260,22 @@ export function HeaderCommandBar({
 
                   <button
                     type="button"
-                    onClick={() => setEditItemType("activity")}
+                    onClick={() => {
+                      setEditItemType("activity");
+                      const startMs = isValidIsoDate(editDueDate)
+                        ? new Date(editDueDate).getTime()
+                        : Date.now();
+                      if (!isValidIsoDate(editDueDate)) {
+                        setEditDueDate(new Date(startMs).toISOString());
+                      }
+                      if (!editEndDate) {
+                        setEditEndDate(new Date(startMs + 60 * 60_000).toISOString());
+                      }
+                      setEditReminderEnabled(true);
+                      if (editReminderMinutesBefore == null) {
+                        setEditReminderMinutesBefore(30);
+                      }
+                    }}
                     className={`flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-lg transition-all ${
                       editItemType === "activity"
                         ? "bg-purple-600 text-white shadow-sm"
@@ -1222,62 +1499,53 @@ export function HeaderCommandBar({
                 </div>
               </div>
 
-              {/* Priority & Due Date */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                {/* Priority */}
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                    Prioridade:
-                  </label>
-                  <div className="flex gap-1">
-                    {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
-                      const activeColor =
-                        p === "P1"
-                          ? "bg-rose-500 text-white"
-                          : p === "P2"
-                          ? "bg-amber-500 text-white"
-                          : p === "P3"
-                          ? "bg-indigo-600 text-white"
-                          : "bg-slate-600 text-white";
-                      return (
-                        <button
-                          key={p}
-                          type="button"
-                          onClick={() => handlePriorityChange(p)}
-                          className={`flex-1 py-1.5 text-xs rounded-xl font-bold border transition-colors ${
-                            editPriority === p
-                              ? activeColor
-                              : "bg-slate-100 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400"
-                          }`}
-                        >
-                          {p}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Due Date */}
-                <div>
-                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
-                    Prazo / Limite da Demanda:
-                  </label>
-                  <input
-                    type="datetime-local"
-                    value={
-                      editDueDate
-                        ? format(parseISO(editDueDate), "yyyy-MM-dd'T'HH:mm")
-                        : ""
-                    }
-                    onChange={(e) => {
-                      if (e.target.value) {
-                        setEditDueDate(new Date(e.target.value).toISOString());
-                      }
-                    }}
-                    className="w-full h-9 px-3 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
-                  />
+              {/* Priority */}
+              <div className="pt-1">
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
+                  Prioridade:
+                </label>
+                <div className="flex gap-1.5">
+                  {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
+                    const activeColor =
+                      p === "P1"
+                        ? "bg-rose-500 text-white border-rose-500"
+                        : p === "P2"
+                        ? "bg-amber-500 text-white border-amber-500"
+                        : p === "P3"
+                        ? "bg-indigo-600 text-white border-indigo-600"
+                        : "bg-slate-600 text-white border-slate-600";
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => handlePriorityChange(p)}
+                        className={`flex-1 py-1.5 text-xs rounded-xl font-bold border transition-colors ${
+                          editPriority === p
+                            ? activeColor
+                            : "bg-slate-100 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
+
+              {/* Agendamento (Início / Término) & Lembrete */}
+              <ScheduleReminderFields
+                valueFormat="iso"
+                itemType={editItemType}
+                startValue={editDueDate}
+                endValue={editEndDate}
+                onChangeStart={setEditDueDate}
+                onChangeEnd={setEditEndDate}
+                reminderEnabled={editReminderEnabled}
+                reminderMinutesBefore={editReminderMinutesBefore}
+                onChangeReminderEnabled={setEditReminderEnabled}
+                onChangeReminderMinutes={setEditReminderMinutesBefore}
+                compact
+              />
 
               {createError && (
                 <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 text-xs font-medium text-rose-700 dark:text-rose-300">
@@ -1317,6 +1585,99 @@ export function HeaderCommandBar({
           </div>
         </div>
       )}
+
+      {/* Floating Active Reminder Banner Portal (z-[95] above headers & Kanban/Agenda cards) */}
+      {activeToastReminders.length > 0 &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <div className="fixed bottom-20 lg:bottom-5 right-3 sm:right-5 z-[95] flex flex-col gap-2.5 w-[calc(100vw-24px)] sm:w-96 max-w-sm pointer-events-none">
+            {activeToastReminders.slice(0, 3).map((item) => {
+              const rangeLabel = formatTaskTimeRange(item.task);
+              const leadLabel = formatReminderLeadTime(item.task.reminder_minutes_before ?? 30);
+              const minsToStart = differenceInMinutes(item.startDate, currentTime);
+              const statusText =
+                minsToStart > 1
+                  ? `Começa em ${minsToStart} min`
+                  : minsToStart >= -1
+                  ? "Começando agora!"
+                  : "Em andamento";
+
+              return (
+                <div
+                  key={`toast-${item.occurrenceKey}`}
+                  className="pointer-events-auto rounded-2xl bg-white dark:bg-[#151428] border border-purple-300 dark:border-purple-600/70 shadow-2xl shadow-purple-900/20 p-3.5 space-y-2.5 animate-in fade-in slide-in-from-bottom-4 duration-200"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="p-2 rounded-xl bg-purple-600 text-white shrink-0 shadow-xs">
+                        <Bell className="w-4 h-4 animate-bounce" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                            Lembrete • {statusText}
+                          </span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-semibold">
+                            {leadLabel}
+                          </span>
+                        </div>
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate mt-0.5">
+                          {item.task.title}
+                        </h4>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => dismissReminderOccurrence(item.occurrenceKey)}
+                      className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white shrink-0"
+                      title="Dispensar lembrete"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300 px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-[#0f0e1d] border border-slate-100 dark:border-white/5">
+                    <span className="flex items-center gap-1.5 font-mono font-semibold">
+                      <Clock className="w-3.5 h-3.5 text-purple-500" />
+                      {format(item.startDate, "dd/MM")} • {rangeLabel}
+                    </span>
+                    <span className="text-[10px] text-slate-400 truncate max-w-[110px]">
+                      {item.task.category}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1.5 pt-0.5">
+                    <button
+                      type="button"
+                      onClick={() => snoozeReminderOccurrence(item.occurrenceKey, 5)}
+                      className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-[#282647] bg-white dark:bg-[#191830] text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#22203e] transition-colors cursor-pointer"
+                    >
+                      Adiar 5m
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => dismissReminderOccurrence(item.occurrenceKey)}
+                      className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-[#282647] bg-white dark:bg-[#191830] text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#22203e] transition-colors cursor-pointer"
+                    >
+                      Dispensar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onSelectTask?.(item.task);
+                        dismissReminderOccurrence(item.occurrenceKey);
+                      }}
+                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold shadow-xs transition-colors cursor-pointer"
+                    >
+                      Abrir Demanda
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>,
+          document.body
+        )}
     </>
   );
 }

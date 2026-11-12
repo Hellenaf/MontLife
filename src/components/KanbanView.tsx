@@ -26,8 +26,16 @@ import {
   X,
   RotateCcw,
   Sparkles,
+  Bell,
 } from "lucide-react";
 import { Task, TaskStatus, Priority, AccountType } from "@/types";
+import {
+  formatReminderLeadTime,
+  formatTaskTimeRange,
+  getTaskScheduleDate,
+  hasScheduledTimeRange,
+  isTaskAllDay,
+} from "@/lib/taskSchedule";
 import { format, isPast, isToday, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -371,12 +379,14 @@ export function KanbanView({
     }
   };
 
-  const renderDueDateBadge = (dueDateIso?: string) => {
+  const renderDueDateBadge = (task: Task) => {
+    const dueDateIso = getTaskScheduleDate(task);
     if (!dueDateIso) return null;
     try {
       const date = parseISO(dueDateIso);
       const overdue = isPast(date) && !isToday(date);
       const today = isToday(date);
+      const showTime = hasScheduledTimeRange(task) || (Boolean(task.scheduled_start) && !isTaskAllDay(task));
 
       return (
         <span
@@ -389,7 +399,9 @@ export function KanbanView({
           }`}
         >
           <Clock className="w-2.5 h-2.5" />
-          {format(date, "dd/MM", { locale: ptBR })}
+          {showTime
+            ? `${format(date, "dd/MM", { locale: ptBR })} • ${formatTaskTimeRange(task)}`
+            : format(date, "dd/MM", { locale: ptBR })}
         </span>
       );
     } catch {
@@ -734,8 +746,16 @@ export function KanbanView({
 
                         {/* Bottom Row: Due Date + Indicators + Quick Stage Controls */}
                         <div className="flex items-center justify-between flex-wrap gap-1.5 pt-1.5 border-t border-slate-100 dark:border-zinc-800/60 text-[10px] text-slate-500 dark:text-zinc-400">
-                          <div className="flex items-center gap-2 min-w-0">
-                            {renderDueDateBadge(task.current_due_date)}
+                          <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                            {renderDueDateBadge(task)}
+                            {task.reminder_enabled && (
+                              <span
+                                className="flex items-center gap-0.5 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-300 border border-purple-200/70 dark:border-purple-800/60"
+                                title={`Lembrete: ${formatReminderLeadTime(task.reminder_minutes_before ?? 30)}`}
+                              >
+                                <Bell className="w-2.5 h-2.5" />
+                              </span>
+                            )}
                             {attachmentsCount > 0 && (
                               <span
                                 className="flex items-center gap-0.5 text-slate-400 dark:text-zinc-500 font-mono"

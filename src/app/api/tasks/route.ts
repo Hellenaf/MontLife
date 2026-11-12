@@ -93,7 +93,52 @@ export async function POST(req: NextRequest) {
     }
 
     const priority = body.priority || "P3";
-    const dueDate = body.due_date || calculateSlaDueDate(priority);
+
+    const rawScheduledStart =
+      typeof body.scheduled_start === "string" && body.scheduled_start.trim()
+        ? body.scheduled_start.trim()
+        : null;
+    const rawScheduledEnd =
+      typeof body.scheduled_end === "string" && body.scheduled_end.trim()
+        ? body.scheduled_end.trim()
+        : null;
+
+    const validScheduledStart =
+      rawScheduledStart && !isNaN(new Date(rawScheduledStart).getTime())
+        ? new Date(rawScheduledStart).toISOString()
+        : null;
+
+    const dueDate =
+      (typeof body.due_date === "string" && body.due_date.trim()
+        ? body.due_date.trim()
+        : null) ||
+      validScheduledStart ||
+      calculateSlaDueDate(priority);
+
+    let validScheduledEnd: string | null = null;
+    if (rawScheduledEnd && !isNaN(new Date(rawScheduledEnd).getTime())) {
+      const refStartMs = new Date(validScheduledStart || dueDate).getTime();
+      const endMs = new Date(rawScheduledEnd).getTime();
+      if (!isNaN(refStartMs) && endMs > refStartMs) {
+        validScheduledEnd = new Date(endMs).toISOString();
+      }
+    }
+
+    const reminderEnabled =
+      typeof body.reminder_enabled === "boolean"
+        ? body.reminder_enabled
+        : Boolean(validScheduledEnd || body.item_type === "activity");
+
+    const parsedReminderMinutes =
+      typeof body.reminder_minutes_before === "number" &&
+      !isNaN(body.reminder_minutes_before) &&
+      body.reminder_minutes_before >= 0
+        ? Math.min(43200, Math.round(body.reminder_minutes_before))
+        : null;
+
+    const reminderMinutesBefore = reminderEnabled
+      ? parsedReminderMinutes ?? 30
+      : parsedReminderMinutes;
 
     const rawAccType = String(body.account_type || "work").toLowerCase().trim();
     const isPersonal =
@@ -140,7 +185,11 @@ export async function POST(req: NextRequest) {
       started_at: null,
       completed_at: null,
       original_due_date: dueDate,
-      current_due_date: dueDate,
+      current_due_date: validScheduledStart || dueDate,
+      scheduled_start: validScheduledStart,
+      scheduled_end: validScheduledEnd,
+      reminder_enabled: reminderEnabled,
+      reminder_minutes_before: reminderMinutesBefore,
       extension_count: 0,
       deadline_extensions: [],
       resolution_notes: null,

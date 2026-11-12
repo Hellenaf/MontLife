@@ -116,6 +116,10 @@ export interface Task {
   completed_at: string | null;
   original_due_date: string;
   current_due_date: string;
+  scheduled_start?: string | null;
+  scheduled_end?: string | null;
+  reminder_enabled?: boolean;
+  reminder_minutes_before?: number | null;
   extension_count: number;
   deadline_extensions: DeadlineExtension[];
   resolution_notes: string | null;
@@ -157,6 +161,7 @@ export interface GeminiTriageResponse {
   category: TaskCategory;
   priority: Priority;
   extracted_due_date_iso: string | null;
+  extracted_end_date_iso?: string | null;
   search_tags: string[];
   learning_queries: string[];
   validation_steps?: string[];

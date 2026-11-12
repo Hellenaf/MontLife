@@ -346,7 +346,8 @@ export async function syncTaskToGoogleCalendar(
     return task.google_calendar_event_id || null;
   }
 
-  if (!task.current_due_date) {
+  const startRef = task.scheduled_start || task.current_due_date;
+  if (!startRef) {
     return task.google_calendar_event_id || null;
   }
 
@@ -355,12 +356,35 @@ export async function syncTaskToGoogleCalendar(
     oauth2Client.setCredentials(tokens);
     const calendarApi = google.calendar({ version: "v3", auth: oauth2Client });
 
-    const startDate = new Date(task.current_due_date);
+    const startDate = new Date(startRef);
     if (isNaN(startDate.getTime())) return null;
 
-    const endDate = new Date(startDate.getTime() + 60 * 60 * 1000);
+    const explicitEnd = task.scheduled_end ? new Date(task.scheduled_end) : null;
+    const endDate =
+      explicitEnd && !isNaN(explicitEnd.getTime()) && explicitEnd.getTime() > startDate.getTime()
+        ? explicitEnd
+        : new Date(startDate.getTime() + 60 * 60 * 1000);
 
-    const eventResource = {
+    const remindersConfig =
+      task.reminder_enabled === false
+        ? { useDefault: false, overrides: [] }
+        : task.reminder_enabled === true
+        ? {
+            useDefault: false,
+            overrides: [
+              {
+                method: "popup",
+                minutes:
+                  typeof task.reminder_minutes_before === "number" &&
+                  task.reminder_minutes_before >= 0
+                    ? Math.min(40320, Math.round(task.reminder_minutes_before))
+                    : 30,
+              },
+            ],
+          }
+        : undefined;
+
+    const eventResource: Record<string, any> = {
       summary: `[MontLife] ${task.title}`,
       description: `${task.description || ""}\n\nCategoria: ${task.category}\nPrioridade: ${task.priority}\nStatus: ${task.status}`,
       start: {
@@ -369,6 +393,7 @@ export async function syncTaskToGoogleCalendar(
       end: {
         dateTime: endDate.toISOString(),
       },
+      ...(remindersConfig ? { reminders: remindersConfig } : {}),
     };
 
     if (task.status === "CANCELED") {

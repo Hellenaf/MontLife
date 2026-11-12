@@ -53,6 +53,7 @@ export default function MontOpsDashboard() {
   const [accountsLoaded, setAccountsLoaded] = useState(false);
   const [userLoaded, setUserLoaded] = useState(false);
   const [newTaskInitialText, setNewTaskInitialText] = useState("");
+  const [newTaskInitialDate, setNewTaskInitialDate] = useState<Date | null>(null);
   const [oauthFeedback, setOauthFeedback] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<{
     userId: string;
@@ -600,6 +601,7 @@ export default function MontOpsDashboard() {
             onOpenReportModal={() => setActiveNav("relatorios")}
             onOpenNewTaskModal={(prefill) => {
               setNewTaskInitialText(prefill || "");
+              setNewTaskInitialDate(null);
               setIsNewTaskModalOpen(true);
             }}
           />
@@ -647,8 +649,9 @@ export default function MontOpsDashboard() {
               accountFilter={accountFilter}
               selectedTaskId={selectedTaskId}
               onSelectTask={navigateToTaskDetails}
-              onOpenNewTaskModal={() => {
+              onOpenNewTaskModal={(prefillDate) => {
                 setNewTaskInitialText("");
+                setNewTaskInitialDate(prefillDate ?? null);
                 setIsNewTaskModalOpen(true);
               }}
               onTaskCreated={handleTaskCreated}
@@ -675,6 +678,7 @@ export default function MontOpsDashboard() {
               onUpdateStatus={handleUpdateStatus}
               onOpenNewTaskModal={() => {
                 setNewTaskInitialText("");
+                setNewTaskInitialDate(null);
                 setIsNewTaskModalOpen(true);
               }}
               onRequestCancelTask={(task) => {
@@ -768,6 +772,7 @@ export default function MontOpsDashboard() {
                 onTransferTask={handleTransferTask}
                 onRequestNewTask={() => {
                   setNewTaskInitialText("");
+                  setNewTaskInitialDate(null);
                   setIsNewTaskModalOpen(true);
                 }}
                 onRefreshTasks={loadTasks}
@@ -926,22 +931,29 @@ export default function MontOpsDashboard() {
 
       <NewTaskModal
         isOpen={isNewTaskModalOpen}
-        onClose={() => setIsNewTaskModalOpen(false)}
+        onClose={() => {
+          setIsNewTaskModalOpen(false);
+          setNewTaskInitialDate(null);
+        }}
         onTaskCreated={(task) => {
           handleTaskCreated(task);
           setIsNewTaskModalOpen(false);
+          setNewTaskInitialDate(null);
         }}
         existingTasks={tasks}
         onSelectExistingTask={(task) => {
           navigateToTaskDetails(task);
           setIsNewTaskModalOpen(false);
+          setNewTaskInitialDate(null);
         }}
         onTaskUpdated={(updatedTask) => {
           setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
           setSelectedTaskId(updatedTask.id);
           setIsNewTaskModalOpen(false);
+          setNewTaskInitialDate(null);
         }}
         initialText={newTaskInitialText}
+        initialDate={newTaskInitialDate}
         availableCategories={allCategories}
       />
 

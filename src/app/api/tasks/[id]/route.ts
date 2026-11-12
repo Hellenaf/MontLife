@@ -78,9 +78,19 @@ export async function PATCH(
       const tasks = await getTasksFromDb(userId);
       const existing = tasks.find((t) => t.id === id);
       if (existing) {
+        const nextScheduledStart =
+          body.scheduled_start !== undefined ? body.scheduled_start : existing.scheduled_start;
+        const nextCurrentDueDate =
+          body.current_due_date !== undefined
+            ? body.current_due_date
+            : typeof nextScheduledStart === "string" && nextScheduledStart
+            ? nextScheduledStart
+            : existing.current_due_date;
+
         const merged = {
           ...existing,
           ...body,
+          current_due_date: nextCurrentDueDate,
           ...(body.category ? { category: normalizeCategory(body.category) } : {}),
         };
         updatedTask = await saveTaskToDb(merged, userId);

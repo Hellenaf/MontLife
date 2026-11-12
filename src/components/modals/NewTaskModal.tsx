@@ -42,6 +42,7 @@ import { format } from "date-fns";
 import { getAllCategories } from "@/lib/categories";
 import { CategoryCombobox } from "@/components/CategoryCombobox";
 import { AttachmentManager } from "@/components/AttachmentManager";
+import { ScheduleReminderFields } from "@/components/ScheduleReminderFields";
 import { findSimilarTasks, SimilarTaskMatch } from "@/lib/taskDeduplication";
 
 interface NewTaskModalProps {
@@ -50,6 +51,7 @@ interface NewTaskModalProps {
   onTaskCreated: (task: Task) => void;
   initialText?: string;
   initialType?: ItemType;
+  initialDate?: Date | null;
   availableCategories?: string[];
   existingTasks?: Task[];
   onSelectExistingTask?: (task: Task) => void;
@@ -74,6 +76,7 @@ export function NewTaskModal({
   onTaskCreated,
   initialText = "",
   initialType = "task",
+  initialDate = null,
   availableCategories,
   existingTasks = [],
   onSelectExistingTask,
@@ -90,6 +93,9 @@ export function NewTaskModal({
   const [category, setCategory] = useState<TaskCategory>("Suporte TI");
   const [priority, setPriority] = useState<Priority>("P3");
   const [dueDate, setDueDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
+  const [reminderEnabled, setReminderEnabled] = useState<boolean>(false);
+  const [reminderMinutesBefore, setReminderMinutesBefore] = useState<number>(30);
   const [tagsInput, setTagsInput] = useState<string>("");
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
 
@@ -115,6 +121,8 @@ export function NewTaskModal({
     category: boolean;
     priority: boolean;
     dueDate: boolean;
+    endDate: boolean;
+    reminder: boolean;
     validationSteps: boolean;
   }>({
     itemType: false,
@@ -122,6 +130,8 @@ export function NewTaskModal({
     category: false,
     priority: false,
     dueDate: false,
+    endDate: false,
+    reminder: false,
     validationSteps: false,
   });
 
@@ -188,6 +198,8 @@ export function NewTaskModal({
         category: false,
         priority: false,
         dueDate: false,
+        endDate: false,
+        reminder: false,
         validationSteps: false,
       };
       if (initialText) {
@@ -203,17 +215,36 @@ export function NewTaskModal({
         setOriginalRawInput("");
       }
       setItemType(initialType);
-      const defaultDate = calculateSlaDueDate("P3");
+      const baseStartDate = initialDate
+        ? (() => {
+            const d = new Date(initialDate);
+            d.setHours(9, 0, 0, 0);
+            return d;
+          })()
+        : new Date(calculateSlaDueDate("P3"));
       try {
-        setDueDate(format(new Date(defaultDate), "yyyy-MM-dd'T'HH:mm"));
+        setDueDate(format(baseStartDate, "yyyy-MM-dd'T'HH:mm"));
       } catch {
-        setDueDate(defaultDate.substring(0, 16));
+        setDueDate(baseStartDate.toISOString().substring(0, 16));
+      }
+      if (initialType === "activity") {
+        const defaultEnd = new Date(baseStartDate.getTime() + 60 * 60_000);
+        setEndDate(format(defaultEnd, "yyyy-MM-dd'T'HH:mm"));
+        setReminderEnabled(true);
+        setReminderMinutesBefore(30);
+      } else {
+        setEndDate("");
+        setReminderEnabled(false);
+        setReminderMinutesBefore(30);
       }
     } else {
       setTitle("");
       setDescription("");
       setAiSuggestions(null);
       setTagsInput("");
+      setEndDate("");
+      setReminderEnabled(false);
+      setReminderMinutesBefore(30);
       setAttachments([]);
       setValidationSteps([]);
       setNewStepText("");
@@ -227,7 +258,7 @@ export function NewTaskModal({
       setAiSource(null);
       setOriginalRawInput("");
     }
-  }, [isOpen, initialText, initialType]);
+  }, [isOpen, initialText, initialType, initialDate]);
 
   const handleAddValidationStep = () => {
     const clean = newStepText.trim();
@@ -365,6 +396,33 @@ export function NewTaskModal({
         setDueDate(formatDateForInput(targetDueIso));
       }
 
+      let targetEndIso: string | null = null;
+      if (respect && touched.endDate && endDate) {
+        targetEndIso = new Date(endDate).toISOString();
+      } else if (triage.extracted_end_date_iso) {
+        targetEndIso = triage.extracted_end_date_iso;
+        if (!respect || !touched.endDate) {
+          setEndDate(formatDateForInput(targetEndIso));
+        }
+      } else if (finalItemType === "activity" && targetDueIso) {
+        const autoEnd = new Date(new Date(targetDueIso).getTime() + 60 * 60_000);
+        if (!isNaN(autoEnd.getTime())) {
+          targetEndIso = autoEnd.toISOString();
+          if (!respect || !touched.endDate) {
+            setEndDate(formatDateForInput(targetEndIso));
+          }
+        }
+      }
+
+      let nextReminderEnabled = reminderEnabled;
+      if ((!respect || !touched.reminder) && (finalItemType === "activity" || Boolean(targetEndIso))) {
+        nextReminderEnabled = true;
+        setReminderEnabled(true);
+        if (!respect || !touched.reminder) {
+          setReminderMinutesBefore(30);
+        }
+      }
+
       return {
         rawText,
         triage,
@@ -379,6 +437,8 @@ export function NewTaskModal({
         finalAccountType,
         finalTags,
         targetDueIso,
+        targetEndIso,
+        nextReminderEnabled,
       };
     } catch (err) {
       console.error("Erro na análise da IA:", err);
@@ -424,6 +484,13 @@ export function NewTaskModal({
           ? new Date(dueDate).toISOString()
           : calculateSlaDueDate(effectivePriority);
 
+      let finalEndDateIso: string | null =
+        endDate && !isNaN(new Date(endDate).getTime())
+          ? new Date(endDate).toISOString()
+          : null;
+
+      let finalReminderEnabled = reminderEnabled;
+
       let serverSimilarMatches: SimilarTaskMatch[] = [];
 
       // Automatically optimize raw message with AI when enabled and not yet enhanced
@@ -441,6 +508,10 @@ export function NewTaskModal({
           if (aiRes.targetDueIso && !isNaN(new Date(aiRes.targetDueIso).getTime())) {
             finalDueDateIso = aiRes.targetDueIso;
           }
+          if (aiRes.targetEndIso && !isNaN(new Date(aiRes.targetEndIso).getTime())) {
+            finalEndDateIso = aiRes.targetEndIso;
+          }
+          finalReminderEnabled = aiRes.nextReminderEnabled;
           serverSimilarMatches = aiRes.similarTasksFromServer || [];
           setHasAiEnhancedDraft(aiRes.source !== "fallback");
         }
@@ -477,6 +548,14 @@ export function NewTaskModal({
         category: effectiveCategory,
         priority: effectivePriority,
         due_date: finalDueDateIso,
+        scheduled_start: finalDueDateIso,
+        scheduled_end:
+          finalEndDateIso &&
+          new Date(finalEndDateIso).getTime() > new Date(finalDueDateIso).getTime()
+            ? finalEndDateIso
+            : null,
+        reminder_enabled: finalReminderEnabled,
+        reminder_minutes_before: finalReminderEnabled ? reminderMinutesBefore : null,
         tags: effectiveTags,
         attachments,
         validation_steps: effectiveSteps,
@@ -780,6 +859,20 @@ export function NewTaskModal({
                   onClick={() => {
                     touchedFieldsRef.current.itemType = true;
                     setItemType("activity");
+                    if (!endDate) {
+                      const base =
+                        dueDate && !isNaN(new Date(dueDate).getTime())
+                          ? new Date(dueDate)
+                          : new Date();
+                      const nextEnd = new Date(base.getTime() + 60 * 60_000);
+                      try {
+                        setEndDate(format(nextEnd, "yyyy-MM-dd'T'HH:mm"));
+                      } catch {}
+                    }
+                    if (!touchedFieldsRef.current.reminder) {
+                      setReminderEnabled(true);
+                      setReminderMinutesBefore(30);
+                    }
                   }}
                   className={`flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
                     itemType === "activity"
@@ -1069,35 +1162,44 @@ export function NewTaskModal({
             </div>
           </div>
 
-          {/* Prazo Limite (Data/Hora) & Tags */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
-                Prazo Limite / Agendamento:
-              </label>
-              <input
-                type="datetime-local"
-                value={dueDate}
-                onChange={(e) => {
-                  touchedFieldsRef.current.dueDate = true;
-                  setDueDate(e.target.value);
-                }}
-                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-hidden focus:border-indigo-500 font-mono"
-              />
-            </div>
+          {/* Agendamento (Início, Término & Lembrete) */}
+          <ScheduleReminderFields
+            startValue={dueDate}
+            endValue={endDate}
+            reminderEnabled={reminderEnabled}
+            reminderMinutesBefore={reminderMinutesBefore}
+            itemType={itemType}
+            valueFormat="local"
+            onChangeStart={(val) => {
+              touchedFieldsRef.current.dueDate = true;
+              setDueDate(val);
+            }}
+            onChangeEnd={(val) => {
+              touchedFieldsRef.current.endDate = true;
+              setEndDate(val);
+            }}
+            onChangeReminderEnabled={(enabled) => {
+              touchedFieldsRef.current.reminder = true;
+              setReminderEnabled(enabled);
+            }}
+            onChangeReminderMinutes={(mins) => {
+              touchedFieldsRef.current.reminder = true;
+              setReminderMinutesBefore(mins);
+            }}
+          />
 
-            <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
-                Tags Técnicas (Separadas por vírgula):
-              </label>
-              <input
-                type="text"
-                value={tagsInput}
-                onChange={(e) => setTagsInput(e.target.value)}
-                placeholder="totvs, financeiro, biblioteca..."
-                className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
-              />
-            </div>
+          {/* Tags Técnicas */}
+          <div className="space-y-1">
+            <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+              Tags Técnicas (Separadas por vírgula):
+            </label>
+            <input
+              type="text"
+              value={tagsInput}
+              onChange={(e) => setTagsInput(e.target.value)}
+              placeholder="totvs, financeiro, biblioteca, reuniao..."
+              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+            />
           </div>
 
           {/* Anexos e Links Externos Reutilizável */}

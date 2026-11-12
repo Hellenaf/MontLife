@@ -152,6 +152,7 @@ export async function POST(req: NextRequest) {
       summary,
       description,
       start,
+      end,
       location,
       accountType = "Pessoal",
       accountEmail,
@@ -182,7 +183,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 2. Prepara a data de agendamento ISO
+    // 2. Prepara a data de agendamento ISO (início e término)
     let dueDateIso = new Date().toISOString();
     if (start) {
       try {
@@ -192,6 +193,19 @@ export async function POST(req: NextRequest) {
         }
       } catch {
         dueDateIso = start;
+      }
+    }
+
+    let endDateIso: string | null = null;
+    if (end) {
+      try {
+        const parsedEnd = new Date(end);
+        const startMs = new Date(dueDateIso).getTime();
+        if (!isNaN(parsedEnd.getTime()) && parsedEnd.getTime() > startMs) {
+          endDateIso = parsedEnd.toISOString();
+        }
+      } catch {
+        endDateIso = null;
       }
     }
 
@@ -232,6 +246,10 @@ export async function POST(req: NextRequest) {
       completed_at: null,
       original_due_date: dueDateIso,
       current_due_date: dueDateIso,
+      scheduled_start: dueDateIso,
+      scheduled_end: endDateIso,
+      reminder_enabled: true,
+      reminder_minutes_before: 30,
       extension_count: 0,
       deadline_extensions: [],
       resolution_notes: null,

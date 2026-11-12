@@ -39,7 +39,9 @@ REGRAS CRÍTICAS DE TRANSFORMAÇÃO (OBRIGATÓRIO):
 
 4. CONTEXTO & CLASSIFICAÇÃO:
    - 'account_type': 'work' (TOTVS, Power BI, relatórios, TI, rotinas corporativas/escolares) ou 'personal' (saúde, casa, compras, finanças pessoais).
-   - 'item_type': 'task' (demanda operacional/técnica), 'activity' (reunião/compromisso/evento) ou 'reminder' (lembrete pontual).
+   - 'item_type': 'task' (demanda operacional/técnica), 'activity' (reunião, treinamento, atendimento agendado, compromisso ou evento com pessoas) ou 'reminder' (lembrete pontual).
+   - 'extracted_due_date_iso': Data/hora ISO 8601 de início (ou prazo) se mencionada pelo usuário, ou null.
+   - 'extracted_end_date_iso': Se o usuário mencionar horário de término (ex: "das 14h às 16h", "de 9h até 10:30") ou duração (ex: "reunião de 1h às 15h"), retorne a data/hora ISO 8601 do término; caso contrário null.
    - 'category': Escolha OBRIGATORIAMENTE uma destas categorias oficiais do MontLife:
      • 'Sistemas ERP' | 'BI & Analytics' | 'Finanças & Tesouraria' | 'Recursos Humanos & DP' | 'Secretaria & Acadêmico' | 'Infraestrutura & TI' | 'Comunicação & Avisos' | 'Gestão & Contratos' | 'Automações & Scripts' | 'Vida Pessoal & Casa' | 'Saúde & Bem-estar' | 'Estudos & Carreira' | 'Operações & Demandas'
    - 'priority': 'P1' (crítica/parado), 'P2' (alta), 'P3' (média/padrão), 'P4' (baixa/planejada).
@@ -84,7 +86,12 @@ const RESPONSE_SCHEMA = {
     extracted_due_date_iso: {
       type: Type.STRING,
       nullable: true,
-      description: "Data/hora ISO 8601 se o usuário mencionou prazo específico, ou null.",
+      description: "Data/hora ISO 8601 de início ou prazo específico mencionado, ou null.",
+    },
+    extracted_end_date_iso: {
+      type: Type.STRING,
+      nullable: true,
+      description: "Data/hora ISO 8601 de término de reunião/treinamento/agendamento quando informada (ou calculada por duração citada), ou null.",
     },
     search_tags: {
       type: Type.ARRAY,
@@ -168,11 +175,14 @@ export function classifyTaskHeuristic(
     itemType = "reminder";
   } else if (
     text.includes("reuni") ||
+    text.includes("treinament") ||
+    text.includes("capacit") ||
     text.includes("encontro") ||
     text.includes("aula") ||
     text.includes("treino") ||
     text.includes("consulta") ||
     text.includes("alinhamento") ||
+    text.includes("entrevista") ||
     text.includes("call") ||
     text.includes("evento") ||
     text.includes("missa") ||
@@ -407,79 +417,115 @@ export function classifyTaskHeuristic(
 }
 
 /**
- * Intelligent heuristic to extract deadline from Portuguese text
+ * Intelligent heuristic to extract start/due date and optional end date from Portuguese text
+ * e.g., "amanhã das 14h às 16h", "dia 20/11 de 09:30 até 11:00", "hoje às 15h"
  */
-export function extractDeadlinesHeuristic(text: string): string | null {
+export function extractScheduleRangeHeuristic(text: string): {
+  startIso: string | null;
+  endIso: string | null;
+} {
   const lower = text.toLowerCase();
   const now = new Date();
+
+  const applyTime = (base: Date, hourStr: string, minStr?: string) => {
+    const d = new Date(base);
+    const h = Math.min(23, Math.max(0, parseInt(hourStr, 10) || 0));
+    const m = minStr ? Math.min(59, Math.max(0, parseInt(minStr, 10) || 0)) : 0;
+    d.setHours(h, m, 0, 0);
+    return d;
+  };
+
+  // Determine base calendar day first
+  let baseDay: Date | null = null;
+  let hasExplicitDay = false;
+
+  if (lower.includes("hoje")) {
+    baseDay = new Date(now);
+    hasExplicitDay = true;
+  } else if (lower.includes("amanhã") || lower.includes("amanha")) {
+    baseDay = new Date(now);
+    baseDay.setDate(baseDay.getDate() + 1);
+    hasExplicitDay = true;
+  } else {
+    const dateMatch = lower.match(/(?:dia|até|ate|em|para)?\s*(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
+    if (dateMatch) {
+      const day = parseInt(dateMatch[1], 10);
+      const month = parseInt(dateMatch[2], 10) - 1;
+      const rawYear = dateMatch[3] ? parseInt(dateMatch[3], 10) : now.getFullYear();
+      const year = rawYear < 100 ? 2000 + rawYear : rawYear;
+      baseDay = new Date(year, month, day, 18, 0, 0, 0);
+      hasExplicitDay = true;
+    } else {
+      const weekdays = [
+        { name: "domingo", day: 0 },
+        { name: "segunda", day: 1 },
+        { name: "terça", day: 2 },
+        { name: "terca", day: 2 },
+        { name: "quarta", day: 3 },
+        { name: "quinta", day: 4 },
+        { name: "sexta", day: 5 },
+        { name: "sábado", day: 6 },
+        { name: "sabado", day: 6 },
+      ];
+      for (const wd of weekdays) {
+        if (lower.includes(wd.name)) {
+          const target = new Date(now);
+          const currentDay = target.getDay();
+          let diff = wd.day - currentDay;
+          if (diff <= 0) diff += 7;
+          target.setDate(target.getDate() + diff);
+          target.setHours(18, 0, 0, 0);
+          baseDay = target;
+          hasExplicitDay = true;
+          break;
+        }
+      }
+    }
+  }
+
+  // Time range patterns: "das 14h às 16h", "de 14:30 a 16:00", "14h até 15h30", "14:00 - 15:00"
+  const rangeMatch = lower.match(
+    /(?:das?|de)?\s*(\d{1,2})(?:[:h](\d{2})|h)?\s*(?:às|as|até|ate|a|-)\s*(\d{1,2})(?:[:h](\d{2})|h)/i
+  );
+  if (rangeMatch) {
+    const refDay = baseDay || new Date(now);
+    const start = applyTime(refDay, rangeMatch[1], rangeMatch[2]);
+    const end = applyTime(refDay, rangeMatch[3], rangeMatch[4]);
+    if (end.getTime() <= start.getTime()) {
+      end.setDate(end.getDate() + 1);
+    }
+    return {
+      startIso: start.toISOString(),
+      endIso: end.toISOString(),
+    };
+  }
 
   // "em X horas" ou "daqui a X horas"
   const inHoursMatch = lower.match(/(?:em|daqui\s+a)\s+(\d+)\s+hora/);
   if (inHoursMatch) {
     const hours = parseInt(inHoursMatch[1], 10);
     const target = new Date(now.getTime() + hours * 3600 * 1000);
-    return target.toISOString();
+    return { startIso: target.toISOString(), endIso: null };
   }
 
-  // "hoje às HH(:mm)?"
-  const hojeMatch = lower.match(/hoje\s+(?:às|as)?\s*(\d{1,2})(?::(\d{2}))?/);
-  if (hojeMatch) {
-    const h = parseInt(hojeMatch[1], 10);
-    const m = hojeMatch[2] ? parseInt(hojeMatch[2], 10) : 0;
-    const target = new Date(now);
-    target.setHours(h, m, 0, 0);
-    return target.toISOString();
+  // Single time mention e.g. "às 14h30", "as 15:00", "14h"
+  const singleTimeMatch = lower.match(/(?:às|as)\s*(\d{1,2})(?:[:h](\d{2})|h)?/);
+  if (singleTimeMatch) {
+    const refDay = baseDay || new Date(now);
+    const start = applyTime(refDay, singleTimeMatch[1], singleTimeMatch[2]);
+    return { startIso: start.toISOString(), endIso: null };
   }
 
-  // "amanhã"
-  if (lower.includes("amanhã") || lower.includes("amanha")) {
-    const target = new Date(now);
-    target.setDate(target.getDate() + 1);
-    const timeMatch = lower.match(/amanh[ãa]\s+(?:às|as)?\s*(\d{1,2})(?::(\d{2}))?/);
-    if (timeMatch) {
-      const h = parseInt(timeMatch[1], 10);
-      const m = timeMatch[2] ? parseInt(timeMatch[2], 10) : 0;
-      target.setHours(h, m, 0, 0);
-    } else {
-      target.setHours(18, 0, 0, 0);
-    }
-    return target.toISOString();
+  if (hasExplicitDay && baseDay) {
+    baseDay.setHours(18, 0, 0, 0);
+    return { startIso: baseDay.toISOString(), endIso: null };
   }
 
-  // Dias da semana: "até sexta", "para quinta"
-  const weekdays = [
-    { name: "domingo", day: 0 },
-    { name: "segunda", day: 1 },
-    { name: "terça", day: 2 },
-    { name: "quarta", day: 3 },
-    { name: "quinta", day: 4 },
-    { name: "sexta", day: 5 },
-    { name: "sábado", day: 6 },
-  ];
+  return { startIso: null, endIso: null };
+}
 
-  for (const wd of weekdays) {
-    if (lower.includes(wd.name)) {
-      const target = new Date(now);
-      const currentDay = target.getDay();
-      let diff = wd.day - currentDay;
-      if (diff <= 0) diff += 7;
-      target.setDate(target.getDate() + diff);
-      target.setHours(18, 0, 0, 0);
-      return target.toISOString();
-    }
-  }
-
-  // "dia DD/MM" ou "até DD/MM"
-  const dateMatch = lower.match(/(?:dia|até|ate)\s+(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?/);
-  if (dateMatch) {
-    const day = parseInt(dateMatch[1], 10);
-    const month = parseInt(dateMatch[2], 10) - 1;
-    const year = dateMatch[3] ? parseInt(dateMatch[3], 10) : now.getFullYear();
-    const target = new Date(year, month, day, 18, 0, 0);
-    return target.toISOString();
-  }
-
-  return null;
+export function extractDeadlinesHeuristic(text: string): string | null {
+  return extractScheduleRangeHeuristic(text).startIso;
 }
 
 /**
@@ -765,7 +811,7 @@ export function synthesizeValidationSteps(rawInput: string, title: string): stri
  */
 function fallbackTriage(rawInput: string): GeminiTriageResponse {
   const heuristic = classifyTaskHeuristic(rawInput);
-  const detectedDueDate = extractDeadlinesHeuristic(rawInput);
+  const { startIso, endIso } = extractScheduleRangeHeuristic(rawInput);
 
   const title = synthesizeRefinedTitle(rawInput);
   const description = synthesizeStructuredDescription(rawInput, title, heuristic.category);
@@ -779,7 +825,8 @@ function fallbackTriage(rawInput: string): GeminiTriageResponse {
     item_type: heuristic.item_type,
     category: heuristic.category,
     priority: heuristic.priority,
-    extracted_due_date_iso: detectedDueDate,
+    extracted_due_date_iso: startIso,
+    extracted_end_date_iso: endIso,
     search_tags: heuristic.tags,
     learning_queries: heuristic.learning_queries,
   };
@@ -953,7 +1000,7 @@ export async function triageInputWithGeminiDetailed(
     };
   }
 
-  const cacheKey = `triage_v2:${cleanInput}`;
+  const cacheKey = `triage_v3:${cleanInput}`;
 
   // 1. Check persistent AI Cache (ONLY when not forcing fresh AI)
   if (!options?.forceFresh) {
@@ -1039,8 +1086,12 @@ ${cleanInput}
     parsed.validation_steps =
       cleanedSteps.length > 0 ? cleanedSteps : heuristicFallback.validation_steps;
 
+    const heuristicSchedule = extractScheduleRangeHeuristic(cleanInput);
     if (!parsed.extracted_due_date_iso) {
-      parsed.extracted_due_date_iso = extractDeadlinesHeuristic(cleanInput);
+      parsed.extracted_due_date_iso = heuristicSchedule.startIso;
+    }
+    if (!parsed.extracted_end_date_iso && heuristicSchedule.endIso) {
+      parsed.extracted_end_date_iso = heuristicSchedule.endIso;
     }
 
     if (!Array.isArray(parsed.search_tags) || parsed.search_tags.length === 0) {
