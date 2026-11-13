@@ -18,7 +18,8 @@ import { ReportsView } from "@/components/ReportsView";
 import { KanbanView } from "@/components/KanbanView";
 import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
 import { getAllCategories } from "@/lib/categories";
-import { ExternalLink, ListTodo, FileText, Calendar, TrendingUp, User, Kanban, BarChart3, Menu, Layers, X } from "lucide-react";
+import { getOfflineQueue, enqueueOfflineAction, syncOfflineQueue } from "@/lib/offlineQueue";
+import { ExternalLink, ListTodo, FileText, Calendar, TrendingUp, User, Kanban, BarChart3, Menu, Layers, X, Wifi, WifiOff } from "lucide-react";
 
 export default function MontOpsDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -61,6 +62,11 @@ export default function MontOpsDashboard() {
     name: string;
     picture?: string;
   } | null>(null);
+
+  // Modo Offline e Sincronização PWA
+  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [offlinePendingCount, setOfflinePendingCount] = useState<number>(0);
+  const [offlineSyncMessage, setOfflineSyncMessage] = useState<string | null>(null);
 
   // User-scoped cache hydration to guarantee multi-tenant UI isolation on shared devices
   useEffect(() => {
@@ -183,6 +189,54 @@ export default function MontOpsDashboard() {
     loadUser();
   }, [loadTasks, loadAccounts, loadUser]);
 
+  // Registro do Service Worker e monitoramento de conectividade (Offline & Web Push)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsOnline(navigator.onLine);
+      setOfflinePendingCount(getOfflineQueue().length);
+
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("/sw.js")
+          .then((reg) => {
+            console.log("MontLife Service Worker ativo:", reg.scope);
+          })
+          .catch((err) => {
+            console.warn("Falha no registro do Service Worker:", err);
+          });
+      }
+
+      const handleOnline = async () => {
+        setIsOnline(true);
+        const count = getOfflineQueue().length;
+        if (count > 0) {
+          setOfflineSyncMessage(`Conexão restabelecida! Sincronizando ${count} alteração(ões)...`);
+          const res = await syncOfflineQueue();
+          setOfflinePendingCount(getOfflineQueue().length);
+          if (res.synced > 0) {
+            setOfflineSyncMessage(`${res.synced} alteração(ões) sincronizadas com sucesso!`);
+            loadTasks();
+            setTimeout(() => setOfflineSyncMessage(null), 5000);
+          } else {
+            setOfflineSyncMessage(null);
+          }
+        }
+      };
+
+      const handleOffline = () => {
+        setIsOnline(false);
+      };
+
+      window.addEventListener("online", handleOnline);
+      window.addEventListener("offline", handleOffline);
+
+      return () => {
+        window.removeEventListener("online", handleOnline);
+        window.removeEventListener("offline", handleOffline);
+      };
+    }
+  }, [loadTasks]);
+
   // Listen to OAuth redirect query params & prompt classification
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -303,17 +357,44 @@ export default function MontOpsDashboard() {
     cancelReason?: string,
     resolutionAttachments?: TaskAttachment[]
   ) => {
+    const payload = {
+      action: "update_status",
+      status: newStatus,
+      resolution_notes: resolutionNotes,
+      cancel_reason: cancelReason,
+      resolution_attachments: resolutionAttachments,
+    };
+
+    // Suporte Offline Imediato (Optimistic UI + Fila de Sincronização)
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("UPDATE_STATUS", {
+        taskId,
+        ...payload,
+      });
+      setOfflinePendingCount(getOfflineQueue().length);
+      setTasks((prev) => {
+        const updated = prev.map((t) =>
+          t.id === taskId
+            ? {
+                ...t,
+                status: newStatus,
+                resolution_notes: resolutionNotes !== undefined ? resolutionNotes : t.resolution_notes,
+                cancel_reason: cancelReason !== undefined ? cancelReason : t.cancel_reason,
+                resolution_attachments: resolutionAttachments !== undefined ? resolutionAttachments : t.resolution_attachments,
+              }
+            : t
+        );
+        syncTasksCache(updated);
+        return updated;
+      });
+      return;
+    }
+
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "update_status",
-          status: newStatus,
-          resolution_notes: resolutionNotes,
-          cancel_reason: cancelReason,
-          resolution_attachments: resolutionAttachments,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success && data.task) {
@@ -324,7 +405,12 @@ export default function MontOpsDashboard() {
         });
       }
     } catch (err) {
-      console.error("Failed to update status:", err);
+      console.warn("Falha na rede ao atualizar status, enfileirando offline:", err);
+      enqueueOfflineAction("UPDATE_STATUS", {
+        taskId,
+        ...payload,
+      });
+      setOfflinePendingCount(getOfflineQueue().length);
     }
   };
 
@@ -337,11 +423,27 @@ export default function MontOpsDashboard() {
   };
 
   const handleUpdateItemType = async (taskId: string, itemType: ItemType) => {
+    const payload = { item_type: itemType };
+
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("UPDATE_FIELDS", {
+        taskId,
+        fields: payload,
+      });
+      setOfflinePendingCount(getOfflineQueue().length);
+      setTasks((prev) => {
+        const updated = prev.map((t) => (t.id === taskId ? { ...t, item_type: itemType } : t));
+        syncTasksCache(updated);
+        return updated;
+      });
+      return;
+    }
+
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ item_type: itemType }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success && data.task) {
@@ -352,11 +454,30 @@ export default function MontOpsDashboard() {
         });
       }
     } catch (err) {
-      console.error("Failed to update item type:", err);
+      console.warn("Falha na rede ao alterar tipo de item, enfileirando offline:", err);
+      enqueueOfflineAction("UPDATE_FIELDS", {
+        taskId,
+        fields: payload,
+      });
+      setOfflinePendingCount(getOfflineQueue().length);
     }
   };
 
   const handleUpdateTaskFields = async (taskId: string, fields: Partial<Task>) => {
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("UPDATE_FIELDS", {
+        taskId,
+        fields,
+      });
+      setOfflinePendingCount(getOfflineQueue().length);
+      setTasks((prev) => {
+        const updated = prev.map((t) => (t.id === taskId ? { ...t, ...fields } : t));
+        syncTasksCache(updated);
+        return updated;
+      });
+      return;
+    }
+
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
@@ -372,7 +493,12 @@ export default function MontOpsDashboard() {
         });
       }
     } catch (err) {
-      console.error("Failed to update task fields:", err);
+      console.warn("Falha na rede ao atualizar campos, enfileirando offline:", err);
+      enqueueOfflineAction("UPDATE_FIELDS", {
+        taskId,
+        fields,
+      });
+      setOfflinePendingCount(getOfflineQueue().length);
     }
   };
 
@@ -450,15 +576,35 @@ export default function MontOpsDashboard() {
     reason: string
   ) => {
     if (!taskForExtend) return;
+    const payload = {
+      action: "extend_deadline",
+      new_due_date: newDueDateIso,
+      reason,
+    };
+
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("EXTEND_DEADLINE", {
+        taskId: taskForExtend.id,
+        new_due_date: newDueDateIso,
+        reason,
+      });
+      setOfflinePendingCount(getOfflineQueue().length);
+      setTasks((prev) => {
+        const updated = prev.map((t) =>
+          t.id === taskForExtend.id ? { ...t, current_due_date: newDueDateIso } : t
+        );
+        syncTasksCache(updated);
+        return updated;
+      });
+      setTaskForExtend(null);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/tasks/${taskForExtend.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "extend_deadline",
-          new_due_date: newDueDateIso,
-          reason,
-        }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (data.success && data.task) {
@@ -469,13 +615,33 @@ export default function MontOpsDashboard() {
         });
       }
     } catch (err) {
-      console.error("Failed to extend deadline:", err);
+      console.warn("Falha na rede ao estender prazo, enfileirando offline:", err);
+      enqueueOfflineAction("EXTEND_DEADLINE", {
+        taskId: taskForExtend.id,
+        new_due_date: newDueDateIso,
+        reason,
+      });
+      setOfflinePendingCount(getOfflineQueue().length);
     } finally {
       setTaskForExtend(null);
     }
   };
 
   const handleDeleteTask = async (taskId: string) => {
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("DELETE_TASK", { taskId });
+      setOfflinePendingCount(getOfflineQueue().length);
+      setTasks((prev) => {
+        const remaining = prev.filter((t) => t.id !== taskId);
+        syncTasksCache(remaining);
+        if (selectedTaskId === taskId) {
+          setSelectedTaskId(remaining.length > 0 ? remaining[0].id : null);
+        }
+        return remaining;
+      });
+      return;
+    }
+
     try {
       const res = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
       const data = await res.json();
@@ -490,7 +656,9 @@ export default function MontOpsDashboard() {
         });
       }
     } catch (err) {
-      console.error("Failed to delete task:", err);
+      console.warn("Falha na rede ao excluir demanda, enfileirando offline:", err);
+      enqueueOfflineAction("DELETE_TASK", { taskId });
+      setOfflinePendingCount(getOfflineQueue().length);
     }
   };
 
@@ -606,6 +774,40 @@ export default function MontOpsDashboard() {
             }}
           />
         </div>
+
+        {/* Banner de Modo Offline */}
+        {!isOnline && (
+          <div className="no-print bg-amber-500 text-slate-950 font-medium px-3 sm:px-4 py-2 flex items-center justify-between text-xs shrink-0 shadow-xs z-30">
+            <div className="flex items-center gap-2">
+              <WifiOff className="w-4 h-4 shrink-0" />
+              <span>
+                <strong>Modo Offline Ativo:</strong> Você está sem conexão com a internet. Suas alterações estão seguras no cache local e serão sincronizadas automaticamente assim que você reconectar.
+              </span>
+            </div>
+            {offlinePendingCount > 0 && (
+              <span className="bg-slate-900 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+                {offlinePendingCount} na fila
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Feedback de Sincronização Offline */}
+        {offlineSyncMessage && (
+          <div className="no-print bg-emerald-600 text-white font-medium px-3 sm:px-4 py-2 flex items-center justify-between text-xs shrink-0 shadow-xs z-30 animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <Wifi className="w-4 h-4 shrink-0" />
+              <span>{offlineSyncMessage}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setOfflineSyncMessage(null)}
+              className="text-white hover:text-emerald-100 font-bold px-2 py-0.5 rounded text-xs cursor-pointer"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Banner if no account is connected */}
         {!hasConnectedAccount && accountsLoaded && (

@@ -1,4 +1,4 @@
-import { Task } from "@/types";
+import { Task, GoogleCalendarEventItem } from "@/types";
 import { parseISO, isSameDay, getHours, getMinutes, format } from "date-fns";
 
 export function isValidIsoDate(val?: string | null): boolean {
@@ -204,4 +204,104 @@ export function getTaskReminderDate(task: Task): Date | null {
       : 30;
 
   return new Date(startMs - leadMinutes * 60_000);
+}
+
+/**
+ * Gera um link exclusivo no padrão oficial do Google Meet (ex: https://meet.google.com/abc-defg-hij)
+ */
+export function generateGoogleMeetLink(): string {
+  const letters = "abcdefghijklmnopqrstuvwxyz";
+  const part = (len: number) =>
+    Array.from({ length: len }, () => letters[Math.floor(Math.random() * letters.length)]).join("");
+  return `https://meet.google.com/${part(3)}-${part(4)}-${part(3)}`;
+}
+
+export function isValidGoogleMeetLink(url?: string | null): boolean {
+  if (!url || typeof url !== "string") return false;
+  return Boolean(url.match(/^https?:\/\/(meet\.google\.com|meet\.app\.goo\.gl)\/[a-z0-9\-_]+/i));
+}
+
+export interface ScheduleConflictItem {
+  id: string;
+  title: string;
+  start: string;
+  end: string;
+  type: "task" | "google_event";
+  timeRangeLabel: string;
+}
+
+/**
+ * Detecta conflitos de horário entre a data/hora proposta e as demandas existentes ou compromissos do Google Agenda.
+ */
+export function findScheduleConflicts(
+  proposedStart: string | null | undefined,
+  proposedEnd: string | null | undefined,
+  tasks: Task[] = [],
+  gcalEvents: GoogleCalendarEventItem[] = [],
+  excludeTaskId?: string
+): ScheduleConflictItem[] {
+  if (!isValidIsoDate(proposedStart)) return [];
+
+  const pStart = new Date(proposedStart as string).getTime();
+  const pEnd = isValidIsoDate(proposedEnd)
+    ? new Date(proposedEnd as string).getTime()
+    : pStart + 60 * 60_000;
+
+  if (pEnd <= pStart) return [];
+
+  const conflicts: ScheduleConflictItem[] = [];
+
+  // 1. Checa demandas MontLife
+  for (const t of tasks) {
+    if (t.id === excludeTaskId) continue;
+    if (t.status === "COMPLETED" || t.status === "CANCELED") continue;
+    if (isTaskAllDay(t)) continue;
+
+    const tStartStr = getTaskScheduleDate(t);
+    if (!isValidIsoDate(tStartStr)) continue;
+
+    const tStart = new Date(tStartStr).getTime();
+    const tEndStr = getTaskScheduleEnd(t);
+    const tEnd = tEndStr && isValidIsoDate(tEndStr)
+      ? new Date(tEndStr).getTime()
+      : tStart + 60 * 60_000;
+
+    // Condição de sobreposição: A.start < B.end && A.end > B.start
+    if (tStart < pEnd && tEnd > pStart) {
+      conflicts.push({
+        id: t.id,
+        title: t.title,
+        start: tStartStr,
+        end: tEndStr || new Date(tEnd).toISOString(),
+        type: "task",
+        timeRangeLabel: formatTaskTimeRange(t),
+      });
+    }
+  }
+
+  // 2. Checa eventos do Google Calendar
+  for (const ev of gcalEvents) {
+    if (ev.allDay) continue;
+    if (!ev.start || !isValidIsoDate(ev.start)) continue;
+
+    const evStart = new Date(ev.start).getTime();
+    const evEnd = ev.end && isValidIsoDate(ev.end)
+      ? new Date(ev.end).getTime()
+      : evStart + 60 * 60_000;
+
+    if (evStart < pEnd && evEnd > pStart) {
+      const startFmt = format(parseISO(ev.start), "HH:mm");
+      const endFmt = ev.end && isValidIsoDate(ev.end) ? format(parseISO(ev.end), "HH:mm") : "";
+      conflicts.push({
+        id: ev.id,
+        title: ev.summary || "Compromisso Google Agenda",
+        start: ev.start,
+        end: ev.end || new Date(evEnd).toISOString(),
+        type: "google_event",
+        timeRangeLabel: endFmt ? `${startFmt} - ${endFmt}` : startFmt,
+      });
+    }
+  }
+
+  return conflicts;
 }

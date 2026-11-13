@@ -27,6 +27,7 @@ import {
   RotateCcw,
   Sparkles,
   Bell,
+  Video,
 } from "lucide-react";
 import { Task, TaskStatus, Priority, AccountType } from "@/types";
 import {
@@ -755,6 +756,19 @@ export function KanbanView({
                               >
                                 <Bell className="w-2.5 h-2.5" />
                               </span>
+                            )}
+                            {task.meet_link && (
+                              <a
+                                href={task.meet_link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 font-semibold shrink-0 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors shadow-2xs"
+                                title="Entrar na reunião do Google Meet"
+                              >
+                                <Video className="w-2.5 h-2.5 text-emerald-600 dark:text-emerald-400" />
+                                <span className="hidden sm:inline">Meet</span>
+                              </a>
                             )}
                             {attachmentsCount > 0 && (
                               <span

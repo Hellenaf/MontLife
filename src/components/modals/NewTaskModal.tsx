@@ -97,6 +97,7 @@ export function NewTaskModal({
   const [endDate, setEndDate] = useState<string>("");
   const [reminderEnabled, setReminderEnabled] = useState<boolean>(false);
   const [reminderMinutesBefore, setReminderMinutesBefore] = useState<number>(30);
+  const [meetLink, setMeetLink] = useState<string | null>(null);
   const [tagsInput, setTagsInput] = useState<string>("");
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
 
@@ -425,6 +426,10 @@ export function NewTaskModal({
         }
       }
 
+      if (triage.extracted_meet_link && !meetLink) {
+        setMeetLink(triage.extracted_meet_link);
+      }
+
       return {
         rawText,
         triage,
@@ -558,6 +563,7 @@ export function NewTaskModal({
             : null,
         reminder_enabled: finalReminderEnabled,
         reminder_minutes_before: finalReminderEnabled ? reminderMinutesBefore : null,
+        meet_link: meetLink,
         tags: effectiveTags,
         attachments,
         validation_steps: effectiveSteps,
@@ -1172,6 +1178,9 @@ export function NewTaskModal({
             reminderMinutesBefore={reminderMinutesBefore}
             itemType={itemType}
             valueFormat="local"
+            meetLink={meetLink}
+            onChangeMeetLink={setMeetLink}
+            tasks={existingTasks}
             onChangeStart={(val) => {
               touchedFieldsRef.current.dueDate = true;
               setDueDate(val);

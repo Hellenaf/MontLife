@@ -42,6 +42,7 @@ import {
   Globe,
   ArrowRightLeft,
   PlayCircle,
+  Video,
 } from "lucide-react";
 import { AttachmentManager } from "@/components/AttachmentManager";
 import { MediaLightboxModal, MediaItem } from "@/components/modals/MediaLightboxModal";
@@ -586,6 +587,13 @@ export function CentralQuadrant({
     });
   };
 
+  const handleChangeDetailMeetLink = async (link: string | null) => {
+    if (!selectedTask || !onUpdateTaskFields) return;
+    await onUpdateTaskFields(selectedTask.id, {
+      meet_link: link,
+    });
+  };
+
   // Helper: check if task is all-day (no specific hour or spans full day)
   const isAllDayTask = (task: Task): boolean => {
     return checkTaskIsAllDay(task);
@@ -872,16 +880,31 @@ export function CentralQuadrant({
                     </div>
                   </div>
 
-                  {/* Schedule & Reminder quick summary strip */}
-                  {(hasScheduledTimeRange(selectedTask) || selectedTask.reminder_enabled) && (
+                  {/* Schedule, Reminder & Google Meet quick summary strip */}
+                  {(hasScheduledTimeRange(selectedTask) || selectedTask.reminder_enabled || selectedTask.meet_link) && (
                     <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/70">
-                        <Clock className="w-3.5 h-3.5" />
-                        <span>
-                          {format(parseISO(getTaskScheduleDate(selectedTask)), "dd/MM/yyyy", { locale: ptBR })} •{" "}
-                          {formatTaskTimeRange(selectedTask)}
+                      {selectedTask.meet_link && (
+                        <a
+                          href={selectedTask.meet_link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all active:scale-95"
+                          title="Entrar na sala de videoconferência do Google Meet"
+                        >
+                          <Video className="w-3.5 h-3.5" />
+                          <span>Entrar no Google Meet</span>
+                          <ExternalLink className="w-3 h-3 opacity-80" />
+                        </a>
+                      )}
+                      {(hasScheduledTimeRange(selectedTask) || !isTaskAllDay(selectedTask)) && (
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/70">
+                          <Clock className="w-3.5 h-3.5" />
+                          <span>
+                            {format(parseISO(getTaskScheduleDate(selectedTask)), "dd/MM/yyyy", { locale: ptBR })} •{" "}
+                            {formatTaskTimeRange(selectedTask)}
+                          </span>
                         </span>
-                      </span>
+                      )}
                       {selectedTask.reminder_enabled && (
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/70">
                           <Bell className="w-3.5 h-3.5" />
@@ -1463,6 +1486,10 @@ export function CentralQuadrant({
                         reminderMinutesBefore={selectedTask.reminder_minutes_before ?? 30}
                         onChangeReminderEnabled={handleChangeDetailReminderEnabled}
                         onChangeReminderMinutes={handleChangeDetailReminderMinutes}
+                        meetLink={selectedTask.meet_link || null}
+                        onChangeMeetLink={handleChangeDetailMeetLink}
+                        tasks={allTasks}
+                        excludeTaskId={selectedTask.id}
                       />
                     </div>
                   </div>
@@ -2047,6 +2074,22 @@ export function CentralQuadrant({
               {previewTask.description && (
                 <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-600 dark:text-slate-300 max-h-24 overflow-y-auto leading-relaxed">
                   <FormattedText text={previewTask.description} />
+                </div>
+              )}
+
+              {/* Google Meet Quick Action */}
+              {previewTask.meet_link && (
+                <div className="pt-1">
+                  <a
+                    href={previewTask.meet_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-all active:scale-[0.98]"
+                  >
+                    <Video className="w-4 h-4" />
+                    <span>Entrar no Google Meet</span>
+                    <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+                  </a>
                 </div>
               )}
 

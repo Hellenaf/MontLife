@@ -113,6 +113,7 @@ export function HeaderCommandBar({
   const [editEndDate, setEditEndDate] = useState("");
   const [editReminderEnabled, setEditReminderEnabled] = useState(false);
   const [editReminderMinutesBefore, setEditReminderMinutesBefore] = useState(30);
+  const [editMeetLink, setEditMeetLink] = useState<string | null>(null);
   const [editValidationSteps, setEditValidationSteps] = useState<ValidationStep[]>([]);
   const [newHeaderStep, setNewHeaderStep] = useState("");
   const [isAddingHeaderStep, setIsAddingHeaderStep] = useState(false);
@@ -349,9 +350,26 @@ export function HeaderCommandBar({
         try {
           const timeRange = formatTaskTimeRange(item.task);
           const leadLabel = formatReminderLeadTime(item.task.reminder_minutes_before ?? 30);
-          new Notification(`Lembrete MontLife: ${item.task.title}`, {
-            body: `${timeRange} • Aviso (${leadLabel})`,
-          });
+          const notifTitle = `Lembrete MontLife: ${item.task.title}`;
+          const notifBody = `${timeRange} • Aviso (${leadLabel})`;
+
+          if ("serviceWorker" in navigator && navigator.serviceWorker.ready) {
+            navigator.serviceWorker.ready.then((reg) => {
+              (reg as any).showNotification(notifTitle, {
+                body: notifBody,
+                icon: "/icon-192x192.png",
+                badge: "/favicon-32x32.png",
+                vibrate: [200, 100, 200],
+                tag: item.occurrenceKey,
+                renotify: true,
+                data: { taskId: item.task.id, url: "/" },
+              });
+            }).catch(() => {
+              new Notification(notifTitle, { body: notifBody, icon: "/icon-192x192.png" });
+            });
+          } else {
+            new Notification(notifTitle, { body: notifBody, icon: "/icon-192x192.png" });
+          }
         } catch {}
       }
     }
@@ -448,6 +466,8 @@ export function HeaderCommandBar({
       setEditReminderEnabled(false);
       setEditReminderMinutesBefore(30);
     }
+
+    setEditMeetLink(triage.extracted_meet_link || null);
 
     if (triage.validation_steps?.length) {
       setEditValidationSteps(
@@ -577,6 +597,7 @@ export function HeaderCommandBar({
         scheduled_end: validEnd,
         reminder_enabled: editReminderEnabled,
         reminder_minutes_before: editReminderEnabled ? editReminderMinutesBefore : null,
+        meet_link: editMeetLink,
         tags: triageData.search_tags || [],
         validation_steps: editValidationSteps,
         learning_resources: learningResources || {
@@ -620,6 +641,7 @@ export function HeaderCommandBar({
     setEditEndDate("");
     setEditReminderEnabled(false);
     setEditReminderMinutesBefore(30);
+    setEditMeetLink(null);
     setIsSimilarityDismissed(false);
     setCreateError(null);
     setTriageError(null);
@@ -1532,7 +1554,7 @@ export function HeaderCommandBar({
                 </div>
               </div>
 
-              {/* Agendamento (Início / Término) & Lembrete */}
+              {/* Agendamento (Início / Término), Lembrete & Google Meet */}
               <ScheduleReminderFields
                 valueFormat="iso"
                 itemType={editItemType}
@@ -1544,6 +1566,9 @@ export function HeaderCommandBar({
                 reminderMinutesBefore={editReminderMinutesBefore}
                 onChangeReminderEnabled={setEditReminderEnabled}
                 onChangeReminderMinutes={setEditReminderMinutesBefore}
+                meetLink={editMeetLink}
+                onChangeMeetLink={setEditMeetLink}
+                tasks={tasks}
                 compact
               />
 

@@ -250,6 +250,7 @@ export async function POST(req: NextRequest) {
       scheduled_end: endDateIso,
       reminder_enabled: true,
       reminder_minutes_before: 30,
+      meet_link: typeof body.meet_link === "string" && body.meet_link.trim() ? body.meet_link.trim() : null,
       extension_count: 0,
       deadline_extensions: [],
       resolution_notes: null,

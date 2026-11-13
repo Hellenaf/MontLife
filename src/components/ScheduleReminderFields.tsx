@@ -1,11 +1,31 @@
 "use client";
 
-import React from "react";
-import { Calendar, Clock, Bell, BellOff, Timer } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import {
+  Calendar,
+  Clock,
+  Bell,
+  BellOff,
+  Timer,
+  Video,
+  Copy,
+  ExternalLink,
+  Check,
+  AlertTriangle,
+  Trash2,
+  RefreshCw,
+  Plus,
+} from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ItemType } from "@/types";
-import { formatReminderLeadTime, toDateTimeLocalValue } from "@/lib/taskSchedule";
+import { ItemType, Task, GoogleCalendarEventItem } from "@/types";
+import {
+  formatReminderLeadTime,
+  toDateTimeLocalValue,
+  findScheduleConflicts,
+  generateGoogleMeetLink,
+  isValidIsoDate,
+} from "@/lib/taskSchedule";
 
 interface ScheduleReminderFieldsProps {
   /** Local datetime string "yyyy-MM-dd'T'HH:mm" or ISO string */
@@ -21,6 +41,13 @@ interface ScheduleReminderFieldsProps {
   onChangeEnd: (nextEndLocalOrIso: string) => void;
   onChangeReminderEnabled: (enabled: boolean) => void;
   onChangeReminderMinutes: (minutes: number) => void;
+  /** Google Meet Link support */
+  meetLink?: string | null;
+  onChangeMeetLink?: (link: string | null) => void;
+  /** Existing tasks and calendar events for real-time conflict detection */
+  tasks?: Task[];
+  gcalEvents?: GoogleCalendarEventItem[];
+  excludeTaskId?: string;
   /** True when parent stores ISO strings (HeaderCommandBar / CentralQuadrant) instead of datetime-local strings (NewTaskModal) */
   valueFormat?: "local" | "iso";
   compact?: boolean;
@@ -66,9 +93,16 @@ export function ScheduleReminderFields({
   onChangeEnd,
   onChangeReminderEnabled,
   onChangeReminderMinutes,
+  meetLink = null,
+  onChangeMeetLink,
+  tasks = [],
+  gcalEvents = [],
+  excludeTaskId,
   valueFormat = "local",
   compact = false,
 }: ScheduleReminderFieldsProps) {
+  const [copiedMeet, setCopiedMeet] = useState(false);
+
   const startInputVal =
     valueFormat === "iso" ? toDateTimeLocalValue(startValue) : startValue;
   const endInputVal =
@@ -77,6 +111,29 @@ export function ScheduleReminderFields({
   const hasEndTime = Boolean(endInputVal && endInputVal.trim());
   const startDateObj = parseDateSafe(startValue || startInputVal);
   const endDateObj = parseDateSafe(endValue || endInputVal);
+
+  // Detecção em tempo real de conflitos com outras demandas ou Google Agenda
+  const conflicts = useMemo(() => {
+    if (!startDateObj) return [];
+    const startIso = startDateObj.toISOString();
+    const endIso = endDateObj ? endDateObj.toISOString() : null;
+    return findScheduleConflicts(startIso, endIso, tasks, gcalEvents, excludeTaskId);
+  }, [startDateObj, endDateObj, tasks, gcalEvents, excludeTaskId]);
+
+  const handleCopyMeet = () => {
+    if (!meetLink) return;
+    try {
+      navigator.clipboard.writeText(meetLink);
+      setCopiedMeet(true);
+      setTimeout(() => setCopiedMeet(false), 2000);
+    } catch {}
+  };
+
+  const handleGenerateMeet = () => {
+    if (!onChangeMeetLink) return;
+    const link = generateGoogleMeetLink();
+    onChangeMeetLink(link);
+  };
 
   const reminderTriggerDate =
     reminderEnabled && startDateObj
@@ -320,6 +377,126 @@ export function ScheduleReminderFields({
                 +1 semana
               </button>
             </>
+          )}
+        </div>
+      )}
+
+      {/* Real-time Schedule Conflict Warning Banner */}
+      {conflicts.length > 0 && (
+        <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 text-xs text-amber-900 dark:text-amber-200 space-y-1.5 animate-in fade-in duration-200">
+          <div className="flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-300">
+            <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+            <span>
+              Conflito de Horário Detectado ({conflicts.length}{" "}
+              {conflicts.length === 1 ? "compromisso coincidente" : "compromissos coincidentes"})
+            </span>
+          </div>
+          <div className="space-y-1 pl-5">
+            {conflicts.map((c) => (
+              <div key={c.id} className="text-[11px] flex items-center justify-between gap-2">
+                <span className="truncate">
+                  <strong className="font-semibold text-slate-900 dark:text-slate-100">{c.title}</strong>
+                  <span className="text-slate-500 dark:text-slate-400">
+                    {" "}
+                    ({c.type === "google_event" ? "Google Agenda" : "MontLife"})
+                  </span>
+                </span>
+                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-300 shrink-0 font-bold border border-amber-200 dark:border-amber-800/50">
+                  {c.timeRangeLabel}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Google Meet Link Generator & Integration */}
+      {onChangeMeetLink && (
+        <div className="pt-2.5 border-t border-slate-200/80 dark:border-zinc-800/80 space-y-2">
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <Video className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span className="text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                Google Meet (Videoconferência):
+              </span>
+            </div>
+            {!meetLink ? (
+              <button
+                type="button"
+                onClick={handleGenerateMeet}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-semibold transition-all cursor-pointer shadow-xs active:scale-95"
+              >
+                <Plus className="w-3 h-3" />
+                <span>+ Gerar Link do Meet</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleGenerateMeet}
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold text-slate-500 hover:text-emerald-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                title="Substituir por um novo link exclusivo"
+              >
+                <RefreshCw className="w-3 h-3" />
+                <span>Gerar outro</span>
+              </button>
+            )}
+          </div>
+
+          {meetLink ? (
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex-1 min-w-[200px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#141520] border border-emerald-300 dark:border-emerald-700/60 text-xs">
+                <Video className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <input
+                  type="text"
+                  value={meetLink}
+                  onChange={(e) => onChangeMeetLink(e.target.value.trim() || null)}
+                  placeholder="https://meet.google.com/..."
+                  className="w-full bg-transparent text-slate-800 dark:text-slate-200 font-mono text-[11px] outline-none"
+                />
+              </div>
+              <div className="flex items-center gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleCopyMeet}
+                  className="px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-700 dark:text-slate-200 hover:text-emerald-600 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                  title="Copiar link do Google Meet"
+                >
+                  {copiedMeet ? (
+                    <>
+                      <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      <span className="text-[10px] text-emerald-600">Copiado!</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-3.5 h-3.5" />
+                      <span className="text-[10px]">Copiar</span>
+                    </>
+                  )}
+                </button>
+                <a
+                  href={meetLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold flex items-center gap-1 transition-all shadow-xs"
+                  title="Entrar na sala do Google Meet"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span className="text-[10px]">Entrar</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => onChangeMeetLink(null)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-500 bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 transition-colors cursor-pointer"
+                  title="Remover Google Meet"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-[10px] text-slate-400 dark:text-slate-500">
+              Gere um link exclusivo do Google Meet com 1 clique para reuniões, alinhamentos ou treinamentos.
+            </p>
           )}
         </div>
       )}

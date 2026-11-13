@@ -21,6 +21,8 @@ import {
   RefreshCw,
   AlertCircle,
   FileText,
+  Video,
+  AlertTriangle,
 } from "lucide-react";
 import confetti from "canvas-confetti";
 import { Task, GoogleCalendarEventItem } from "@/types";
@@ -29,6 +31,7 @@ import {
   formatTaskTimeRange,
   getTaskScheduleDate,
   isTaskScheduledForDay,
+  findScheduleConflicts,
 } from "@/lib/taskSchedule";
 import {
   format,
@@ -183,6 +186,7 @@ export function AgendaDoDiaView({
           start: event.start,
           end: event.end,
           location: event.location,
+          meet_link: event.meet_link || (event.description?.match(/https:\/\/meet\.google\.com\/[a-z0-9\-]+/i)?.[0]) || null,
           accountType: event.isPersonal ? "Pessoal" : "Trabalho",
           accountEmail: event.accountEmail,
         }),
@@ -779,6 +783,14 @@ export function AgendaDoDiaView({
                         const timeText = formatTaskTimeRange(task);
                         const isCurrentSelected = selectedTaskId === task.id;
                         const isWork = isWorkTask(task);
+                        const conflicts = findScheduleConflicts(
+                          task.scheduled_start || task.current_due_date,
+                          task.scheduled_end,
+                          tasksForSelectedDay,
+                          gcalEventsForSelectedDay,
+                          task.id
+                        );
+                        const hasConflict = conflicts.length > 0;
 
                         return (
                           <div
@@ -811,6 +823,28 @@ export function AgendaDoDiaView({
 
                             <div className="flex items-center justify-between sm:justify-end gap-1.5 shrink-0 pl-12 sm:pl-0">
                               <div className="flex items-center gap-1.5 flex-wrap">
+                                {hasConflict && (
+                                  <span
+                                    className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-300 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-800/60"
+                                    title={`Possível conflito de horário com: ${conflicts.map((c) => c.title).join(", ")}`}
+                                  >
+                                    <AlertTriangle className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
+                                    <span className="hidden sm:inline">Conflito ({conflicts.length})</span>
+                                  </span>
+                                )}
+                                {task.meet_link && (
+                                  <a
+                                    href={task.meet_link}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    onClick={(e) => e.stopPropagation()}
+                                    className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold flex items-center gap-1 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors shadow-2xs"
+                                    title="Entrar na reunião do Google Meet"
+                                  >
+                                    <Video className="w-2.5 h-2.5" />
+                                    <span>Meet</span>
+                                  </a>
+                                )}
                                 {task.reminder_enabled && (
                                   <span
                                     className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold flex items-center gap-1 bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/60"
@@ -871,6 +905,7 @@ export function AgendaDoDiaView({
                       {gcalEventsForSelectedDay.map((ev) => {
                         const timeText = getGcalEventTimeText(ev);
                         const isConverting = convertingEventId === ev.id;
+                        const eventMeetLink = ev.meet_link || (ev.description?.match(/https:\/\/meet\.google\.com\/[a-z0-9\-]+/i)?.[0]) || null;
 
                         return (
                           <div
@@ -886,6 +921,18 @@ export function AgendaDoDiaView({
                                   <span className="px-1.5 py-0.5 rounded-md text-[10px] font-bold bg-amber-100/70 dark:bg-amber-950/50 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/50">
                                     Agenda Pessoal
                                   </span>
+                                  {eventMeetLink && (
+                                    <a
+                                      href={eventMeetLink}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 dark:bg-emerald-950/70 dark:text-emerald-300 dark:border-emerald-800/80 flex items-center gap-1 hover:bg-emerald-200 transition-colors shadow-2xs"
+                                      title="Entrar na sala do Google Meet"
+                                    >
+                                      <Video className="w-2.5 h-2.5" />
+                                      <span>Google Meet</span>
+                                    </a>
+                                  )}
                                 </div>
                                 <h4 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white leading-snug">
                                   {ev.summary}
@@ -903,17 +950,30 @@ export function AgendaDoDiaView({
                                 )}
                               </div>
 
-                              {ev.htmlLink && (
-                                <a
-                                  href={ev.htmlLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 transition-colors shrink-0"
-                                  title="Abrir no Google Calendar Oficial"
-                                >
-                                  <ExternalLink className="w-3.5 h-3.5" />
-                                </a>
-                              )}
+                              <div className="flex items-center gap-1 shrink-0">
+                                {eventMeetLink && (
+                                  <a
+                                    href={eventMeetLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 rounded-lg text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-colors"
+                                    title="Entrar no Google Meet"
+                                  >
+                                    <Video className="w-4 h-4" />
+                                  </a>
+                                )}
+                                {ev.htmlLink && (
+                                  <a
+                                    href={ev.htmlLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 transition-colors"
+                                    title="Abrir no Google Calendar Oficial"
+                                  >
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  </a>
+                                )}
+                              </div>
                             </div>
 
                             {/* AÇÃO PRINCIPAL: TRANSFORMAR EM DEMANDA */}

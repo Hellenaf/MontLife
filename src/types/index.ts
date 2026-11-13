@@ -120,6 +120,7 @@ export interface Task {
   scheduled_end?: string | null;
   reminder_enabled?: boolean;
   reminder_minutes_before?: number | null;
+  meet_link?: string | null;
   extension_count: number;
   deadline_extensions: DeadlineExtension[];
   resolution_notes: string | null;
@@ -162,6 +163,7 @@ export interface GeminiTriageResponse {
   priority: Priority;
   extracted_due_date_iso: string | null;
   extracted_end_date_iso?: string | null;
+  extracted_meet_link?: string | null;
   search_tags: string[];
   learning_queries: string[];
   validation_steps?: string[];
@@ -184,6 +186,7 @@ export interface GoogleCalendarEventItem {
   allDay: boolean;
   status?: string;
   htmlLink?: string;
+  meet_link?: string;
   location?: string;
   accountEmail?: string;
   accountLabel?: string;
