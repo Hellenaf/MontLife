@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   X,
   Download,
@@ -9,6 +9,13 @@ import {
   PlayCircle,
   FileText,
   Youtube,
+  ZoomIn,
+  ZoomOut,
+  RotateCw,
+  RotateCcw,
+  Maximize2,
+  Minimize2,
+  Move,
 } from "lucide-react";
 
 export interface MediaItem {
@@ -58,27 +65,96 @@ export function MediaLightboxModal({
   onClose,
   media,
 }: MediaLightboxModalProps) {
+  // Zoom & Pan states
+  const [scale, setScale] = useState(1);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [rotation, setRotation] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const touchStartRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const touchDistRef = useRef<number | null>(null);
+
+  // Reset transform when media changes or modal opens
+  useEffect(() => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+    setRotation(0);
+    setIsDragging(false);
+    setIsFullscreen(false);
+  }, [media?.url, isOpen]);
+
+  const handleZoomIn = useCallback(() => {
+    setScale((prev) => Math.min(5, Math.round((prev + 0.25) * 100) / 100));
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    setScale((prev) => {
+      const next = Math.max(0.5, Math.round((prev - 0.25) * 100) / 100);
+      if (next <= 1) setPosition({ x: 0, y: 0 });
+      return next;
+    });
+  }, []);
+
+  const handleReset = useCallback(() => {
+    setScale(1);
+    setPosition({ x: 0, y: 0 });
+    setRotation(0);
+  }, []);
+
+  const handleRotate = useCallback(() => {
+    setRotation((prev) => (prev + 90) % 360);
+  }, []);
+
+  const handleToggleFullscreen = () => {
+    setIsFullscreen((prev) => !prev);
+  };
+
+  const isVideo = Boolean(
+    (media && getYouTubeEmbedUrl(media.url)) ||
+    media?.type?.startsWith("video/") ||
+    media?.url.match(/\.(mp4|webm|mov|ogg)($|\?)/i)
+  );
+
+  const isImage = Boolean(
+    !isVideo &&
+    media &&
+    (media.type?.startsWith("image/") ||
+      Boolean(media.url.match(/\.(jpeg|jpg|png|gif|webp|svg)($|\?)/i)) ||
+      media.url.startsWith("data:image/"))
+  );
+
   useEffect(() => {
     if (!isOpen) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === "Escape") {
+        if (isFullscreen) {
+          setIsFullscreen(false);
+        } else {
+          onClose();
+        }
+      }
+      if (isImage) {
+        if (e.key === "+" || e.key === "=") {
+          e.preventDefault();
+          handleZoomIn();
+        } else if (e.key === "-" || e.key === "_") {
+          e.preventDefault();
+          handleZoomOut();
+        } else if (e.key === "0" || e.key === "r" || e.key === "R") {
+          e.preventDefault();
+          handleReset();
+        }
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isImage, isFullscreen, handleZoomIn, handleZoomOut, handleReset]);
 
   if (!isOpen || !media) return null;
 
   const youtubeEmbedUrl = getYouTubeEmbedUrl(media.url);
-  const isVideo =
-    Boolean(youtubeEmbedUrl) ||
-    media.type?.startsWith("video/") ||
-    media.url.match(/\.(mp4|webm|mov|ogg)($|\?)/i);
-  const isImage =
-    !isVideo &&
-    (media.type?.startsWith("image/") ||
-      Boolean(media.url.match(/\.(jpeg|jpg|png|gif|webp|svg)($|\?)/i)) ||
-      media.url.startsWith("data:image/"));
 
   const handleDownload = () => {
     try {
@@ -95,18 +171,110 @@ export function MediaLightboxModal({
     }
   };
 
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (!isImage) return;
+    e.preventDefault();
+    if (scale > 1) {
+      handleReset();
+    } else {
+      setScale(2);
+      setPosition({ x: 0, y: 0 });
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (!isImage) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const delta = e.deltaY < 0 ? 0.25 : -0.25;
+    setScale((prev) => {
+      const next = Math.max(0.5, Math.min(5, Math.round((prev + delta) * 100) / 100));
+      if (next <= 1) setPosition({ x: 0, y: 0 });
+      return next;
+    });
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!isImage || scale <= 1 || e.button !== 0) return;
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    setPosition({
+      x: e.clientX - dragStart.x,
+      y: e.clientY - dragStart.y,
+    });
+  };
+
+  const handleMouseUp = () => setIsDragging(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isImage) return;
+    if (e.touches.length === 1 && scale > 1) {
+      setIsDragging(true);
+      touchStartRef.current = {
+        x: e.touches[0].clientX - position.x,
+        y: e.touches[0].clientY - position.y,
+      };
+    } else if (e.touches.length === 2) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      touchDistRef.current = dist;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isImage) return;
+    if (e.touches.length === 1 && isDragging && scale > 1) {
+      setPosition({
+        x: e.touches[0].clientX - touchStartRef.current.x,
+        y: e.touches[0].clientY - touchStartRef.current.y,
+      });
+    } else if (e.touches.length === 2 && touchDistRef.current !== null) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const delta = (dist - touchDistRef.current) / 120;
+      touchDistRef.current = dist;
+      setScale((prev) => {
+        const next = Math.max(0.5, Math.min(5, Math.round((prev + delta) * 100) / 100));
+        if (next <= 1) setPosition({ x: 0, y: 0 });
+        return next;
+      });
+    }
+  };
+
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    touchDistRef.current = null;
+    if (scale <= 1) {
+      setPosition({ x: 0, y: 0 });
+    }
+  };
+
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
       onClick={onClose}
     >
       <div
-        className="relative w-[96vw] sm:w-[92vw] max-w-4xl h-[86dvh] sm:h-[82vh] max-h-[720px] min-h-[280px] sm:min-h-[480px] flex flex-col rounded-3xl bg-[#0f1017] border border-zinc-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200"
+        className={`relative flex flex-col rounded-3xl bg-[#0f1017] border border-zinc-800 shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 transition-all ${
+          isFullscreen
+            ? "fixed inset-2 sm:inset-4 z-50 w-auto h-auto max-w-none max-h-none"
+            : "w-[96vw] sm:w-[92vw] max-w-5xl h-[88dvh] sm:h-[84vh] max-h-[780px] min-h-[280px] sm:min-h-[480px]"
+        }`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header Bar */}
-        <div className="flex items-center justify-between px-3.5 sm:px-5 py-3 sm:py-3.5 border-b border-zinc-800/80 bg-zinc-900/70 shrink-0">
-          <div className="flex items-center gap-2.5 min-w-0 pr-4">
+        <div className="flex items-center justify-between px-3.5 sm:px-5 py-3 sm:py-3.5 border-b border-zinc-800/80 bg-zinc-900/70 shrink-0 gap-2">
+          <div className="flex items-center gap-2.5 min-w-0 pr-2">
             <div className="w-8 h-8 rounded-xl bg-zinc-800 border border-zinc-700/70 flex items-center justify-center text-indigo-400 shrink-0">
               {youtubeEmbedUrl ? (
                 <Youtube className="w-4 h-4 text-rose-500" />
@@ -120,7 +288,7 @@ export function MediaLightboxModal({
             </div>
 
             <div className="min-w-0">
-              <h3 className="text-sm font-bold text-white truncate max-w-md sm:max-w-xl">
+              <h3 className="text-sm font-bold text-white truncate max-w-xs sm:max-w-md md:max-w-lg">
                 {media.title || "Visualizador de Mídia"}
               </h3>
               <div className="flex items-center gap-2 text-[10px] text-zinc-400 font-mono mt-0.5">
@@ -130,7 +298,7 @@ export function MediaLightboxModal({
                     : isVideo
                     ? "Vídeo"
                     : isImage
-                    ? "Imagem"
+                    ? `Imagem (${Math.round(scale * 100)}%)`
                     : "Arquivo"}
                 </span>
                 {media.size ? <span>• {formatFileSize(media.size)}</span> : null}
@@ -139,7 +307,61 @@ export function MediaLightboxModal({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+            {/* Header Zoom Controls (for desktop fast access) */}
+            {isImage && (
+              <div className="hidden md:flex items-center gap-1 bg-zinc-800/70 border border-zinc-700/60 rounded-xl p-0.5 mr-1">
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  disabled={scale <= 0.5}
+                  className="p-1.5 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700/60 disabled:opacity-30 transition-colors"
+                  title="Diminuir Zoom (-)"
+                >
+                  <ZoomOut className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="px-2 py-1 text-[11px] font-mono font-bold text-zinc-200 hover:text-white transition-colors"
+                  title="Redefinir Zoom para 100%"
+                >
+                  {Math.round(scale * 100)}%
+                </button>
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  disabled={scale >= 5}
+                  className="p-1.5 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700/60 disabled:opacity-30 transition-colors"
+                  title="Aumentar Zoom (+)"
+                >
+                  <ZoomIn className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleRotate}
+                  className="p-1.5 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700/60 transition-colors ml-0.5"
+                  title="Girar 90°"
+                >
+                  <RotateCw className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Toggle Fullscreen Modal */}
+            <button
+              type="button"
+              onClick={handleToggleFullscreen}
+              className="p-2 rounded-xl text-zinc-400 hover:text-white bg-zinc-800/60 hover:bg-zinc-800 border border-zinc-700/60 transition-colors shadow-xs cursor-pointer"
+              title={isFullscreen ? "Restaurar tamanho normal" : "Expandir em tela cheia"}
+            >
+              {isFullscreen ? (
+                <Minimize2 className="w-4 h-4" />
+              ) : (
+                <Maximize2 className="w-4 h-4" />
+              )}
+            </button>
+
             {/* Secondary Download Button */}
             {!youtubeEmbedUrl && (
               <button
@@ -167,7 +389,7 @@ export function MediaLightboxModal({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-xl text-zinc-400 hover:text-rose-400 bg-zinc-800/60 hover:bg-rose-950/40 border border-zinc-700/60 hover:border-rose-900/50 transition-colors shadow-xs cursor-pointer ml-1"
+              className="p-2 rounded-xl text-zinc-400 hover:text-rose-400 bg-zinc-800/60 hover:bg-rose-950/40 border border-zinc-700/60 hover:border-rose-900/50 transition-colors shadow-xs cursor-pointer ml-0.5"
               title="Fechar (Esc)"
             >
               <X className="w-4 h-4" />
@@ -176,9 +398,9 @@ export function MediaLightboxModal({
         </div>
 
         {/* Content Viewer Body */}
-        <div className="flex-1 w-full h-full overflow-hidden p-3 sm:p-6 flex items-center justify-center bg-black/60 min-h-[200px] sm:min-h-[300px]">
+        <div className="relative flex-1 w-full h-full overflow-hidden p-2 sm:p-4 flex items-center justify-center bg-black/75 min-h-[220px] sm:min-h-[320px]">
           {youtubeEmbedUrl ? (
-            <div className="w-full h-full max-w-3xl aspect-video rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl bg-black flex items-center justify-center">
+            <div className="w-full h-full max-w-4xl aspect-video rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl bg-black flex items-center justify-center">
               <iframe
                 src={youtubeEmbedUrl}
                 title={media.title}
@@ -198,12 +420,108 @@ export function MediaLightboxModal({
               Seu navegador não suporta a reprodução deste vídeo.
             </video>
           ) : isImage ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={media.url}
-              alt={media.title}
-              className="max-h-full max-w-full object-contain rounded-2xl shadow-2xl border border-zinc-800/80"
-            />
+            <div
+              className="relative flex items-center justify-center w-full h-full overflow-hidden select-none"
+              onWheel={handleWheel}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              onDoubleClick={handleDoubleClick}
+              style={{
+                cursor: scale > 1 ? (isDragging ? "grabbing" : "grab") : "zoom-in",
+              }}
+            >
+              {/* Image with dynamic transform and smooth transitions */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={media.url}
+                alt={media.title}
+                draggable={false}
+                style={{
+                  transform: `translate3d(${position.x}px, ${position.y}px, 0) scale(${scale}) rotate(${rotation}deg)`,
+                  transition: isDragging ? "none" : "transform 140ms ease-out",
+                  maxWidth: "100%",
+                  maxHeight: "100%",
+                  objectFit: "contain",
+                  userSelect: "none",
+                  pointerEvents: "auto",
+                }}
+                className="rounded-xl shadow-2xl border border-zinc-800/80 will-change-transform"
+              />
+
+              {/* Floating Bottom Zoom & Tool HUD for Images */}
+              <div
+                className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 p-1.5 rounded-2xl bg-zinc-900/90 backdrop-blur-md border border-zinc-700/80 shadow-2xl text-xs text-white max-w-[92vw] overflow-x-auto"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Zoom Out Button */}
+                <button
+                  type="button"
+                  onClick={handleZoomOut}
+                  disabled={scale <= 0.5}
+                  className="p-1.5 sm:p-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 disabled:opacity-40 transition-colors cursor-pointer"
+                  title="Diminuir Zoom (-)"
+                >
+                  <ZoomOut className="w-4 h-4" />
+                </button>
+
+                {/* Current Zoom Level badge (click to reset) */}
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  className="px-2.5 py-1 rounded-xl text-[11px] font-mono font-bold text-zinc-200 hover:text-white hover:bg-zinc-800 transition-colors min-w-[54px] text-center cursor-pointer"
+                  title="Clique para redefinir para 100%"
+                >
+                  {Math.round(scale * 100)}%
+                </button>
+
+                {/* Zoom In Button */}
+                <button
+                  type="button"
+                  onClick={handleZoomIn}
+                  disabled={scale >= 5}
+                  className="p-1.5 sm:p-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 disabled:opacity-40 transition-colors cursor-pointer"
+                  title="Aumentar Zoom (+)"
+                >
+                  <ZoomIn className="w-4 h-4" />
+                </button>
+
+                <div className="w-px h-5 bg-zinc-700 mx-0.5 shrink-0" />
+
+                {/* Reset / 1:1 Button */}
+                <button
+                  type="button"
+                  onClick={handleReset}
+                  disabled={scale === 1 && rotation === 0 && position.x === 0 && position.y === 0}
+                  className="p-1.5 sm:p-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 disabled:opacity-40 transition-colors cursor-pointer"
+                  title="Redefinir visualização (1:1)"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </button>
+
+                {/* Rotate Button */}
+                <button
+                  type="button"
+                  onClick={handleRotate}
+                  className="p-1.5 sm:p-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                  title="Girar 90°"
+                >
+                  <RotateCw className="w-4 h-4" />
+                </button>
+
+                {/* Pan hint when zoomed */}
+                {scale > 1 && (
+                  <div className="hidden sm:flex items-center gap-1 text-[10px] text-indigo-400 pl-1 font-medium">
+                    <Move className="w-3 h-3" />
+                    <span>Arraste para mover</span>
+                  </div>
+                )}
+              </div>
+            </div>
           ) : (
             <div className="text-center p-8 space-y-3">
               <FileText className="w-12 h-12 mx-auto text-zinc-500 opacity-60" />

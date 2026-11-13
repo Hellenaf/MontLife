@@ -43,6 +43,7 @@ import { getAllCategories } from "@/lib/categories";
 import { CategoryCombobox } from "@/components/CategoryCombobox";
 import { AttachmentManager } from "@/components/AttachmentManager";
 import { ScheduleReminderFields } from "@/components/ScheduleReminderFields";
+import { MediaLightboxModal, MediaItem } from "@/components/modals/MediaLightboxModal";
 import { findSimilarTasks, SimilarTaskMatch } from "@/lib/taskDeduplication";
 
 interface NewTaskModalProps {
@@ -141,6 +142,7 @@ export function NewTaskModal({
   const [serverSimilarMatch, setServerSimilarMatch] = useState<SimilarTaskMatch | null>(null);
   const [isRegisteringRecurrence, setIsRegisteringRecurrence] = useState(false);
   const [isReopeningTask, setIsReopeningTask] = useState(false);
+  const [previewMedia, setPreviewMedia] = useState<MediaItem | null>(null);
 
   const similarMatches = useMemo(() => {
     const cleanTitle = title.trim();
@@ -1209,6 +1211,7 @@ export function NewTaskModal({
               onChange={setAttachments}
               stage="creation"
               label="4. Anexos de Arquivos & Links Externos (Opcional)"
+              onPreviewMedia={(media) => setPreviewMedia(media)}
             />
           </div>
 
@@ -1251,6 +1254,13 @@ export function NewTaskModal({
             </button>
           </div>
         )}
+
+        {/* Lightbox Preview Modal for Attachments */}
+        <MediaLightboxModal
+          isOpen={Boolean(previewMedia)}
+          onClose={() => setPreviewMedia(null)}
+          media={previewMedia}
+        />
       </div>
     </div>
   );

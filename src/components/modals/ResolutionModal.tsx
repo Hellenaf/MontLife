@@ -11,6 +11,7 @@ import {
 import confetti from "canvas-confetti";
 import { Task, TaskAttachment } from "@/types";
 import { AttachmentManager } from "@/components/AttachmentManager";
+import { MediaLightboxModal, MediaItem } from "@/components/modals/MediaLightboxModal";
 
 interface ResolutionModalProps {
   task: Task | null;
@@ -31,6 +32,7 @@ export function ResolutionModal({
   const [resolutionNotes, setResolutionNotes] = useState("");
   const [attachments, setAttachments] = useState<TaskAttachment[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [previewMedia, setPreviewMedia] = useState<MediaItem | null>(null);
 
   if (!isOpen || !task) return null;
 
@@ -169,6 +171,7 @@ export function ResolutionModal({
               onChange={setAttachments}
               stage="resolution"
               label="Comprovantes & Links da Solução (Opcional)"
+              onPreviewMedia={(media) => setPreviewMedia(media)}
             />
           </div>
         </form>
@@ -207,6 +210,13 @@ export function ResolutionModal({
             )}
           </button>
         </div>
+
+        {/* Lightbox Preview Modal for Attachments */}
+        <MediaLightboxModal
+          isOpen={Boolean(previewMedia)}
+          onClose={() => setPreviewMedia(null)}
+          media={previewMedia}
+        />
       </div>
     </div>
   );
