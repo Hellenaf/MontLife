@@ -308,46 +308,6 @@ export function MediaLightboxModal({
 
           {/* Action Buttons */}
           <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-            {/* Header Zoom Controls (for desktop fast access) */}
-            {isImage && (
-              <div className="hidden md:flex items-center gap-1 bg-zinc-800/70 border border-zinc-700/60 rounded-xl p-0.5 mr-1">
-                <button
-                  type="button"
-                  onClick={handleZoomOut}
-                  disabled={scale <= 0.5}
-                  className="p-1.5 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700/60 disabled:opacity-30 transition-colors"
-                  title="Diminuir Zoom (-)"
-                >
-                  <ZoomOut className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="px-2 py-1 text-[11px] font-mono font-bold text-zinc-200 hover:text-white transition-colors"
-                  title="Redefinir Zoom para 100%"
-                >
-                  {Math.round(scale * 100)}%
-                </button>
-                <button
-                  type="button"
-                  onClick={handleZoomIn}
-                  disabled={scale >= 5}
-                  className="p-1.5 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700/60 disabled:opacity-30 transition-colors"
-                  title="Aumentar Zoom (+)"
-                >
-                  <ZoomIn className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="button"
-                  onClick={handleRotate}
-                  className="p-1.5 rounded-lg text-zinc-300 hover:text-white hover:bg-zinc-700/60 transition-colors ml-0.5"
-                  title="Girar 90°"
-                >
-                  <RotateCw className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-
             {/* Toggle Fullscreen Modal */}
             <button
               type="button"
@@ -453,9 +413,9 @@ export function MediaLightboxModal({
                 className="rounded-xl shadow-2xl border border-zinc-800/80 will-change-transform"
               />
 
-              {/* Floating Bottom Zoom & Tool HUD for Images */}
+              {/* Floating Bottom Zoom & Tool HUD for Images (Translucent Island) */}
               <div
-                className="absolute bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 p-1.5 rounded-2xl bg-zinc-900/90 backdrop-blur-md border border-zinc-700/80 shadow-2xl text-xs text-white max-w-[92vw] overflow-x-auto"
+                className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 p-1.5 px-2 rounded-2xl bg-black/55 backdrop-blur-xl border border-white/15 shadow-2xl text-xs text-white max-w-[92vw] overflow-x-auto"
                 onClick={(e) => e.stopPropagation()}
               >
                 {/* Zoom Out Button */}
@@ -463,7 +423,7 @@ export function MediaLightboxModal({
                   type="button"
                   onClick={handleZoomOut}
                   disabled={scale <= 0.5}
-                  className="p-1.5 sm:p-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 disabled:opacity-40 transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/15 disabled:opacity-30 transition-all cursor-pointer"
                   title="Diminuir Zoom (-)"
                 >
                   <ZoomOut className="w-4 h-4" />
@@ -473,7 +433,7 @@ export function MediaLightboxModal({
                 <button
                   type="button"
                   onClick={handleReset}
-                  className="px-2.5 py-1 rounded-xl text-[11px] font-mono font-bold text-zinc-200 hover:text-white hover:bg-zinc-800 transition-colors min-w-[54px] text-center cursor-pointer"
+                  className="px-2.5 py-1 rounded-xl text-[11px] font-mono font-bold text-white/90 hover:text-white hover:bg-white/15 transition-all min-w-[54px] text-center cursor-pointer"
                   title="Clique para redefinir para 100%"
                 >
                   {Math.round(scale * 100)}%
@@ -484,20 +444,20 @@ export function MediaLightboxModal({
                   type="button"
                   onClick={handleZoomIn}
                   disabled={scale >= 5}
-                  className="p-1.5 sm:p-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 disabled:opacity-40 transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/15 disabled:opacity-30 transition-all cursor-pointer"
                   title="Aumentar Zoom (+)"
                 >
                   <ZoomIn className="w-4 h-4" />
                 </button>
 
-                <div className="w-px h-5 bg-zinc-700 mx-0.5 shrink-0" />
+                <div className="w-px h-4 bg-white/20 mx-0.5 shrink-0" />
 
                 {/* Reset / 1:1 Button */}
                 <button
                   type="button"
                   onClick={handleReset}
                   disabled={scale === 1 && rotation === 0 && position.x === 0 && position.y === 0}
-                  className="p-1.5 sm:p-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 disabled:opacity-40 transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/15 disabled:opacity-30 transition-all cursor-pointer"
                   title="Redefinir visualização (1:1)"
                 >
                   <RotateCcw className="w-4 h-4" />
@@ -507,7 +467,7 @@ export function MediaLightboxModal({
                 <button
                   type="button"
                   onClick={handleRotate}
-                  className="p-1.5 sm:p-2 rounded-xl text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                  className="p-1.5 sm:p-2 rounded-xl text-white/80 hover:text-white hover:bg-white/15 transition-all cursor-pointer"
                   title="Girar 90°"
                 >
                   <RotateCw className="w-4 h-4" />
@@ -515,7 +475,7 @@ export function MediaLightboxModal({
 
                 {/* Pan hint when zoomed */}
                 {scale > 1 && (
-                  <div className="hidden sm:flex items-center gap-1 text-[10px] text-indigo-400 pl-1 font-medium">
+                  <div className="hidden sm:flex items-center gap-1 text-[10px] text-indigo-300 pl-1 font-medium select-none">
                     <Move className="w-3 h-3" />
                     <span>Arraste para mover</span>
                   </div>
