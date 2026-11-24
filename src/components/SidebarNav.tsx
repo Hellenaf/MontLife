@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ShieldCheck,
   LayoutGrid,
+  StickyNote,
   X,
 } from "lucide-react";
 import { ConnectedAccount, Task, AccountType } from "@/types";
@@ -33,6 +34,7 @@ interface SidebarNavProps {
   onSelectAccountFilter?: (filter: "all" | AccountType) => void;
   onLogout?: () => void;
   completedTasksCount?: number;
+  notesCount?: number;
   currentUser?: {
     userId: string;
     email: string;
@@ -53,6 +55,7 @@ export function SidebarNav({
   onSelectAccountFilter,
   onLogout,
   completedTasksCount = 0,
+  notesCount = 0,
   currentUser,
   onClose,
 }: SidebarNavProps) {
@@ -76,7 +79,13 @@ export function SidebarNav({
   const pendingTasks = tasks.filter(
     (t) => t.status !== "COMPLETED" && t.status !== "CANCELED"
   ).length;
-  const completedTasks = tasks.filter((t) => t.status === "COMPLETED").length;
+  const completedList = tasks.filter((t) => t.status === "COMPLETED");
+  const completedTasks = completedList.length;
+  const slaOnTimeCount = completedList.filter(
+    (t) => t.met_original_sla === true && (t.extension_count || 0) === 0
+  ).length;
+  const slaOnTimePct =
+    completedTasks > 0 ? Math.round((slaOnTimeCount / completedTasks) * 100) : 100;
   const completionPercentage =
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 100;
 
@@ -171,7 +180,7 @@ export function SidebarNav({
   };
 
   return (
-    <aside className="w-full lg:w-60 xl:w-64 h-full flex flex-col bg-[#0b0a17] border-r border-[#1e1c36] text-slate-200 shrink-0 select-none transition-all duration-200">
+    <aside className="w-full lg:w-[232px] xl:w-[248px] h-full flex flex-col bg-[#0b0a17] border-r border-[#1e1c36] text-slate-200 shrink-0 select-none transition-all duration-200">
       {/* 1. Brand Logo & Title (MontLife) */}
       <div className="h-16 px-4 sm:px-5 flex items-center justify-between border-b border-[#1e1c36]/80 shrink-0">
         <div className="flex items-center gap-3 min-w-0">
@@ -273,6 +282,31 @@ export function SidebarNav({
             </span>
           </button>
 
+          {/* Bloco de Notas */}
+          <button
+            type="button"
+            onClick={() => onSelectNav("notas")}
+            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+              activeNav === "notas"
+                ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30 font-bold"
+                : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
+          >
+            <div className="flex items-center gap-2.5 min-w-0">
+              <StickyNote className="w-4 h-4 text-amber-400" />
+              <span className="truncate">Bloco de Notas</span>
+            </div>
+            {notesCount > 0 ? (
+              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                {notesCount}
+              </span>
+            ) : (
+              <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                IA
+              </span>
+            )}
+          </button>
+
           {/* Wiki Técnica */}
           <button
             type="button"
@@ -307,7 +341,7 @@ export function SidebarNav({
               <span className="truncate">Relatórios</span>
             </div>
             <span className="text-[10px] text-emerald-400 font-mono font-bold">
-              100% SLA
+              {slaOnTimePct}% SLA
             </span>
           </button>
         </div>

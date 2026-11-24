@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   TrendingUp,
   Award,
@@ -17,18 +17,50 @@ import {
   ListTodo,
   Activity,
   Bell,
+  Sparkles,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
-import { Task } from "@/types";
+import { Task, DailyBriefingResponse } from "@/types";
 
 interface RightKpiQuadrantProps {
   tasks: Task[];
   onOpenReportModal: () => void;
+  onSelectTaskById?: (taskId: string) => void;
+  pinnedNotesCount?: number;
 }
 
 export function RightKpiQuadrant({
   tasks,
   onOpenReportModal,
+  onSelectTaskById,
+  pinnedNotesCount = 0,
 }: RightKpiQuadrantProps) {
+  const [briefing, setBriefing] = useState<DailyBriefingResponse | null>(null);
+  const [isLoadingBriefing, setIsLoadingBriefing] = useState(false);
+  const [briefingError, setBriefingError] = useState<string | null>(null);
+
+  const handleLoadBriefing = async () => {
+    if (isLoadingBriefing) return;
+    setIsLoadingBriefing(true);
+    setBriefingError(null);
+    try {
+      const res = await fetch("/api/ai/briefing", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.briefing) {
+        setBriefing(data.briefing);
+      } else {
+        setBriefingError(data?.error || "Não foi possível gerar o briefing.");
+      }
+    } catch {
+      setBriefingError("Erro ao conectar com a IA.");
+    } finally {
+      setIsLoadingBriefing(false);
+    }
+  };
   const metrics = useMemo(() => {
     const total = tasks.length;
     const completed = tasks.filter((t) => t.status === "COMPLETED");
@@ -107,13 +139,13 @@ export function RightKpiQuadrant({
   }, [tasks]);
 
   return (
-    <aside className="w-full lg:w-[300px] xl:w-[330px] h-full flex flex-col border-l border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
+    <aside className="w-full lg:w-[276px] xl:w-[296px] h-full flex flex-col border-l border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
       {/* Header */}
-      <div className="h-12 border-b border-slate-200 dark:border-zinc-800/80 px-5 flex items-center justify-between shrink-0 bg-white dark:bg-[#101118]">
+      <div className="h-12 border-b border-slate-200 dark:border-zinc-800/80 px-4 flex items-center justify-between shrink-0 bg-white dark:bg-[#101118]">
         <div className="flex items-center gap-2">
           <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           <h2 className="text-xs font-bold text-slate-800 dark:text-white tracking-wider uppercase">
-            Métricas Operacionais
+            Métricas & IA
           </h2>
         </div>
         <span className="flex items-center gap-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
@@ -123,7 +155,91 @@ export function RightKpiQuadrant({
       </div>
 
       {/* Scrollable KPIs container */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3.5 pb-6 lg:pb-4">
+      <div className="flex-1 overflow-y-auto p-3.5 space-y-3 pb-6 lg:pb-4 custom-scrollbar">
+        {/* Briefing IA do Dia */}
+        <div className="p-3.5 rounded-2xl bg-gradient-to-br from-purple-50/90 via-white to-indigo-50/70 dark:from-[#17142b] dark:via-[#131420] dark:to-[#111526] border border-purple-200/80 dark:border-purple-800/50 space-y-2.5 shadow-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Sparkles className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+              <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                Briefing IA do Dia
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={handleLoadBriefing}
+              disabled={isLoadingBriefing}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold shadow-2xs transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
+              title="Analisar prioridades e prazos do dia com IA"
+            >
+              {isLoadingBriefing ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : briefing ? (
+                <RefreshCw className="w-3 h-3" />
+              ) : (
+                <Sparkles className="w-3 h-3" />
+              )}
+              <span>{briefing ? "Atualizar" : "Analisar Meu Dia"}</span>
+            </button>
+          </div>
+
+          {briefingError && (
+            <p className="text-[11px] text-rose-600 dark:text-rose-400">{briefingError}</p>
+          )}
+
+          {briefing ? (
+            <div className="space-y-2 animate-in fade-in">
+              <p className="text-[11px] text-slate-700 dark:text-slate-200 leading-relaxed">
+                {briefing.focus_summary}
+              </p>
+
+              {briefing.top_priorities.length > 0 && (
+                <div className="space-y-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400 block">
+                    Foco Recomendado
+                  </span>
+                  {briefing.top_priorities.map((item) => (
+                    <button
+                      key={item.task_id}
+                      type="button"
+                      onClick={() => onSelectTaskById?.(item.task_id)}
+                      className="w-full text-left p-2 rounded-xl bg-white/85 dark:bg-[#0d0e16]/90 border border-slate-200/80 dark:border-zinc-800 hover:border-purple-400 transition-colors cursor-pointer space-y-0.5"
+                    >
+                      <div className="flex items-center justify-between gap-1.5">
+                        <span className="text-[11px] font-bold text-slate-900 dark:text-white line-clamp-1">
+                          {item.title}
+                        </span>
+                        <span
+                          className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase shrink-0 ${
+                            item.urgency === "alta"
+                              ? "bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300"
+                              : item.urgency === "media"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
+                              : "bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300"
+                          }`}
+                        >
+                          {item.urgency}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 line-clamp-1">
+                        {item.reason}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <p className="text-[10px] text-indigo-700 dark:text-indigo-300 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-lg px-2 py-1.5 leading-snug">
+                💡 {briefing.quick_tip}
+              </p>
+            </div>
+          ) : (
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
+              Peça à IA um resumo rápido das suas prioridades, prazos críticos
+              {pinnedNotesCount > 0 ? ` e ${pinnedNotesCount} nota(s) fixada(s).` : " do dia."}
+            </p>
+          )}
+        </div>
         {/* Core 4-KPI Grid */}
         <div className="grid grid-cols-2 gap-2">
           {/* Total */}

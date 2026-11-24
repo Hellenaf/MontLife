@@ -31,6 +31,7 @@ import {
   Trash2,
   Repeat,
   RotateCcw,
+  StickyNote,
 } from "lucide-react";
 import { findSimilarTasks } from "@/lib/taskDeduplication";
 import {
@@ -70,6 +71,7 @@ interface HeaderCommandBarProps {
   onOpenAccountsModal: () => void;
   onOpenReportModal: () => void;
   onOpenNewTaskModal?: (initialText?: string) => void;
+  onOpenNotes?: () => void;
   onSelectTask?: (task: Task) => void;
 }
 
@@ -81,6 +83,7 @@ export function HeaderCommandBar({
   onOpenAccountsModal,
   onOpenReportModal,
   onOpenNewTaskModal,
+  onOpenNotes,
   onSelectTask,
 }: HeaderCommandBarProps) {
   const { theme, toggleTheme } = useTheme();
@@ -120,6 +123,26 @@ export function HeaderCommandBar({
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [currentTime, setCurrentTime] = useState<Date>(new Date());
+  const commandInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        const activeTag = document.activeElement?.tagName?.toLowerCase();
+        const isEditable =
+          activeTag === "input" ||
+          activeTag === "textarea" ||
+          (document.activeElement as HTMLElement | null)?.isContentEditable;
+        if (!isEditable || document.activeElement === commandInputRef.current) {
+          event.preventDefault();
+          commandInputRef.current?.focus();
+          commandInputRef.current?.select();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   // Deduplication state in AI Confirmation modal
   const [isSimilarityDismissed, setIsSimilarityDismissed] = useState(false);
@@ -654,7 +677,7 @@ export function HeaderCommandBar({
 
   return (
     <>
-      <header className="relative z-40 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-3 sm:px-6 py-2 md:py-0 md:h-16 flex flex-wrap md:flex-nowrap items-center justify-between shadow-sm transition-colors duration-200 gap-x-2 gap-y-2 md:gap-4">
+      <header className="relative z-40 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-3 sm:px-6 py-1.5 md:py-0 md:h-16 flex flex-wrap md:flex-nowrap items-center justify-between shadow-sm transition-colors duration-200 gap-x-2 gap-y-1.5 md:gap-4">
       {/* Brand (visible on mobile/tablet where sidebar is hidden) */}
       <div className="order-1 flex items-center gap-2 shrink-0 lg:hidden">
         <MontLifeLogo size="sm" showText={false} />
@@ -663,20 +686,27 @@ export function HeaderCommandBar({
         </span>
       </div>
 
-      {/* Center Command Bar + Nova Demanda */}
-      <div className="order-3 md:order-2 w-full md:w-auto md:flex-1 md:max-w-2xl flex items-center gap-2 min-w-0">
-        <form onSubmit={handleRunTriage} className="relative flex items-center flex-1 min-w-0">
+      {/* Center Command Bar + Nova Demanda + Bloco de Notas */}
+      <div className="order-3 md:order-2 w-full md:w-auto md:flex-1 md:max-w-2xl flex items-center gap-1.5 sm:gap-2 min-w-0">
+        <form
+          onSubmit={handleRunTriage}
+          className="relative flex items-center flex-1 min-w-0 rounded-xl focus-within:ring-2 focus-within:ring-purple-500/25 transition-shadow"
+        >
           <Sparkles className="w-4 h-4 text-purple-500 absolute left-3 pointer-events-none shrink-0" />
           <input
+            ref={commandInputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Digite um comando com IA..."
-            className="w-full h-10 pl-9 pr-24 sm:pr-28 rounded-xl bg-slate-100 dark:bg-[#16152a] border border-slate-200 dark:border-[#282647] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all font-medium truncate"
+            className="w-full h-9 sm:h-10 pl-9 pr-24 sm:pr-36 rounded-xl bg-slate-100/90 dark:bg-[#16152a] border border-slate-200 dark:border-[#282647] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all font-medium truncate"
             disabled={isProcessing}
           />
 
           <div className="absolute right-1.5 flex items-center gap-1">
+            <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/80 dark:bg-[#22203b] border border-slate-200 dark:border-zinc-700 text-[10px] font-mono text-slate-400 dark:text-slate-500 mr-0.5 select-none">
+              Ctrl K
+            </kbd>
             {onOpenNewTaskModal && (
               <button
                 type="button"
@@ -720,11 +750,23 @@ export function HeaderCommandBar({
           </div>
         </form>
 
+        {onOpenNotes && (
+          <button
+            type="button"
+            onClick={onOpenNotes}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-2 h-10 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-semibold shadow-2xs transition-all shrink-0 active:scale-95 cursor-pointer"
+            title="Abrir Bloco de Notas & Reuniões"
+          >
+            <StickyNote className="w-3.5 h-3.5" />
+            <span className="hidden xl:inline">Notas</span>
+          </button>
+        )}
+
         {onOpenNewTaskModal && (
           <button
             type="button"
             onClick={() => onOpenNewTaskModal("")}
-            className="flex items-center gap-1.5 px-3 py-2 h-10 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-sm transition-all shrink-0 active:scale-95"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 h-9 sm:h-10 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-sm transition-all shrink-0 active:scale-95 cursor-pointer"
             title="Adicionar demanda detalhada"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -1008,7 +1050,7 @@ export function HeaderCommandBar({
               : "Vincular Google"}
           </span>
           <span className="font-bold text-[11px] md:hidden whitespace-nowrap">
-            {connectedAccountsCount > 0 ? `${connectedAccountsCount} ${connectedAccountsCount === 1 ? "conta" : "contas"}` : "Vincular"}
+            {connectedAccountsCount > 0 ? connectedAccountsCount : "Vincular"}
           </span>
         </button>
 

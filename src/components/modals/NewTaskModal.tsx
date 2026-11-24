@@ -36,6 +36,7 @@ import {
   TaskAttachment,
   ValidationStep,
   GeminiTriageResponse,
+  ExtractedNoteTaskDraft,
 } from "@/types";
 import { calculateSlaDueDate } from "@/lib/sla";
 import { format } from "date-fns";
@@ -53,6 +54,7 @@ interface NewTaskModalProps {
   initialText?: string;
   initialType?: ItemType;
   initialDate?: Date | null;
+  initialDraft?: Partial<ExtractedNoteTaskDraft> | null;
   availableCategories?: string[];
   existingTasks?: Task[];
   onSelectExistingTask?: (task: Task) => void;
@@ -78,6 +80,7 @@ export function NewTaskModal({
   initialText = "",
   initialType = "task",
   initialDate = null,
+  initialDraft = null,
   availableCategories,
   existingTasks = [],
   onSelectExistingTask,
@@ -205,7 +208,39 @@ export function NewTaskModal({
         reminder: false,
         validationSteps: false,
       };
-      if (initialText) {
+      if (initialDraft) {
+        const dTitle = (initialDraft.title || "").trim();
+        const dDesc = (initialDraft.description || "").trim();
+        setOriginalRawInput(buildRawInputForAI(dTitle, dDesc));
+        setTitle(dTitle);
+        setDescription(dDesc);
+        if (initialDraft.account_type) setAccountType(initialDraft.account_type);
+        if (initialDraft.item_type) setItemType(initialDraft.item_type);
+        if (initialDraft.category) setCategory(initialDraft.category);
+        if (initialDraft.priority) setPriority(initialDraft.priority);
+        if (Array.isArray(initialDraft.tags) && initialDraft.tags.length > 0) {
+          setTagsInput(initialDraft.tags.join(", "));
+        }
+        if (Array.isArray(initialDraft.validation_steps) && initialDraft.validation_steps.length > 0) {
+          setValidationSteps(
+            initialDraft.validation_steps.map((txt, idx) => ({
+              id: `step-${Date.now()}-${idx}`,
+              text: txt,
+              completed: false,
+            }))
+          );
+        }
+        if (initialDraft.extracted_due_date_iso) {
+          setDueDate(formatDateForInput(initialDraft.extracted_due_date_iso));
+        }
+        if (initialDraft.extracted_end_date_iso) {
+          setEndDate(formatDateForInput(initialDraft.extracted_end_date_iso));
+          setReminderEnabled(true);
+        }
+        if (dTitle && dDesc) {
+          setHasAiEnhancedDraft(true);
+        }
+      } else if (initialText) {
         const cleanInitial = initialText.trim();
         setOriginalRawInput(cleanInitial);
         if (cleanInitial.includes("\n") || cleanInitial.length > 60) {
@@ -217,28 +252,34 @@ export function NewTaskModal({
       } else {
         setOriginalRawInput("");
       }
-      setItemType(initialType);
+      if (!initialDraft) {
+        setItemType(initialType);
+      }
       const baseStartDate = initialDate
         ? (() => {
             const d = new Date(initialDate);
             d.setHours(9, 0, 0, 0);
             return d;
           })()
-        : new Date(calculateSlaDueDate("P3"));
-      try {
-        setDueDate(format(baseStartDate, "yyyy-MM-dd'T'HH:mm"));
-      } catch {
-        setDueDate(baseStartDate.toISOString().substring(0, 16));
+        : new Date(calculateSlaDueDate(initialDraft?.priority || "P3"));
+      if (!initialDraft?.extracted_due_date_iso) {
+        try {
+          setDueDate(format(baseStartDate, "yyyy-MM-dd'T'HH:mm"));
+        } catch {
+          setDueDate(baseStartDate.toISOString().substring(0, 16));
+        }
       }
-      if (initialType === "activity") {
-        const defaultEnd = new Date(baseStartDate.getTime() + 60 * 60_000);
-        setEndDate(format(defaultEnd, "yyyy-MM-dd'T'HH:mm"));
-        setReminderEnabled(true);
-        setReminderMinutesBefore(30);
-      } else {
-        setEndDate("");
-        setReminderEnabled(false);
-        setReminderMinutesBefore(30);
+      if (!initialDraft?.extracted_end_date_iso) {
+        if ((initialDraft?.item_type || initialType) === "activity") {
+          const defaultEnd = new Date(baseStartDate.getTime() + 60 * 60_000);
+          setEndDate(format(defaultEnd, "yyyy-MM-dd'T'HH:mm"));
+          setReminderEnabled(true);
+          setReminderMinutesBefore(30);
+        } else {
+          setEndDate("");
+          setReminderEnabled(false);
+          setReminderMinutesBefore(30);
+        }
       }
     } else {
       setTitle("");
@@ -261,7 +302,7 @@ export function NewTaskModal({
       setAiSource(null);
       setOriginalRawInput("");
     }
-  }, [isOpen, initialText, initialType, initialDate]);
+  }, [isOpen, initialText, initialType, initialDate, initialDraft]);
 
   const handleAddValidationStep = () => {
     const clean = newStepText.trim();

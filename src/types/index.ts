@@ -209,3 +209,80 @@ export interface AnalyticsMetrics {
   categories_distribution: Record<string, number>;
   knowledge_base_reuse_count: number;
 }
+
+export type NoteCategory = "reuniao" | "ideia" | "checklist" | "geral";
+
+export type NoteColor = "default" | "purple" | "blue" | "amber" | "emerald" | "rose";
+
+export interface NoteChecklistItem {
+  id: string;
+  text: string;
+  checked: boolean;
+  linked_task_id?: string | null;
+}
+
+export interface Note {
+  id: string;
+  owner_uid?: string;
+  user_id?: string;
+  title: string;
+  content: string;
+  category: NoteCategory;
+  account_type: AccountType;
+  color?: NoteColor;
+  pinned?: boolean;
+  archived?: boolean;
+  tags: string[];
+  checklist: NoteChecklistItem[];
+  ai_summary?: string | null;
+  key_decisions?: string[];
+  converted_task_ids?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ExtractedNoteTaskDraft {
+  title: string;
+  description: string;
+  account_type: AccountType;
+  item_type: ItemType;
+  category: TaskCategory;
+  priority: Priority;
+  extracted_due_date_iso: string | null;
+  extracted_end_date_iso?: string | null;
+  tags: string[];
+  validation_steps: string[];
+  source_excerpt?: string;
+}
+
+export interface TaskAiAssistResponse {
+  refined_title?: string;
+  structured_description?: string;
+  validation_steps?: string[];
+  technical_guidance: string;
+  priority_suggestion?: Priority;
+  category_suggestion?: TaskCategory;
+  tags_suggestion?: string[];
+  estimated_effort?: string;
+  ai_source: "gemini" | "cache" | "fallback";
+  model_used?: string | null;
+}
+
+export interface DailyBriefingResponse {
+  greeting: string;
+  focus_summary: string;
+  top_priorities: {
+    task_id: string;
+    title: string;
+    reason: string;
+    urgency: "alta" | "media" | "normal";
+  }[];
+  quick_tip: string;
+  stats: {
+    overdue: number;
+    due_today: number;
+    open_total: number;
+  };
+  ai_source: "gemini" | "cache" | "fallback";
+  generated_at: string;
+}

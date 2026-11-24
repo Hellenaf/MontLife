@@ -9,7 +9,9 @@ export type OfflineActionType =
   | "UPDATE_STATUS"
   | "UPDATE_FIELDS"
   | "EXTEND_DEADLINE"
-  | "DELETE_TASK";
+  | "DELETE_TASK"
+  | "SAVE_NOTE"
+  | "DELETE_NOTE";
 
 export interface OfflineQueueItem {
   id: string;
@@ -134,6 +136,28 @@ export async function syncOfflineQueue(): Promise<{ synced: number; failed: numb
         success = res.ok && data.success;
       } else if (item.type === "DELETE_TASK") {
         const res = await fetch(`/api/tasks/${item.payload.taskId}`, {
+          method: "DELETE",
+        });
+        const data = await res.json();
+        success = res.ok && data.success;
+      } else if (item.type === "SAVE_NOTE") {
+        const note = item.payload?.note;
+        if (note?.id) {
+          const isNew = Boolean(item.payload?.isNew);
+          const url = isNew ? "/api/notes" : `/api/notes/${note.id}`;
+          const method = isNew ? "POST" : "PATCH";
+          const res = await fetch(url, {
+            method,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(note),
+          });
+          const data = await res.json();
+          success = res.ok && data.success;
+        } else {
+          success = true;
+        }
+      } else if (item.type === "DELETE_NOTE") {
+        const res = await fetch(`/api/notes/${item.payload.noteId}`, {
           method: "DELETE",
         });
         const data = await res.json();

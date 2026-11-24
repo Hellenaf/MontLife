@@ -13,16 +13,42 @@ import { NewTaskModal } from "@/components/modals/NewTaskModal";
 import { ClassifyAccountModal } from "@/components/modals/ClassifyAccountModal";
 import { CancelTaskModal } from "@/components/modals/CancelTaskModal";
 import { AgendaDoDiaView } from "@/components/AgendaDoDiaView";
+import { NotesView } from "@/components/NotesView";
 import { WikiTechnicalView } from "@/components/WikiTechnicalView";
 import { ReportsView } from "@/components/ReportsView";
 import { KanbanView } from "@/components/KanbanView";
-import { Task, TaskAttachment, ConnectedAccount, TaskStatus, ItemType, AccountType } from "@/types";
+import {
+  Task,
+  TaskAttachment,
+  ConnectedAccount,
+  TaskStatus,
+  ItemType,
+  AccountType,
+  Note,
+  ExtractedNoteTaskDraft,
+} from "@/types";
 import { getAllCategories } from "@/lib/categories";
 import { getOfflineQueue, enqueueOfflineAction, syncOfflineQueue } from "@/lib/offlineQueue";
-import { ExternalLink, ListTodo, FileText, Calendar, TrendingUp, User, Kanban, BarChart3, Menu, Layers, X, Wifi, WifiOff } from "lucide-react";
+import {
+  ExternalLink,
+  ListTodo,
+  FileText,
+  Calendar,
+  TrendingUp,
+  User,
+  Kanban,
+  BarChart3,
+  Menu,
+  Layers,
+  X,
+  Wifi,
+  WifiOff,
+  StickyNote,
+} from "lucide-react";
 
 export default function MontOpsDashboard() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [notes, setNotes] = useState<Note[]>([]);
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
   const [activeNav, setActiveNav] = useState("tarefas");
@@ -30,6 +56,7 @@ export default function MontOpsDashboard() {
   const [centralActiveTab, setCentralActiveTab] = useState<"details" | "study">("details");
   const [mobileActiveView, setMobileActiveView] = useState<"tasks" | "details" | "kpi">("tasks");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isDesktopKpiOpen, setIsDesktopKpiOpen] = useState<boolean>(true);
 
   // Dynamically derive selected task from tasks array
   const selectedTask =
@@ -55,6 +82,11 @@ export default function MontOpsDashboard() {
   const [userLoaded, setUserLoaded] = useState(false);
   const [newTaskInitialText, setNewTaskInitialText] = useState("");
   const [newTaskInitialDate, setNewTaskInitialDate] = useState<Date | null>(null);
+  const [newTaskInitialDraft, setNewTaskInitialDraft] = useState<Partial<ExtractedNoteTaskDraft> | null>(null);
+  const [pendingNoteLink, setPendingNoteLink] = useState<{
+    noteId: string;
+    checklistItemId?: string;
+  } | null>(null);
   const [oauthFeedback, setOauthFeedback] = useState<string | null>(null);
   const [currentUser, setCurrentUser] = useState<{
     userId: string;
@@ -68,6 +100,27 @@ export default function MontOpsDashboard() {
   const [offlinePendingCount, setOfflinePendingCount] = useState<number>(0);
   const [offlineSyncMessage, setOfflineSyncMessage] = useState<string | null>(null);
 
+  // Persist desktop KPI panel state
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const saved = localStorage.getItem("montlife_desktop_kpi_open");
+      if (saved === "false") setIsDesktopKpiOpen(false);
+    } catch {}
+  }, []);
+
+  const handleToggleDesktopKpi = () => {
+    setIsDesktopKpiOpen((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("montlife_desktop_kpi_open", String(next));
+        } catch {}
+      }
+      return next;
+    });
+  };
+
   // User-scoped cache hydration to guarantee multi-tenant UI isolation on shared devices
   useEffect(() => {
     if (typeof window !== "undefined" && currentUser?.userId) {
@@ -79,6 +132,14 @@ export default function MontOpsDashboard() {
           if (Array.isArray(parsed) && parsed.length > 0) {
             setTasks(parsed);
             setSelectedTaskId(parsed[0].id);
+          }
+        }
+        const notesCacheKey = `montlife_cached_notes_${currentUser.userId}`;
+        const cachedNotes = localStorage.getItem(notesCacheKey);
+        if (cachedNotes && notes.length === 0) {
+          const parsedNotes = JSON.parse(cachedNotes);
+          if (Array.isArray(parsedNotes) && parsedNotes.length > 0) {
+            setNotes(parsedNotes);
           }
         }
         const accCacheKey = `montlife_cached_accounts_${currentUser.userId}`;
@@ -120,6 +181,27 @@ export default function MontOpsDashboard() {
       }
     } catch (err) {
       console.error("Failed to load tasks:", err);
+    }
+  }, [currentUser?.userId]);
+
+  const loadNotes = useCallback(async () => {
+    try {
+      const res = await fetch("/api/notes");
+      if (res.status === 401) {
+        setNotes([]);
+        return;
+      }
+      const data = await res.json();
+      if (data.success && Array.isArray(data.notes)) {
+        setNotes(data.notes);
+        if (typeof window !== "undefined" && currentUser?.userId) {
+          try {
+            localStorage.setItem(`montlife_cached_notes_${currentUser.userId}`, JSON.stringify(data.notes));
+          } catch {}
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load notes:", err);
     }
   }, [currentUser?.userId]);
 
@@ -185,9 +267,10 @@ export default function MontOpsDashboard() {
 
   useEffect(() => {
     loadTasks();
+    loadNotes();
     loadAccounts();
     loadUser();
-  }, [loadTasks, loadAccounts, loadUser]);
+  }, [loadTasks, loadNotes, loadAccounts, loadUser]);
 
   // Registro do Service Worker e monitoramento de conectividade (Offline & Web Push)
   useEffect(() => {
@@ -216,6 +299,7 @@ export default function MontOpsDashboard() {
           if (res.synced > 0) {
             setOfflineSyncMessage(`${res.synced} alteração(ões) sincronizadas com sucesso!`);
             loadTasks();
+            loadNotes();
             setTimeout(() => setOfflineSyncMessage(null), 5000);
           } else {
             setOfflineSyncMessage(null);
@@ -348,6 +432,231 @@ export default function MontOpsDashboard() {
       return updated;
     });
     setSelectedTaskId(newTask.id);
+  };
+
+  // ==========================================
+  // Notes State Helpers & Offline-Safe Handlers
+  // ==========================================
+  const syncNotesCache = useCallback(
+    (nextNotes: Note[]) => {
+      if (typeof window !== "undefined" && currentUser?.userId) {
+        try {
+          localStorage.setItem(
+            `montlife_cached_notes_${currentUser.userId}`,
+            JSON.stringify(nextNotes)
+          );
+        } catch {}
+      }
+    },
+    [currentUser?.userId]
+  );
+
+  const handleCreateNote = async (draft: Partial<Note>): Promise<Note | null> => {
+    const nowIso = new Date().toISOString();
+    const optimisticNote: Note = {
+      id: `note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+      title: (draft.title || "").trim() || "Sem título",
+      content: draft.content || "",
+      category: draft.category || "geral",
+      account_type: draft.account_type || "work",
+      color: draft.color || "default",
+      pinned: Boolean(draft.pinned),
+      archived: false,
+      tags: Array.isArray(draft.tags) ? draft.tags : [],
+      checklist: Array.isArray(draft.checklist) ? draft.checklist : [],
+      ai_summary: draft.ai_summary || null,
+      key_decisions: Array.isArray(draft.key_decisions) ? draft.key_decisions : [],
+      converted_task_ids: [],
+      created_at: nowIso,
+      updated_at: nowIso,
+    };
+
+    setNotes((prev) => {
+      const updated = [optimisticNote, ...prev];
+      syncNotesCache(updated);
+      return updated;
+    });
+
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("SAVE_NOTE", { note: optimisticNote, isNew: true });
+      setOfflinePendingCount(getOfflineQueue().length);
+      return optimisticNote;
+    }
+
+    try {
+      const res = await fetch("/api/notes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(optimisticNote),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.note) {
+        setNotes((prev) => {
+          const updated = prev.map((n) => (n.id === optimisticNote.id ? data.note : n));
+          syncNotesCache(updated);
+          return updated;
+        });
+        return data.note;
+      }
+      return optimisticNote;
+    } catch {
+      enqueueOfflineAction("SAVE_NOTE", { note: optimisticNote, isNew: true });
+      setOfflinePendingCount(getOfflineQueue().length);
+      return optimisticNote;
+    }
+  };
+
+  const handleUpdateNote = async (
+    noteId: string,
+    patch: Partial<Note>
+  ): Promise<Note | null> => {
+    let updatedSnapshot: Note | null = null;
+    setNotes((prev) => {
+      const next = prev.map((n) => {
+        if (n.id !== noteId) return n;
+        updatedSnapshot = {
+          ...n,
+          ...patch,
+          updated_at: new Date().toISOString(),
+        };
+        return updatedSnapshot;
+      });
+      next.sort((a, b) => {
+        const pinnedDiff = Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+        if (pinnedDiff !== 0) return pinnedDiff;
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+      });
+      syncNotesCache(next);
+      return next;
+    });
+
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      if (updatedSnapshot) {
+        enqueueOfflineAction("SAVE_NOTE", { note: updatedSnapshot, isNew: false });
+        setOfflinePendingCount(getOfflineQueue().length);
+      }
+      return updatedSnapshot;
+    }
+
+    try {
+      const res = await fetch(`/api/notes/${noteId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.note) {
+        setNotes((prev) => {
+          const next = prev.map((n) => (n.id === noteId ? data.note : n));
+          syncNotesCache(next);
+          return next;
+        });
+        return data.note;
+      }
+      return updatedSnapshot;
+    } catch {
+      if (updatedSnapshot) {
+        enqueueOfflineAction("SAVE_NOTE", { note: updatedSnapshot, isNew: false });
+        setOfflinePendingCount(getOfflineQueue().length);
+      }
+      return updatedSnapshot;
+    }
+  };
+
+  const handleDeleteNote = async (noteId: string): Promise<void> => {
+    setNotes((prev) => {
+      const next = prev.filter((n) => n.id !== noteId);
+      syncNotesCache(next);
+      return next;
+    });
+
+    if (typeof window !== "undefined" && !navigator.onLine) {
+      enqueueOfflineAction("DELETE_NOTE", { noteId });
+      setOfflinePendingCount(getOfflineQueue().length);
+      return;
+    }
+
+    try {
+      await fetch(`/api/notes/${noteId}`, { method: "DELETE" });
+    } catch {
+      enqueueOfflineAction("DELETE_NOTE", { noteId });
+      setOfflinePendingCount(getOfflineQueue().length);
+    }
+  };
+
+  const handleCreateTasksFromNote = async (
+    note: Note,
+    drafts: ExtractedNoteTaskDraft[],
+    checklistItemId?: string
+  ): Promise<Task[]> => {
+    const createdList: Task[] = [];
+
+    for (const draft of drafts) {
+      try {
+        const res = await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            raw_input: draft.source_excerpt || draft.description || draft.title,
+            title: draft.title,
+            description: draft.description,
+            account_type: draft.account_type || note.account_type || "work",
+            item_type: draft.item_type || "task",
+            category: draft.category || "Operações & Demandas",
+            priority: draft.priority || "P3",
+            due_date: draft.extracted_due_date_iso || undefined,
+            scheduled_start: draft.extracted_due_date_iso || null,
+            scheduled_end: draft.extracted_end_date_iso || null,
+            tags: draft.tags || [],
+            validation_steps: (draft.validation_steps || []).map((text, idx) => ({
+              id: `step-${Date.now()}-${idx}`,
+              text,
+              completed: false,
+            })),
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success && data.task) {
+          createdList.push(data.task);
+          handleTaskCreated(data.task);
+        }
+      } catch (err) {
+        console.error("Failed to create task from note draft:", err);
+      }
+    }
+
+    if (createdList.length > 0) {
+      const nextConverted = Array.from(
+        new Set([...(note.converted_task_ids || []), ...createdList.map((t) => t.id)])
+      );
+      const nextChecklist =
+        checklistItemId && createdList[0]
+          ? (note.checklist || []).map((item) =>
+              item.id === checklistItemId
+                ? { ...item, linked_task_id: createdList[0].id }
+                : item
+            )
+          : note.checklist;
+
+      await handleUpdateNote(note.id, {
+        converted_task_ids: nextConverted,
+        checklist: nextChecklist,
+      });
+    }
+
+    return createdList;
+  };
+
+  const handleOpenNewTaskModalWithDraft = (
+    draft: Partial<ExtractedNoteTaskDraft>,
+    sourceNoteId: string,
+    checklistItemId?: string
+  ) => {
+    setNewTaskInitialText("");
+    setNewTaskInitialDate(null);
+    setNewTaskInitialDraft(draft);
+    setPendingNoteLink({ noteId: sourceNoteId, checklistItemId });
+    setIsNewTaskModalOpen(true);
   };
 
   const handleUpdateStatus = async (
@@ -708,6 +1017,7 @@ export default function MontOpsDashboard() {
           onSelectAccountFilter={(filter) => setAccountFilter(filter)}
           onLogout={handleLogout}
           completedTasksCount={tasks.filter((t) => t.status === "COMPLETED").length}
+          notesCount={notes.filter((n) => !n.archived).length}
           currentUser={currentUser}
         />
       </div>
@@ -748,6 +1058,7 @@ export default function MontOpsDashboard() {
               }}
               onLogout={handleLogout}
               completedTasksCount={tasks.filter((t) => t.status === "COMPLETED").length}
+              notesCount={notes.filter((n) => !n.archived).length}
               currentUser={currentUser}
               onClose={() => setIsMobileMenuOpen(false)}
             />
@@ -767,9 +1078,12 @@ export default function MontOpsDashboard() {
             onSelectTask={navigateToTaskDetails}
             onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
             onOpenReportModal={() => setActiveNav("relatorios")}
+            onOpenNotes={() => setActiveNav("notas")}
             onOpenNewTaskModal={(prefill) => {
               setNewTaskInitialText(prefill || "");
               setNewTaskInitialDate(null);
+              setNewTaskInitialDraft(null);
+              setPendingNoteLink(null);
               setIsNewTaskModalOpen(true);
             }}
           />
@@ -854,9 +1168,25 @@ export default function MontOpsDashboard() {
               onOpenNewTaskModal={(prefillDate) => {
                 setNewTaskInitialText("");
                 setNewTaskInitialDate(prefillDate ?? null);
+                setNewTaskInitialDraft(null);
+                setPendingNoteLink(null);
                 setIsNewTaskModalOpen(true);
               }}
               onTaskCreated={handleTaskCreated}
+            />
+          </main>
+        ) : activeNav === "notas" ? (
+          <main className="flex-1 min-h-0 overflow-hidden p-2.5 sm:p-4 lg:p-4 bg-slate-100/50 dark:bg-[#0c0d13]">
+            <NotesView
+              notes={notes}
+              tasks={tasks}
+              accountFilter={accountFilter}
+              onCreateNote={handleCreateNote}
+              onUpdateNote={handleUpdateNote}
+              onDeleteNote={handleDeleteNote}
+              onCreateTasksFromNote={handleCreateTasksFromNote}
+              onOpenNewTaskModalWithDraft={handleOpenNewTaskModalWithDraft}
+              onSelectTask={navigateToTaskDetails}
             />
           </main>
         ) : activeNav === "wiki" ? (
@@ -903,47 +1233,49 @@ export default function MontOpsDashboard() {
           </main>
         ) : (
           <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
-            {/* Mobile Sub-Navigation Pill Strip (Lista | Detalhes | Métricas) */}
-            <div className="lg:hidden px-2.5 py-2 bg-white dark:bg-[#101118] border-b border-slate-200 dark:border-zinc-800/80 flex items-center gap-1.5 shrink-0">
-              <button
-                type="button"
-                onClick={() => setMobileActiveView("tasks")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  mobileActiveView === "tasks"
-                    ? "bg-purple-600 text-white shadow-xs"
-                    : "bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-slate-400"
-                }`}
-              >
-                <ListTodo className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">Lista ({openTasksCount})</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setCentralActiveTab("details");
-                  setMobileActiveView("details");
-                }}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  mobileActiveView === "details"
-                    ? "bg-purple-600 text-white shadow-xs"
-                    : "bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-slate-400"
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">Detalhes</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setMobileActiveView("kpi")}
-                className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                  mobileActiveView === "kpi"
-                    ? "bg-purple-600 text-white shadow-xs"
-                    : "bg-slate-100 dark:bg-zinc-900 text-slate-600 dark:text-slate-400"
-                }`}
-              >
-                <TrendingUp className="w-3.5 h-3.5 shrink-0" />
-                <span className="truncate">Métricas</span>
-              </button>
+            {/* Mobile Sub-Navigation Segmented Control (Lista | Detalhes | Métricas) */}
+            <div className="lg:hidden px-2.5 py-2 bg-white dark:bg-[#101118] border-b border-slate-200 dark:border-zinc-800/80 shrink-0">
+              <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-slate-100 dark:bg-[#171825] border border-slate-200/70 dark:border-zinc-800/70">
+                <button
+                  type="button"
+                  onClick={() => setMobileActiveView("tasks")}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    mobileActiveView === "tasks"
+                      ? "bg-white dark:bg-[#23253a] text-purple-700 dark:text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  <ListTodo className="w-3.5 h-3.5 shrink-0 text-blue-500" />
+                  <span className="truncate">Lista ({openTasksCount})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCentralActiveTab("details");
+                    setMobileActiveView("details");
+                  }}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    mobileActiveView === "details"
+                      ? "bg-white dark:bg-[#23253a] text-purple-700 dark:text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5 shrink-0 text-indigo-500" />
+                  <span className="truncate">Detalhes</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileActiveView("kpi")}
+                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                    mobileActiveView === "kpi"
+                      ? "bg-white dark:bg-[#23253a] text-purple-700 dark:text-white shadow-xs"
+                      : "text-slate-600 dark:text-slate-400"
+                  }`}
+                >
+                  <TrendingUp className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
+                  <span className="truncate">Métricas</span>
+                </button>
+              </div>
             </div>
 
             {/* Quadrante Esquerdo: Minhas Tarefas */}
@@ -1010,14 +1342,21 @@ export default function MontOpsDashboard() {
                 activeTab={centralActiveTab}
                 onTabChange={setCentralActiveTab}
                 onBackToTasks={() => setMobileActiveView("tasks")}
+                isKpiPanelOpen={isDesktopKpiOpen}
+                onToggleKpiPanel={handleToggleDesktopKpi}
               />
             </div>
 
-            {/* Quadrante Direito: Métricas & Desempenho + Resumo Anual */}
-            <div className={`${mobileActiveView === "kpi" ? "flex" : "hidden"} lg:flex flex-1 min-h-0 lg:flex-none lg:h-full w-full lg:w-auto lg:shrink-0`}>
+            {/* Quadrante Direito: Métricas & Briefing IA + Resumo Anual */}
+            <div className={`${mobileActiveView === "kpi" ? "flex" : "hidden"} ${isDesktopKpiOpen ? "lg:flex" : "lg:hidden"} flex-1 min-h-0 lg:flex-none lg:h-full w-full lg:w-auto lg:shrink-0`}>
               <RightKpiQuadrant
                 tasks={tasks}
                 onOpenReportModal={() => setActiveNav("relatorios")}
+                pinnedNotesCount={notes.filter((n) => Boolean(n.pinned) && !n.archived).length}
+                onSelectTaskById={(taskId) => {
+                  const found = tasks.find((t) => t.id === taskId);
+                  if (found) navigateToTaskDetails(found);
+                }}
               />
             </div>
           </div>
@@ -1025,23 +1364,27 @@ export default function MontOpsDashboard() {
       </div>
 
       {/* Mobile Bottom Navigation Bar (Fixed for PWA on Phones) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 min-h-[64px] pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-white/95 dark:bg-[#10111a]/95 backdrop-blur-lg border-t border-slate-200 dark:border-zinc-800/80 px-2 flex items-center justify-around z-40">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 min-h-[64px] pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-white/95 dark:bg-[#10111a]/95 backdrop-blur-lg border-t border-slate-200 dark:border-zinc-800/80 px-1.5 flex items-center justify-around z-40">
         <button
           type="button"
           onClick={() => {
             setActiveNav("tarefas");
             setMobileActiveView("tasks");
           }}
-          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
+          className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
             activeNav === "tarefas"
               ? "text-purple-600 dark:text-purple-400 font-bold"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
-          <div className="relative">
+          <div
+            className={`relative px-2.5 py-1 rounded-xl transition-colors ${
+              activeNav === "tarefas" ? "bg-purple-600/10 dark:bg-purple-500/20" : ""
+            }`}
+          >
             <ListTodo className="w-5 h-5" />
             {openTasksCount > 0 && (
-              <span className="absolute -top-1 -right-2 px-1 text-[9px] font-bold rounded-full bg-purple-600 text-white">
+              <span className="absolute -top-0.5 right-0 px-1 text-[9px] font-bold rounded-full bg-purple-600 text-white leading-tight">
                 {openTasksCount}
               </span>
             )}
@@ -1051,53 +1394,90 @@ export default function MontOpsDashboard() {
 
         <button
           type="button"
-          onClick={() => setActiveNav("kanban")}
-          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
-            activeNav === "kanban"
+          onClick={() => setActiveNav("notas")}
+          className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
+            activeNav === "notas"
               ? "text-purple-600 dark:text-purple-400 font-bold"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
-          <Kanban className="w-5 h-5" />
-          <span className="text-[10px]">Kanban</span>
+          <div
+            className={`relative px-2.5 py-1 rounded-xl transition-colors ${
+              activeNav === "notas" ? "bg-purple-600/10 dark:bg-purple-500/20" : ""
+            }`}
+          >
+            <StickyNote className="w-5 h-5" />
+            {notes.filter((n) => !n.archived).length > 0 && (
+              <span className="absolute -top-0.5 right-0 px-1 text-[9px] font-bold rounded-full bg-amber-500 text-white leading-tight">
+                {notes.filter((n) => !n.archived).length}
+              </span>
+            )}
+          </div>
+          <span className="text-[10px]">Notas</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveNav("agenda")}
-          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
+          className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
             activeNav === "agenda"
               ? "text-purple-600 dark:text-purple-400 font-bold"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
-          <Calendar className="w-5 h-5" />
+          <div
+            className={`px-2.5 py-1 rounded-xl transition-colors ${
+              activeNav === "agenda" ? "bg-purple-600/10 dark:bg-purple-500/20" : ""
+            }`}
+          >
+            <Calendar className="w-5 h-5" />
+          </div>
           <span className="text-[10px]">Agenda</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveNav("relatorios")}
-          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
-            activeNav === "relatorios"
+          onClick={() => setActiveNav("kanban")}
+          className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
+            activeNav === "kanban"
               ? "text-purple-600 dark:text-purple-400 font-bold"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
-          <BarChart3 className="w-5 h-5" />
-          <span className="text-[10px]">Relatórios</span>
+          <div
+            className={`px-2.5 py-1 rounded-xl transition-colors ${
+              activeNav === "kanban" ? "bg-purple-600/10 dark:bg-purple-500/20" : ""
+            }`}
+          >
+            <Kanban className="w-5 h-5" />
+          </div>
+          <span className="text-[10px]">Kanban</span>
         </button>
 
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
-          className={`flex flex-col items-center justify-center gap-1 py-1 px-2.5 rounded-xl transition-all cursor-pointer ${
-            isMobileMenuOpen || activeNav === "wiki" || activeNav === "config"
+          className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
+            isMobileMenuOpen ||
+            activeNav === "wiki" ||
+            activeNav === "relatorios" ||
+            activeNav === "config"
               ? "text-purple-600 dark:text-purple-400 font-bold"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
-          <Menu className="w-5 h-5" />
+          <div
+            className={`px-2.5 py-1 rounded-xl transition-colors ${
+              isMobileMenuOpen ||
+              activeNav === "wiki" ||
+              activeNav === "relatorios" ||
+              activeNav === "config"
+                ? "bg-purple-600/10 dark:bg-purple-500/20"
+                : ""
+            }`}
+          >
+            <Menu className="w-5 h-5" />
+          </div>
           <span className="text-[10px]">Menu</span>
         </button>
       </nav>
@@ -1136,26 +1516,54 @@ export default function MontOpsDashboard() {
         onClose={() => {
           setIsNewTaskModalOpen(false);
           setNewTaskInitialDate(null);
+          setNewTaskInitialDraft(null);
+          setPendingNoteLink(null);
         }}
-        onTaskCreated={(task) => {
+        onTaskCreated={async (task) => {
           handleTaskCreated(task);
+          if (pendingNoteLink) {
+            const sourceNote = notes.find((n) => n.id === pendingNoteLink.noteId);
+            if (sourceNote) {
+              const nextConverted = Array.from(
+                new Set([...(sourceNote.converted_task_ids || []), task.id])
+              );
+              const nextChecklist = pendingNoteLink.checklistItemId
+                ? (sourceNote.checklist || []).map((item) =>
+                    item.id === pendingNoteLink.checklistItemId
+                      ? { ...item, linked_task_id: task.id }
+                      : item
+                  )
+                : sourceNote.checklist;
+              await handleUpdateNote(sourceNote.id, {
+                converted_task_ids: nextConverted,
+                checklist: nextChecklist,
+              });
+            }
+          }
           setIsNewTaskModalOpen(false);
           setNewTaskInitialDate(null);
+          setNewTaskInitialDraft(null);
+          setPendingNoteLink(null);
         }}
         existingTasks={tasks}
         onSelectExistingTask={(task) => {
           navigateToTaskDetails(task);
           setIsNewTaskModalOpen(false);
           setNewTaskInitialDate(null);
+          setNewTaskInitialDraft(null);
+          setPendingNoteLink(null);
         }}
         onTaskUpdated={(updatedTask) => {
           setTasks((prev) => prev.map((t) => (t.id === updatedTask.id ? updatedTask : t)));
           setSelectedTaskId(updatedTask.id);
           setIsNewTaskModalOpen(false);
           setNewTaskInitialDate(null);
+          setNewTaskInitialDraft(null);
+          setPendingNoteLink(null);
         }}
         initialText={newTaskInitialText}
         initialDate={newTaskInitialDate}
+        initialDraft={newTaskInitialDraft}
         availableCategories={allCategories}
       />
 

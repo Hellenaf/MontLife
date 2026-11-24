@@ -1,5 +1,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { GeminiTriageResponse, TaskCategory, Priority, AccountType, ItemType } from "@/types";
+import {
+  GeminiTriageResponse,
+  TaskCategory,
+  Priority,
+  AccountType,
+  ItemType,
+  NoteCategory,
+  NoteChecklistItem,
+  ExtractedNoteTaskDraft,
+  TaskAiAssistResponse,
+  DailyBriefingResponse,
+  Task,
+  SimilarResolution,
+} from "@/types";
 import { aiCache } from "@/lib/aiCache";
 import { normalizeCategory, STANDARD_CATEGORIES } from "@/lib/categories";
 
@@ -832,17 +845,68 @@ function fallbackTriage(rawInput: string): GeminiTriageResponse {
   };
 }
 
-// Active production Gemini model cascade (explicit 3.x models first, then floating alias & 2.5 fallback)
+// Active production Gemini model cascade (fastest production 2.5 & latest aliases first)
 const PRIMARY_FLASH_MODELS = [
-  "gemini-3.8-flash",
-  "gemini-3.7-flash",
-  "gemini-3.6-flash",
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
-  "gemini-flash-latest",
-  "gemini-flash-lite-latest",
   "gemini-2.5-flash",
+  "gemini-flash-latest",
+  "gemini-2.5-flash-lite",
+  "gemini-flash-lite-latest",
+  "gemini-2.5-pro",
 ];
+
+const MODEL_CALL_TIMEOUT_MS = 15000;
+
+function getSaoPauloDateString(date: Date = new Date()): string {
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(date);
+  } catch {
+    return date.toISOString().slice(0, 10);
+  }
+}
+
+function isInvalidApiKeyError(err: unknown): boolean {
+  const msg = (err instanceof Error ? err.message : String(err || "")).toLowerCase();
+  const status = typeof (err as any)?.status === "number" ? (err as any).status : 0;
+  return (
+    status === 401 ||
+    status === 403 ||
+    msg.includes("api_key_invalid") ||
+    msg.includes("api key not valid") ||
+    msg.includes("permission_denied")
+  );
+}
+
+async function callGenerateWithTimeout(
+  ai: GoogleGenAI,
+  modelName: string,
+  contents: string,
+  config: Record<string, any>
+) {
+  let timeoutId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      timeoutId = setTimeout(
+        () => reject(new Error(`Timeout after ${MODEL_CALL_TIMEOUT_MS}ms on ${modelName}`)),
+        MODEL_CALL_TIMEOUT_MS
+      );
+    });
+    return await Promise.race([
+      ai.models.generateContent({
+        model: modelName,
+        contents,
+        config,
+      }),
+      timeoutPromise,
+    ]);
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
+}
 
 let cachedWorkingModel: string | null = null;
 let cachedDiscoveredModels: { models: string[]; fetchedAt: number } | null = null;
@@ -932,11 +996,7 @@ async function generateWithActiveGeminiModels(
 
   for (const modelName of orderedCandidates) {
     try {
-      const response = await ai.models.generateContent({
-        model: modelName,
-        contents,
-        config,
-      });
+      const response = await callGenerateWithTimeout(ai, modelName, contents, config);
       const respText = extractRawText(response).trim();
       if (respText) {
         cachedWorkingModel = modelName;
@@ -945,6 +1005,10 @@ async function generateWithActiveGeminiModels(
     } catch (modelErr: any) {
       if (cachedWorkingModel === modelName) {
         cachedWorkingModel = null;
+      }
+      if (isInvalidApiKeyError(modelErr)) {
+        console.warn(`[Gemini] Invalid API key detected on ${modelName}; aborting cascade.`);
+        return null;
       }
       const msg = modelErr?.message || String(modelErr);
       console.warn(`[Gemini] Model ${modelName} failed:`, msg.slice(0, 220));
@@ -956,17 +1020,16 @@ async function generateWithActiveGeminiModels(
   for (const modelName of discovered) {
     if (orderedCandidates.includes(modelName)) continue;
     try {
-      const response = await ai.models.generateContent({
-        model: modelName,
-        contents,
-        config,
-      });
+      const response = await callGenerateWithTimeout(ai, modelName, contents, config);
       const respText = extractRawText(response).trim();
       if (respText) {
         cachedWorkingModel = modelName;
         return { text: respText, modelUsed: modelName };
       }
     } catch (modelErr: any) {
+      if (isInvalidApiKeyError(modelErr)) {
+        return null;
+      }
       const msg = modelErr?.message || String(modelErr);
       console.warn(`[Gemini] Discovered model ${modelName} failed:`, msg.slice(0, 220));
     }
@@ -1000,7 +1063,12 @@ export async function triageInputWithGeminiDetailed(
     };
   }
 
-  const cacheKey = `triage_v3:${cleanInput}`;
+  const hasRelativeTemporalRef =
+    /(?:hoje|amanh[ãa]|ontem|segunda|ter[çc]a|quarta|quinta|sexta|s[áa]bado|domingo|pr[óo]xim|semana|m[êe]s|daqui|agora)/i.test(
+      cleanInput
+    );
+  const dateBucket = hasRelativeTemporalRef ? `${getSaoPauloDateString()}:` : "";
+  const cacheKey = `triage_v4:${dateBucket}${cleanInput}`;
 
   // 1. Check persistent AI Cache (ONLY when not forcing fresh AI)
   if (!options?.forceFresh) {
@@ -1024,7 +1092,8 @@ export async function triageInputWithGeminiDetailed(
 
   try {
     const now = new Date();
-    const promptWithContext = `Data e hora atual de referência: ${now.toISOString()} (${now.toLocaleDateString("pt-BR", { weekday: "long", year: "numeric", month: "long", day: "numeric" })} às ${now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}).
+    const promptWithContext = `Data e hora atual de referência: ${now.toISOString()} (${now.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", year: "numeric", month: "long", day: "numeric" })} às ${now.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}).
+Fuso horário do usuário: America/Sao_Paulo (UTC-03:00). Sempre gere datas ISO coerentes com este fuso.
 
 Reescreva e estruture a solicitação abaixo tornando o texto objetivo e direto (sem copiar a redação informal), crie um título apropriado começando com verbo de ação, extraia o prazo se houver e gere 3 a 5 sub-tarefas práticas específicas para ajudar o usuário a concluir esta demanda:
 
@@ -1283,5 +1352,703 @@ Use tom executivo, claro e objetivo.`;
   } catch (err) {
     console.warn("Failed to generate executive summary with Gemini:", err);
     return fallbackSummary;
+  }
+}
+
+// ==========================================
+// 2. NOTES AI ENGINE (ORGANIZE & EXTRACT TASKS)
+// ==========================================
+
+const ORGANIZE_NOTE_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    refined_title: { type: Type.STRING },
+    organized_content: { type: Type.STRING },
+    ai_summary: { type: Type.STRING },
+    key_decisions: { type: Type.ARRAY, items: { type: Type.STRING } },
+    checklist_items: { type: Type.ARRAY, items: { type: Type.STRING } },
+    tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+  },
+  required: [
+    "refined_title",
+    "organized_content",
+    "ai_summary",
+    "key_decisions",
+    "checklist_items",
+    "tags",
+  ],
+};
+
+function buildNoteContextText(params: {
+  title?: string;
+  content?: string;
+  checklist?: NoteChecklistItem[];
+  category?: NoteCategory;
+}): string {
+  const parts: string[] = [];
+  if (params.title?.trim()) parts.push(`Título atual: ${params.title.trim()}`);
+  if (params.category) parts.push(`Tipo da nota: ${params.category}`);
+  if (params.content?.trim()) parts.push(`Conteúdo:\n${params.content.trim()}`);
+  if (params.checklist && params.checklist.length > 0) {
+    const checklistLines = params.checklist
+      .map((item) => `- [${item.checked ? "x" : " "}] ${item.text}`)
+      .join("\n");
+    parts.push(`Itens de checklist existentes:\n${checklistLines}`);
+  }
+  return parts.join("\n\n").trim();
+}
+
+export async function organizeNoteWithAI(params: {
+  title: string;
+  content: string;
+  checklist?: NoteChecklistItem[];
+  category?: NoteCategory;
+  apiKey?: string;
+}): Promise<{
+  refined_title: string;
+  organized_content: string;
+  ai_summary: string;
+  key_decisions: string[];
+  checklist_items: string[];
+  tags: string[];
+  ai_source: "gemini" | "cache" | "fallback";
+}> {
+  const contextText = buildNoteContextText(params);
+  const rawLines = (params.content || "")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+
+  const fallbackResult = () => {
+    const fallbackTitle =
+      params.title?.trim() ||
+      synthesizeRefinedTitle(rawLines[0] || params.content || "Anotação de Reunião");
+    const actionVerbs =
+      /^(?:fazer|enviar|verificar|ajustar|implementar|cobrar|agendar|atualizar|revisar|criar|pagar|ligar|validar|confirmar|solicitar|responder)\b/i;
+    const candidateActions = rawLines
+      .map((l) => cleanStepPrefix(l))
+      .filter((l) => l.length >= 6 && (actionVerbs.test(l) || rawLines.length <= 6))
+      .slice(0, 6);
+    const heuristic = classifyTaskHeuristic(fallbackTitle, params.content || "");
+    const firstSummary = rawLines.slice(0, 2).join(" ").slice(0, 220);
+
+    return {
+      refined_title: fallbackTitle,
+      organized_content: rawLines.join("\n") || (params.content || "").trim(),
+      ai_summary: firstSummary || "Anotação organizada localmente.",
+      key_decisions: rawLines.slice(0, 3).map((l) => cleanStepPrefix(l)).filter(Boolean),
+      checklist_items: candidateActions,
+      tags: heuristic.tags.slice(0, 4),
+      ai_source: "fallback" as const,
+    };
+  };
+
+  if (!contextText || contextText.length < 4) {
+    return fallbackResult();
+  }
+
+  const key = (params.apiKey || process.env.GEMINI_API_KEY || "").trim();
+  if (!key || key === "sua_chave_da_gemini_api") {
+    return fallbackResult();
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: key });
+    const prompt = `Você é o assistente executivo de produtividade do MontLife.
+Organize a anotação/rascunho abaixo (pode ser uma ata rápida de reunião, texto ditado por voz no celular ou ideias soltas) em português claro, corporativo e prático:
+
+1. 'refined_title': Título claro e informativo (máximo 65 caracteres).
+2. 'organized_content': Texto organizado, corrigido e fácil de ler no celular (use parágrafos curtos ou tópicos simples limpos, mantendo 100% dos fatos, sistemas, números e nomes mencionados).
+3. 'ai_summary': Resumo executivo objetivo em 1 ou 2 frases.
+4. 'key_decisions': Lista curta (0 a 5 itens) com as decisões tomadas ou pontos principais combinados.
+5. 'checklist_items': Lista prática (1 a 8 itens) com os próximos passos acionáveis identificados (sem numeração nem marcador no início).
+6. 'tags': 2 a 4 tags curtas.
+
+Anotação:
+"""
+${contextText}
+"""`;
+
+    const generation = await generateWithActiveGeminiModels(ai, prompt, {
+      responseMimeType: "application/json",
+      responseSchema: ORGANIZE_NOTE_SCHEMA,
+      temperature: 0.25,
+      maxOutputTokens: 1800,
+    });
+
+    const jsonStr = generation ? extractJsonObject(generation.text) : null;
+    if (!jsonStr) return fallbackResult();
+
+    const parsed = JSON.parse(jsonStr);
+    const fb = fallbackResult();
+    return {
+      refined_title: (parsed.refined_title || "").trim() || fb.refined_title,
+      organized_content: (parsed.organized_content || "").trim() || fb.organized_content,
+      ai_summary: (parsed.ai_summary || "").trim() || fb.ai_summary,
+      key_decisions: Array.isArray(parsed.key_decisions)
+        ? parsed.key_decisions.map((s: string) => cleanStepPrefix(s)).filter(Boolean)
+        : fb.key_decisions,
+      checklist_items: Array.isArray(parsed.checklist_items)
+        ? parsed.checklist_items.map((s: string) => cleanStepPrefix(s)).filter(Boolean)
+        : fb.checklist_items,
+      tags: Array.isArray(parsed.tags) && parsed.tags.length > 0 ? parsed.tags.slice(0, 5) : fb.tags,
+      ai_source: "gemini",
+    };
+  } catch (err) {
+    console.warn("organizeNoteWithAI failed, using heuristic fallback:", err);
+    return fallbackResult();
+  }
+}
+
+const EXTRACT_NOTE_TASKS_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    summary: { type: Type.STRING },
+    key_decisions: { type: Type.ARRAY, items: { type: Type.STRING } },
+    tasks: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          title: { type: Type.STRING },
+          description: { type: Type.STRING },
+          account_type: { type: Type.STRING, enum: ["work", "personal"] },
+          item_type: { type: Type.STRING, enum: ["task", "activity", "reminder"] },
+          category: { type: Type.STRING },
+          priority: { type: Type.STRING, enum: ["P1", "P2", "P3", "P4"] },
+          extracted_due_date_iso: { type: Type.STRING, nullable: true },
+          extracted_end_date_iso: { type: Type.STRING, nullable: true },
+          tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+          validation_steps: { type: Type.ARRAY, items: { type: Type.STRING } },
+          source_excerpt: { type: Type.STRING, nullable: true },
+        },
+        required: [
+          "title",
+          "description",
+          "account_type",
+          "item_type",
+          "category",
+          "priority",
+          "tags",
+          "validation_steps",
+        ],
+      },
+    },
+  },
+  required: ["summary", "key_decisions", "tasks"],
+};
+
+export async function extractTasksFromNoteWithAI(params: {
+  title: string;
+  content: string;
+  checklist?: NoteChecklistItem[];
+  category?: NoteCategory;
+  accountType?: AccountType;
+  apiKey?: string;
+}): Promise<{
+  summary: string;
+  key_decisions: string[];
+  tasks: ExtractedNoteTaskDraft[];
+  ai_source: "gemini" | "cache" | "fallback";
+}> {
+  const contextText = buildNoteContextText(params);
+  const defaultAccount: AccountType =
+    String(params.accountType || "").toLowerCase().includes("pess") ||
+    String(params.accountType || "") === "personal"
+      ? "personal"
+      : "work";
+
+  const buildDraftFromText = (rawItemText: string): ExtractedNoteTaskDraft => {
+    const fb = fallbackTriage(rawItemText);
+    return {
+      title: fb.refined_title,
+      description: fb.structured_description || rawItemText,
+      account_type: params.accountType ? defaultAccount : fb.account_type,
+      item_type: fb.item_type,
+      category: normalizeCategory(fb.category),
+      priority: fb.priority,
+      extracted_due_date_iso: fb.extracted_due_date_iso,
+      extracted_end_date_iso: fb.extracted_end_date_iso || null,
+      tags: fb.search_tags,
+      validation_steps: fb.validation_steps || [],
+      source_excerpt: rawItemText.slice(0, 120),
+    };
+  };
+
+  const fallbackResult = () => {
+    const openChecklist = (params.checklist || []).filter(
+      (c) => !c.checked && !c.linked_task_id && c.text.trim().length > 3
+    );
+    const lines = (params.content || "")
+      .split(/\r?\n/)
+      .map((l) => cleanStepPrefix(l))
+      .filter((l) => l.length >= 8);
+
+    const candidates =
+      openChecklist.length > 0
+        ? openChecklist.map((c) => c.text.trim())
+        : lines.length > 0
+        ? lines
+        : [params.title || params.content].filter((x) => Boolean(x && x.trim()));
+
+    const drafts = candidates.slice(0, 6).map(buildDraftFromText);
+
+    return {
+      summary:
+        lines.slice(0, 2).join(" ").slice(0, 200) ||
+        params.title ||
+        "Demandas extraídas da anotação.",
+      key_decisions: lines.slice(0, 3),
+      tasks: drafts,
+      ai_source: "fallback" as const,
+    };
+  };
+
+  if (!contextText || contextText.length < 4) {
+    return fallbackResult();
+  }
+
+  const key = (params.apiKey || process.env.GEMINI_API_KEY || "").trim();
+  if (!key || key === "sua_chave_da_gemini_api") {
+    return fallbackResult();
+  }
+
+  try {
+    const now = new Date();
+    const ai = new GoogleGenAI({ apiKey: key });
+    const prompt = `Data e hora atual de referência: ${now.toISOString()} (${now.toLocaleDateString("pt-BR", { timeZone: "America/Sao_Paulo", weekday: "long", year: "numeric", month: "long", day: "numeric" })} às ${now.toLocaleTimeString("pt-BR", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit" })}).
+Fuso horário do usuário: America/Sao_Paulo (UTC-03:00).
+
+Analise a anotação abaixo (ideias, ata de reunião ou checklist) e extraia TODAS as demandas acionáveis distintas (entre 1 e 8 demandas), ignorando itens já concluídos [x] quando houver pendências claras.
+
+Para cada demanda extraída:
+- 'title': Título acionável começando com verbo no infinitivo (máx 70 caracteres).
+- 'description': Descrição clara e objetiva em texto corrido (sem bullets ou markdown).
+- 'account_type': 'work' ou 'personal' (contexto padrão da nota: ${defaultAccount}).
+- 'item_type': 'task', 'activity' ou 'reminder'.
+- 'category': ESTRITAMENTE uma de: ${STANDARD_CATEGORIES.map((c) => `'${c}'`).join(", ")}.
+- 'priority': 'P1' | 'P2' | 'P3' | 'P4'.
+- 'extracted_due_date_iso' e 'extracted_end_date_iso': ISO 8601 quando houver data/horário mencionado, senão null.
+- 'tags': 2 a 4 tags curtas.
+- 'validation_steps': 2 a 4 passos práticos objetivos (sem numeração no início).
+- 'source_excerpt': trecho curto da nota que originou esta demanda.
+
+Anotação:
+"""
+${contextText}
+"""`;
+
+    const generation = await generateWithActiveGeminiModels(ai, prompt, {
+      responseMimeType: "application/json",
+      responseSchema: EXTRACT_NOTE_TASKS_SCHEMA,
+      temperature: 0.25,
+      maxOutputTokens: 2800,
+    });
+
+    const jsonStr = generation ? extractJsonObject(generation.text) : null;
+    if (!jsonStr) return fallbackResult();
+
+    const parsed = JSON.parse(jsonStr);
+    const rawTasks = Array.isArray(parsed.tasks) ? parsed.tasks : [];
+    if (rawTasks.length === 0) return fallbackResult();
+
+    const normalizedTasks: ExtractedNoteTaskDraft[] = rawTasks.slice(0, 8).map((t: any) => {
+      const sourceText = `${t.title || ""} ${t.description || ""} ${t.source_excerpt || ""}`.trim();
+      const schedule = extractScheduleRangeHeuristic(sourceText);
+      const cleanSteps = Array.isArray(t.validation_steps)
+        ? t.validation_steps.map(cleanStepPrefix).filter(Boolean)
+        : [];
+      return {
+        title: (t.title || "").trim() || synthesizeRefinedTitle(sourceText),
+        description: cleanToContinuousProse(t.description || "") || (t.title || "").trim(),
+        account_type: t.account_type === "personal" ? "personal" : "work",
+        item_type: t.item_type === "activity" || t.item_type === "reminder" ? t.item_type : "task",
+        category: normalizeCategory(t.category),
+        priority: ["P1", "P2", "P3", "P4"].includes(t.priority) ? t.priority : "P3",
+        extracted_due_date_iso: t.extracted_due_date_iso || schedule.startIso || null,
+        extracted_end_date_iso: t.extracted_end_date_iso || schedule.endIso || null,
+        tags: Array.isArray(t.tags) ? t.tags.slice(0, 5) : [],
+        validation_steps:
+          cleanSteps.length > 0
+            ? cleanSteps
+            : synthesizeValidationSteps(sourceText, t.title || "").map(cleanStepPrefix),
+        source_excerpt: typeof t.source_excerpt === "string" ? t.source_excerpt : undefined,
+      };
+    });
+
+    return {
+      summary: (parsed.summary || "").trim() || params.title || "Demandas extraídas da nota.",
+      key_decisions: Array.isArray(parsed.key_decisions)
+        ? parsed.key_decisions.map((d: string) => cleanStepPrefix(d)).filter(Boolean)
+        : [],
+      tasks: normalizedTasks,
+      ai_source: "gemini",
+    };
+  } catch (err) {
+    console.warn("extractTasksFromNoteWithAI failed, using fallback:", err);
+    return fallbackResult();
+  }
+}
+
+// ==========================================
+// 3. TASK AI ASSISTANT (REFINE / ACTION PLAN / DIAGNOSE)
+// ==========================================
+
+const TASK_ASSIST_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    refined_title: { type: Type.STRING, nullable: true },
+    structured_description: { type: Type.STRING, nullable: true },
+    validation_steps: { type: Type.ARRAY, items: { type: Type.STRING } },
+    technical_guidance: { type: Type.STRING },
+    priority_suggestion: { type: Type.STRING, enum: ["P1", "P2", "P3", "P4"], nullable: true },
+    category_suggestion: { type: Type.STRING, nullable: true },
+    tags_suggestion: { type: Type.ARRAY, items: { type: Type.STRING } },
+    estimated_effort: { type: Type.STRING, nullable: true },
+  },
+  required: ["technical_guidance", "validation_steps"],
+};
+
+export async function assistTaskWithAI(
+  task: Task,
+  similarResolutions: SimilarResolution[] = [],
+  mode: "refine" | "action_plan" | "diagnose" = "action_plan",
+  apiKey?: string
+): Promise<TaskAiAssistResponse> {
+  const baseText = `${task.title}\n${task.description || ""}`.trim();
+  const cacheKey = `assist_v1:${mode}:${task.id}:${baseText.slice(0, 140)}:${similarResolutions.length}`;
+
+  const cached = await aiCache.getAsync<TaskAiAssistResponse>(cacheKey);
+  if (cached && cached.tokensSaved > 0 && cached.data?.technical_guidance) {
+    return { ...cached.data, ai_source: "cache" };
+  }
+
+  const buildFallbackAssist = (): TaskAiAssistResponse => {
+    const fb = fallbackTriage(baseText || task.title);
+    const wikiHint =
+      similarResolutions.length > 0
+        ? ` Foram encontradas ${similarResolutions.length} resolução(ões) semelhante(s) na Wiki (ex.: "${similarResolutions[0].title}") que podem acelerar o atendimento.`
+        : "";
+    return {
+      refined_title: fb.refined_title,
+      structured_description: fb.structured_description || task.description,
+      validation_steps:
+        fb.validation_steps && fb.validation_steps.length > 0
+          ? fb.validation_steps
+          : synthesizeValidationSteps(baseText, task.title).map(cleanStepPrefix),
+      technical_guidance:
+        mode === "diagnose"
+          ? `Análise estruturada para "${task.title}": revise os pré-requisitos na categoria ${normalizeCategory(task.category)} e valide em homologação antes da entrega final.${wikiHint}`
+          : mode === "refine"
+          ? `Sugestão de texto mais objetivo e plano de validação prontos para aplicar.${wikiHint}`
+          : `Plano de execução sequencial sugerido para concluir "${task.title}" dentro do SLA.${wikiHint}`,
+      priority_suggestion: task.priority,
+      category_suggestion: normalizeCategory(task.category),
+      tags_suggestion: Array.from(new Set([...(task.tags || []), ...(fb.search_tags || [])])).slice(0, 5),
+      estimated_effort: task.priority === "P1" ? "30–60 min" : "1–2 horas",
+      ai_source: "fallback",
+      model_used: null,
+    };
+  };
+
+  const key = (apiKey || process.env.GEMINI_API_KEY || "").trim();
+  if (!key || key === "sua_chave_da_gemini_api") {
+    return buildFallbackAssist();
+  }
+
+  try {
+    const wikiContext =
+      similarResolutions.length > 0
+        ? `\n\nResoluções anteriores semelhantes na Wiki Técnica:\n${similarResolutions
+            .slice(0, 3)
+            .map((r, i) => `${i + 1}. "${r.title}": ${r.resolution_notes.slice(0, 240)}`)
+            .join("\n")}`
+        : "";
+
+    const existingSteps =
+      task.validation_steps && task.validation_steps.length > 0
+        ? `\nEtapas atuais: ${task.validation_steps.map((s) => `${s.completed ? "[x]" : "[ ]"} ${s.text}`).join(" | ")}`
+        : "";
+
+    const modeGoal =
+      mode === "refine"
+        ? "Reescreva 'refined_title' e 'structured_description' em português executivo super claro e objetivo (texto corrido sem bullets), sugira categoria/prioridade/tags ideais e 3–5 etapas práticas."
+        : mode === "diagnose"
+        ? "Faça um diagnóstico técnico prático em 'technical_guidance' destacando causas prováveis, riscos/cuidados e como aproveitar eventuais resoluções da Wiki, além de 3–5 passos de verificação."
+        : "Monte um plano de ação concreto e detalhado com 4–6 'validation_steps' sequenciais específicos para esta demanda, 'estimated_effort' e orientação prática em 'technical_guidance'.";
+
+    const prompt = `${modeGoal}
+
+Demanda atual:
+- Título: ${task.title}
+- Descrição: ${task.description || "(sem descrição)"}
+- Categoria atual: ${task.category}
+- Prioridade atual: ${task.priority}
+- Tags: ${(task.tags || []).join(", ") || "(nenhuma)"}${existingSteps}${wikiContext}
+
+Categorias válidas: ${STANDARD_CATEGORIES.join(", ")}.
+Retorne estritamente o JSON do schema.`;
+
+    const ai = new GoogleGenAI({ apiKey: key });
+    const generation = await generateWithActiveGeminiModels(ai, prompt, {
+      responseMimeType: "application/json",
+      responseSchema: TASK_ASSIST_SCHEMA,
+      temperature: 0.25,
+      maxOutputTokens: 1600,
+    });
+
+    const jsonStr = generation ? extractJsonObject(generation.text) : null;
+    if (!jsonStr) return buildFallbackAssist();
+
+    const parsed = JSON.parse(jsonStr);
+    const fb = buildFallbackAssist();
+
+    const result: TaskAiAssistResponse = {
+      refined_title:
+        typeof parsed.refined_title === "string" && parsed.refined_title.trim()
+          ? parsed.refined_title.trim()
+          : fb.refined_title,
+      structured_description:
+        typeof parsed.structured_description === "string" && parsed.structured_description.trim()
+          ? cleanToContinuousProse(parsed.structured_description)
+          : fb.structured_description,
+      validation_steps:
+        Array.isArray(parsed.validation_steps) && parsed.validation_steps.length > 0
+          ? parsed.validation_steps.map(cleanStepPrefix).filter(Boolean)
+          : fb.validation_steps,
+      technical_guidance: (parsed.technical_guidance || "").trim() || fb.technical_guidance,
+      priority_suggestion: ["P1", "P2", "P3", "P4"].includes(parsed.priority_suggestion)
+        ? parsed.priority_suggestion
+        : task.priority,
+      category_suggestion: parsed.category_suggestion
+        ? normalizeCategory(parsed.category_suggestion)
+        : normalizeCategory(task.category),
+      tags_suggestion:
+        Array.isArray(parsed.tags_suggestion) && parsed.tags_suggestion.length > 0
+          ? parsed.tags_suggestion.slice(0, 5)
+          : fb.tags_suggestion,
+      estimated_effort:
+        typeof parsed.estimated_effort === "string" && parsed.estimated_effort.trim()
+          ? parsed.estimated_effort.trim()
+          : fb.estimated_effort,
+      ai_source: "gemini",
+      model_used: generation?.modelUsed || null,
+    };
+
+    aiCache.set(cacheKey, result, 380, 12 * 60 * 60 * 1000);
+    return result;
+  } catch (err) {
+    console.warn("assistTaskWithAI failed, using fallback:", err);
+    return buildFallbackAssist();
+  }
+}
+
+// ==========================================
+// 4. DAILY EXECUTIVE BRIEFING AI
+// ==========================================
+
+const DAILY_BRIEFING_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    greeting: { type: Type.STRING },
+    focus_summary: { type: Type.STRING },
+    top_priorities: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          task_id: { type: Type.STRING },
+          title: { type: Type.STRING },
+          reason: { type: Type.STRING },
+          urgency: { type: Type.STRING, enum: ["alta", "media", "normal"] },
+        },
+        required: ["task_id", "title", "reason", "urgency"],
+      },
+    },
+    quick_tip: { type: Type.STRING },
+  },
+  required: ["greeting", "focus_summary", "top_priorities", "quick_tip"],
+};
+
+export async function generateDailyBriefingWithAI(
+  tasks: Task[],
+  pinnedNotesCount: number = 0,
+  apiKey?: string
+): Promise<DailyBriefingResponse> {
+  const now = new Date();
+  const todayStr = getSaoPauloDateString(now);
+  const openTasks = tasks.filter((t) => t.status !== "COMPLETED" && t.status !== "CANCELED");
+
+  const priorityRank: Record<string, number> = { P1: 0, P2: 1, P3: 2, P4: 3 };
+
+  let overdue = 0;
+  let dueToday = 0;
+
+  for (const t of openTasks) {
+    const dueStr = t.scheduled_start || t.current_due_date;
+    if (!dueStr) continue;
+    try {
+      const dueDate = new Date(dueStr);
+      const dueDayStr = getSaoPauloDateString(dueDate);
+      if (dueDayStr === todayStr) {
+        dueToday++;
+      } else if (dueDate.getTime() < now.getTime()) {
+        overdue++;
+      }
+    } catch {
+      // ignore invalid date
+    }
+  }
+
+  const rankedOpen = [...openTasks]
+    .sort((a, b) => {
+      const dueA = a.scheduled_start || a.current_due_date || "9999-12-31";
+      const dueB = b.scheduled_start || b.current_due_date || "9999-12-31";
+      const dateA = new Date(dueA).getTime();
+      const dateB = new Date(dueB).getTime();
+      const isOverA = dateA < now.getTime() ? 0 : 1;
+      const isOverB = dateB < now.getTime() ? 0 : 1;
+      if (isOverA !== isOverB) return isOverA - isOverB;
+      const pDiff = (priorityRank[a.priority] ?? 2) - (priorityRank[b.priority] ?? 2);
+      if (pDiff !== 0) return pDiff;
+      return dateA - dateB;
+    })
+    .slice(0, 12);
+
+  const hourSp = Number(
+    new Intl.DateTimeFormat("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      hour: "2-digit",
+      hour12: false,
+    }).format(now)
+  );
+  const baseGreeting =
+    hourSp < 12 ? "Bom dia!" : hourSp < 18 ? "Boa tarde!" : "Boa noite!";
+
+  const buildFallbackBriefing = (): DailyBriefingResponse => {
+    const top = rankedOpen.slice(0, 3).map((t) => {
+      const dueStr = t.scheduled_start || t.current_due_date;
+      const isOver = dueStr ? new Date(dueStr).getTime() < now.getTime() : false;
+      const urgency: "alta" | "media" | "normal" =
+        t.priority === "P1" || isOver ? "alta" : t.priority === "P2" ? "media" : "normal";
+      return {
+        task_id: t.id,
+        title: t.title,
+        reason: isOver
+          ? `Prazo vencido (${t.priority} • ${t.category})`
+          : `Prioridade ${t.priority} • ${t.category}`,
+        urgency,
+      };
+    });
+
+    return {
+      greeting: `${baseGreeting} Resumo do seu dia`,
+      focus_summary:
+        openTasks.length === 0
+          ? "Nenhuma demanda aberta no momento. Aproveite para revisar suas anotações fixadas."
+          : `Você tem ${openTasks.length} demanda(s) em aberto (${overdue} atrasada(s) e ${dueToday} com prazo para hoje). Foque primeiro nos itens críticos.`,
+      top_priorities: top,
+      quick_tip:
+        pinnedNotesCount > 0
+          ? `Você tem ${pinnedNotesCount} anotação(ões) fixada(s) no Bloco de Notas — converta ideias pendentes em demandas quando estiver pronta.`
+          : "Use o Bloco de Notas no celular durante reuniões para capturar pontos e transformá-los em demandas com 1 clique.",
+      stats: {
+        overdue,
+        due_today: dueToday,
+        open_total: openTasks.length,
+      },
+      ai_source: "fallback",
+      generated_at: now.toISOString(),
+    };
+  };
+
+  if (rankedOpen.length === 0) {
+    return buildFallbackBriefing();
+  }
+
+  const signature = rankedOpen.map((t) => `${t.id}:${t.status}:${t.priority}`).join("|");
+  const cacheKey = `briefing_v1:${todayStr}:${pinnedNotesCount}:${signature}`;
+  const cached = await aiCache.getAsync<DailyBriefingResponse>(cacheKey);
+  if (cached && cached.tokensSaved > 0 && cached.data?.focus_summary) {
+    return {
+      ...cached.data,
+      stats: { overdue, due_today: dueToday, open_total: openTasks.length },
+      ai_source: "cache",
+    };
+  }
+
+  const key = (apiKey || process.env.GEMINI_API_KEY || "").trim();
+  if (!key || key === "sua_chave_da_gemini_api") {
+    return buildFallbackBriefing();
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: key });
+    const tasksSummary = rankedOpen
+      .map((t) => {
+        const due = t.scheduled_start || t.current_due_date || "sem prazo";
+        return `ID=${t.id} | [${t.priority}] | ${t.status} | Cat=${t.category} | Prazo=${due} | Título=${t.title}`;
+      })
+      .join("\n");
+
+    const prompt = `Gere um briefing executivo curto e motivador em português para agora (${baseGreeting}, data ${todayStr}).
+Métricas atuais: ${openTasks.length} abertas, ${overdue} atrasadas, ${dueToday} vencem hoje, ${pinnedNotesCount} notas fixadas.
+
+Lista das principais demandas em aberto (use EXATAMENTE os IDs fornecidos em 'task_id'):
+${tasksSummary}
+
+Retorne:
+- 'greeting': saudação curta (máx 40 chars).
+- 'focus_summary': orientação direta do foco do dia em 1–2 frases.
+- 'top_priorities': até 3 demandas mais estratégicas com 'task_id' exato da lista acima, 'title' curto, 'reason' (motivo prático curto) e 'urgency' ('alta'|'media'|'normal').
+- 'quick_tip': 1 dica rápida de produtividade.`;
+
+    const generation = await generateWithActiveGeminiModels(ai, prompt, {
+      responseMimeType: "application/json",
+      responseSchema: DAILY_BRIEFING_SCHEMA,
+      temperature: 0.3,
+      maxOutputTokens: 900,
+    });
+
+    const jsonStr = generation ? extractJsonObject(generation.text) : null;
+    if (!jsonStr) return buildFallbackBriefing();
+
+    const parsed = JSON.parse(jsonStr);
+    const validIds = new Set(rankedOpen.map((t) => t.id));
+    const parsedTop = Array.isArray(parsed.top_priorities)
+      ? parsed.top_priorities
+          .filter((p: any) => p && validIds.has(p.task_id))
+          .slice(0, 3)
+          .map((p: any) => ({
+            task_id: String(p.task_id),
+            title: String(p.title || rankedOpen.find((t) => t.id === p.task_id)?.title || ""),
+            reason: String(p.reason || "Prioridade recomendada"),
+            urgency: (["alta", "media", "normal"].includes(p.urgency) ? p.urgency : "media") as
+              | "alta"
+              | "media"
+              | "normal",
+          }))
+      : [];
+
+    const fb = buildFallbackBriefing();
+    const result: DailyBriefingResponse = {
+      greeting: (parsed.greeting || "").trim() || fb.greeting,
+      focus_summary: (parsed.focus_summary || "").trim() || fb.focus_summary,
+      top_priorities: parsedTop.length > 0 ? parsedTop : fb.top_priorities,
+      quick_tip: (parsed.quick_tip || "").trim() || fb.quick_tip,
+      stats: {
+        overdue,
+        due_today: dueToday,
+        open_total: openTasks.length,
+      },
+      ai_source: "gemini",
+      generated_at: now.toISOString(),
+    };
+
+    aiCache.set(cacheKey, result, 300, 6 * 60 * 60 * 1000);
+    return result;
+  } catch (err) {
+    console.warn("generateDailyBriefingWithAI failed, using fallback:", err);
+    return buildFallbackBriefing();
   }
 }

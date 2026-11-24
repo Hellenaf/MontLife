@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTasksFromDb, saveTaskToDb } from "@/services/taskService";
-import { categorizeTaskWithAI } from "@/services/geminiService";
+import { categorizeTaskWithAI, synthesizeValidationSteps } from "@/services/geminiService";
 import { fetchYouTubeResources } from "@/services/googleService";
 import { getSessionUser } from "@/lib/session";
 import { normalizeCategory } from "@/lib/categories";
@@ -17,11 +17,11 @@ export async function POST(req: NextRequest) {
     const tasks = await getTasksFromDb(userId);
     let updatedCount = 0;
 
-    // Filter to ONLY process tasks that genuinely need categorization (generic or missing tags)
-    // Skips already established categories to prevent redundant token burning
-    // Limit to max 5 tasks per batch to ensure conscious, controlled API consumption
+    // Filter to ONLY process tasks that genuinely need categorization, tags, or validation steps
+    // Limit to max 10 tasks per batch for conscious, controlled API consumption
     const tasksToProcess = tasks
       .filter((t) => {
+        if (t.status === "CANCELED") return false;
         const isGeneric =
           !t.category ||
           t.category === "Geral" ||
@@ -29,10 +29,12 @@ export async function POST(req: NextRequest) {
           t.category === "Suporte & Demandas" ||
           !t.tags ||
           t.tags.length === 0 ||
-          (t.tags.length === 1 && t.tags[0].includes("google-task"));
+          (t.tags.length === 1 && t.tags[0].includes("google-task")) ||
+          !t.validation_steps ||
+          t.validation_steps.length === 0;
         return isGeneric;
       })
-      .slice(0, 5);
+      .slice(0, 10);
 
     for (const task of tasksToProcess) {
       const aiData = await categorizeTaskWithAI(
@@ -63,6 +65,22 @@ export async function POST(req: NextRequest) {
         hasChanges = true;
       }
 
+      // Populate practical validation steps if missing
+      if (!task.validation_steps || task.validation_steps.length === 0) {
+        const steps = synthesizeValidationSteps(
+          `${task.title}\n${task.description || ""}`,
+          task.title
+        );
+        if (steps.length > 0) {
+          task.validation_steps = steps.map((text, idx) => ({
+            id: `step-${Date.now()}-${idx}`,
+            text,
+            completed: false,
+          }));
+          hasChanges = true;
+        }
+      }
+
       // Ensure YouTube learning resources are populated
       if (!task.learning_resources?.youtube_videos?.length) {
         task.learning_resources = await fetchYouTubeResources(aiData.learning_queries);
@@ -80,7 +98,7 @@ export async function POST(req: NextRequest) {
       updated_count: updatedCount,
       evaluated_count: tasksToProcess.length,
       tokens_saved_estimate: 0,
-      message: `${updatedCount} tarefas refinadas com sucesso.`,
+      message: `${updatedCount} demandas refinadas com sucesso.`,
     });
   } catch (error: unknown) {
     console.error("POST /api/tasks/ai-categorize error:", error);

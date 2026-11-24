@@ -43,6 +43,10 @@ import {
   ArrowRightLeft,
   PlayCircle,
   Video,
+  PanelRightClose,
+  PanelRightOpen,
+  Wand2,
+  Lightbulb,
 } from "lucide-react";
 import { AttachmentManager } from "@/components/AttachmentManager";
 import { MediaLightboxModal, MediaItem } from "@/components/modals/MediaLightboxModal";
@@ -55,6 +59,7 @@ import {
   AccountType,
   Priority,
   WebArticleResource,
+  TaskAiAssistResponse,
 } from "@/types";
 import { processFileToAttachment, formatFileSize } from "@/lib/attachmentUtils";
 import { calculateSlaDueDate } from "@/lib/sla";
@@ -114,6 +119,8 @@ interface CentralQuadrantProps {
   activeTab?: "details" | "study";
   onTabChange?: (tab: "details" | "study") => void;
   onBackToTasks?: () => void;
+  isKpiPanelOpen?: boolean;
+  onToggleKpiPanel?: () => void;
 }
 
 const CATEGORY_SUGGESTIONS = [
@@ -149,6 +156,8 @@ export function CentralQuadrant({
   activeTab: propActiveTab,
   onTabChange,
   onBackToTasks,
+  isKpiPanelOpen = true,
+  onToggleKpiPanel,
 }: CentralQuadrantProps) {
   const [internalActiveTab, setInternalActiveTab] = useState<"details" | "study">("details");
   const activeTab = propActiveTab !== undefined ? propActiveTab : internalActiveTab;
@@ -156,6 +165,13 @@ export function CentralQuadrant({
     setInternalActiveTab(tab);
     onTabChange?.(tab);
   };
+
+  // Task AI Assistant states
+  const [aiAssistResult, setAiAssistResult] = useState<TaskAiAssistResponse | null>(null);
+  const [aiAssistMode, setAiAssistMode] = useState<"refine" | "action_plan" | "diagnose" | null>(null);
+  const [isLoadingAiAssist, setIsLoadingAiAssist] = useState(false);
+  const [aiAssistError, setAiAssistError] = useState<string | null>(null);
+  const [isApplyingAiAssist, setIsApplyingAiAssist] = useState(false);
 
   // Automatically open Details tab whenever a task is selected or clicked
   useEffect(() => {
@@ -165,8 +181,77 @@ export function CentralQuadrant({
       setIsAddingTag(false);
       setIsEditingTitle(false);
       setIsEditingDescription(false);
+      setAiAssistResult(null);
+      setAiAssistMode(null);
+      setAiAssistError(null);
     }
   }, [selectedTask?.id]);
+
+  const handleRunTaskAiAssist = async (mode: "refine" | "action_plan" | "diagnose") => {
+    if (!selectedTask || isLoadingAiAssist) return;
+    setIsLoadingAiAssist(true);
+    setAiAssistMode(mode);
+    setAiAssistError(null);
+    try {
+      const res = await fetch(`/api/tasks/${selectedTask.id}/ai-assist`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.assist) {
+        setAiAssistResult(data.assist);
+      } else {
+        setAiAssistError(data?.error || "Não foi possível consultar o assistente IA.");
+      }
+    } catch {
+      setAiAssistError("Erro de comunicação ao consultar o assistente IA.");
+    } finally {
+      setIsLoadingAiAssist(false);
+    }
+  };
+
+  const handleApplyTaskAiAssist = async () => {
+    if (!selectedTask || !aiAssistResult || !onUpdateTaskFields || isApplyingAiAssist) return;
+    setIsApplyingAiAssist(true);
+    try {
+      const patch: Partial<Task> = {};
+      if (aiAssistMode === "refine" && aiAssistResult.refined_title) {
+        patch.title = aiAssistResult.refined_title;
+      }
+      if (aiAssistMode === "refine" && aiAssistResult.structured_description) {
+        patch.description = aiAssistResult.structured_description;
+      }
+      if (aiAssistResult.category_suggestion) {
+        patch.category = aiAssistResult.category_suggestion;
+      }
+      if (aiAssistResult.tags_suggestion && aiAssistResult.tags_suggestion.length > 0) {
+        patch.tags = Array.from(
+          new Set([...(selectedTask.tags || []), ...aiAssistResult.tags_suggestion])
+        ).slice(0, 6);
+      }
+      if (aiAssistResult.validation_steps && aiAssistResult.validation_steps.length > 0) {
+        const existingTexts = new Set(
+          (selectedTask.validation_steps || []).map((s) => s.text.trim().toLowerCase())
+        );
+        const addedSteps: ValidationStep[] = aiAssistResult.validation_steps
+          .filter((txt) => !existingTexts.has(txt.trim().toLowerCase()))
+          .map((txt, idx) => ({
+            id: `step-${Date.now()}-${idx}`,
+            text: txt,
+            completed: false,
+          }));
+        if (addedSteps.length > 0) {
+          patch.validation_steps = [...(selectedTask.validation_steps || []), ...addedSteps];
+        }
+      }
+      await onUpdateTaskFields(selectedTask.id, patch);
+      setAiAssistResult(null);
+      setAiAssistMode(null);
+    } finally {
+      setIsApplyingAiAssist(false);
+    }
+  };
 
   // Category and Tag Editing States
   const [isEditingCategory, setIsEditingCategory] = useState(false);
@@ -703,14 +788,32 @@ export function CentralQuadrant({
           </button>
         </div>
 
-        {selectedTask && (
-          <div className="hidden md:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 shrink-0">
-            <span>Demanda:</span>
-            <span className="font-mono text-[11px] text-blue-600 dark:text-blue-400 font-semibold truncate max-w-[180px]">
-              {selectedTask.title}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center gap-2 shrink-0">
+          {selectedTask && (
+            <div className="hidden md:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 shrink-0">
+              <span>Demanda:</span>
+              <span className="font-mono text-[11px] text-blue-600 dark:text-blue-400 font-semibold truncate max-w-[180px]">
+                {selectedTask.title}
+              </span>
+            </div>
+          )}
+
+          {onToggleKpiPanel && (
+            <button
+              type="button"
+              onClick={onToggleKpiPanel}
+              className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-[#161724] hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 text-[11px] font-semibold transition-colors cursor-pointer"
+              title={isKpiPanelOpen ? "Recolher painel de métricas para ampliar detalhes" : "Mostrar painel de métricas e Briefing IA"}
+            >
+              {isKpiPanelOpen ? (
+                <PanelRightClose className="w-3.5 h-3.5 text-indigo-500" />
+              ) : (
+                <PanelRightOpen className="w-3.5 h-3.5 text-indigo-500" />
+              )}
+              <span className="hidden xl:inline">Métricas</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Main Tab Content */}
@@ -1125,6 +1228,150 @@ export function CentralQuadrant({
                         </div>
                       )}
                     </div>
+                  </div>
+
+                  {/* Assistente IA na Demanda (Refinar / Plano de Ação / Diagnóstico + Wiki) */}
+                  <div className="pt-3 border-t border-slate-100 dark:border-zinc-800/80 space-y-2.5">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="text-xs font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-purple-500" />
+                        <span>Assistente IA na Demanda</span>
+                      </span>
+
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => handleRunTaskAiAssist("refine")}
+                          disabled={isLoadingAiAssist}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
+                            aiAssistMode === "refine" && aiAssistResult
+                              ? "bg-purple-600 text-white border-purple-600"
+                              : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60 hover:bg-purple-100 dark:hover:bg-purple-900/50"
+                          }`}
+                        >
+                          {isLoadingAiAssist && aiAssistMode === "refine" ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Wand2 className="w-3 h-3" />
+                          )}
+                          <span>Refinar Texto</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRunTaskAiAssist("action_plan")}
+                          disabled={isLoadingAiAssist}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
+                            aiAssistMode === "action_plan" && aiAssistResult
+                              ? "bg-indigo-600 text-white border-indigo-600"
+                              : "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
+                          }`}
+                        >
+                          {isLoadingAiAssist && aiAssistMode === "action_plan" ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <CheckSquare className="w-3 h-3" />
+                          )}
+                          <span>Plano de Ação</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleRunTaskAiAssist("diagnose")}
+                          disabled={isLoadingAiAssist}
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
+                            aiAssistMode === "diagnose" && aiAssistResult
+                              ? "bg-amber-600 text-white border-amber-600"
+                              : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/50"
+                          }`}
+                        >
+                          {isLoadingAiAssist && aiAssistMode === "diagnose" ? (
+                            <Loader2 className="w-3 h-3 animate-spin" />
+                          ) : (
+                            <Lightbulb className="w-3 h-3" />
+                          )}
+                          <span>Diagnóstico + Wiki</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {aiAssistError && (
+                      <p className="text-[11px] text-rose-600 dark:text-rose-400">{aiAssistError}</p>
+                    )}
+
+                    {aiAssistResult && (
+                      <div className="p-3.5 rounded-xl bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/70 dark:from-[#17152c] dark:via-[#141522] dark:to-[#111524] border border-purple-200/80 dark:border-purple-800/60 space-y-2.5 animate-in fade-in">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                          <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Sugestão da IA
+                            {aiAssistResult.estimated_effort ? ` • Esforço est.: ${aiAssistResult.estimated_effort}` : ""}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setAiAssistResult(null);
+                              setAiAssistMode(null);
+                            }}
+                            className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">
+                          {aiAssistResult.technical_guidance}
+                        </p>
+
+                        {aiAssistMode === "refine" && aiAssistResult.refined_title && (
+                          <div className="p-2.5 rounded-lg bg-white/80 dark:bg-[#0d0e15] border border-slate-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                            <div className="font-bold text-slate-900 dark:text-white">
+                              Novo título: {aiAssistResult.refined_title}
+                            </div>
+                            {aiAssistResult.structured_description && (
+                              <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                                {aiAssistResult.structured_description}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {aiAssistResult.validation_steps && aiAssistResult.validation_steps.length > 0 && (
+                          <div className="space-y-1">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block">
+                              Etapas sugeridas ({aiAssistResult.validation_steps.length})
+                            </span>
+                            <ul className="space-y-1">
+                              {aiAssistResult.validation_steps.map((step, i) => (
+                                <li
+                                  key={i}
+                                  className="text-[11px] text-slate-600 dark:text-slate-300 flex items-start gap-1.5"
+                                >
+                                  <Check className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" />
+                                  <span>{step}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-end gap-2 pt-1">
+                          <button
+                            type="button"
+                            onClick={handleApplyTaskAiAssist}
+                            disabled={isApplyingAiAssist}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                          >
+                            {isApplyingAiAssist ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Check className="w-3.5 h-3.5" />
+                            )}
+                            <span>Aplicar na Demanda</span>
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Mobile Quick Primary Action Bar (Instant one-tap Concluir / Adiar / Cancelar without scrolling) */}
