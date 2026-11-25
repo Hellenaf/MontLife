@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
 import { HeaderCommandBar } from "@/components/HeaderCommandBar";
 import { LeftTasksQuadrant } from "@/components/LeftTasksQuadrant";
 import { CentralQuadrant } from "@/components/CentralQuadrant";
 import { RightKpiQuadrant } from "@/components/RightKpiQuadrant";
+import { CommandPalette } from "@/components/CommandPalette";
+import { UndoToast, UndoToastData } from "@/components/UndoToast";
+import { useTheme } from "@/context/ThemeContext";
 import { ResolutionModal } from "@/components/modals/ResolutionModal";
 import { ExtendDeadlineModal } from "@/components/modals/ExtendDeadlineModal";
 import { AccountsModal } from "@/components/modals/AccountsModal";
@@ -57,6 +60,15 @@ export default function MontOpsDashboard() {
   const [mobileActiveView, setMobileActiveView] = useState<"tasks" | "details" | "kpi">("tasks");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktopKpiOpen, setIsDesktopKpiOpen] = useState<boolean>(true);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
+  const [undoToast, setUndoToast] = useState<UndoToastData | null>(null);
+  const pendingDeleteRef = useRef<{
+    taskId: string;
+    timer: ReturnType<typeof setTimeout>;
+    commit: () => Promise<void>;
+  } | null>(null);
+  const { theme, toggleTheme } = useTheme();
 
   // Dynamically derive selected task from tasks array
   const selectedTask =
@@ -100,14 +112,48 @@ export default function MontOpsDashboard() {
   const [offlinePendingCount, setOfflinePendingCount] = useState<number>(0);
   const [offlineSyncMessage, setOfflineSyncMessage] = useState<string | null>(null);
 
-  // Persist desktop KPI panel state
+  // Persist desktop KPI & Sidebar collapsed states + `[` shortcut for sidebar
   useEffect(() => {
     if (typeof window === "undefined") return;
     try {
-      const saved = localStorage.getItem("montlife_desktop_kpi_open");
-      if (saved === "false") setIsDesktopKpiOpen(false);
+      const savedKpi = localStorage.getItem("montlife_desktop_kpi_open");
+      if (savedKpi === "false") setIsDesktopKpiOpen(false);
+      const savedSidebar = localStorage.getItem("montlife_sidebar_collapsed");
+      if (savedSidebar === "true") setIsSidebarCollapsed(true);
     } catch {}
   }, []);
+
+  const handleToggleSidebar = useCallback(() => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem("montlife_sidebar_collapsed", String(next));
+        } catch {}
+      }
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "[" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const tag = document.activeElement?.tagName?.toLowerCase();
+        const isEditable =
+          tag === "input" ||
+          tag === "textarea" ||
+          tag === "select" ||
+          (document.activeElement as HTMLElement | null)?.isContentEditable;
+        if (!isEditable) {
+          e.preventDefault();
+          handleToggleSidebar();
+        }
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleToggleSidebar]);
 
   const handleToggleDesktopKpi = () => {
     setIsDesktopKpiOpen((prev) => {
@@ -659,19 +705,96 @@ export default function MontOpsDashboard() {
     setIsNewTaskModalOpen(true);
   };
 
+  const STATUS_LABELS: Record<TaskStatus, string> = {
+    TRIAGE: "Triagem",
+    TODO: "A Fazer",
+    IN_PROGRESS: "Em Andamento",
+    WAITING: "Aguardando",
+    COMPLETED: "Concluída",
+    CANCELED: "Cancelada",
+  };
+
+  const handleQuickCreateKanbanTask = async (title: string, status: TaskStatus) => {
+    const clean = title.trim();
+    if (!clean) return;
+    const isPersonal =
+      accountFilter === "personal" ||
+      accountFilter.toLowerCase().includes("pess") ||
+      accountFilter.toLowerCase().includes("hellen");
+
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: clean,
+          status,
+          priority: "P3",
+          item_type: "task",
+          account_type: isPersonal ? "personal" : "work",
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.task) {
+        handleTaskCreated(data.task);
+        setUndoToast({
+          id: `created-${data.task.id}`,
+          message: `Demanda criada em ${STATUS_LABELS[status] || status}`,
+          detail: data.task.title,
+          variant: "success",
+        });
+      }
+    } catch (err) {
+      console.error("Failed to quick-create kanban task:", err);
+    }
+  };
+
   const handleUpdateStatus = async (
     taskId: string,
     newStatus: TaskStatus,
     resolutionNotes?: string,
     cancelReason?: string,
-    resolutionAttachments?: TaskAttachment[]
+    resolutionAttachments?: TaskAttachment[],
+    skipUndoToast?: boolean
   ) => {
+    const prevTask = tasks.find((t) => t.id === taskId);
     const payload = {
       action: "update_status",
       status: newStatus,
       resolution_notes: resolutionNotes,
       cancel_reason: cancelReason,
       resolution_attachments: resolutionAttachments,
+    };
+
+    const showStatusUndoToast = () => {
+      if (skipUndoToast || !prevTask || prevTask.status === newStatus) return;
+      const previousStatus = prevTask.status;
+      setUndoToast({
+        id: `status-${taskId}-${Date.now()}`,
+        message:
+          newStatus === "COMPLETED"
+            ? "Demanda concluída!"
+            : newStatus === "CANCELED"
+            ? "Demanda cancelada"
+            : `Movida para ${STATUS_LABELS[newStatus] || newStatus}`,
+        detail: prevTask.title,
+        variant:
+          newStatus === "COMPLETED"
+            ? "success"
+            : newStatus === "CANCELED"
+            ? "warning"
+            : "default",
+        onUndo: async () => {
+          await handleUpdateStatus(
+            taskId,
+            previousStatus,
+            prevTask.resolution_notes ?? undefined,
+            prevTask.cancel_reason ?? undefined,
+            prevTask.resolution_attachments,
+            true
+          );
+        },
+      });
     };
 
     // Suporte Offline Imediato (Optimistic UI + Fila de Sincronização)
@@ -696,6 +819,7 @@ export default function MontOpsDashboard() {
         syncTasksCache(updated);
         return updated;
       });
+      showStatusUndoToast();
       return;
     }
 
@@ -712,6 +836,7 @@ export default function MontOpsDashboard() {
           syncTasksCache(updated);
           return updated;
         });
+        showStatusUndoToast();
       }
     } catch (err) {
       console.warn("Falha na rede ao atualizar status, enfileirando offline:", err);
@@ -859,6 +984,15 @@ export default function MontOpsDashboard() {
           syncTasksCache(updated);
           return updated;
         });
+        setUndoToast({
+          id: `transfer-${task.id}-${Date.now()}`,
+          message: `Transferida para ${targetType}`,
+          detail: task.title,
+          variant: "default",
+          onUndo: async () => {
+            await handleTransferTask(data.task, isWork ? "personal" : "work");
+          },
+        });
       }
     } catch (err) {
       console.error("Failed to transfer task:", err);
@@ -936,39 +1070,80 @@ export default function MontOpsDashboard() {
     }
   };
 
-  const handleDeleteTask = async (taskId: string) => {
+  const executeDeleteTaskOnServer = async (taskId: string) => {
     if (typeof window !== "undefined" && !navigator.onLine) {
       enqueueOfflineAction("DELETE_TASK", { taskId });
       setOfflinePendingCount(getOfflineQueue().length);
-      setTasks((prev) => {
-        const remaining = prev.filter((t) => t.id !== taskId);
-        syncTasksCache(remaining);
-        if (selectedTaskId === taskId) {
-          setSelectedTaskId(remaining.length > 0 ? remaining[0].id : null);
-        }
-        return remaining;
-      });
       return;
     }
 
     try {
-      const res = await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
-      const data = await res.json();
-      if (data.success) {
-        setTasks((prev) => {
-          const remaining = prev.filter((t) => t.id !== taskId);
-          syncTasksCache(remaining);
-          if (selectedTaskId === taskId) {
-            setSelectedTaskId(remaining.length > 0 ? remaining[0].id : null);
-          }
-          return remaining;
-        });
-      }
+      await fetch(`/api/tasks/${taskId}`, { method: "DELETE" });
     } catch (err) {
       console.warn("Falha na rede ao excluir demanda, enfileirando offline:", err);
       enqueueOfflineAction("DELETE_TASK", { taskId });
       setOfflinePendingCount(getOfflineQueue().length);
     }
+  };
+
+  const handleDeleteTask = async (taskId: string) => {
+    const targetIndex = tasks.findIndex((t) => t.id === taskId);
+    const deletedSnapshot = targetIndex >= 0 ? tasks[targetIndex] : null;
+
+    // Flush any previously queued deferred delete immediately
+    if (pendingDeleteRef.current) {
+      clearTimeout(pendingDeleteRef.current.timer);
+      const prevCommit = pendingDeleteRef.current.commit;
+      pendingDeleteRef.current = null;
+      void prevCommit();
+    }
+
+    // Optimistic removal from UI + Cache
+    setTasks((prev) => {
+      const remaining = prev.filter((t) => t.id !== taskId);
+      syncTasksCache(remaining);
+      if (selectedTaskId === taskId) {
+        setSelectedTaskId(remaining.length > 0 ? remaining[0].id : null);
+      }
+      return remaining;
+    });
+
+    const commit = async () => {
+      await executeDeleteTaskOnServer(taskId);
+    };
+
+    const timer = setTimeout(() => {
+      if (pendingDeleteRef.current?.taskId === taskId) {
+        pendingDeleteRef.current = null;
+        void commit();
+      }
+    }, 5200);
+
+    pendingDeleteRef.current = { taskId, timer, commit };
+
+    setUndoToast({
+      id: `delete-${taskId}-${Date.now()}`,
+      message: "Demanda excluída",
+      detail: deletedSnapshot?.title,
+      variant: "danger",
+      durationMs: 5000,
+      onUndo: () => {
+        if (pendingDeleteRef.current?.taskId === taskId) {
+          clearTimeout(pendingDeleteRef.current.timer);
+          pendingDeleteRef.current = null;
+        }
+        if (deletedSnapshot) {
+          setTasks((prev) => {
+            if (prev.some((t) => t.id === deletedSnapshot.id)) return prev;
+            const restored = [...prev];
+            restored.splice(Math.min(targetIndex, restored.length), 0, deletedSnapshot);
+            syncTasksCache(restored);
+            return restored;
+          });
+          setSelectedTaskId(deletedSnapshot.id);
+        }
+      },
+    });
   };
 
   const safeAccounts = useMemo(() => {
@@ -1019,6 +1194,8 @@ export default function MontOpsDashboard() {
           completedTasksCount={tasks.filter((t) => t.status === "COMPLETED").length}
           notesCount={notes.filter((n) => !n.archived).length}
           currentUser={currentUser}
+          isCollapsed={isSidebarCollapsed}
+          onToggleCollapse={handleToggleSidebar}
         />
       </div>
 
@@ -1079,6 +1256,7 @@ export default function MontOpsDashboard() {
             onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
             onOpenReportModal={() => setActiveNav("relatorios")}
             onOpenNotes={() => setActiveNav("notas")}
+            onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
             onOpenNewTaskModal={(prefill) => {
               setNewTaskInitialText(prefill || "");
               setNewTaskInitialDate(null);
@@ -1208,6 +1386,7 @@ export default function MontOpsDashboard() {
               accountFilter={accountFilter}
               onSelectTask={navigateToTaskDetails}
               onUpdateStatus={handleUpdateStatus}
+              onQuickCreateTask={handleQuickCreateKanbanTask}
               onOpenNewTaskModal={() => {
                 setNewTaskInitialText("");
                 setNewTaskInitialDate(null);
@@ -1233,52 +1412,7 @@ export default function MontOpsDashboard() {
           </main>
         ) : (
           <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
-            {/* Mobile Sub-Navigation Segmented Control (Lista | Detalhes | Métricas) */}
-            <div className="lg:hidden px-2.5 py-2 bg-white dark:bg-[#101118] border-b border-slate-200 dark:border-zinc-800/80 shrink-0">
-              <div className="grid grid-cols-3 gap-1 p-1 rounded-2xl bg-slate-100 dark:bg-[#171825] border border-slate-200/70 dark:border-zinc-800/70">
-                <button
-                  type="button"
-                  onClick={() => setMobileActiveView("tasks")}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    mobileActiveView === "tasks"
-                      ? "bg-white dark:bg-[#23253a] text-purple-700 dark:text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  <ListTodo className="w-3.5 h-3.5 shrink-0 text-blue-500" />
-                  <span className="truncate">Lista ({openTasksCount})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setCentralActiveTab("details");
-                    setMobileActiveView("details");
-                  }}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    mobileActiveView === "details"
-                      ? "bg-white dark:bg-[#23253a] text-purple-700 dark:text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  <FileText className="w-3.5 h-3.5 shrink-0 text-indigo-500" />
-                  <span className="truncate">Detalhes</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setMobileActiveView("kpi")}
-                  className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    mobileActiveView === "kpi"
-                      ? "bg-white dark:bg-[#23253a] text-purple-700 dark:text-white shadow-xs"
-                      : "text-slate-600 dark:text-slate-400"
-                  }`}
-                >
-                  <TrendingUp className="w-3.5 h-3.5 shrink-0 text-emerald-500" />
-                  <span className="truncate">Métricas</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Quadrante Esquerdo: Minhas Tarefas */}
+            {/* Quadrante Esquerdo: Minhas Tarefas (Clean Drill-Down UX on Mobile!) */}
             <div className={`${mobileActiveView === "tasks" ? "flex" : "hidden"} lg:flex flex-1 min-h-0 lg:flex-none lg:h-full w-full lg:w-auto lg:shrink-0`}>
               <LeftTasksQuadrant
                 tasks={tasks}
@@ -1312,10 +1446,11 @@ export default function MontOpsDashboard() {
                 onRefreshTasks={loadTasks}
                 accountFilter={accountFilter}
                 onAccountFilterChange={setAccountFilter}
+                onOpenMobileMetrics={() => setMobileActiveView("kpi")}
               />
             </div>
 
-            {/* Quadrante Central: Detalhes da Demanda (sem duplicação de agenda) */}
+            {/* Quadrante Central: Detalhes da Demanda */}
             <div className={`${mobileActiveView === "details" ? "flex" : "hidden"} lg:flex flex-1 min-h-0 lg:h-full min-w-0`}>
               <CentralQuadrant
                 selectedTask={selectedTask}
@@ -1353,6 +1488,7 @@ export default function MontOpsDashboard() {
                 tasks={tasks}
                 onOpenReportModal={() => setActiveNav("relatorios")}
                 pinnedNotesCount={notes.filter((n) => Boolean(n.pinned) && !n.archived).length}
+                onBackToTasks={() => setMobileActiveView("tasks")}
                 onSelectTaskById={(taskId) => {
                   const found = tasks.find((t) => t.id === taskId);
                   if (found) navigateToTaskDetails(found);
@@ -1587,6 +1723,40 @@ export default function MontOpsDashboard() {
           await handleCancelTask(taskId, reason);
         }}
       />
+
+      {/* Global Command Palette (Ctrl+K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        tasks={tasks}
+        notes={notes}
+        onSelectTask={navigateToTaskDetails}
+        onSelectNote={() => setActiveNav("notas")}
+        onNavigate={(nav) => {
+          setActiveNav(nav);
+          if (nav === "tarefas") {
+            setCentralActiveTab("details");
+            setMobileActiveView("tasks");
+          }
+        }}
+        onOpenNewTaskModal={(prefill) => {
+          setNewTaskInitialText(prefill || "");
+          setNewTaskInitialDate(null);
+          setNewTaskInitialDraft(null);
+          setPendingNoteLink(null);
+          setIsNewTaskModalOpen(true);
+        }}
+        onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
+        onToggleTheme={toggleTheme}
+        onToggleSidebar={handleToggleSidebar}
+        onToggleKpiPanel={handleToggleDesktopKpi}
+        theme={theme}
+        isSidebarCollapsed={isSidebarCollapsed}
+        isKpiPanelOpen={isDesktopKpiOpen}
+      />
+
+      {/* Global Floating Undo Toast */}
+      <UndoToast toast={undoToast} onDismiss={() => setUndoToast(null)} />
     </div>
   );
 }

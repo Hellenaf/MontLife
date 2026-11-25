@@ -20,6 +20,7 @@ import {
   Sparkles,
   Loader2,
   RefreshCw,
+  ChevronLeft,
 } from "lucide-react";
 import { Task, DailyBriefingResponse } from "@/types";
 
@@ -28,6 +29,7 @@ interface RightKpiQuadrantProps {
   onOpenReportModal: () => void;
   onSelectTaskById?: (taskId: string) => void;
   pinnedNotesCount?: number;
+  onBackToTasks?: () => void;
 }
 
 export function RightKpiQuadrant({
@@ -35,6 +37,7 @@ export function RightKpiQuadrant({
   onOpenReportModal,
   onSelectTaskById,
   pinnedNotesCount = 0,
+  onBackToTasks,
 }: RightKpiQuadrantProps) {
   const [briefing, setBriefing] = useState<DailyBriefingResponse | null>(null);
   const [isLoadingBriefing, setIsLoadingBriefing] = useState(false);
@@ -141,8 +144,18 @@ export function RightKpiQuadrant({
   return (
     <aside className="w-full lg:w-[276px] xl:w-[296px] h-full flex flex-col border-l border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
       {/* Header */}
-      <div className="h-12 border-b border-slate-200 dark:border-zinc-800/80 px-4 flex items-center justify-between shrink-0 bg-white dark:bg-[#101118]">
+      <div className="h-12 border-b border-slate-200 dark:border-zinc-800/80 px-3.5 sm:px-4 flex items-center justify-between shrink-0 bg-white dark:bg-[#101118]">
         <div className="flex items-center gap-2">
+          {onBackToTasks && (
+            <button
+              type="button"
+              onClick={onBackToTasks}
+              className="lg:hidden inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold cursor-pointer mr-1"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span>Lista</span>
+            </button>
+          )}
           <TrendingUp className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           <h2 className="text-xs font-bold text-slate-800 dark:text-white tracking-wider uppercase">
             Métricas & IA

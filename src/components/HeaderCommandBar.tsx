@@ -72,6 +72,7 @@ interface HeaderCommandBarProps {
   onOpenReportModal: () => void;
   onOpenNewTaskModal?: (initialText?: string) => void;
   onOpenNotes?: () => void;
+  onOpenCommandPalette?: () => void;
   onSelectTask?: (task: Task) => void;
 }
 
@@ -84,6 +85,7 @@ export function HeaderCommandBar({
   onOpenReportModal,
   onOpenNewTaskModal,
   onOpenNotes,
+  onOpenCommandPalette,
   onSelectTask,
 }: HeaderCommandBarProps) {
   const { theme, toggleTheme } = useTheme();
@@ -128,13 +130,10 @@ export function HeaderCommandBar({
   useEffect(() => {
     const handleGlobalKeyDown = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
-        const activeTag = document.activeElement?.tagName?.toLowerCase();
-        const isEditable =
-          activeTag === "input" ||
-          activeTag === "textarea" ||
-          (document.activeElement as HTMLElement | null)?.isContentEditable;
-        if (!isEditable || document.activeElement === commandInputRef.current) {
-          event.preventDefault();
+        event.preventDefault();
+        if (onOpenCommandPalette) {
+          onOpenCommandPalette();
+        } else {
           commandInputRef.current?.focus();
           commandInputRef.current?.select();
         }
@@ -142,7 +141,7 @@ export function HeaderCommandBar({
     };
     window.addEventListener("keydown", handleGlobalKeyDown);
     return () => window.removeEventListener("keydown", handleGlobalKeyDown);
-  }, []);
+  }, [onOpenCommandPalette]);
 
   // Deduplication state in AI Confirmation modal
   const [isSimilarityDismissed, setIsSimilarityDismissed] = useState(false);
@@ -183,7 +182,7 @@ export function HeaderCommandBar({
 
   useEffect(() => {
     setCurrentTime(new Date());
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    const timer = setInterval(() => setCurrentTime(new Date()), 15000);
     return () => clearInterval(timer);
   }, []);
 
@@ -704,15 +703,26 @@ export function HeaderCommandBar({
           />
 
           <div className="absolute right-1.5 flex items-center gap-1">
-            <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/80 dark:bg-[#22203b] border border-slate-200 dark:border-zinc-700 text-[10px] font-mono text-slate-400 dark:text-slate-500 mr-0.5 select-none">
-              Ctrl K
-            </kbd>
+            {onOpenCommandPalette ? (
+              <button
+                type="button"
+                onClick={onOpenCommandPalette}
+                title="Abrir busca global e comandos (Ctrl+K)"
+                className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/90 dark:bg-[#22203b] border border-slate-200 dark:border-zinc-700 hover:border-indigo-400 text-[10px] font-mono text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 mr-0.5 transition-colors cursor-pointer select-none"
+              >
+                Ctrl K
+              </button>
+            ) : (
+              <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/80 dark:bg-[#22203b] border border-slate-200 dark:border-zinc-700 text-[10px] font-mono text-slate-400 dark:text-slate-500 mr-0.5 select-none">
+                Ctrl K
+              </kbd>
+            )}
             {onOpenNewTaskModal && (
               <button
                 type="button"
                 onClick={() => onOpenNewTaskModal(input)}
                 title="Expandir formulário detalhado (textos longos / mensagens recebidas)"
-                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-800 transition-colors"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>
@@ -722,7 +732,7 @@ export function HeaderCommandBar({
               type="button"
               onClick={toggleVoiceInput}
               title={isListening ? "Parar gravação" : "Falar comando por voz"}
-              className={`p-1.5 rounded-lg transition-colors ${
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 isListening
                   ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 animate-pulse"
                   : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-800"
@@ -738,7 +748,7 @@ export function HeaderCommandBar({
             <button
               type="submit"
               disabled={isProcessing || !input.trim()}
-              className="flex items-center justify-center w-7 h-7 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-white text-xs font-semibold shadow-md shadow-purple-600/30 transition-all disabled:opacity-40"
+              className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-40 cursor-pointer"
               title="Executar comando inteligente"
             >
               {isProcessing ? (
@@ -750,23 +760,11 @@ export function HeaderCommandBar({
           </div>
         </form>
 
-        {onOpenNotes && (
-          <button
-            type="button"
-            onClick={onOpenNotes}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-2 h-10 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-semibold shadow-2xs transition-all shrink-0 active:scale-95 cursor-pointer"
-            title="Abrir Bloco de Notas & Reuniões"
-          >
-            <StickyNote className="w-3.5 h-3.5" />
-            <span className="hidden xl:inline">Notas</span>
-          </button>
-        )}
-
         {onOpenNewTaskModal && (
           <button
             type="button"
             onClick={() => onOpenNewTaskModal("")}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 h-9 sm:h-10 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold shadow-sm transition-all shrink-0 active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 h-9 sm:h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-all shrink-0 active:scale-95 cursor-pointer"
             title="Adicionar demanda detalhada"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -777,15 +775,15 @@ export function HeaderCommandBar({
 
       {/* Right Navigation & Tools */}
       <div className="order-2 md:order-3 ml-auto md:ml-0 flex items-center gap-1.5 sm:gap-2 shrink-0">
-        {/* Clock & Date Widget (Real-time seconds ticking) */}
-        <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-[#16152a] border border-slate-200 dark:border-[#282647] text-xs text-slate-700 dark:text-slate-300 font-medium shadow-xs">
-          <Clock className="w-3.5 h-3.5 text-purple-500 animate-pulse" />
+        {/* Calm Date & Time Indicator (no distracting seconds/pulse) */}
+        <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/80 dark:bg-[#16152a] border border-slate-200/80 dark:border-[#282647] text-xs text-slate-600 dark:text-slate-300 font-medium">
+          <Clock className="w-3.5 h-3.5 text-indigo-500 dark:text-purple-400" />
           <span className="capitalize">
             {format(currentTime, "EEE, d 'de' MMM", { locale: ptBR })}
           </span>
-          <span className="text-slate-300 dark:text-zinc-600">|</span>
-          <span className="font-bold font-mono text-purple-600 dark:text-purple-400 tabular-nums">
-            {format(currentTime, "HH:mm:ss")}
+          <span className="text-slate-300 dark:text-zinc-600">•</span>
+          <span className="font-semibold font-mono text-slate-800 dark:text-slate-100 tabular-nums">
+            {format(currentTime, "HH:mm")}
           </span>
         </div>
 

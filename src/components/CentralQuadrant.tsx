@@ -47,6 +47,8 @@ import {
   PanelRightOpen,
   Wand2,
   Lightbulb,
+  ChevronDown,
+  MoreHorizontal,
 } from "lucide-react";
 import { AttachmentManager } from "@/components/AttachmentManager";
 import { MediaLightboxModal, MediaItem } from "@/components/modals/MediaLightboxModal";
@@ -173,6 +175,19 @@ export function CentralQuadrant({
   const [aiAssistError, setAiAssistError] = useState<string | null>(null);
   const [isApplyingAiAssist, setIsApplyingAiAssist] = useState(false);
 
+  // Collapsible secondary sections & Sticky Action Bar dropdown
+  const [isScheduleExpanded, setIsScheduleExpanded] = useState(false);
+  const [isAttachmentsExpanded, setIsAttachmentsExpanded] = useState(false);
+  const [isSolutionExpanded, setIsSolutionExpanded] = useState(false);
+  const [isMoreActionsOpen, setIsMoreActionsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isMoreActionsOpen) return;
+    const close = () => setIsMoreActionsOpen(false);
+    window.addEventListener("click", close);
+    return () => window.removeEventListener("click", close);
+  }, [isMoreActionsOpen]);
+
   // Automatically open Details tab whenever a task is selected or clicked
   useEffect(() => {
     if (selectedTask?.id) {
@@ -184,6 +199,19 @@ export function CentralQuadrant({
       setAiAssistResult(null);
       setAiAssistMode(null);
       setAiAssistError(null);
+      setIsMoreActionsOpen(false);
+      setIsScheduleExpanded(false);
+      const totalAtt =
+        (selectedTask.attachments?.length || 0) +
+        (selectedTask.resolution_attachments?.length || 0);
+      setIsAttachmentsExpanded(totalAtt > 0);
+      setIsSolutionExpanded(
+        Boolean(
+          selectedTask.resolution_notes ||
+            (selectedTask.recurrence_count || 1) > 1 ||
+            selectedTask.status === "COMPLETED"
+        )
+      );
     }
   }, [selectedTask?.id]);
 
@@ -816,11 +844,193 @@ export function CentralQuadrant({
         </div>
       </div>
 
+      {/* Sticky Primary Action & Status Bar (Desktop + Mobile unified — no scrolling to complete!) */}
+      {activeTab === "details" && selectedTask && (
+        <div className="shrink-0 bg-white/95 dark:bg-[#12131d]/95 backdrop-blur-sm border-b border-slate-200/90 dark:border-zinc-800/80 px-3 sm:px-5 py-2 flex items-center justify-between gap-2 flex-wrap z-20">
+          {/* Left: Interactive Status Switcher (A Fazer -> Em Andamento -> Aguardando) */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {selectedTask.status === "COMPLETED" ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  Concluída
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onUpdateStatus(selectedTask.id, "TODO")}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="w-3 h-3 text-indigo-500" />
+                  <span>Reabrir</span>
+                </button>
+              </div>
+            ) : selectedTask.status === "CANCELED" ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
+                  <Ban className="w-3.5 h-3.5" />
+                  Cancelada
+                </span>
+                {onReopenTask && (
+                  <button
+                    type="button"
+                    onClick={() => onReopenTask(selectedTask.id)}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    <span>Reabrir Demanda</span>
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="inline-flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-[#0c0d14] border border-slate-200/80 dark:border-zinc-800 text-[11px]">
+                {[
+                  { status: "TODO" as TaskStatus, label: "A Fazer", dot: "bg-slate-400" },
+                  { status: "IN_PROGRESS" as TaskStatus, label: "Em Andamento", dot: "bg-indigo-500" },
+                  { status: "WAITING" as TaskStatus, label: "Aguardando", dot: "bg-amber-500" },
+                ].map((stage) => {
+                  const isCurrent =
+                    selectedTask.status === stage.status ||
+                    (stage.status === "TODO" && selectedTask.status === "TRIAGE");
+                  return (
+                    <button
+                      key={stage.status}
+                      type="button"
+                      onClick={() => onUpdateStatus(selectedTask.id, stage.status)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                        isCurrent
+                          ? "bg-white dark:bg-[#1e2030] text-slate-900 dark:text-white shadow-2xs"
+                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                      }`}
+                    >
+                      <span className={`w-1.5 h-1.5 rounded-full ${stage.dot}`} />
+                      <span>{stage.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Right: Meet CTA + Concluir + Adiar + Secondary More Menu */}
+          <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+            {selectedTask.meet_link && (
+              <a
+                href={selectedTask.meet_link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors"
+                title="Entrar na sala do Google Meet"
+              >
+                <Video className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Meet</span>
+              </a>
+            )}
+
+            {selectedTask.status !== "COMPLETED" && selectedTask.status !== "CANCELED" && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onRequestExtendDeadline(selectedTask)}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                  title="Adiar ou estender prazo"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                  <span className="hidden sm:inline">Adiar</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => onRequestResolution(selectedTask)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+                  title="Concluir demanda"
+                >
+                  <Check className="w-3.5 h-3.5" />
+                  <span>Concluir</span>
+                </button>
+              </>
+            )}
+
+            {/* More Actions Dropdown (Transfer, Recurrence, Cancel) */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsMoreActionsOpen((prev) => !prev);
+                }}
+                className="p-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#161724] text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                title="Mais opções da demanda"
+                aria-label="Mais opções da demanda"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </button>
+
+              {isMoreActionsOpen && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute right-0 mt-1.5 w-52 rounded-xl bg-white dark:bg-[#171828] border border-slate-200 dark:border-zinc-700 shadow-xl py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
+                >
+                  {onTransferTask && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onTransferTask(selectedTask, isWorkItem(selectedTask) ? "personal" : "work");
+                        setIsMoreActionsOpen(false);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                    >
+                      <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>
+                        {isWorkItem(selectedTask)
+                          ? "Transferir p/ Pessoal"
+                          : "Transferir p/ Trabalho"}
+                      </span>
+                    </button>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSolutionExpanded(true);
+                      setIsAddingRecurrence(true);
+                      setIsMoreActionsOpen(false);
+                    }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    <Repeat className="w-3.5 h-3.5 text-indigo-500" />
+                    <span>Registrar Nova Ocorrência</span>
+                  </button>
+
+                  {onRequestCancelTask &&
+                    selectedTask.status !== "CANCELED" &&
+                    selectedTask.status !== "COMPLETED" && (
+                      <>
+                        <div className="my-1 border-t border-slate-100 dark:border-zinc-800" />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onRequestCancelTask(selectedTask);
+                            setIsMoreActionsOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                        >
+                          <Ban className="w-3.5 h-3.5" />
+                          <span>Cancelar Demanda</span>
+                        </button>
+                      </>
+                    )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Tab Content */}
       <div className="flex-1 overflow-y-auto p-3 sm:p-5 pb-6 lg:pb-5">
-        {/* TAB 2: DETAILS OF SELECTED ITEM (ABOVE) & AGENDA DO DIA (BELOW) */}
+        {/* TAB 2: DETAILS OF SELECTED ITEM */}
         {activeTab === "details" && (
-          <div className="max-w-4xl mx-auto space-y-4">
+          <div className="max-w-4xl mx-auto space-y-3.5">
             {!selectedTask ? (
               <div className="p-6 sm:p-8 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 text-center space-y-2 shadow-sm">
                 <FileText className="w-8 h-8 mx-auto opacity-30 text-indigo-500" />
@@ -833,72 +1043,159 @@ export function CentralQuadrant({
               </div>
             ) : (
               <>
-                {/* Header card of selected item */}
+                {/* 1. TITLE-FIRST HERO CARD + LINEAR-STYLE PROPERTIES STRIP + DESCRIPTION */}
                 <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  {/* Top Bar with Context + Category Editor + Type Switcher */}
-                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {isWorkItem(selectedTask) ? (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20">
-                            <Briefcase className="w-3.5 h-3.5" /> Trabalho
-                          </span>
-                          {onTransferTask && (
-                            <button
-                              type="button"
-                              onClick={() => onTransferTask(selectedTask, "personal")}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-purple-50 hover:bg-purple-100 text-purple-700 dark:bg-purple-950/50 dark:hover:bg-purple-900/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800 transition-all cursor-pointer shadow-xs ml-0.5"
-                              title="Transferir esta demanda para a conta Pessoal"
-                            >
-                              <ArrowRightLeft className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-                              <span>Transferir p/ Pessoal</span>
-                            </button>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20">
-                            <User className="w-3.5 h-3.5" /> Pessoal
-                          </span>
-                          {onTransferTask && (
-                            <button
-                              type="button"
-                              onClick={() => onTransferTask(selectedTask, "work")}
-                              className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-semibold bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:hover:bg-blue-900/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800 transition-all cursor-pointer shadow-xs ml-0.5"
-                              title="Transferir esta demanda para a conta de Trabalho"
-                            >
-                              <ArrowRightLeft className="w-3 h-3 text-blue-600 dark:text-blue-400" />
-                              <span>Transferir p/ Trabalho</span>
-                            </button>
-                          )}
-                        </div>
-                      )}
+                  {/* Banner if Task is Canceled */}
+                  {selectedTask.status === "CANCELED" && (
+                    <div className="p-3.5 rounded-xl bg-rose-50/90 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 space-y-2 animate-in fade-in">
+                      <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-bold text-xs">
+                        <Ban className="w-4 h-4 shrink-0" />
+                        <span>Motivo do Cancelamento</span>
+                      </div>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                        {selectedTask.cancel_reason || "Cancelada pelo usuário."}
+                      </p>
+                    </div>
+                  )}
 
-                      {/* Interactive Editable Category (Single Unified Combobox) */}
+                  {/* TITLE FIRST — Prominent & Immediately Editable */}
+                  {isEditingTitle ? (
+                    <div className="flex items-center gap-1.5 animate-in fade-in">
+                      <input
+                        type="text"
+                        value={tempTitle}
+                        onChange={(e) => setTempTitle(e.target.value)}
+                        onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
+                        className="flex-1 px-3 py-2 rounded-xl text-base sm:text-lg font-bold border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        placeholder="Título da demanda..."
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveTitle}
+                        className="p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm cursor-pointer"
+                        title="Salvar título"
+                      >
+                        <Check className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingTitle(false)}
+                        className="p-2 rounded-xl bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                        title="Cancelar"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-start justify-between gap-2 group">
+                      <h2
+                        onClick={handleStartEditTitle}
+                        className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-snug flex-1 cursor-text hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                        title="Clique para editar o título"
+                      >
+                        {selectedTask.title}
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={handleStartEditTitle}
+                        className="opacity-70 lg:opacity-0 lg:group-hover:opacity-100 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all shrink-0 cursor-pointer"
+                        title="Editar título"
+                      >
+                        <Edit3 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* CLEAN COMPACT PROPERTIES GRID (Notion / Linear style) */}
+                  <div className="p-3 rounded-xl bg-slate-50/90 dark:bg-[#0e0f17] border border-slate-200/80 dark:border-zinc-800/80 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
+                    {/* Prioridade (inline 1-click pills) */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
+                        Prioridade
+                      </span>
+                      <div className="flex items-center gap-1">
+                        {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
+                          const isSel = selectedTask.priority === p;
+                          const activeClass =
+                            p === "P1"
+                              ? "bg-rose-600 text-white border-rose-600"
+                              : p === "P2"
+                              ? "bg-amber-500 text-white border-amber-500"
+                              : p === "P3"
+                              ? "bg-indigo-600 text-white border-indigo-600"
+                              : "bg-slate-600 text-white border-slate-600";
+                          return (
+                            <button
+                              key={p}
+                              type="button"
+                              onClick={() => handleChangeDetailPriority(p)}
+                              className={`px-2 py-0.5 rounded-md border font-mono text-[11px] font-bold transition-all cursor-pointer ${
+                                isSel
+                                  ? activeClass
+                                  : "bg-white dark:bg-[#161724] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-zinc-800 hover:border-indigo-400"
+                              }`}
+                            >
+                              {p}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Prazo & Horário (clickable to open Schedule editor) */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
+                        Prazo / Agenda
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsScheduleExpanded((prev) => !prev)}
+                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white dark:bg-[#161724] border border-slate-200 dark:border-zinc-800 hover:border-indigo-400 text-[11px] font-mono font-semibold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer truncate"
+                        title="Clique para editar horário, lembrete e link do Meet"
+                      >
+                        <Clock className="w-3 h-3 text-indigo-500 shrink-0" />
+                        <span className="truncate">
+                          {format(parseISO(getTaskScheduleDate(selectedTask)), "dd/MM/yy", { locale: ptBR })}
+                          {(hasScheduledTimeRange(selectedTask) || !isTaskAllDay(selectedTask))
+                            ? ` • ${formatTaskTimeRange(selectedTask)}`
+                            : ""}
+                        </span>
+                        {selectedTask.reminder_enabled && (
+                          <Bell className="w-3 h-3 text-purple-500 shrink-0" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Categoria (inline editable) */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
+                        Categoria
+                      </span>
                       {isEditingCategory ? (
-                        <div className="flex items-center gap-1.5 animate-in fade-in">
+                        <div className="flex items-center gap-1">
                           <CategoryCombobox
                             value={tempCategory}
                             onChange={(val) => setTempCategory(val)}
                             categories={categoriesList}
-                            className="w-48"
+                            className="w-40"
                             autoFocus
                           />
                           <button
                             type="button"
                             onClick={handleSaveCategory}
-                            className="p-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm"
+                            className="p-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 cursor-pointer"
                             title="Salvar categoria"
                           >
-                            <Check className="w-3.5 h-3.5" />
+                            <Check className="w-3 h-3" />
                           </button>
                           <button
                             type="button"
                             onClick={() => setIsEditingCategory(false)}
-                            className="p-2 rounded-lg bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300"
+                            className="p-1.5 rounded-lg bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 cursor-pointer"
                             title="Cancelar"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-3 h-3" />
                           </button>
                         </div>
                       ) : (
@@ -908,523 +1205,169 @@ export function CentralQuadrant({
                             setTempCategory(selectedTask.category);
                             setIsEditingCategory(true);
                           }}
-                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-indigo-50 hover:text-indigo-600 dark:hover:bg-indigo-950/40 transition-colors group"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-[#161724] border border-slate-200 dark:border-zinc-800 hover:border-indigo-400 text-[11px] font-semibold text-slate-700 dark:text-slate-200 transition-colors group cursor-pointer truncate max-w-[200px]"
                           title="Clique para editar a categoria"
                         >
-                          <span>{selectedTask.category}</span>
-                          <Edit2 className="w-3 h-3 opacity-70 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity" />
+                          <span className="truncate">{selectedTask.category}</span>
+                          <Edit2 className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100 shrink-0" />
                         </button>
                       )}
                     </div>
 
-                    {/* Right-aligned Header Controls: Item Type Selector */}
-                    <div className="flex items-center gap-2.5 ml-auto flex-wrap">
-                      {/* Canceled Status Badge in Header if task is canceled */}
-                      {selectedTask.status === "CANCELED" && (
-                        <div className="flex items-center gap-1.5">
-                          <span className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
-                            <Ban className="w-3.5 h-3.5" /> Cancelada
-                          </span>
-                          {onReopenTask && (
-                            <button
-                              type="button"
-                              onClick={() => onReopenTask(selectedTask.id)}
-                              className="px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors flex items-center gap-1 shadow-xs"
-                              title="Reabrir demanda cancelada"
-                            >
-                              <RotateCcw className="w-3 h-3 text-indigo-500" />
-                              Reabrir
-                            </button>
+                    {/* Tipo + Espaço */}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
+                        Tipo / Espaço
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {onUpdateItemType && (
+                          <select
+                            value={selectedTask.item_type || "task"}
+                            onChange={(e) =>
+                              onUpdateItemType(selectedTask.id, e.target.value as ItemType)
+                            }
+                            aria-label="Tipo do item"
+                            className="px-2 py-0.5 rounded-md bg-white dark:bg-[#161724] border border-slate-200 dark:border-zinc-800 text-[11px] font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                          >
+                            <option value="task">Tarefa</option>
+                            <option value="activity">Atividade</option>
+                            <option value="reminder">Lembrete</option>
+                          </select>
+                        )}
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
+                            isWorkItem(selectedTask)
+                              ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20"
+                              : "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20"
+                          }`}
+                        >
+                          {isWorkItem(selectedTask) ? (
+                            <>
+                              <Briefcase className="w-3 h-3" /> Trabalho
+                            </>
+                          ) : (
+                            <>
+                              <User className="w-3 h-3" /> Pessoal
+                            </>
                           )}
-                        </div>
-                      )}
-
-                      {/* Item Type Selector (Tarefas, Atividades, Lembretes) - Pushed to the far right */}
-                      {onUpdateItemType && (
-                        <div className="flex items-center bg-slate-100 dark:bg-[#0c0d13] p-1 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs shadow-xs">
-                          <button
-                            type="button"
-                            onClick={() => onUpdateItemType(selectedTask.id, "task")}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                              (selectedTask.item_type || "task") === "task"
-                                ? "bg-white dark:bg-[#1a1b26] text-blue-600 dark:text-blue-400 shadow-sm"
-                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                            }`}
-                          >
-                            <ListTodo className="w-3.5 h-3.5" />
-                            Tarefa
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onUpdateItemType(selectedTask.id, "activity")}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                              selectedTask.item_type === "activity"
-                                ? "bg-white dark:bg-[#1a1b26] text-purple-600 dark:text-purple-400 shadow-sm"
-                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                            }`}
-                          >
-                            <Activity className="w-3.5 h-3.5" />
-                            Atividade
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => onUpdateItemType(selectedTask.id, "reminder")}
-                            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                              selectedTask.item_type === "reminder"
-                                ? "bg-white dark:bg-[#1a1b26] text-amber-600 dark:text-amber-400 shadow-sm"
-                                : "text-slate-500 hover:text-slate-900 dark:hover:text-white"
-                            }`}
-                          >
-                            <Bell className="w-3.5 h-3.5" />
-                            Lembrete
-                          </button>
-                        </div>
-                      )}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Schedule, Reminder & Google Meet quick summary strip */}
-                  {(hasScheduledTimeRange(selectedTask) || selectedTask.reminder_enabled || selectedTask.meet_link) && (
-                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
-                      {selectedTask.meet_link && (
-                        <a
-                          href={selectedTask.meet_link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all active:scale-95"
-                          title="Entrar na sala de videoconferência do Google Meet"
-                        >
-                          <Video className="w-3.5 h-3.5" />
-                          <span>Entrar no Google Meet</span>
-                          <ExternalLink className="w-3 h-3 opacity-80" />
-                        </a>
-                      )}
-                      {(hasScheduledTimeRange(selectedTask) || !isTaskAllDay(selectedTask)) && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/70">
-                          <Clock className="w-3.5 h-3.5" />
-                          <span>
-                            {format(parseISO(getTaskScheduleDate(selectedTask)), "dd/MM/yyyy", { locale: ptBR })} •{" "}
-                            {formatTaskTimeRange(selectedTask)}
-                          </span>
-                        </span>
-                      )}
-                      {selectedTask.reminder_enabled && (
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/70">
-                          <Bell className="w-3.5 h-3.5" />
-                          <span>
-                            Lembrete: {formatReminderLeadTime(selectedTask.reminder_minutes_before ?? 30)}
-                            {(() => {
-                              const remDate = getTaskReminderDate(selectedTask);
-                              return remDate ? ` (às ${format(remDate, "HH:mm")})` : "";
-                            })()}
-                          </span>
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Banner if Task is Canceled */}
-                  {selectedTask.status === "CANCELED" && (
-                    <div className="p-4 rounded-2xl bg-rose-50/90 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 space-y-2.5 animate-in fade-in">
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-bold text-xs sm:text-sm">
-                          <Ban className="w-4 h-4 shrink-0" />
-                          <span>Esta demanda foi cancelada</span>
-                        </div>
-                        {onReopenTask && (
-                          <button
-                            type="button"
-                            onClick={() => onReopenTask(selectedTask.id)}
-                            className="px-3 py-1.5 rounded-xl bg-white dark:bg-zinc-900 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-900/40 text-xs font-semibold transition-all shadow-xs flex items-center gap-1.5 active:scale-95"
-                            title="Reativar e mover de volta para A Fazer"
-                          >
-                            <RotateCcw className="w-3.5 h-3.5" />
-                            Reabrir Demanda
-                          </button>
-                        )}
-                      </div>
-                      <div className="text-xs text-slate-700 dark:text-slate-300 bg-white/90 dark:bg-black/40 p-3 rounded-xl border border-rose-100 dark:border-rose-900/40 space-y-1">
-                        <span className="font-semibold text-rose-600 dark:text-rose-400 text-[11px] uppercase tracking-wide block">
-                          Motivo / Justificativa do Cancelamento:
-                        </span>
-                        <p className="whitespace-pre-wrap leading-relaxed">
-                          {selectedTask.cancel_reason || "Cancelada pelo usuário."}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Title & Description */}
-                  <div className="space-y-3">
-                    {/* Title */}
-                    {isEditingTitle ? (
-                      <div className="space-y-1.5 animate-in fade-in">
-                        <div className="flex items-center gap-1.5">
-                          <input
-                            type="text"
-                            value={tempTitle}
-                            onChange={(e) => setTempTitle(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
-                            className="flex-1 px-3 py-1.5 rounded-xl text-base font-bold border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500"
-                            placeholder="Título da demanda..."
-                            autoFocus
-                          />
-                          <button
-                            type="button"
-                            onClick={handleSaveTitle}
-                            className="p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 text-xs font-semibold shadow-sm"
-                            title="Salvar título"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingTitle(false)}
-                            className="p-2 rounded-xl bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-xs font-semibold"
-                            title="Cancelar"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-start justify-between gap-2 sm:gap-3 group">
-                        <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-snug flex-1">
-                          {selectedTask.title}
-                        </h2>
+                  {/* Description with Formatted Text & Inline Edit */}
+                  {isEditingDescription ? (
+                    <div className="space-y-2 animate-in fade-in">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
+                          Editar Descrição:
+                        </label>
                         <button
                           type="button"
-                          onClick={handleStartEditTitle}
-                          className="opacity-75 lg:opacity-0 lg:group-hover:opacity-100 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all shrink-0 cursor-pointer"
-                          title="Editar título"
+                          onClick={handleCleanAsterisks}
+                          className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
                         >
-                          <Edit3 className="w-4 h-4" />
+                          Remover asteriscos (**)
                         </button>
                       </div>
-                    )}
+                      <textarea
+                        rows={6}
+                        value={tempDescription}
+                        onChange={(e) => setTempDescription(e.target.value)}
+                        className="w-full p-3 rounded-xl text-xs sm:text-sm border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-500/20 leading-relaxed resize-y"
+                        placeholder="Descrição da demanda..."
+                        autoFocus
+                      />
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setIsEditingDescription(false)}
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                        >
+                          Cancelar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleSaveDescription}
+                          className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm cursor-pointer"
+                        >
+                          Salvar Descrição
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="group relative">
+                      <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                        <FormattedText text={selectedTask.description || "Nenhuma descrição fornecida."} />
+                      </div>
+                      <div className="mt-1.5">
+                        <button
+                          type="button"
+                          onClick={handleStartEditDescription}
+                          className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                          title="Editar texto da descrição"
+                        >
+                          <Edit3 className="w-3 h-3" />
+                          <span>Editar descrição</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
-                    {/* Description with Formatted Text (no raw asterisks) & Edit */}
-                    {isEditingDescription ? (
-                      <div className="space-y-2 animate-in fade-in">
-                        <div className="flex items-center justify-between">
-                          <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                            Editar Descrição da Demanda:
-                          </label>
-                          <button
-                            type="button"
-                            onClick={handleCleanAsterisks}
-                            className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline"
-                            title="Remover todos os asteriscos (**) do texto"
-                          >
-                            Remover asteriscos (**)
-                          </button>
-                        </div>
-                        <textarea
-                          rows={6}
-                          value={tempDescription}
-                          onChange={(e) => setTempDescription(e.target.value)}
-                          className="w-full p-3 rounded-xl text-xs sm:text-sm border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-900 dark:text-slate-100 outline-none focus:ring-1 focus:ring-indigo-500 font-sans leading-relaxed resize-y"
-                          placeholder="Descrição da demanda..."
+                  {/* Compact Inline Tags Strip */}
+                  <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 flex flex-wrap items-center gap-1.5">
+                    <Tag className="w-3.5 h-3.5 text-slate-400 mr-0.5 shrink-0" />
+                    {selectedTask.tags?.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-zinc-700"
+                      >
+                        <span>#{tag}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                          title={`Remover tag #${tag}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+
+                    {isAddingTag ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="text"
+                          placeholder="Nova tag..."
+                          value={newTagInput}
+                          onChange={(e) => setNewTagInput(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
+                          className="px-2 py-0.5 rounded-md text-xs border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-800 dark:text-slate-100 outline-none w-28"
                           autoFocus
                         />
-                        <div className="flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingDescription(false)}
-                            className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800"
-                          >
-                            Cancelar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={handleSaveDescription}
-                            className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm"
-                          >
-                            Salvar Descrição
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={handleAddTag}
+                          className="p-1 rounded bg-indigo-600 text-white cursor-pointer"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingTag(false)}
+                          className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
                       </div>
                     ) : (
-                      <div className="group relative">
-                        <div className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-                          <FormattedText text={selectedTask.description || "Nenhuma descrição fornecida."} />
-                        </div>
-                        <div className="mt-1">
-                          <button
-                            type="button"
-                            onClick={handleStartEditDescription}
-                            className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
-                            title="Editar texto da descrição"
-                          >
-                            <Edit3 className="w-3 h-3" />
-                            <span>Editar descrição</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Tags Manager with Autonomous AI and Manual Editing */}
-                  <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-                        <Tag className="w-3.5 h-3.5 text-indigo-500" />
-                        Tags & Classificação Autônoma:
-                      </span>
-                      {!isAddingTag && (
-                        <button
-                          type="button"
-                          onClick={() => setIsAddingTag(true)}
-                          className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 hover:underline font-semibold"
-                        >
-                          <Plus className="w-3 h-3" /> Adicionar Tag
-                        </button>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                      {selectedTask.tags?.map((tag) => (
-                        <span
-                          key={tag}
-                          className="group inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-700"
-                        >
-                          <span>#{tag}</span>
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveTag(tag)}
-                            className="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
-                            title={`Remover tag #${tag}`}
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </span>
-                      ))}
-
-                      {isAddingTag && (
-                        <div className="flex items-center gap-1">
-                          <input
-                            type="text"
-                            placeholder="Nova tag..."
-                            value={newTagInput}
-                            onChange={(e) => setNewTagInput(e.target.value)}
-                            onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
-                            className="px-2 py-0.5 rounded text-xs border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-800 dark:text-slate-100 outline-none w-28"
-                            autoFocus
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddTag}
-                            className="p-1 rounded bg-indigo-600 text-white"
-                          >
-                            <Check className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setIsAddingTag(false)}
-                            className="p-1 rounded text-slate-400 hover:text-slate-600"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Assistente IA na Demanda (Refinar / Plano de Ação / Diagnóstico + Wiki) */}
-                  <div className="pt-3 border-t border-slate-100 dark:border-zinc-800/80 space-y-2.5">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="text-xs font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-purple-500" />
-                        <span>Assistente IA na Demanda</span>
-                      </span>
-
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <button
-                          type="button"
-                          onClick={() => handleRunTaskAiAssist("refine")}
-                          disabled={isLoadingAiAssist}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
-                            aiAssistMode === "refine" && aiAssistResult
-                              ? "bg-purple-600 text-white border-purple-600"
-                              : "bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60 hover:bg-purple-100 dark:hover:bg-purple-900/50"
-                          }`}
-                        >
-                          {isLoadingAiAssist && aiAssistMode === "refine" ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Wand2 className="w-3 h-3" />
-                          )}
-                          <span>Refinar Texto</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRunTaskAiAssist("action_plan")}
-                          disabled={isLoadingAiAssist}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
-                            aiAssistMode === "action_plan" && aiAssistResult
-                              ? "bg-indigo-600 text-white border-indigo-600"
-                              : "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50"
-                          }`}
-                        >
-                          {isLoadingAiAssist && aiAssistMode === "action_plan" ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <CheckSquare className="w-3 h-3" />
-                          )}
-                          <span>Plano de Ação</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleRunTaskAiAssist("diagnose")}
-                          disabled={isLoadingAiAssist}
-                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
-                            aiAssistMode === "diagnose" && aiAssistResult
-                              ? "bg-amber-600 text-white border-amber-600"
-                              : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/50"
-                          }`}
-                        >
-                          {isLoadingAiAssist && aiAssistMode === "diagnose" ? (
-                            <Loader2 className="w-3 h-3 animate-spin" />
-                          ) : (
-                            <Lightbulb className="w-3 h-3" />
-                          )}
-                          <span>Diagnóstico + Wiki</span>
-                        </button>
-                      </div>
-                    </div>
-
-                    {aiAssistError && (
-                      <p className="text-[11px] text-rose-600 dark:text-rose-400">{aiAssistError}</p>
-                    )}
-
-                    {aiAssistResult && (
-                      <div className="p-3.5 rounded-xl bg-gradient-to-br from-purple-50/80 via-white to-indigo-50/70 dark:from-[#17152c] dark:via-[#141522] dark:to-[#111524] border border-purple-200/80 dark:border-purple-800/60 space-y-2.5 animate-in fade-in">
-                        <div className="flex items-center justify-between gap-2 flex-wrap">
-                          <span className="text-[11px] font-bold text-purple-700 dark:text-purple-300 flex items-center gap-1.5">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Sugestão da IA
-                            {aiAssistResult.estimated_effort ? ` • Esforço est.: ${aiAssistResult.estimated_effort}` : ""}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setAiAssistResult(null);
-                              setAiAssistMode(null);
-                            }}
-                            className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
-                          >
-                            <X className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-
-                        <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">
-                          {aiAssistResult.technical_guidance}
-                        </p>
-
-                        {aiAssistMode === "refine" && aiAssistResult.refined_title && (
-                          <div className="p-2.5 rounded-lg bg-white/80 dark:bg-[#0d0e15] border border-slate-200/80 dark:border-zinc-800 space-y-1 text-xs">
-                            <div className="font-bold text-slate-900 dark:text-white">
-                              Novo título: {aiAssistResult.refined_title}
-                            </div>
-                            {aiAssistResult.structured_description && (
-                              <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                                {aiAssistResult.structured_description}
-                              </div>
-                            )}
-                          </div>
-                        )}
-
-                        {aiAssistResult.validation_steps && aiAssistResult.validation_steps.length > 0 && (
-                          <div className="space-y-1">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block">
-                              Etapas sugeridas ({aiAssistResult.validation_steps.length})
-                            </span>
-                            <ul className="space-y-1">
-                              {aiAssistResult.validation_steps.map((step, i) => (
-                                <li
-                                  key={i}
-                                  className="text-[11px] text-slate-600 dark:text-slate-300 flex items-start gap-1.5"
-                                >
-                                  <Check className="w-3 h-3 text-emerald-500 shrink-0 mt-0.5" />
-                                  <span>{step}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-
-                        <div className="flex items-center justify-end gap-2 pt-1">
-                          <button
-                            type="button"
-                            onClick={handleApplyTaskAiAssist}
-                            disabled={isApplyingAiAssist}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
-                          >
-                            {isApplyingAiAssist ? (
-                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                            ) : (
-                              <Check className="w-3.5 h-3.5" />
-                            )}
-                            <span>Aplicar na Demanda</span>
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Mobile Quick Primary Action Bar (Instant one-tap Concluir / Adiar / Cancelar without scrolling) */}
-                  <div className="lg:hidden pt-3 border-t border-slate-100 dark:border-zinc-800/80 flex items-center gap-2 flex-wrap">
-                    {selectedTask.status === "COMPLETED" ? (
                       <button
                         type="button"
-                        onClick={() => onUpdateStatus(selectedTask.id, "TODO")}
-                        className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold active:scale-95 transition-all cursor-pointer"
+                        onClick={() => setIsAddingTag(true)}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-semibold transition-colors cursor-pointer"
                       >
-                        <RotateCcw className="w-3.5 h-3.5 text-indigo-500" />
-                        <span>Reabrir</span>
+                        <Plus className="w-3 h-3" /> Tag
                       </button>
-                    ) : selectedTask.status === "CANCELED" ? (
-                      onReopenTask && (
-                        <button
-                          type="button"
-                          onClick={() => onReopenTask(selectedTask.id)}
-                          className="flex-1 min-w-[120px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold active:scale-95 transition-all cursor-pointer"
-                        >
-                          <RotateCcw className="w-3.5 h-3.5" />
-                          <span>Reabrir Demanda</span>
-                        </button>
-                      )
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => onRequestResolution(selectedTask)}
-                          className="flex-1 min-w-[110px] flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
-                        >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Concluir</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => onRequestExtendDeadline(selectedTask)}
-                          className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-semibold active:scale-95 transition-all cursor-pointer"
-                        >
-                          <Calendar className="w-3.5 h-3.5" />
-                          <span>Adiar</span>
-                        </button>
-                        {onRequestCancelTask && (
-                          <button
-                            type="button"
-                            onClick={() => onRequestCancelTask(selectedTask)}
-                            className="flex items-center justify-center gap-1 px-2.5 py-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-semibold active:scale-95 transition-all cursor-pointer"
-                            title="Cancelar demanda"
-                          >
-                            <Ban className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </>
                     )}
                   </div>
                 </div>
@@ -1578,94 +1521,194 @@ export function CentralQuadrant({
                   )}
                 </div>
 
-                {/* Attachments Card (Criação & Solução) */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  <AttachmentManager
-                    attachments={selectedTask.attachments || []}
-                    onChange={async (updated) => {
-                      if (onUpdateTaskFields) {
-                        await onUpdateTaskFields(selectedTask.id, { attachments: updated });
-                      }
-                    }}
-                    stage="creation"
-                    label="Arquivos & Links da Demanda (Criação)"
-                    onPreviewMedia={(media) => setActiveMediaItem(media)}
-                  />
+                {/* Assistente IA na Demanda (Compact 1-row bar; expands cleanly with results) */}
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2.5 shadow-sm">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
+                    <span className="text-xs font-bold text-indigo-700 dark:text-purple-300 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-500 dark:text-purple-400" />
+                      <span>Assistente IA na Demanda</span>
+                    </span>
 
-                  {selectedTask.resolution_attachments && selectedTask.resolution_attachments.length > 0 && (
-                    <div className="pt-3 border-t border-slate-100 dark:border-zinc-800">
-                      <AttachmentManager
-                        attachments={selectedTask.resolution_attachments || []}
-                        onChange={async (updated) => {
-                          if (onUpdateTaskFields) {
-                            await onUpdateTaskFields(selectedTask.id, { resolution_attachments: updated });
-                          }
-                        }}
-                        stage="resolution"
-                        label="Comprovantes & Links da Solução"
-                        onPreviewMedia={(media) => setActiveMediaItem(media)}
-                      />
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => handleRunTaskAiAssist("refine")}
+                        disabled={isLoadingAiAssist}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
+                          aiAssistMode === "refine" && aiAssistResult
+                            ? "bg-indigo-600 text-white border-indigo-600"
+                            : "bg-slate-50 dark:bg-[#181927] text-slate-700 dark:text-slate-200 border-slate-200 dark:border-zinc-700 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300"
+                        }`}
+                      >
+                        {isLoadingAiAssist && aiAssistMode === "refine" ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Wand2 className="w-3 h-3 text-indigo-500" />
+                        )}
+                        <span>Refinar Texto</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRunTaskAiAssist("action_plan")}
+                        disabled={isLoadingAiAssist}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
+                          aiAssistMode === "action_plan" && aiAssistResult
+                            ? "bg-indigo-600 text-white border-indigo-600"
+                            : "bg-slate-50 dark:bg-[#181927] text-slate-700 dark:text-slate-200 border-slate-200 dark:border-zinc-700 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300"
+                        }`}
+                      >
+                        {isLoadingAiAssist && aiAssistMode === "action_plan" ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <CheckSquare className="w-3 h-3 text-indigo-500" />
+                        )}
+                        <span>Plano de Ação</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleRunTaskAiAssist("diagnose")}
+                        disabled={isLoadingAiAssist}
+                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
+                          aiAssistMode === "diagnose" && aiAssistResult
+                            ? "bg-indigo-600 text-white border-indigo-600"
+                            : "bg-slate-50 dark:bg-[#181927] text-slate-700 dark:text-slate-200 border-slate-200 dark:border-zinc-700 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300"
+                        }`}
+                      >
+                        {isLoadingAiAssist && aiAssistMode === "diagnose" ? (
+                          <Loader2 className="w-3 h-3 animate-spin" />
+                        ) : (
+                          <Lightbulb className="w-3 h-3 text-amber-500" />
+                        )}
+                        <span>Diagnóstico + Wiki</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {aiAssistError && (
+                    <p className="text-xs text-rose-600 dark:text-rose-400">{aiAssistError}</p>
+                  )}
+
+                  {aiAssistResult && (
+                    <div className="p-3.5 rounded-xl bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/70 dark:from-[#17152c] dark:via-[#141522] dark:to-[#111524] border border-indigo-200/80 dark:border-indigo-800/60 space-y-2.5 animate-in fade-in">
+                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                        <span className="text-[11px] font-bold text-indigo-700 dark:text-purple-300 flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          Sugestão da IA
+                          {aiAssistResult.estimated_effort ? ` • Esforço est.: ${aiAssistResult.estimated_effort}` : ""}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAiAssistResult(null);
+                            setAiAssistMode(null);
+                          }}
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">
+                        {aiAssistResult.technical_guidance}
+                      </p>
+
+                      {aiAssistMode === "refine" && aiAssistResult.refined_title && (
+                        <div className="p-2.5 rounded-lg bg-white/80 dark:bg-[#0d0e15] border border-slate-200/80 dark:border-zinc-800 space-y-1 text-xs">
+                          <div className="font-bold text-slate-900 dark:text-white">
+                            Novo título: {aiAssistResult.refined_title}
+                          </div>
+                          {aiAssistResult.structured_description && (
+                            <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                              {aiAssistResult.structured_description}
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {aiAssistResult.validation_steps && aiAssistResult.validation_steps.length > 0 && (
+                        <div className="space-y-1">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block">
+                            Etapas sugeridas ({aiAssistResult.validation_steps.length})
+                          </span>
+                          <ul className="space-y-1">
+                            {aiAssistResult.validation_steps.map((step, i) => (
+                              <li
+                                key={i}
+                                className="text-xs text-slate-600 dark:text-slate-300 flex items-start gap-1.5"
+                              >
+                                <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
+                                <span>{step}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={handleApplyTaskAiAssist}
+                          disabled={isApplyingAiAssist}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                        >
+                          {isApplyingAiAssist ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          ) : (
+                            <Check className="w-3.5 h-3.5" />
+                          )}
+                          <span>Aplicar na Demanda</span>
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
 
-                {/* Deadlines & SLA Card */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  <div className="flex items-center justify-between flex-wrap gap-2">
-                    <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-blue-500" />
-                      Prazos & Linha do Tempo (SLA)
-                    </h3>
-                    {selectedTask.status !== "COMPLETED" && (
-                      <button
-                        onClick={() => onRequestExtendDeadline(selectedTask)}
-                        className="px-3 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 text-xs font-medium transition-colors cursor-pointer"
-                      >
-                        Adiar / Estender Prazo
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Priority & Schedule + Reminder Controls */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
-                    {/* Priority Selector (Independent) */}
-                    <div className="lg:col-span-5 p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                          Nível de Prioridade:
+                {/* Collapsible Section: Agenda, Prazo, Lembrete & Google Meet */}
+                <div className="rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setIsScheduleExpanded((prev) => !prev)}
+                    className="w-full px-4 sm:px-5 py-3.5 flex items-center justify-between gap-2 hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
+                      <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                        Agenda, Lembrete & Google Meet
+                      </span>
+                      <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                        {format(parseISO(getTaskScheduleDate(selectedTask)), "dd/MM/yyyy", { locale: ptBR })}
+                        {(hasScheduledTimeRange(selectedTask) || !isTaskAllDay(selectedTask))
+                          ? ` • ${formatTaskTimeRange(selectedTask)}`
+                          : ""}
+                      </span>
+                      {selectedTask.reminder_enabled && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/70 dark:border-purple-800/60 text-[10px] font-semibold">
+                          <Bell className="w-2.5 h-2.5" />
+                          {formatReminderLeadTime(selectedTask.reminder_minutes_before ?? 30)}
                         </span>
-                        <span className="text-[10px] text-slate-400">
-                          O que priorizar
+                      )}
+                      {selectedTask.meet_link && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 text-[10px] font-semibold">
+                          <Video className="w-2.5 h-2.5" />
+                          Sala ativa
                         </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        {[
-                          { p: "P1" as Priority, label: "P1 - Crítica", color: "border-rose-500 text-rose-600 bg-rose-50/80 dark:bg-rose-950/40" },
-                          { p: "P2" as Priority, label: "P2 - Alta", color: "border-orange-500 text-orange-600 bg-orange-50/80 dark:bg-orange-950/40" },
-                          { p: "P3" as Priority, label: "P3 - Média", color: "border-amber-500 text-amber-600 bg-amber-50/80 dark:bg-amber-950/40" },
-                          { p: "P4" as Priority, label: "P4 - Baixa", color: "border-emerald-500 text-emerald-600 bg-emerald-50/80 dark:bg-emerald-950/40" },
-                        ].map((item) => {
-                          const isSelected = selectedTask.priority === item.p;
-                          return (
-                            <button
-                              key={item.p}
-                              type="button"
-                              onClick={() => handleChangeDetailPriority(item.p)}
-                              className={`py-1.5 px-2 rounded-lg border text-center transition-all text-xs font-semibold ${
-                                isSelected
-                                  ? `${item.color} font-bold ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-[#141520] shadow-xs`
-                                  : "border-slate-200 dark:border-zinc-800 hover:bg-slate-100 dark:hover:bg-zinc-800/60 text-slate-600 dark:text-slate-400"
-                              }`}
-                            >
-                              {item.label}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      )}
+                    </div>
+                    <ChevronDown
+                      className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+                        isScheduleExpanded ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
 
-                      <div className="pt-1 border-t border-slate-200/70 dark:border-zinc-800/80">
-                        <span className="text-[10px] font-medium text-slate-400 block mb-1.5">
-                          Atalhos rápidos de início/prazo:
+                  {isScheduleExpanded && (
+                    <div className="px-4 sm:px-5 pb-4 pt-2 border-t border-slate-100 dark:border-zinc-800/80 space-y-3 animate-in fade-in duration-150">
+                      {/* Quick date presets */}
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
+                          Atalhos rápidos de prazo:
                         </span>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <button
@@ -1675,7 +1718,7 @@ export function CentralQuadrant({
                               d.setHours(18, 0, 0, 0);
                               handleChangeDetailDueDate(d.toISOString());
                             }}
-                            className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-300 cursor-pointer"
                           >
                             Hoje 18h
                           </button>
@@ -1687,7 +1730,7 @@ export function CentralQuadrant({
                               d.setHours(18, 0, 0, 0);
                               handleChangeDetailDueDate(d.toISOString());
                             }}
-                            className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-300 cursor-pointer"
                           >
                             Amanhã
                           </button>
@@ -1699,8 +1742,7 @@ export function CentralQuadrant({
                               d.setHours(18, 0, 0, 0);
                               handleChangeDetailDueDate(d.toISOString());
                             }}
-                            className="px-2 py-0.5 rounded text-[10px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800"
-                            title="Definir prazo para 4 dias"
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 cursor-pointer"
                           >
                             +4 dias
                           </button>
@@ -1712,16 +1754,13 @@ export function CentralQuadrant({
                               d.setHours(18, 0, 0, 0);
                               handleChangeDetailDueDate(d.toISOString());
                             }}
-                            className="px-2 py-0.5 rounded text-[10px] bg-slate-200/70 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400"
+                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-300 cursor-pointer"
                           >
                             +1 semana
                           </button>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Schedule (Start / End) & Reminder Editor */}
-                    <div className="lg:col-span-7">
                       <ScheduleReminderFields
                         valueFormat="iso"
                         itemType={selectedTask.item_type}
@@ -1739,228 +1778,269 @@ export function CentralQuadrant({
                         excludeTaskId={selectedTask.id}
                       />
                     </div>
-                  </div>
+                  )}
                 </div>
 
-                {/* Base de Soluções & Controle de Recorrência */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  <div className="flex items-center justify-between flex-wrap gap-2.5">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 shrink-0">
-                        <BookOpen className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 flex items-center gap-2">
-                          Base de Soluções & Recorrência
-                        </h3>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          Resolução documentada e histórico de execuções reincidentes.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 flex-wrap">
-                      {/* Recurrence counter badge */}
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 font-mono text-[11px] font-semibold">
-                        <Repeat className="w-3 h-3 text-indigo-500" />
-                        <span>{selectedTask.recurrence_count || 1}x ocorrências</span>
-                      </span>
-
-                      {/* Register New Occurrence Button */}
+                {/* Collapsible Section: Attachments Card (Criação & Solução) */}
+                {(() => {
+                  const totalAttachments =
+                    (selectedTask.attachments?.length || 0) +
+                    (selectedTask.resolution_attachments?.length || 0);
+                  return (
+                    <div className="rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
                       <button
                         type="button"
-                        onClick={() => setIsAddingRecurrence((prev) => !prev)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-xs font-medium transition-colors cursor-pointer"
+                        onClick={() => setIsAttachmentsExpanded((prev) => !prev)}
+                        className="w-full px-4 sm:px-5 py-3.5 flex items-center justify-between gap-2 hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors cursor-pointer text-left"
                       >
-                        <Plus className="w-3 h-3" />
-                        <span>Nova Ocorrência</span>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Paperclip className="w-4 h-4 text-indigo-500 shrink-0" />
+                          <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                            Arquivos & Links Anexados
+                          </span>
+                          <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-[11px] font-mono font-semibold text-slate-600 dark:text-slate-300">
+                            {totalAttachments}
+                          </span>
+                        </div>
+                        <ChevronDown
+                          className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+                            isAttachmentsExpanded ? "rotate-180" : ""
+                          }`}
+                        />
                       </button>
 
-                      {selectedTask.status === "COMPLETED" ? (
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Concluído
-                        </span>
-                      ) : selectedTask.status === "CANCELED" ? (
-                        <span className="text-xs text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-1">
-                          <Ban className="w-3.5 h-3.5" /> Demanda Cancelada
-                        </span>
-                      ) : (
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={() => onRequestResolution(selectedTask)}
-                            className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-                            title="Concluir demanda (preenchimento de solução opcional)"
-                          >
-                            <Check className="w-3.5 h-3.5" />
-                            <span>Concluir</span>
-                          </button>
-                          {onRequestCancelTask && (
-                            <button
-                              type="button"
-                              onClick={() => onRequestCancelTask(selectedTask)}
-                              className="px-3 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 text-xs font-medium transition-colors flex items-center gap-1 cursor-pointer"
-                              title="Cancelar esta demanda e informar motivo"
-                            >
-                              <Ban className="w-3 h-3" />
-                              Cancelar Demanda
-                            </button>
+                      {isAttachmentsExpanded && (
+                        <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-slate-100 dark:border-zinc-800/80 space-y-4 animate-in fade-in duration-150">
+                          <AttachmentManager
+                            attachments={selectedTask.attachments || []}
+                            onChange={async (updated) => {
+                              if (onUpdateTaskFields) {
+                                await onUpdateTaskFields(selectedTask.id, { attachments: updated });
+                              }
+                            }}
+                            stage="creation"
+                            label="Arquivos & Links da Demanda (Criação)"
+                            onPreviewMedia={(media) => setActiveMediaItem(media)}
+                          />
+
+                          {selectedTask.resolution_attachments && selectedTask.resolution_attachments.length > 0 && (
+                            <div className="pt-3 border-t border-slate-100 dark:border-zinc-800">
+                              <AttachmentManager
+                                attachments={selectedTask.resolution_attachments || []}
+                                onChange={async (updated) => {
+                                  if (onUpdateTaskFields) {
+                                    await onUpdateTaskFields(selectedTask.id, { resolution_attachments: updated });
+                                  }
+                                }}
+                                stage="resolution"
+                                label="Comprovantes & Links da Solução"
+                                onPreviewMedia={(media) => setActiveMediaItem(media)}
+                              />
+                            </div>
                           )}
                         </div>
                       )}
                     </div>
+                  );
+                })()}
+
+                {/* Collapsible Section: Base de Soluções & Controle de Recorrência */}
+                <div className="rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                  <div
+                    onClick={() => setIsSolutionExpanded((prev) => !prev)}
+                    className="w-full px-4 sm:px-5 py-3.5 flex items-center justify-between gap-2.5 flex-wrap hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                      <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
+                        Base de Soluções & Recorrência
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-mono text-[11px] font-semibold">
+                        <Repeat className="w-3 h-3 text-indigo-500" />
+                        {selectedTask.recurrence_count || 1}x
+                      </span>
+                      {selectedTask.resolution_notes && (
+                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 text-[10px] font-bold">
+                          Documentada
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsSolutionExpanded(true);
+                          setIsAddingRecurrence((prev) => !prev);
+                        }}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[11px] font-semibold transition-colors cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Nova Ocorrência</span>
+                      </button>
+                      <ChevronDown
+                        className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
+                          isSolutionExpanded ? "rotate-180" : ""
+                        }`}
+                      />
+                    </div>
                   </div>
 
-                  {/* Form to Register Recurrence / Reincidence */}
-                  {isAddingRecurrence && (
-                    <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-700/80 space-y-3 animate-fadeIn text-xs text-slate-800 dark:text-zinc-200">
-                      <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-zinc-200">
-                        <Repeat className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
-                        <span>Registrar Nova Execução no Mesmo Item (Sem Duplicar Base)</span>
-                      </div>
+                  {isSolutionExpanded && (
+                    <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-slate-100 dark:border-zinc-800/80 space-y-4 animate-in fade-in duration-150">
+                      {/* Form to Register Recurrence / Reincidence */}
+                      {isAddingRecurrence && (
+                        <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-700/80 space-y-3 animate-fadeIn text-xs text-slate-800 dark:text-zinc-200">
+                          <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-zinc-200">
+                            <Repeat className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+                            <span>Registrar Nova Execução no Mesmo Item (Sem Duplicar Base)</span>
+                          </div>
 
-                      <div className="space-y-2">
-                        <div>
-                          <label className="text-[11px] text-slate-600 dark:text-zinc-400 block mb-1">
-                            Notas / Contexto desta reincidência:
-                          </label>
-                          <textarea
-                            rows={2}
-                            value={recurrenceNotes}
-                            onChange={(e) => setRecurrenceNotes(e.target.value)}
-                            placeholder="Descreva onde ou por que a ocorrência se repetiu (ex: usuário reportou o mesmo erro no TOTVS)..."
-                            className="w-full text-xs p-2 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 resize-none"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="text-[11px] text-slate-600 dark:text-zinc-400 block mb-1">
-                            Método de conclusão alternativo (opcional se utilizou solução diferente):
-                          </label>
-                          <input
-                            type="text"
-                            value={recurrenceMethod}
-                            onChange={(e) => setRecurrenceMethod(e.target.value)}
-                            placeholder="Ex: Executado script PowerShell alternativo ao invés de reiniciar servidor..."
-                            className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
-                          />
-                        </div>
-
-                        <label className="flex items-center gap-2 text-slate-700 dark:text-zinc-300 cursor-pointer pt-1">
-                          <input
-                            type="checkbox"
-                            checked={recurrenceReopen}
-                            onChange={(e) => setRecurrenceReopen(e.target.checked)}
-                            className="rounded border-slate-300 dark:border-zinc-700 text-indigo-600 focus:ring-0"
-                          />
-                          <span>Reabrir demanda para Em Andamento (trabalho ativo)</span>
-                        </label>
-                      </div>
-
-                      <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-200 dark:border-zinc-800">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setIsAddingRecurrence(false);
-                            setRecurrenceNotes("");
-                            setRecurrenceMethod("");
-                          }}
-                          className="px-3 py-1 rounded text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200"
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          type="button"
-                          disabled={isSubmittingRecurrence}
-                          onClick={handleSaveRecurrence}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-xs disabled:opacity-50 transition-all cursor-pointer"
-                        >
-                          {isSubmittingRecurrence ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <Check className="w-3.5 h-3.5" />
-                          )}
-                          <span>Gravar Ocorrência no Histórico</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Primary Solution */}
-                  {selectedTask.resolution_notes ? (
-                    <div className="space-y-2">
-                      <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Solução Registrada na Base de Conhecimento:</span>
-                      </div>
-                      <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
-                        {selectedTask.resolution_notes}
-                      </div>
-                    </div>
-                  ) : (
-                    <p className="text-xs text-slate-400 dark:text-slate-500 italic">
-                      Nenhuma anotação de resolução registrada até o momento.
-                    </p>
-                  )}
-
-                  {/* Execution History Timeline */}
-                  {selectedTask.execution_history && selectedTask.execution_history.length > 0 && (
-                    <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
-                      <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block flex items-center gap-1.5">
-                        <Repeat className="w-3 h-3 text-indigo-500" />
-                        Histórico de Execuções e Reincidências ({selectedTask.execution_history.length}):
-                      </span>
-                      <div className="space-y-1.5">
-                        {selectedTask.execution_history.map((exec) => (
-                          <div
-                            key={exec.id}
-                            className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-xs space-y-1"
-                          >
-                            <div className="flex items-center justify-between flex-wrap gap-1 text-[10px] text-zinc-400 font-mono">
-                              <span className="text-indigo-400 font-semibold">
-                                Ocorrência em {format(parseISO(exec.date), "dd/MM/yyyy 'às' HH:mm")}
-                              </span>
-                              <span>Registrado por: {exec.registered_by || "Usuário"}</span>
+                          <div className="space-y-2">
+                            <div>
+                              <label className="text-[11px] text-slate-600 dark:text-zinc-400 block mb-1">
+                                Notas / Contexto desta reincidência:
+                              </label>
+                              <textarea
+                                rows={2}
+                                value={recurrenceNotes}
+                                onChange={(e) => setRecurrenceNotes(e.target.value)}
+                                placeholder="Descreva onde ou por que a ocorrência se repetiu (ex: usuário reportou o mesmo erro no TOTVS)..."
+                                className="w-full text-xs p-2 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 resize-none"
+                              />
                             </div>
-                            {exec.notes && (
-                              <p className="text-slate-700 dark:text-slate-200 text-xs">
-                                {exec.notes}
-                              </p>
-                            )}
-                            {exec.method && (
-                              <div className="text-[11px] text-emerald-600 dark:text-emerald-400 bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-900/40">
-                                <strong>Método aplicado:</strong> {exec.method}
+
+                            <div>
+                              <label className="text-[11px] text-slate-600 dark:text-zinc-400 block mb-1">
+                                Método de conclusão alternativo (opcional se utilizou solução diferente):
+                              </label>
+                              <input
+                                type="text"
+                                value={recurrenceMethod}
+                                onChange={(e) => setRecurrenceMethod(e.target.value)}
+                                placeholder="Ex: Executado script PowerShell alternativo ao invés de reiniciar servidor..."
+                                className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+                              />
+                            </div>
+
+                            <label className="flex items-center gap-2 text-slate-700 dark:text-zinc-300 cursor-pointer pt-1">
+                              <input
+                                type="checkbox"
+                                checked={recurrenceReopen}
+                                onChange={(e) => setRecurrenceReopen(e.target.checked)}
+                                className="rounded border-slate-300 dark:border-zinc-700 text-indigo-600 focus:ring-0"
+                              />
+                              <span>Reabrir demanda para Em Andamento (trabalho ativo)</span>
+                            </label>
+                          </div>
+
+                          <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-200 dark:border-zinc-800">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setIsAddingRecurrence(false);
+                                setRecurrenceNotes("");
+                                setRecurrenceMethod("");
+                              }}
+                              className="px-3 py-1 rounded text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 cursor-pointer"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              type="button"
+                              disabled={isSubmittingRecurrence}
+                              onClick={handleSaveRecurrence}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-xs disabled:opacity-50 transition-all cursor-pointer"
+                            >
+                              {isSubmittingRecurrence ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Check className="w-3.5 h-3.5" />
+                              )}
+                              <span>Gravar Ocorrência no Histórico</span>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Primary Solution */}
+                      {selectedTask.resolution_notes ? (
+                        <div className="space-y-2">
+                          <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5" />
+                            <span>Solução Registrada na Base de Conhecimento:</span>
+                          </div>
+                          <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                            {selectedTask.resolution_notes}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-slate-400 dark:text-slate-500 italic">
+                          Nenhuma anotação de resolução registrada até o momento.
+                        </p>
+                      )}
+
+                      {/* Execution History Timeline */}
+                      {selectedTask.execution_history && selectedTask.execution_history.length > 0 && (
+                        <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
+                          <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                            <Repeat className="w-3 h-3 text-indigo-500" />
+                            Histórico de Execuções e Reincidências ({selectedTask.execution_history.length}):
+                          </span>
+                          <div className="space-y-1.5">
+                            {selectedTask.execution_history.map((exec) => (
+                              <div
+                                key={exec.id}
+                                className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-xs space-y-1"
+                              >
+                                <div className="flex items-center justify-between flex-wrap gap-1 text-[11px] text-slate-500 dark:text-zinc-400 font-mono">
+                                  <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
+                                    Ocorrência em {format(parseISO(exec.date), "dd/MM/yyyy 'às' HH:mm")}
+                                  </span>
+                                  <span>Registrado por: {exec.registered_by || "Usuário"}</span>
+                                </div>
+                                {exec.notes && (
+                                  <p className="text-slate-700 dark:text-slate-200 text-xs">
+                                    {exec.notes}
+                                  </p>
+                                )}
+                                {exec.method && (
+                                  <div className="text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-900/40">
+                                    <strong>Método aplicado:</strong> {exec.method}
+                                  </div>
+                                )}
                               </div>
-                            )}
+                            ))}
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
+                        </div>
+                      )}
 
-                  {/* Alternative Resolution Methods */}
-                  {selectedTask.alternative_resolutions && selectedTask.alternative_resolutions.length > 0 && (
-                    <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
-                      <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 block flex items-center gap-1.5">
-                        <Sparkles className="w-3 h-3 text-amber-500" />
-                        Métodos Alternativos de Resolução Catalogados:
-                      </span>
-                      <div className="space-y-1.5">
-                        {selectedTask.alternative_resolutions.map((alt) => (
-                          <div
-                            key={alt.id}
-                            className="p-2.5 rounded-xl bg-amber-950/20 border border-amber-800/40 text-xs space-y-0.5"
-                          >
-                            <div className="flex items-center justify-between flex-wrap gap-1 text-[10px] font-mono text-amber-400">
-                              <span className="font-semibold">{alt.method}</span>
-                              <span>{format(parseISO(alt.date), "dd/MM/yyyy")}</span>
-                            </div>
-                            {alt.notes && (
-                              <p className="text-[11px] text-zinc-300 italic">{alt.notes}</p>
-                            )}
+                      {/* Alternative Resolution Methods */}
+                      {selectedTask.alternative_resolutions && selectedTask.alternative_resolutions.length > 0 && (
+                        <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
+                          <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                            <Sparkles className="w-3 h-3 text-amber-500" />
+                            Métodos Alternativos de Resolução Catalogados:
+                          </span>
+                          <div className="space-y-1.5">
+                            {selectedTask.alternative_resolutions.map((alt) => (
+                              <div
+                                key={alt.id}
+                                className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 text-xs space-y-0.5"
+                              >
+                                <div className="flex items-center justify-between flex-wrap gap-1 text-[11px] font-mono text-amber-700 dark:text-amber-400">
+                                  <span className="font-semibold">{alt.method}</span>
+                                  <span>{format(parseISO(alt.date), "dd/MM/yyyy")}</span>
+                                </div>
+                                {alt.notes && (
+                                  <p className="text-[11px] text-slate-600 dark:text-zinc-300 italic">{alt.notes}</p>
+                                )}
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

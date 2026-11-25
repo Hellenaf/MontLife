@@ -1,46 +1,54 @@
-# **Mont Life**
-> *Gestor da minha vida diária através das tarefas, atividades e lembretes.*
-> *Hub Central de Produtividade, Base de Conhecimento (Wiki Técnica) & Motor de Metrificação.*
+# **MontLife**
+> *Central de Inteligência Operacional, Produtividade Diária, Base de Conhecimento (Wiki Técnica) & Motor de Metrificação.*
 
-O **Mont Life** é uma aplicação completa de inteligência operacional projetada para unificar fluxos de trabalho de TI escolar e vida pessoal, integrando a **API do Google Gemini** com *Structured Outputs* otimizados por tokens, autenticação **Multi-Account** via **Google OAuth (SSO)** com suporte a **Perfil Mestre Unificado**, curadoria automática de estudos com a **YouTube Data API v3** e persistência 100% nativa no **Cloud Firestore** com motor de auditoria de SLA e prestação de contas.
+O **MontLife** é uma aplicação PWA completa de gestão operacional e produtividade projetada para unificar demandas de trabalho e rotina pessoal em uma única interface rápida, responsiva e inteligente. Integra **Google Gemini AI**, **Google Calendar**, **Google Meet**, **YouTube Data API v3**, **Google OAuth Multi-Contas (Perfil Mestre Unificado)**, **Notificações Web Push nativas** e **Modo Offline com fila automática de sincronização**, tudo com persistência 100% nativa no **Cloud Firestore**.
 
 ---
 
 ## **1. Arquitetura e Stack Tecnológica**
 
-* **Frontend:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS com CSS Grid rigoroso.
-* **Layout:** **Fixed-Grid (Grade Fixa)** de 4 quadrantes em tela cheia (`100vh`, `overflow: hidden` na raiz e scrolls internos independentes por painel).
-* **Tema Visual:** *Lavender Purple Theme* (`#0F0E17` Dark Deep Lavender, `#1A1829` Superfícies, `#9D8DF1` Lavender Purple, `#7B61FF` Vibrant Violet, `#2E2B44` Bordas sutis).
-* **Inteligência Artificial:** Google Gemini API (`@google/genai`) utilizando modelo `gemini-2.5-flash` com micro-prompts, heurística de priorização rápida, cache em Firestore e busca por similaridade na base de conhecimento.
-* **Autenticação & Contas:** Google OAuth 2.0 (`googleapis`) com suporte a **Perfil Mestre Unificado** (Cross-Account Login) e vínculo ilimitado de contas e espaços de trabalho (`Trabalho`, `Pessoal`, `Estudos`, etc.).
-* **Curadoria de Aprendizado:** YouTube Data API v3 para busca contextual de vídeos técnicos e boas práticas.
-* **Armazenamento 100% Nativo:** Cloud Firestore (Firebase Admin SDK) com coleções `tasks`, `users` e `accounts` com consolidação e auditoria permanente.
+* **Frontend:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS.
+* **Tipografia & Temas:** Fontes **Plus Jakarta Sans** e **JetBrains Mono** (`next/font/google`), com suporte completo a **Tema Claro e Tema Escuro** harmonizado em toda a interface (incluindo Sidebar recolhível e painéis).
+* **Inteligência Artificial:** Google Gemini API (`@google/genai`) com triagem objetiva de demandas, reescrita estruturada, geração automática de checklists, assistente contextual na demanda (*Refinar Texto*, *Plano de Ação*, *Diagnóstico + Wiki*), **Briefing IA do Dia**, categorização inteligente e extração de tarefas a partir do Bloco de Notas.
+* **Autenticação & Multi-Workspaces:** Google OAuth 2.0 (`googleapis`) com **Perfil Mestre Unificado** (*Cross-Account Login*) e separação inteligente por contextos (`Trabalho`, `Pessoal`, `Estudos`, etc.).
+* **Integrações Google:** Google Calendar (visualização unificada, deduplicação de itens vinculados e conversão em demandas) e **Google Meet** (geração de sala em 1 clique e acesso rápido direto nos cards).
+* **Curadoria de Estudos:** YouTube Data API v3 + referências técnicas contextualizadas por demanda.
+* **PWA, Web Push & Modo Offline:** Service Worker dedicado (`public/sw.js`) com cache de assets, alertas nativos com vibração tátil no celular/desktop e fila persistente de mutações (`src/lib/offlineQueue.ts`) com UI otimista e sincronização automática ao reconectar.
+* **Armazenamento Cloud Native:** Cloud Firestore (Firebase Admin SDK) com coleções `tasks`, `notes`, `users` e `accounts`, auditoria completa de SLA e histórico de recorrências.
 
 ---
 
-## **2. Os 4 Quadrantes do Sistema**
+## **2. Módulos & Experiência de Uso (UX)**
 
-1. **Header / Barra de Comando IA (Topo Fixo):**
-   * Entrada de comandos rápidos em linguagem natural e reconhecimento de voz (Web Speech API).
-   * Triagem inteligente via Gemini com card de confirmação interativo e micro-prompts econômicos.
-   * **Alerta da Wiki Técnica:** Detecta tarefas anteriores concluídas similares e exibe a solução salva: *"💡 Você já resolveu algo parecido em [Data]: [Resumo da Solução]"*.
-   * Indicadores de conexão das contas Google vinculadas.
+### **Navegação & Produtividade Rápida**
+* **Sidebar Recolhível (Mini-Rail):** Alterne entre menu expandido e barra compacta de ícones pelo botão superior ou pelo atalho `[`, liberando mais espaço em telas de notebook.
+* **Command Palette Global (`Ctrl+K`):** Busca instantânea em **Demandas**, **Notas** e **Wiki Técnica**, navegação entre módulos, ações rápidas (tema, recolher painéis, configurações) e criação de demandas com IA.
+* **Header Calmo & Triagem por Voz/Texto:** Barra de comando IA integrada com ditado por voz (*Web Speech API*), central de alertas via Portal (sempre acima de cards e modais) e relógio discreto.
+* **Toasts Flutuantes com "Desfazer" (5s):** Alterações de status, conclusões, cancelamentos, transferências de conta e exclusões exibem aviso com opção imediata de desfazer.
 
-2. **Quadrante Esquerdo (Gestão de Tarefas):**
-   * Filtros por Conta/Espaço (`Todas`, `Trabalho (Notre Dame)`, `Pessoal`, etc.), Status e Prioridades (`P1` a `P4`).
-   * Ações rápidas: Iniciar (`[▶️]`), Aguardar (`[⏳]`), Concluir com Resolução (`[✅]`), Estender Prazo e Excluir.
-   * Botão de consolidação imediata de dados com a nuvem nativa.
+### **Minhas Demandas (Lista + Detalhes + Métricas & IA)**
+* **Lista Inteligente:** Busca limpa, **filtros recolhíveis** (dropdown no desktop e *Bottom Sheet* no mobile), chips removíveis de filtros ativos, seletor de **ordenação** (*Prazo mais próximo*, *Prioridade P1→P4*, *Mais recentes*), alternador **Compacto / Detalhado** e faixa lateral de prioridade nos cards.
+* **Detalhes da Demanda (Título Primeiro + Ações Fixas):**
+  * **Barra de Ações Fixa (*Sticky*):** Troca de status em 1 clique (`A Fazer → Em Andamento → Aguardando`), **Concluir**, **Adiar**, botão **Meet** e menu de ações secundárias sempre acessíveis sem rolar a página.
+  * **Grade Compacta de Propriedades:** Edição rápida de prioridade, prazo/horário, categoria, tipo (`Tarefa`, `Atividade`, `Lembrete`) e espaço.
+  * **Checklist & Assistente IA:** Pontos de validação interativos com barra de progresso e ações de IA (*Refinar Texto*, *Plano de Ação*, *Diagnóstico + Wiki*).
+  * **Seções Recolhíveis (*Accordions*):** *Agenda, Lembrete & Google Meet*, *Anexos & Links* (com **Visualizador Lightbox** com zoom interativo, arrastar/*pan*, rotação e tela cheia) e *Base de Soluções & Recorrência*.
+* **Painel Direito Recolhível (Métricas & Briefing IA):** Briefing inteligente das prioridades do dia, distribuição de status/tipos, cumprimento de SLA e proporção Trabalho vs Pessoal.
 
-3. **Quadrante Central (Timeline, Detalhes & Wiki):**
-   * **Aba 1 (Detalhes da Atividade):** Título, plano de ação estruturado, tags, ciclo de vida e histórico detalhado de extensões de prazo.
-   * **Aba 2 (Timeline do Dia):** Agenda integrada com blocos horários (08:00 às 20:00) mesclando tarefas institucionais e pessoais.
-   * **Aba 3 (Estudo & Melhoria):** Curadoria em vídeo do YouTube com links diretos e termos de busca recomendados pelo Gemini.
+### **Fluxo Kanban**
+* Quadro visual com arrastar e soltar (*drag-and-drop*), criação e renomeação de seções customizadas, faixa lateral de prioridade, controles revelados no *hover* e **adição rápida inline ("+ Adicionar aqui")** no rodapé de cada coluna.
 
-4. **Quadrante Direito (KPIs & Métricas em Tempo Real):**
-   * Cumprimento de SLA (% no prazo original vs % com adiamento gerenciado vs % atrasado).
-   * Proporção de atividades Trabalho vs Vida Pessoal.
-   * Distribuição por categoria técnica e contagem de soluções na Wiki.
-   * Botão de acesso ao **Relatório de Atividades & Prestação de Contas** em PDF executivo de alta fidelidade.
+### **Agenda do Dia & Gestão de Horários**
+* Visão unificada das demandas agendadas + compromissos do **Google Calendar** (ignorando duplicatas já vinculadas como demanda).
+* Marcação de **horário de início e término**, **lembretes personalizáveis** (padrão de 30 minutos antes) e **Detecção de Conflitos de Horário** em tempo real.
+* Conversão de eventos do Google Agenda em demandas completas do MontLife (incluindo extração automática de links do Google Meet).
+
+### **Bloco de Notas Inteligente**
+* Captura rápida e ditado por voz para atas de reunião, ideias e checklists, com cores, fixação (*pin*), salvamento automático (*autosave*), organização por IA e **extração automática de múltiplas demandas** diretamente a partir de uma nota.
+
+### **Wiki Técnica & Relatórios Executivos**
+* **Wiki Técnica:** Base pesquisável de soluções documentadas em demandas concluídas, com alerta automático de demandas similares durante a triagem para evitar retrabalho.
+* **Relatórios & Prestação de Contas:** Indicadores de *Lead Time*, matriz de prioridades, eficiência de SLA e layout otimizado para impressão/exportação em PDF executivo.
 
 ---
 
@@ -50,33 +58,32 @@ O **Mont Life** é uma aplicação completa de inteligência operacional projeta
 | :--- | :--- | :--- | :--- |
 | **P1** | Crítica / Urgente | +4 horas a partir da criação | `#EF4444` (Vermelho) |
 | **P2** | Alta | +24 horas (Dia seguinte) | `#F97316` (Laranja) |
-| **P3** | Média / Rotina | +3 dias úteis (pula fins de semana) | `#EAB308` (Amarelo) |
-| **P4** | Baixa / Planejamento | +7 dias corridos | `#A855F7` (Roxo) |
+| **P3** | Média / Rotina | +3 dias úteis (pula fins de semana) | `#6366F1` (Índigo) |
+| **P4** | Baixa / Planejamento | +7 dias corridos | `#94A3B8` (Neutro) |
 
-### **Extensão de Prazo (Deadline Extension):**
-* Ao estender o prazo, o sistema preserva o `original_due_date` (para garantir a fidelidade do relatório anual de assertividade), atualiza o `current_due_date`, incrementa o contador `extension_count` e adiciona ao array `deadline_extensions: [{ extended_at, previous_date, new_date, reason }]`.
-* Auditado e persistido de forma 100% nativa no Cloud Firestore.
+### **Extensão de Prazo (*Deadline Extension*):**
+* Ao estender um prazo, o sistema preserva `original_due_date` (mantendo a auditoria fiel nos relatórios), atualiza `current_due_date`, incrementa `extension_count` e registra o histórico completo em `deadline_extensions`.
 
 ---
 
-## **4. Ciclo de Vida das Demandas (Cloud Native)**
+## **4. Ciclo de Vida das Demandas**
 
-| Status no Mont Life | Descrição do Estado | Ação do Sistema |
+| Status | Descrição | Comportamento |
 | :--- | :--- | :--- |
-| `TRIAGE` | Triagem pendente | Aguardando confirmação no Card de IA |
-| `TODO` | Agendada / A Fazer | Demanda no backlog ativo com SLA calculado |
-| `IN_PROGRESS` | Em Andamento (`[▶️]`) | Registra timestamp `started_at` |
-| `WAITING` | Em Espera / Bloqueada (`[⏳]`) | Pausa a contagem de atraso de SLA |
-| `COMPLETED` | Concluída (`[✅]`) | Registra `completed_at`, notas técnicas e anexos de resolução |
-| `CANCELED` | Cancelada | Preservada no histórico de auditoria com justificativa |
+| `TRIAGE` | Triagem pendente | Aguardando confirmação no card de IA |
+| `TODO` | A Fazer | Demanda ativa no backlog com SLA calculado |
+| `IN_PROGRESS` | Em Andamento | Registra `started_at` |
+| `WAITING` | Aguardando | Pausa contagem de atraso enquanto aguarda terceiros/validação |
+| `COMPLETED` | Concluída | Registra `completed_at`, solução para a Wiki e comprovantes |
+| `CANCELED` | Cancelada | Mantida em histórico de auditoria com justificativa e opção de reabertura |
 
 ---
 
-## **5. Perfil Mestre & Vínculo Multi-Contas**
+## **5. Experiência Mobile & PWA**
 
-* **Login Transparente:** Autenticar com qualquer um dos e-mails vinculados reconhece automaticamente o Perfil Mestre e carrega todas as contas associadas.
-* **Espaços Flexíveis:** Contas podem ser rotuladas como `Trabalho (Notre Dame)`, `Pessoal`, `Estudos`, `Projetos` ou qualquer contexto customizado.
-* **Consolidação Centralizada:** Demandas criadas em diferentes contas vinculadas são centralizadas e visíveis unificadamente.
+* **Instalável no Celular:** Manifesto PWA e ícones otimizados para adicionar à tela inicial (Android/iOS).
+* **Navegação *Drill-Down*:** Barra inferior fixa (*Demandas*, *Notas*, *Agenda*, *Kanban*, *Menu*), filtros em *Bottom Sheet* e abertura direta de Detalhes/Métricas com retorno rápido, maximizando a área útil de leitura.
+* **Notificações Web Push & Offline:** Lembretes disparam notificações nativas do dispositivo via Service Worker, e ações feitas sem internet ficam enfileiradas localmente para sincronização automática ao restabelecer a rede.
 
 ---
 
@@ -94,7 +101,7 @@ Preencha os valores:
 # Gemini API (Paid Tier via @google/genai)
 GEMINI_API_KEY="sua_chave_da_gemini_api"
 
-# Google OAuth 2.0 (Para login seguro e identificação de espaços)
+# Google OAuth 2.0 (Login seguro, workspaces e Google Calendar)
 GOOGLE_CLIENT_ID="seu_client_id.apps.googleusercontent.com"
 GOOGLE_CLIENT_SECRET="seu_client_secret"
 GOOGLE_REDIRECT_URI="http://localhost:3000/api/google/callback"
@@ -102,26 +109,30 @@ GOOGLE_REDIRECT_URI="http://localhost:3000/api/google/callback"
 # YouTube Data API v3 (Curadoria automática de vídeos de estudo)
 YOUTUBE_API_KEY="sua_api_key_do_google_cloud"
 
-# Firebase / Cloud Firestore (Plano Blaze)
+# Firebase / Cloud Firestore
 NEXT_PUBLIC_FIREBASE_PROJECT_ID="seu_projeto_id"
 FIREBASE_CLIENT_EMAIL="firebase-adminsdk-xxx@seu_projeto.iam.gserviceaccount.com"
 FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
+
+# Opcional: Microsoft To Do / Entra ID
+MICROSOFT_CLIENT_ID="seu_client_id_do_azure"
+MICROSOFT_CLIENT_SECRET="seu_client_secret_do_azure"
 ```
 
 ---
 
 ## **7. Executando o Projeto**
 
-Para iniciar o servidor de desenvolvimento:
+Instale as dependências e inicie o servidor de desenvolvimento:
 
 ```bash
+npm install
 npm run dev
 ```
 
-Acesse em seu navegador:
-[http://localhost:3000](http://localhost:3000)
+Acesse em seu navegador: [http://localhost:3000](http://localhost:3000)
 
-Para compilar para produção:
+Para compilar e iniciar em modo de produção:
 
 ```bash
 npm run build

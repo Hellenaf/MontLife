@@ -46,6 +46,7 @@ interface KanbanViewProps {
   onSelectTask: (task: Task) => void;
   onUpdateStatus: (taskId: string, newStatus: TaskStatus) => void;
   onOpenNewTaskModal: (initialStatus?: TaskStatus) => void;
+  onQuickCreateTask?: (title: string, status: TaskStatus) => Promise<void> | void;
   onRequestCancelTask?: (task: Task) => void;
 }
 
@@ -174,10 +175,29 @@ export function KanbanView({
   onSelectTask,
   onUpdateStatus,
   onOpenNewTaskModal,
+  onQuickCreateTask,
   onRequestCancelTask,
 }: KanbanViewProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [priorityFilter, setPriorityFilter] = useState<"all" | Priority>("all");
+
+  // Inline Column Quick-Add state
+  const [quickAddColId, setQuickAddColId] = useState<string | null>(null);
+  const [quickAddTitle, setQuickAddTitle] = useState("");
+  const [isSubmittingQuickAdd, setIsSubmittingQuickAdd] = useState(false);
+
+  const handleSubmitQuickAdd = async (col: ColumnDef) => {
+    const clean = quickAddTitle.trim();
+    if (!clean || !onQuickCreateTask || isSubmittingQuickAdd) return;
+    setIsSubmittingQuickAdd(true);
+    try {
+      await onQuickCreateTask(clean, col.targetStatus || col.statuses[0]);
+      setQuickAddTitle("");
+      setQuickAddColId(null);
+    } finally {
+      setIsSubmittingQuickAdd(false);
+    }
+  };
 
   // Dynamic columns state with local persistence
   const [columns, setColumns] = useState<ColumnDef[]>(DEFAULT_COLUMNS);
@@ -465,16 +485,6 @@ export function KanbanView({
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
           )}
-
-          {/* Add Task Button */}
-          <button
-            type="button"
-            onClick={() => onOpenNewTaskModal()}
-            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm transition-all shrink-0 cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Nova Demanda</span>
-          </button>
         </div>
       </div>
 
@@ -668,7 +678,15 @@ export function KanbanView({
                           setDraggedOverColId(null);
                         }}
                         onClick={() => onSelectTask(task)}
-                        className={`group relative p-3 rounded-xl border transition-all cursor-grab active:cursor-grabbing shadow-xs space-y-2 ${
+                        className={`group relative p-3 rounded-xl border border-l-[3px] transition-all cursor-grab active:cursor-grabbing shadow-2xs space-y-2 ${
+                          task.priority === "P1"
+                            ? "border-l-rose-500"
+                            : task.priority === "P2"
+                            ? "border-l-amber-500"
+                            : task.priority === "P3"
+                            ? "border-l-indigo-500/80"
+                            : "border-l-slate-300 dark:border-l-zinc-700"
+                        } ${
                           isDraggingThis
                             ? "opacity-35 scale-95 border-dashed border-indigo-500 bg-slate-50 dark:bg-zinc-900"
                             : "bg-white dark:bg-[#111217] hover:bg-slate-50/80 dark:hover:bg-[#161820] border-slate-200 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-md"
@@ -781,10 +799,10 @@ export function KanbanView({
                             )}
                           </div>
 
-                          {/* Quick Move Buttons (Back / Cancel / Advance) */}
+                          {/* Quick Move Buttons (Always visible on mobile, revealed smoothly on hover/focus on desktop) */}
                           <div
                             onClick={(e) => e.stopPropagation()}
-                            className="flex items-center gap-1 opacity-100 md:opacity-75 md:group-hover:opacity-100 transition-opacity ml-auto"
+                            className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 md:focus-within:opacity-100 transition-opacity ml-auto"
                           >
                             {onRequestCancelTask && (
                               <button
@@ -849,6 +867,64 @@ export function KanbanView({
                     <ArrowRight className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
                     <span>Solte para mover para {col.title}</span>
                   </div>
+                )}
+
+                {/* Inline Quick-Add at Column Footer */}
+                {quickAddColId === col.id ? (
+                  <div className="p-2.5 rounded-xl bg-white dark:bg-[#141520] border border-indigo-400 dark:border-indigo-600 shadow-sm space-y-2 animate-in fade-in duration-100">
+                    <input
+                      type="text"
+                      autoFocus
+                      value={quickAddTitle}
+                      onChange={(e) => setQuickAddTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSubmitQuickAdd(col);
+                        if (e.key === "Escape") {
+                          setQuickAddColId(null);
+                          setQuickAddTitle("");
+                        }
+                      }}
+                      placeholder={`Título em ${col.title}...`}
+                      disabled={isSubmittingQuickAdd}
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#0d0e16] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+                    />
+                    <div className="flex items-center justify-end gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuickAddColId(null);
+                          setQuickAddTitle("");
+                        }}
+                        className="px-2 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={!quickAddTitle.trim() || isSubmittingQuickAdd}
+                        onClick={() => handleSubmitQuickAdd(col)}
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 cursor-pointer"
+                      >
+                        {isSubmittingQuickAdd ? "Criando..." : "Adicionar"}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onQuickCreateTask) {
+                        setQuickAddColId(col.id);
+                        setQuickAddTitle("");
+                      } else {
+                        onOpenNewTaskModal(col.targetStatus || col.statuses[0]);
+                      }
+                    }}
+                    className="w-full py-2 px-2.5 rounded-xl border border-dashed border-transparent hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-white/70 dark:hover:bg-white/[0.03] text-slate-500 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Adicionar aqui</span>
+                  </button>
                 )}
               </div>
             </div>
