@@ -146,15 +146,15 @@ export function RightKpiQuadrant({
   }, [tasks]);
 
   return (
-    <aside className="w-full h-full flex flex-col border-l border-slate-200/80 dark:border-[#22222B] bg-[#FAFAFB] dark:bg-[#0D0D11] shrink-0 overflow-hidden transition-colors duration-200">
+    <aside className="w-full h-full flex flex-col border-l border-[#DCD7CC]/80 dark:border-[#343F56] bg-[#F0EDE6] dark:bg-[#1C2230] shrink-0 overflow-hidden transition-colors duration-200">
       {/* Header */}
-      <div className="h-12 border-b border-slate-200/75 dark:border-[#1F1F28] px-4 flex items-center justify-between shrink-0 bg-white dark:bg-[#111115]">
+      <div className="h-12 border-b border-[#DCD7CC]/75 dark:border-[#2E384D] px-4 flex items-center justify-between shrink-0 bg-[#F7F6F1] dark:bg-[#222938]">
         <div className="flex items-center gap-2 min-w-0">
           {onBackToTasks && (
             <button
               type="button"
               onClick={onBackToTasks}
-              className="lg:hidden inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-zinc-200 text-xs font-medium cursor-pointer mr-1"
+              className="lg:hidden inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#E7E3DA] dark:bg-white/[0.06] text-slate-700 dark:text-zinc-200 text-xs font-medium cursor-pointer mr-1"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
               <span>Lista</span>
@@ -175,7 +175,7 @@ export function RightKpiQuadrant({
             <button
               type="button"
               onClick={onCloseDesktop}
-              className="hidden lg:flex p-1 rounded-md text-slate-400 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+              className="hidden lg:flex p-1 rounded-md text-slate-400 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-100 hover:bg-[#E4E0D6] dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
               title="Fechar painel de métricas"
               aria-label="Fechar painel de métricas"
             >
@@ -188,7 +188,7 @@ export function RightKpiQuadrant({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto p-3.5 space-y-3 pb-6 lg:pb-4">
         {/* Briefing IA do Dia */}
-        <div className="p-3.5 rounded-xl bg-white dark:bg-[#14141B] border border-indigo-200/80 dark:border-indigo-500/25 space-y-2.5 shadow-xs-subtle">
+        <div className="p-3.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-indigo-200/80 dark:border-indigo-500/25 space-y-2.5 shadow-xs-subtle">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-1.5 min-w-0">
               <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
@@ -234,7 +234,7 @@ export function RightKpiQuadrant({
                       key={item.task_id}
                       type="button"
                       onClick={() => onSelectTaskById?.(item.task_id)}
-                      className="w-full text-left p-2.5 rounded-lg bg-[#FAFAFB] dark:bg-[#101016] border border-slate-200/80 dark:border-[#23232D] hover:border-indigo-400 dark:hover:border-indigo-500/50 transition-colors cursor-pointer space-y-0.5"
+                      className="w-full text-left p-2.5 rounded-lg bg-[#F0EDE6] dark:bg-[#1C2230] border border-[#DCD7CC]/80 dark:border-[#343F56] hover:border-indigo-400 dark:hover:border-indigo-500/50 transition-colors cursor-pointer space-y-0.5"
                     >
                       <div className="flex items-center justify-between gap-1.5">
                         <span className="text-xs font-semibold text-slate-900 dark:text-zinc-100 line-clamp-1">
@@ -276,7 +276,7 @@ export function RightKpiQuadrant({
 
         {/* Clean 2x2 KPI Grid */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="p-3 rounded-xl bg-white dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] space-y-1">
+          <div className="p-3 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-1">
             <span className="text-[11px] text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
               Total
@@ -287,7 +287,7 @@ export function RightKpiQuadrant({
             <div className="text-[10px] text-slate-400 dark:text-zinc-500">registradas</div>
           </div>
 
-          <div className="p-3 rounded-xl bg-white dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] space-y-1">
+          <div className="p-3 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-1">
             <span className="text-[11px] text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
               Concluídas
@@ -300,7 +300,7 @@ export function RightKpiQuadrant({
             </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-white dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] space-y-1">
+          <div className="p-3 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-1">
             <span className="text-[11px] text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               Em aberto
@@ -311,7 +311,7 @@ export function RightKpiQuadrant({
             <div className="text-[10px] text-slate-400 dark:text-zinc-500">pendentes</div>
           </div>
 
-          <div className="p-3 rounded-xl bg-white dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] space-y-1">
+          <div className="p-3 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-1">
             <span className="text-[11px] text-slate-500 dark:text-zinc-400 flex items-center gap-1.5 font-medium">
               <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
               Canceladas
@@ -324,26 +324,26 @@ export function RightKpiQuadrant({
         </div>
 
         {/* Distribution by Type */}
-        <div className="p-3.5 rounded-xl bg-white dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] space-y-2.5">
+        <div className="p-3.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-2.5">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block">
             Distribuição por Tipo
           </span>
           <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
-            <div className="p-2 rounded-lg bg-[#FAFAFB] dark:bg-[#101016] border border-slate-200/60 dark:border-[#20202A]">
+            <div className="p-2 rounded-lg bg-[#F0EDE6] dark:bg-[#1C2230] border border-[#DCD7CC]/60 dark:border-[#2E384D]">
               <ListTodo className="w-3.5 h-3.5 text-indigo-500 mx-auto mb-1" />
               <span className="font-mono font-bold text-xs text-slate-900 dark:text-zinc-100 block tabular-nums">
                 {metrics.tasksCount}
               </span>
               <span className="text-slate-500 dark:text-zinc-400">Tarefas</span>
             </div>
-            <div className="p-2 rounded-lg bg-[#FAFAFB] dark:bg-[#101016] border border-slate-200/60 dark:border-[#20202A]">
+            <div className="p-2 rounded-lg bg-[#F0EDE6] dark:bg-[#1C2230] border border-[#DCD7CC]/60 dark:border-[#2E384D]">
               <Activity className="w-3.5 h-3.5 text-violet-500 mx-auto mb-1" />
               <span className="font-mono font-bold text-xs text-slate-900 dark:text-zinc-100 block tabular-nums">
                 {metrics.activitiesCount}
               </span>
               <span className="text-slate-500 dark:text-zinc-400">Atividades</span>
             </div>
-            <div className="p-2 rounded-lg bg-[#FAFAFB] dark:bg-[#101016] border border-slate-200/60 dark:border-[#20202A]">
+            <div className="p-2 rounded-lg bg-[#F0EDE6] dark:bg-[#1C2230] border border-[#DCD7CC]/60 dark:border-[#2E384D]">
               <Bell className="w-3.5 h-3.5 text-amber-500 mx-auto mb-1" />
               <span className="font-mono font-bold text-xs text-slate-900 dark:text-zinc-100 block tabular-nums">
                 {metrics.remindersCount}
@@ -354,7 +354,7 @@ export function RightKpiQuadrant({
         </div>
 
         {/* SLA Compliance */}
-        <div className="p-3.5 rounded-xl bg-white dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] space-y-3">
+        <div className="p-3.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-800 dark:text-zinc-100 flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
@@ -365,7 +365,7 @@ export function RightKpiQuadrant({
             </span>
           </div>
 
-          <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-white/[0.06] overflow-hidden flex">
+          <div className="w-full h-1.5 rounded-full bg-[#E7E3DA] dark:bg-white/[0.06] overflow-hidden flex">
             <div
               style={{ width: `${metrics.onTimePct}%` }}
               className="bg-emerald-500 h-full transition-all"
@@ -384,19 +384,19 @@ export function RightKpiQuadrant({
           </div>
 
           <div className="grid grid-cols-3 gap-1.5 text-center text-[10px]">
-            <div className="p-1.5 rounded-lg bg-[#FAFAFB] dark:bg-[#101016]">
+            <div className="p-1.5 rounded-lg bg-[#F0EDE6] dark:bg-[#1C2230]">
               <span className="text-emerald-600 dark:text-emerald-400 block font-mono font-bold tabular-nums">
                 {metrics.onTimePct}%
               </span>
               <span className="text-slate-500 dark:text-zinc-400">No Prazo</span>
             </div>
-            <div className="p-1.5 rounded-lg bg-[#FAFAFB] dark:bg-[#101016]">
+            <div className="p-1.5 rounded-lg bg-[#F0EDE6] dark:bg-[#1C2230]">
               <span className="text-amber-600 dark:text-amber-400 block font-mono font-bold tabular-nums">
                 {metrics.extendedPct}%
               </span>
               <span className="text-slate-500 dark:text-zinc-400">Estendido</span>
             </div>
-            <div className="p-1.5 rounded-lg bg-[#FAFAFB] dark:bg-[#101016]">
+            <div className="p-1.5 rounded-lg bg-[#F0EDE6] dark:bg-[#1C2230]">
               <span className="text-rose-600 dark:text-rose-400 block font-mono font-bold tabular-nums">
                 {metrics.breachedPct}%
               </span>
@@ -406,7 +406,7 @@ export function RightKpiQuadrant({
         </div>
 
         {/* Work vs Personal Ratio */}
-        <div className="p-3.5 rounded-xl bg-white dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] space-y-2.5">
+        <div className="p-3.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-800 dark:text-zinc-100 flex items-center gap-1.5">
               <PieChart className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500" />
@@ -427,7 +427,7 @@ export function RightKpiQuadrant({
                   {metrics.workTasks} ({metrics.workPct}%)
                 </span>
               </div>
-              <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-white/[0.06]">
+              <div className="w-full h-1.5 rounded-full bg-[#E7E3DA] dark:bg-white/[0.06]">
                 <div
                   style={{ width: `${metrics.workPct}%` }}
                   className="h-full bg-blue-500 rounded-full transition-all"
@@ -444,7 +444,7 @@ export function RightKpiQuadrant({
                   {metrics.personalTasks} ({metrics.personalPct}%)
                 </span>
               </div>
-              <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-white/[0.06]">
+              <div className="w-full h-1.5 rounded-full bg-[#E7E3DA] dark:bg-white/[0.06]">
                 <div
                   style={{ width: `${metrics.personalPct}%` }}
                   className="h-full bg-violet-500 rounded-full transition-all"
@@ -455,7 +455,7 @@ export function RightKpiQuadrant({
         </div>
 
         {/* Top Categories */}
-        <div className="p-3.5 rounded-xl bg-white dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] space-y-2.5">
+        <div className="p-3.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-2.5">
           <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block">
             Principais Categorias
           </span>
@@ -477,7 +477,7 @@ export function RightKpiQuadrant({
                         {count}
                       </span>
                     </div>
-                    <div className="w-full h-1 rounded-full bg-slate-100 dark:bg-white/[0.06]">
+                    <div className="w-full h-1 rounded-full bg-[#E7E3DA] dark:bg-white/[0.06]">
                       <div
                         style={{ width: `${pct}%` }}
                         className="h-full bg-indigo-500 rounded-full transition-all"

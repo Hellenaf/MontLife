@@ -129,9 +129,9 @@ export function ClassifyAccountModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-3xl bg-white dark:bg-[#141326] border border-slate-200 dark:border-[#282647] shadow-2xl p-4 sm:p-7 space-y-4 sm:space-y-5 text-left transition-all custom-scrollbar">
+      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-3xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-2xl p-4 sm:p-7 space-y-4 sm:space-y-5 text-left transition-all custom-scrollbar">
         {/* Top Header */}
-        <div className="flex items-center gap-3.5 border-b border-slate-100 dark:border-white/5 pb-4">
+        <div className="flex items-center gap-3.5 border-b border-[#E5E0D6] dark:border-white/5 pb-4">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center font-black text-xl text-white shadow-md shadow-purple-600/30 shrink-0">
             M
           </div>
@@ -183,7 +183,7 @@ export function ClassifyAccountModal({
                   className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                     isSelected
                       ? "bg-purple-50 dark:bg-purple-950/50 border-purple-500 text-purple-700 dark:text-purple-300 ring-2 ring-purple-500/20 font-bold"
-                      : "bg-slate-50 dark:bg-[#18172e] border-slate-200 dark:border-white/5 text-slate-700 dark:text-slate-300 hover:border-purple-300 dark:hover:border-purple-500/30"
+                      : "bg-[#F0EDE6] dark:bg-[#293244] border-[#DCD7CC] dark:border-white/5 text-slate-700 dark:text-slate-300 hover:border-purple-300 dark:hover:border-purple-500/30"
                   }`}
                 >
                   <Icon className="w-4 h-4 text-purple-500 shrink-0" />
@@ -210,7 +210,7 @@ export function ClassifyAccountModal({
               placeholder="Ex: Faculdade, TI Escolar, Freelance, Geral..."
               maxLength={35}
               required
-              className="w-full h-11 px-3.5 rounded-xl bg-slate-50 dark:bg-[#18172e] border border-slate-200 dark:border-white/10 text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+              className="w-full h-11 px-3.5 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-white/10 text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
             />
             <p className="text-[11px] text-slate-400">
               Você pode vincular quantas contas Google desejar e renomear os rótulos a qualquer momento.

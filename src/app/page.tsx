@@ -1173,7 +1173,7 @@ export default function MontOpsDashboard() {
   const allCategories = useMemo(() => getAllCategories(tasks), [tasks]);
 
   return (
-    <div className="w-full h-screen h-[100dvh] overflow-hidden flex bg-[#F6F7F9] dark:bg-[#09090B] text-slate-900 dark:text-zinc-100 transition-colors duration-200">
+    <div className="w-full h-screen h-[100dvh] overflow-hidden flex bg-[#EAE7DF] dark:bg-[#171C26] text-slate-900 dark:text-zinc-100 transition-colors duration-200">
       {/* 1. Sidebar Nav */}
       <div className="hidden lg:flex h-full no-print">
         <SidebarNav
@@ -1338,7 +1338,7 @@ export default function MontOpsDashboard() {
 
         {/* Main Content Canvas */}
         {activeNav === "agenda" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-[#F6F7F9] dark:bg-[#09090B]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-[#EAE7DF] dark:bg-[#171C26]">
             <AgendaDoDiaView
               tasks={tasks}
               accountFilter={accountFilter}
@@ -1355,7 +1355,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "notas" ? (
-          <main className="flex-1 min-h-0 overflow-hidden p-3 sm:p-4 bg-[#F6F7F9] dark:bg-[#09090B]">
+          <main className="flex-1 min-h-0 overflow-hidden p-3 sm:p-4 bg-[#EAE7DF] dark:bg-[#171C26]">
             <NotesView
               notes={notes}
               tasks={tasks}
@@ -1369,7 +1369,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "wiki" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-[#F6F7F9] dark:bg-[#09090B]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-[#EAE7DF] dark:bg-[#171C26]">
             <WikiTechnicalView
               tasks={tasks}
               onSelectTask={navigateToTaskDetails}
@@ -1381,7 +1381,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "kanban" ? (
-          <main className="flex-1 min-h-0 overflow-hidden p-3 sm:p-5 bg-[#F6F7F9] dark:bg-[#09090B]">
+          <main className="flex-1 min-h-0 overflow-hidden p-3 sm:p-5 bg-[#EAE7DF] dark:bg-[#171C26]">
             <KanbanView
               tasks={tasks}
               accountFilter={accountFilter}
@@ -1400,7 +1400,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "relatorios" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-[#F6F7F9] dark:bg-[#09090B]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-[#EAE7DF] dark:bg-[#171C26]">
             <ReportsView
               tasks={tasks}
               accountFilter={accountFilter}
@@ -1412,7 +1412,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : (
-          <div className="relative flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden bg-[#F6F7F9] dark:bg-[#09090B]">
+          <div className="relative flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden bg-[#EAE7DF] dark:bg-[#171C26]">
             {/* Master Column: Task Inbox List */}
             <div className={`${mobileActiveView === "tasks" ? "flex" : "hidden"} lg:flex flex-1 min-h-0 lg:flex-none lg:h-full w-full lg:w-auto lg:shrink-0`}>
               <LeftTasksQuadrant
@@ -1514,7 +1514,7 @@ export default function MontOpsDashboard() {
       </div>
 
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 min-h-[62px] pt-1 pb-[max(0.45rem,env(safe-area-inset-bottom))] bg-white/95 dark:bg-[#0C0C0F]/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-[#22222B] px-1.5 flex items-center justify-around z-40">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 min-h-[62px] pt-1 pb-[max(0.45rem,env(safe-area-inset-bottom))] bg-[#F7F6F1]/95 dark:bg-[#1C2230]/95 backdrop-blur-lg border-t border-[#DCD7CC]/80 dark:border-[#343F56] px-1.5 flex items-center justify-around z-40">
         <button
           type="button"
           onClick={() => {

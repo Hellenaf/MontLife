@@ -555,7 +555,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
   return (
     <div className="max-w-7xl mx-auto space-y-4 pb-8 lg:pb-12 animate-in fade-in duration-200">
       {/* 1. Header Toolbar (Hidden when printing) */}
-      <div className="no-print p-4 sm:p-5 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] flex flex-wrap items-center justify-between gap-3">
+      <div className="no-print p-4 sm:p-5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-200/70 dark:border-indigo-500/25 flex items-center justify-center shrink-0">
             <Award className="w-4 h-4" />
@@ -565,7 +565,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               <h2 className="text-base font-bold tracking-tight text-slate-950 dark:text-zinc-50">
                 Relatórios & Prestação de Contas
               </h2>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300">
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-[#E7E3DA] dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300">
                 {scopeFilter === "work"
                   ? "Atividades Profissionais"
                   : scopeFilter === "personal"
@@ -587,7 +587,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
               isPreviewMode
                 ? "bg-slate-900 dark:bg-white text-white dark:text-zinc-950 border-slate-900 dark:border-white font-semibold"
-                : "border-slate-200/90 dark:border-[#24242F] bg-white dark:bg-[#16161C] text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-[#1C1C24]"
+                : "border-[#DCD7CC]/90 dark:border-[#343F56] bg-[#F7F6F1] dark:bg-[#293244] text-slate-700 dark:text-zinc-200 hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D]"
             }`}
             title="Alternar entre painel interativo e visualização executiva do relatório"
           >
@@ -623,7 +623,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           <button
             type="button"
             onClick={handleCopyEmailReport}
-            className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-slate-200/90 dark:border-[#24242F] bg-white dark:bg-[#16161C] text-xs font-medium text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-[#1C1C24] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-[#DCD7CC]/90 dark:border-[#343F56] bg-[#F7F6F1] dark:bg-[#293244] text-xs font-medium text-slate-700 dark:text-zinc-200 hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] transition-colors cursor-pointer"
             title="Copiar texto formatado para enviar por e-mail"
           >
             {copiedFeedback ? (
@@ -642,7 +642,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           <button
             type="button"
             onClick={handleExportCsv}
-            className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-slate-200/90 dark:border-[#24242F] bg-white dark:bg-[#16161C] text-xs font-medium text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-[#1C1C24] transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-[#DCD7CC]/90 dark:border-[#343F56] bg-[#F7F6F1] dark:bg-[#293244] text-xs font-medium text-slate-700 dark:text-zinc-200 hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] transition-colors cursor-pointer"
             title="Exportar planilha CSV"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -652,7 +652,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
       </div>
 
       {/* 2. Filter Bar: Year + Month + Sub-tabs */}
-      <div className="no-print p-3 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+      <div className="no-print p-3 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
         <div className="flex items-center gap-1.5 w-full lg:w-auto overflow-x-auto no-scrollbar pb-0.5 lg:pb-0">
           <div className="relative shrink-0">
             <select
@@ -660,7 +660,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               onChange={(e) =>
                 setSelectedYear(e.target.value === "ALL" ? "ALL" : Number(e.target.value))
               }
-              className="h-8 pl-2.5 pr-7 rounded-lg bg-slate-100/80 dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] text-xs font-semibold text-slate-800 dark:text-zinc-100 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none transition-colors"
+              className="h-8 pl-2.5 pr-7 rounded-lg bg-[#E7E3DA]/80 dark:bg-[#293244] border border-[#DCD7CC]/80 dark:border-[#343F56] text-xs font-semibold text-slate-800 dark:text-zinc-100 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none transition-colors"
               title="Filtrar por ano ou compilado geral"
             >
               <option value="ALL">Todos os Anos</option>
@@ -673,7 +673,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             <ChevronDown className="w-3 h-3 text-slate-400 dark:text-zinc-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          <div className="flex items-center gap-0.5 p-0.5 bg-slate-100/80 dark:bg-[#16161C] rounded-lg border border-slate-200/80 dark:border-[#24242F] shrink-0">
+          <div className="flex items-center gap-0.5 p-0.5 bg-[#E7E3DA]/80 dark:bg-[#293244] rounded-lg border border-[#DCD7CC]/80 dark:border-[#343F56] shrink-0">
             {months.map((m) => (
               <button
                 key={String(m.value)}
@@ -681,7 +681,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 onClick={() => setSelectedMonth(m.value as any)}
                 className={`px-2 py-0.5 rounded-md text-[11px] font-medium shrink-0 transition-all cursor-pointer ${
                   selectedMonth === m.value
-                    ? "bg-white dark:bg-[#23232E] text-slate-950 dark:text-white font-semibold shadow-xs-subtle"
+                    ? "bg-[#F7F6F1] dark:bg-[#313B50] text-slate-950 dark:text-white font-semibold shadow-xs-subtle"
                     : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
                 }`}
               >
@@ -692,13 +692,13 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
         </div>
 
         {!isPreviewMode && (
-          <div className="flex items-center gap-0.5 bg-slate-100/80 dark:bg-[#16161C] p-0.5 rounded-lg border border-slate-200/80 dark:border-[#24242F] w-full lg:w-auto overflow-x-auto no-scrollbar shrink-0">
+          <div className="flex items-center gap-0.5 bg-[#E7E3DA]/80 dark:bg-[#293244] p-0.5 rounded-lg border border-[#DCD7CC]/80 dark:border-[#343F56] w-full lg:w-auto overflow-x-auto no-scrollbar shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab("dashboard")}
               className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "dashboard"
-                  ? "bg-white dark:bg-[#23232E] text-slate-950 dark:text-white shadow-xs-subtle font-semibold"
+                  ? "bg-[#F7F6F1] dark:bg-[#313B50] text-slate-950 dark:text-white shadow-xs-subtle font-semibold"
                   : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white"
               }`}
             >
@@ -709,7 +709,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               onClick={() => setActiveTab("activities")}
               className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "activities"
-                  ? "bg-white dark:bg-[#23232E] text-slate-950 dark:text-white shadow-xs-subtle font-semibold"
+                  ? "bg-[#F7F6F1] dark:bg-[#313B50] text-slate-950 dark:text-white shadow-xs-subtle font-semibold"
                   : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white"
               }`}
             >
@@ -721,7 +721,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 onClick={() => setActiveTab("ai_summary")}
                 className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                   activeTab === "ai_summary"
-                    ? "bg-white dark:bg-[#23232E] text-indigo-600 dark:text-indigo-400 shadow-xs-subtle font-semibold"
+                    ? "bg-[#F7F6F1] dark:bg-[#313B50] text-indigo-600 dark:text-indigo-400 shadow-xs-subtle font-semibold"
                     : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
@@ -741,12 +741,12 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           id="printable-report"
           className={`${
             isPreviewMode
-              ? "block bg-white dark:bg-[#12131A] text-slate-900 dark:text-zinc-100 p-4 sm:p-10 rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-2xl space-y-6 sm:space-y-8 print:p-0 print:border-0 print:shadow-none print:bg-white print:text-black"
+              ? "block bg-[#F7F6F1] dark:bg-[#222938] text-slate-900 dark:text-zinc-100 p-4 sm:p-10 rounded-2xl sm:rounded-3xl border border-[#DCD7CC] dark:border-[#343F56] shadow-2xl space-y-6 sm:space-y-8 print:p-0 print:border-0 print:shadow-none print:bg-white print:text-black"
               : "hidden print:block text-black bg-white space-y-6"
           }`}
         >
           {/* Executive Header Banner */}
-          <div className="border-b-2 border-slate-800 dark:border-zinc-700 print:border-black pb-6 space-y-4">
+          <div className="border-b-2 border-slate-800 dark:border-[#404D68] print:border-black pb-6 space-y-4">
             <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2.5 flex-wrap">
@@ -765,7 +765,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
               {/* Verified Seal */}
               <div className="text-left sm:text-right shrink-0">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 text-slate-800 dark:text-zinc-200 print:bg-slate-100 print:text-black print:border-slate-300 text-[11px] font-bold">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#E7E3DA] dark:bg-[#293244] border border-slate-300 dark:border-[#404D68] text-slate-800 dark:text-zinc-200 print:bg-slate-100 print:text-black print:border-slate-300 text-[11px] font-bold">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span>Documento Oficial Auditado</span>
                 </div>
@@ -774,7 +774,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
             {/* Metadata 4-Box Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 text-xs">
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200">
+              <div className="p-2.5 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] print:bg-slate-50 print:border-slate-200">
                 <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Período Auditado
                 </span>
@@ -783,7 +783,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200">
+              <div className="p-2.5 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] print:bg-slate-50 print:border-slate-200">
                 <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Escopo Operacional
                 </span>
@@ -796,7 +796,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </span>
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200">
+              <div className="p-2.5 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] print:bg-slate-50 print:border-slate-200">
                 <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Gestor Responsável
                 </span>
@@ -804,13 +804,13 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                   type="text"
                   value={managerName}
                   onChange={(e) => handleManagerNameChange(e.target.value)}
-                  className="font-bold text-slate-900 dark:text-white print:text-black bg-transparent border-b border-dashed border-slate-300 dark:border-zinc-700 focus:border-indigo-500 outline-none w-full mt-0.5 text-xs transition-colors"
+                  className="font-bold text-slate-900 dark:text-white print:text-black bg-transparent border-b border-dashed border-slate-300 dark:border-[#404D68] focus:border-indigo-500 outline-none w-full mt-0.5 text-xs transition-colors"
                   placeholder="Nome do Gestor"
                   title="Clique para editar o Gestor Responsável"
                 />
               </div>
 
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200">
+              <div className="p-2.5 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] print:bg-slate-50 print:border-slate-200">
                 <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Data de Emissão
                 </span>
@@ -829,7 +829,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             </h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-              <div className="p-3 sm:p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
+              <div className="p-3 sm:p-4 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] print:bg-slate-50 print:border-slate-200 space-y-1">
                 <span className="text-[11px] font-semibold text-slate-600 dark:text-zinc-400 print:text-slate-600 block">
                   Total de Demandas
                 </span>
@@ -899,7 +899,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             </h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
+              <div className="p-3.5 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] print:bg-slate-50 print:border-slate-200 space-y-1">
                 <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Tempo Médio de Resolução
                 </span>
@@ -911,7 +911,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
+              <div className="p-3.5 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] print:bg-slate-50 print:border-slate-200 space-y-1">
                 <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Entrega Mais Ágil
                 </span>
@@ -923,7 +923,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
+              <div className="p-3.5 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] print:bg-slate-50 print:border-slate-200 space-y-1">
                 <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Maior Complexidade
                 </span>
@@ -935,7 +935,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-1">
+              <div className="p-3.5 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] print:bg-slate-50 print:border-slate-200 space-y-1">
                 <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-zinc-400 print:text-slate-600 block">
                   Assertividade Crítica (P1/P2)
                 </span>
@@ -957,8 +957,8 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             </h2>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border border-slate-200 dark:border-zinc-800 print:border-slate-300 rounded-xl overflow-hidden">
-                <thead className="bg-slate-100 dark:bg-[#181926] print:bg-slate-100 border-b border-slate-300 dark:border-zinc-700 print:border-slate-300">
+              <table className="w-full text-left text-xs border border-[#DCD7CC] dark:border-[#343F56] print:border-slate-300 rounded-xl overflow-hidden">
+                <thead className="bg-[#E7E3DA] dark:bg-[#293244] print:bg-slate-100 border-b border-slate-300 dark:border-[#404D68] print:border-slate-300">
                   <tr>
                     <th className="p-2 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-16 text-center">Nível</th>
                     <th className="p-2 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800">Classificação / Descrição</th>
@@ -981,7 +981,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                         : resolutionMetrics.avgLabelP4;
 
                     return (
-                      <tr key={p.priority} className="hover:bg-slate-50/50 print:hover:bg-transparent">
+                      <tr key={p.priority} className="hover:bg-[#EBE7DE]/50 print:hover:bg-transparent">
                         <td className="p-2 text-center font-mono font-bold text-slate-900 dark:text-white print:text-black">
                           <span
                             className={`px-2 py-0.5 rounded text-[11px] font-bold ${
@@ -991,7 +991,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                                 ? "bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-800"
                                 : p.priority === "P3"
                                 ? "bg-indigo-100 dark:bg-indigo-950/60 text-indigo-800 dark:text-indigo-300 border border-indigo-300 dark:border-indigo-800"
-                                : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-zinc-700"
+                                : "bg-[#E7E3DA] dark:bg-[#293244] text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-[#404D68]"
                             }`}
                           >
                             {p.priority}
@@ -1028,14 +1028,14 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           {/* Section 4: SLA Audit & Categories Matrix */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 page-break-avoid">
             {/* SLA Breakdown Card */}
-            <div className="p-3.5 sm:p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-3">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] print:bg-slate-50 print:border-slate-200 space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex flex-wrap items-center justify-between gap-1.5">
                 <span>4. Auditoria de Cumprimento de Prazos (SLA)</span>
                 <span className="text-emerald-700 dark:text-emerald-400 font-mono font-bold">{onTimePct + extendedPct}% Confiabilidade</span>
               </h3>
 
               <div className="space-y-2 text-xs">
-                <div className="flex items-center justify-between gap-2 py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
+                <div className="flex items-center justify-between gap-2 py-1 border-b border-[#DCD7CC] dark:border-[#343F56]/80 print:border-slate-200">
                   <span className="text-slate-700 dark:text-zinc-300 print:text-slate-700 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-emerald-600 shrink-0" />
                     No Prazo Original (Sem prorrogação)
@@ -1043,7 +1043,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                   <strong className="text-slate-900 dark:text-white print:text-black font-mono shrink-0">{onTimeCount} ({onTimePct}%)</strong>
                 </div>
 
-                <div className="flex items-center justify-between gap-2 py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
+                <div className="flex items-center justify-between gap-2 py-1 border-b border-[#DCD7CC] dark:border-[#343F56]/80 print:border-slate-200">
                   <span className="text-slate-700 dark:text-zinc-300 print:text-slate-700 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-amber-600 shrink-0" />
                     Com Prazo Prorrogado (Gerenciado)
@@ -1051,7 +1051,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                   <strong className="text-slate-900 dark:text-white print:text-black font-mono shrink-0">{extendedAndCompletedCount} ({extendedPct}%)</strong>
                 </div>
 
-                <div className="flex items-center justify-between gap-2 py-1 border-b border-slate-200 dark:border-zinc-800/80 print:border-slate-200">
+                <div className="flex items-center justify-between gap-2 py-1 border-b border-[#DCD7CC] dark:border-[#343F56]/80 print:border-slate-200">
                   <span className="text-slate-700 dark:text-zinc-300 print:text-slate-700 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-rose-600 shrink-0" />
                     Entregues com Atraso
@@ -1070,7 +1070,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             </div>
 
             {/* Top Workload Categories */}
-            <div className="p-3.5 sm:p-4 rounded-xl bg-slate-50 dark:bg-[#181926] border border-slate-200 dark:border-zinc-800 print:bg-slate-50 print:border-slate-200 space-y-3">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] print:bg-slate-50 print:border-slate-200 space-y-3">
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex flex-wrap items-center justify-between gap-1.5">
                 <span>5. Distribuição por Linha de Atuação (Categorias)</span>
                 <span className="text-slate-500 dark:text-zinc-400 font-mono">{categoryStats.length} categorias</span>
@@ -1079,7 +1079,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               <div className="space-y-1.5 text-xs max-h-52 overflow-hidden">
                 {categoryStats.slice(0, 6).map((c) => {
                   return (
-                    <div key={c.category} className="flex items-center justify-between gap-2 py-1 border-b border-slate-200/80 dark:border-zinc-800/80 print:border-slate-200">
+                    <div key={c.category} className="flex items-center justify-between gap-2 py-1 border-b border-[#DCD7CC]/80 dark:border-[#343F56]/80 print:border-slate-200">
                       <span className="text-slate-800 dark:text-zinc-200 print:text-slate-800 font-medium truncate min-w-0 flex-1">{c.category}</span>
                       <span className="font-mono text-slate-600 dark:text-zinc-400 print:text-slate-600 font-semibold shrink-0">{c.completed}/{c.total} ({c.successRate}%)</span>
                     </div>
@@ -1103,7 +1103,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               </div>
             </div>
           ) : (
-            <div className="no-print p-4 rounded-2xl bg-slate-50 dark:bg-zinc-800/50 border border-dashed border-slate-300 dark:border-zinc-700 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="no-print p-4 rounded-2xl bg-[#F0EDE6] dark:bg-[#293244]/50 border border-dashed border-slate-300 dark:border-[#404D68] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
               <div className="space-y-0.5">
                 <span className="text-xs font-bold text-slate-800 dark:text-zinc-200 block">
                   Deseja incluir parecer executivo automático no Relatório?
@@ -1126,7 +1126,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
           {/* Section 4: Comprehensive Analytical Delivery Table */}
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-300 dark:border-zinc-700 print:border-slate-300 pb-2">
+            <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-300 dark:border-[#404D68] print:border-slate-300 pb-2">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-800 dark:text-zinc-200 print:text-slate-800 flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-slate-900 dark:bg-white print:bg-black" />
                 4. Quadro Analítico de Demandas & Entregas do Período ({filteredTasks.length})
@@ -1137,8 +1137,8 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs border border-slate-200 dark:border-zinc-800 print:border-slate-300 rounded-xl overflow-hidden">
-                <thead className="bg-slate-100 dark:bg-[#181926] print:bg-slate-100 border-b border-slate-300 dark:border-zinc-700 print:border-slate-300">
+              <table className="w-full text-left text-xs border border-[#DCD7CC] dark:border-[#343F56] print:border-slate-300 rounded-xl overflow-hidden">
+                <thead className="bg-[#E7E3DA] dark:bg-[#293244] print:bg-slate-100 border-b border-slate-300 dark:border-[#404D68] print:border-slate-300">
                   <tr>
                     <th className="p-2.5 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-12 text-center">#</th>
                     <th className="p-2.5 font-bold text-slate-800 dark:text-zinc-200 print:text-slate-800 w-24">Tipo</th>
@@ -1158,12 +1158,12 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                     </tr>
                   ) : (
                     filteredTasks.map((task, idx) => (
-                      <tr key={task.id} className="page-break-avoid hover:bg-slate-50/80 dark:hover:bg-zinc-800/40 print:hover:bg-transparent">
+                      <tr key={task.id} className="page-break-avoid hover:bg-[#EBE7DE]/80 dark:hover:bg-[#2F394D]/40 print:hover:bg-transparent">
                         <td className="p-2.5 font-mono text-slate-500 dark:text-zinc-400 print:text-slate-500 text-center font-semibold">
                           {idx + 1}
                         </td>
                         <td className="p-2.5">
-                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700 print:bg-slate-100 print:border-slate-300 print:text-black">
+                          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#E7E3DA] dark:bg-[#293244] text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-[#404D68] print:bg-slate-100 print:border-slate-300 print:text-black">
                             {task.item_type === "activity"
                               ? "Atividade"
                               : task.item_type === "reminder"
@@ -1229,7 +1229,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           </div>
 
           {/* Section 8: Termo de Homologação Executiva & Assinatura */}
-          <div className="pt-6 border-t border-slate-300 dark:border-zinc-700 print:border-slate-400 page-break-avoid">
+          <div className="pt-6 border-t border-slate-300 dark:border-[#404D68] print:border-slate-400 page-break-avoid">
             <div className="flex flex-col sm:flex-row items-start sm:items-end justify-between gap-6 sm:gap-8 pt-2">
               <div className="space-y-1 text-xs">
                 <span className="font-bold text-slate-900 dark:text-white print:text-black block">
@@ -1253,7 +1253,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           </div>
 
           {/* Document Footer */}
-          <div className="pt-6 border-t-2 border-slate-300 dark:border-zinc-800 print:border-slate-300 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-500 font-medium">
+          <div className="pt-6 border-t-2 border-slate-300 dark:border-[#343F56] print:border-slate-300 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left text-[10px] text-slate-500 dark:text-zinc-400 print:text-slate-500 font-medium">
             <span>MontLife Platform &bull; Sistema Integrado de Produtividade & Operações</span>
             <span>Documento Oficial de Prestação de Contas &bull; Confidencial</span>
           </div>
@@ -1271,13 +1271,13 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               {/* Primary 4-KPI Status Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3.5">
                 {/* 1. QUANTIDADE TOTAL */}
-                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                <div className="p-3 sm:p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-1.5 sm:space-y-2 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <span className="text-[11px] sm:text-xs font-semibold text-slate-500 dark:text-slate-400 flex items-center gap-1 sm:gap-1.5">
                       <Layers className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
                       <span>Total</span>
                     </span>
-                    <span className="text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 font-mono">
+                    <span className="text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full bg-[#E7E3DA] dark:bg-[#293244] text-slate-600 dark:text-zinc-400 font-mono">
                       {selectedYear}
                     </span>
                   </div>
@@ -1285,7 +1285,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                     <span className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white font-mono">{total}</span>
                     <span className="text-[11px] sm:text-xs text-slate-400">demandas</span>
                   </div>
-                  <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex flex-wrap items-center justify-between gap-x-1.5 gap-y-0.5 text-[10px] text-slate-500 dark:text-slate-400">
+                  <div className="pt-2 border-t border-[#E5E0D6] dark:border-[#343F56]/80 flex flex-wrap items-center justify-between gap-x-1.5 gap-y-0.5 text-[10px] text-slate-500 dark:text-slate-400">
                     <span title="Tarefas">{tasksCount} tar.</span>
                     <span className="hidden sm:inline">•</span>
                     <span title="Atividades">{activitiesCount} ativ.</span>
@@ -1295,7 +1295,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* 2. CONCLUÍDAS */}
-                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                <div className="p-3 sm:p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-1.5 sm:space-y-2 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <span className="text-[11px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 sm:gap-1.5">
                       <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
@@ -1307,7 +1307,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                     <span className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400 font-mono">{completedCount}</span>
                     <span className="text-[11px] sm:text-xs text-slate-400">entregas</span>
                   </div>
-                  <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-1.5 rounded-full overflow-hidden">
                     <div
                       className="bg-emerald-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${completedPct}%` }}
@@ -1316,7 +1316,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* 3. EM ANDAMENTO / PENDENTES */}
-                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                <div className="p-3 sm:p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-1.5 sm:space-y-2 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <span className="text-[11px] sm:text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 sm:gap-1.5">
                       <Clock className="w-3.5 h-3.5 shrink-0" />
@@ -1328,7 +1328,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                     <span className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400 font-mono">{inProgressCount}</span>
                     <span className="text-[10px] sm:text-xs text-slate-400 leading-tight">({activeRunningCount} ativas)</span>
                   </div>
-                  <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-1.5 rounded-full overflow-hidden">
                     <div
                       className="bg-amber-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${inProgressPct}%` }}
@@ -1337,7 +1337,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* 4. CANCELADAS */}
-                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                <div className="p-3 sm:p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-1.5 sm:space-y-2 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <span className="text-[11px] sm:text-xs font-semibold text-rose-600 dark:text-rose-400 flex items-center gap-1 sm:gap-1.5">
                       <XCircle className="w-3.5 h-3.5 shrink-0" />
@@ -1349,7 +1349,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                     <span className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-400 font-mono">{canceledCount}</span>
                     <span className="text-[11px] sm:text-xs text-slate-400">descartadas</span>
                   </div>
-                  <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-1.5 rounded-full overflow-hidden">
                     <div
                       className="bg-rose-500 h-full rounded-full transition-all duration-500"
                       style={{ width: `${canceledPct}%` }}
@@ -1361,7 +1361,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               {/* Secondary 4-KPI Efficiency & Lead Time Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3.5">
                 {/* 1. TEMPO MÉDIO DE RESOLUÇÃO */}
-                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                <div className="p-3 sm:p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-1.5 sm:space-y-2 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <span className="text-[11px] sm:text-xs font-semibold text-indigo-600 dark:text-indigo-400 flex items-center gap-1 sm:gap-1.5">
                       <Timer className="w-3.5 h-3.5 shrink-0" />
@@ -1382,7 +1382,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* 2. VELOCIDADE EXTREMA (MAIS ÁGIL VS MAIS LONGA) */}
-                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                <div className="p-3 sm:p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-1.5 sm:space-y-2 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <span className="text-[11px] sm:text-xs font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 sm:gap-1.5">
                       <Zap className="w-3.5 h-3.5 shrink-0" />
@@ -1403,7 +1403,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* 3. ASSERTIVIDADE CRÍTICA (P1 / P2) */}
-                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                <div className="p-3 sm:p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-1.5 sm:space-y-2 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <span className="text-[11px] sm:text-xs font-semibold text-purple-600 dark:text-purple-400 flex items-center gap-1 sm:gap-1.5">
                       <Target className="w-3.5 h-3.5 shrink-0" />
@@ -1419,7 +1419,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                     </span>
                     <span className="text-[10px] sm:text-xs text-slate-400">concl.</span>
                   </div>
-                  <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                  <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-1.5 rounded-full overflow-hidden">
                     <div
                       className="bg-purple-600 h-full rounded-full transition-all duration-500"
                       style={{ width: `${criticalResolutionRate}%` }}
@@ -1428,7 +1428,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* 4. GOVERNANÇA DE PRAZOS & PRORROGAÇÕES */}
-                <div className="p-3 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-1.5 sm:space-y-2 shadow-sm">
+                <div className="p-3 sm:p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-1.5 sm:space-y-2 shadow-sm">
                   <div className="flex flex-wrap items-center justify-between gap-1">
                     <span className="text-[11px] sm:text-xs font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1 sm:gap-1.5">
                       <Calendar className="w-3.5 h-3.5 shrink-0" />
@@ -1453,8 +1453,8 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               {/* Priority & Complexidade Performance Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Card 1: Ciclo Médio por Prioridade */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                <div className="p-4 sm:p-5 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-4 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-[#E5E0D6] dark:border-[#343F56]/80 pb-3">
                     <div className="flex items-center gap-2">
                       <Gauge className="w-4 h-4 text-indigo-500 shrink-0" />
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
@@ -1475,7 +1475,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                           {resolutionMetrics.avgLabelP1}
                         </strong>
                       </div>
-                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                      <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-1.5 rounded-full overflow-hidden">
                         <div className="bg-rose-500 h-full rounded-full" style={{ width: "95%" }} />
                       </div>
                     </div>
@@ -1490,7 +1490,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                           {resolutionMetrics.avgLabelP2}
                         </strong>
                       </div>
-                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                      <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-1.5 rounded-full overflow-hidden">
                         <div className="bg-amber-500 h-full rounded-full" style={{ width: "80%" }} />
                       </div>
                     </div>
@@ -1505,7 +1505,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                           {resolutionMetrics.avgLabelP3}
                         </strong>
                       </div>
-                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                      <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-1.5 rounded-full overflow-hidden">
                         <div className="bg-indigo-500 h-full rounded-full" style={{ width: "60%" }} />
                       </div>
                     </div>
@@ -1513,14 +1513,14 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                     <div className="space-y-1">
                       <div className="flex items-center justify-between text-xs">
                         <span className="text-slate-700 dark:text-slate-300 flex items-center gap-1.5 font-medium">
-                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300">P4</span>
+                          <span className="px-1.5 py-0.2 rounded text-[10px] font-bold bg-[#E7E3DA] dark:bg-[#293244] text-slate-700 dark:text-slate-300">P4</span>
                           Baixa / Planejada
                         </span>
                         <strong className="text-slate-600 dark:text-slate-400 font-mono">
                           {resolutionMetrics.avgLabelP4}
                         </strong>
                       </div>
-                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                      <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-1.5 rounded-full overflow-hidden">
                         <div className="bg-slate-400 h-full rounded-full" style={{ width: "40%" }} />
                       </div>
                     </div>
@@ -1528,8 +1528,8 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </div>
 
                 {/* Card 2: Matriz de Prioridade & Volume de Demandas */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                <div className="p-4 sm:p-5 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-4 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-[#E5E0D6] dark:border-[#343F56]/80 pb-3">
                     <div className="flex items-center gap-2">
                       <BarChart3 className="w-4 h-4 text-purple-500 shrink-0" />
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
@@ -1550,7 +1550,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                             {p.completed}/{p.total} ({p.resolutionRate}%)
                           </span>
                         </div>
-                        <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                        <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-1.5 rounded-full overflow-hidden">
                           <div
                             className={`h-full rounded-full transition-all duration-500 ${
                               p.priority === "P1"
@@ -1573,8 +1573,8 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
               {/* SLA Performance & Categories Breakdown Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* SLA Performance Card */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                <div className="p-4 sm:p-5 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-4 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-[#E5E0D6] dark:border-[#343F56]/80 pb-3">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-emerald-500 shrink-0" />
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
@@ -1597,7 +1597,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                           {onTimeCount} ({onTimePct}%)
                         </strong>
                       </div>
-                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                      <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-2 rounded-full overflow-hidden">
                         <div className="bg-emerald-500 h-full rounded-full" style={{ width: `${onTimePct}%` }} />
                       </div>
                     </div>
@@ -1612,7 +1612,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                           {extendedAndCompletedCount} ({extendedPct}%)
                         </strong>
                       </div>
-                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                      <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-2 rounded-full overflow-hidden">
                         <div className="bg-amber-500 h-full rounded-full" style={{ width: `${extendedPct}%` }} />
                       </div>
                     </div>
@@ -1627,20 +1627,20 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                           {breachedCount} ({breachedPct}%)
                         </strong>
                       </div>
-                      <div className="w-full bg-slate-100 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+                      <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-2 rounded-full overflow-hidden">
                         <div className="bg-rose-500 h-full rounded-full" style={{ width: `${breachedPct}%` }} />
                       </div>
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-[11px] text-slate-500 dark:text-slate-400">
+                  <div className="p-3 rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-[11px] text-slate-500 dark:text-slate-400">
                     💡 <strong>Índice de Confiabilidade:</strong> {onTimePct + extendedPct}% das tarefas concluídas tiveram seus prazos devidamente gerenciados e cumpridos.
                   </div>
                 </div>
 
                 {/* Category Volume Breakdown */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+                <div className="p-4 sm:p-5 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-4 shadow-sm">
+                  <div className="flex flex-wrap items-center justify-between gap-1.5 border-b border-[#E5E0D6] dark:border-[#343F56]/80 pb-3">
                     <div className="flex items-center gap-2">
                       <PieChart className="w-4 h-4 text-purple-500 shrink-0" />
                       <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
@@ -1663,7 +1663,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                               {count} ({pct}%)
                             </span>
                           </div>
-                          <div className="w-full bg-slate-100 dark:bg-zinc-800 h-1.5 rounded-full overflow-hidden">
+                          <div className="w-full bg-[#E7E3DA] dark:bg-[#293244] h-1.5 rounded-full overflow-hidden">
                             <div className="bg-purple-600 h-full rounded-full" style={{ width: `${pct}%` }} />
                           </div>
                         </div>
@@ -1678,7 +1678,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           {/* TAB 2: ACTIVITIES / DELIVERIES LIST */}
           {activeTab === "activities" && (
             <div className="space-y-4">
-              <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center justify-between">
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-sm flex items-center justify-between">
                 <div>
                   <h3 className="text-xs font-bold uppercase tracking-wider text-slate-900 dark:text-white">
                     Quadro Completo de Entregas & Atividades ({filteredTasks.length})
@@ -1691,7 +1691,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
               <div className="space-y-2.5">
                 {filteredTasks.length === 0 ? (
-                  <div className="py-12 text-center text-slate-400 bg-white dark:bg-[#141520] rounded-2xl border border-slate-200 dark:border-zinc-800 space-y-2">
+                  <div className="py-12 text-center text-slate-400 bg-[#F7F6F1] dark:bg-[#222938] rounded-2xl border border-[#DCD7CC] dark:border-[#343F56] space-y-2">
                     <Layers className="w-8 h-8 mx-auto opacity-30 text-indigo-400" />
                     <p className="text-xs">Nenhuma atividade registrada para o período e escopo selecionados.</p>
                   </div>
@@ -1703,17 +1703,17 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                       <div
                         key={t.id}
                         onClick={() => toggleTaskExpand(t.id)}
-                        className={`p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border transition-all space-y-2.5 shadow-xs cursor-pointer select-none ${
+                        className={`p-3.5 sm:p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border transition-all space-y-2.5 shadow-xs cursor-pointer select-none ${
                           isExpanded
                             ? "border-indigo-400 dark:border-indigo-500/70 ring-1 ring-indigo-500/20"
-                            : "border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700"
+                            : "border-[#DCD7CC] dark:border-[#343F56] hover:border-slate-300 dark:hover:border-zinc-700"
                         }`}
                         title="Clique para expandir/recolher a descrição da demanda"
                       >
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                             {getItemTypeBadge(t.item_type)}
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#E7E3DA] dark:bg-[#293244] text-slate-600 dark:text-slate-300">
                               {t.category}
                             </span>
                             <span className="px-1.5 py-0.5 rounded text-[10px] font-mono text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-950/40 border border-purple-200 dark:border-purple-800/60">
@@ -1739,7 +1739,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                             {t.completed_at && (
                               <span>• Concluída: {format(parseISO(t.completed_at), "dd/MM/yyyy")}</span>
                             )}
-                            <div className="p-1 rounded-md bg-slate-100 dark:bg-zinc-800/80 text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors ml-1">
+                            <div className="p-1 rounded-md bg-[#E7E3DA] dark:bg-[#293244]/80 text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors ml-1">
                               {isExpanded ? (
                                 <ChevronUp className="w-3.5 h-3.5" />
                               ) : (
@@ -1755,7 +1755,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
                         {/* Accordion: Displays ONLY the description when expanded */}
                         {isExpanded && (
-                          <div className="mt-3 p-3.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200/90 dark:border-zinc-800/90 text-xs text-slate-700 dark:text-slate-300 animate-in fade-in slide-in-from-top-1 duration-150 space-y-1.5">
+                          <div className="mt-3 p-3.5 rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC]/90 dark:border-[#343F56]/90 text-xs text-slate-700 dark:text-slate-300 animate-in fade-in slide-in-from-top-1 duration-150 space-y-1.5">
                             <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block">
                               Descrição da Demanda
                             </span>
@@ -1778,8 +1778,8 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
 
           {/* TAB 3: AI EXECUTIVE SUMMARY */}
           {activeTab === "ai_summary" && aiSummary && (
-            <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+            <div className="p-4 sm:p-6 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-sm space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 border-b border-[#E5E0D6] dark:border-[#343F56]/80 pb-3">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5 text-purple-500 shrink-0" />
                   <h3 className="text-sm font-bold text-slate-900 dark:text-white">
@@ -1796,7 +1796,7 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                 </button>
               </div>
 
-              <div className="p-3.5 sm:p-5 rounded-2xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 leading-relaxed text-xs sm:text-sm text-slate-800 dark:text-slate-200">
+              <div className="p-3.5 sm:p-5 rounded-2xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] leading-relaxed text-xs sm:text-sm text-slate-800 dark:text-slate-200">
                 <FormattedText text={aiSummary} />
               </div>
             </div>

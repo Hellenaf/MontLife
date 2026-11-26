@@ -699,7 +699,7 @@ export function HeaderCommandBar({
 
   return (
     <>
-      <header className="relative z-40 w-full shrink-0 bg-white/95 dark:bg-[#111115]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-[#22222B] px-3 sm:px-5 py-1.5 md:py-0 md:h-14 flex flex-wrap md:flex-nowrap items-center justify-between transition-colors duration-200 gap-x-2 gap-y-1.5 md:gap-4">
+      <header className="relative z-40 w-full shrink-0 bg-[#F7F6F1]/95 dark:bg-[#222938]/95 backdrop-blur-md border-b border-[#DCD7CC]/80 dark:border-[#343F56] px-3 sm:px-5 py-1.5 md:py-0 md:h-14 flex flex-wrap md:flex-nowrap items-center justify-between transition-colors duration-200 gap-x-2 gap-y-1.5 md:gap-4">
       {/* Left: Mobile Brand OR Desktop Contextual Breadcrumb */}
       <div className="order-1 flex items-center gap-2 shrink-0">
         <div className="flex items-center gap-2 lg:hidden">
@@ -715,7 +715,7 @@ export function HeaderCommandBar({
           {workspaceLabel && (
             <>
               <span className="text-slate-300 dark:text-zinc-700">/</span>
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.06] text-[11px] font-medium text-slate-600 dark:text-zinc-300">
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#E7E3DA] dark:bg-white/[0.06] text-[11px] font-medium text-slate-600 dark:text-zinc-300">
                 <span
                   className={`w-1.5 h-1.5 rounded-full ${
                     workspaceLabel === "Trabalho" ? "bg-blue-500" : "bg-violet-500"
@@ -741,7 +741,7 @@ export function HeaderCommandBar({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Descreva uma demanda para a IA criar ou pressione Ctrl+K..."
-            className="w-full h-9 pl-8.5 pl-9 pr-28 sm:pr-36 rounded-lg bg-slate-100/80 dark:bg-[#18181F] hover:bg-slate-100 dark:hover:bg-[#1B1B24] focus:bg-white dark:focus:bg-[#16161C] border border-slate-200/80 dark:border-[#262632] focus:border-indigo-500/80 focus:ring-2 focus:ring-indigo-500/15 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none transition-all font-medium truncate"
+            className="w-full h-9 pl-8.5 pl-9 pr-28 sm:pr-36 rounded-lg bg-[#E7E3DA]/80 dark:bg-[#293244] hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] focus:bg-[#FBF9F5] dark:focus:bg-[#262F40] border border-[#DCD7CC]/80 dark:border-[#343F56] focus:border-indigo-500/80 focus:ring-2 focus:ring-indigo-500/15 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none transition-all font-medium truncate"
             disabled={isProcessing}
           />
 
@@ -751,12 +751,12 @@ export function HeaderCommandBar({
                 type="button"
                 onClick={onOpenCommandPalette}
                 title="Abrir busca global e comandos (Ctrl+K)"
-                className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white dark:bg-[#22222C] border border-slate-200/90 dark:border-[#323240] hover:border-indigo-400 text-[10px] font-mono text-slate-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-300 mr-0.5 transition-colors cursor-pointer select-none"
+                className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-[#F7F6F1] dark:bg-[#313B50] border border-[#DCD7CC]/90 dark:border-[#343F56] hover:border-indigo-400 text-[10px] font-mono text-slate-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-300 mr-0.5 transition-colors cursor-pointer select-none"
               >
                 Ctrl K
               </button>
             ) : (
-              <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded bg-white/80 dark:bg-[#22222C] border border-slate-200 dark:border-[#323240] text-[10px] font-mono text-slate-400 dark:text-zinc-500 mr-0.5 select-none">
+              <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded bg-[#F7F6F1]/80 dark:bg-[#313B50] border border-[#DCD7CC] dark:border-[#343F56] text-[10px] font-mono text-slate-400 dark:text-zinc-500 mr-0.5 select-none">
                 Ctrl K
               </kbd>
             )}
@@ -765,7 +765,7 @@ export function HeaderCommandBar({
                 type="button"
                 onClick={() => onOpenNewTaskModal(input)}
                 title="Expandir formulário detalhado"
-                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-[#DDD8CD]/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>
@@ -778,7 +778,7 @@ export function HeaderCommandBar({
               className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                 isListening
                   ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 animate-pulse"
-                  : "text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-200/60 dark:hover:bg-white/[0.06]"
+                  : "text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-[#DDD8CD]/60 dark:hover:bg-white/[0.06]"
               }`}
             >
               {isListening ? (
@@ -818,7 +818,7 @@ export function HeaderCommandBar({
           </button>
         )}
 
-        <div className="hidden md:block w-px h-5 bg-slate-200/80 dark:bg-[#23232D] mx-0.5" />
+        <div className="hidden md:block w-px h-5 bg-slate-200/80 dark:bg-[#313B50] mx-0.5" />
 
         {/* Notifications Bell */}
         <div ref={notificationRef} className="relative">
@@ -833,7 +833,7 @@ export function HeaderCommandBar({
             className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
               isNotificationOpen
                 ? "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300"
-                : "text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-white/[0.06]"
+                : "text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-[#E4E0D6] dark:hover:bg-white/[0.06]"
             }`}
             title="Alertas de Vencimento e Lembretes"
           >
@@ -857,9 +857,9 @@ export function HeaderCommandBar({
                   left: `${notificationCoords.left}px`,
                   width: `${notificationCoords.width}px`,
                 }}
-                className="fixed rounded-xl bg-white dark:bg-[#14141A] border border-slate-200 dark:border-[#262632] shadow-popover z-[90] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                className="fixed rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-popover z-[90] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
               >
-                <div className="px-4 py-3 border-b border-slate-100 dark:border-[#22222B] flex items-center justify-between bg-[#FAFAFB] dark:bg-[#111116]">
+                <div className="px-4 py-3 border-b border-[#E5E0D6] dark:border-[#343F56] flex items-center justify-between bg-[#F0EDE6] dark:bg-[#222938]">
                   <div className="flex items-center gap-2">
                     <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                     <div>
@@ -876,7 +876,7 @@ export function HeaderCommandBar({
                   <button
                     type="button"
                     onClick={() => setIsNotificationOpen(false)}
-                    className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.06] cursor-pointer"
+                    className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-[#DDD8CD]/60 dark:hover:bg-white/[0.06] cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -919,7 +919,7 @@ export function HeaderCommandBar({
                             className={`p-2.5 rounded-lg border cursor-pointer transition-colors space-y-1 ${
                               item.isActive && !isDismissed
                                 ? "border-indigo-200 dark:border-indigo-500/40 bg-indigo-50/60 dark:bg-indigo-950/25 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
-                                : "border-slate-200/70 dark:border-[#22222B] bg-slate-50/50 dark:bg-[#181820]/60 hover:border-indigo-300 dark:hover:border-indigo-500/40"
+                                : "border-[#DCD7CC]/70 dark:border-[#343F56] bg-[#F0EDE6]/50 dark:bg-[#293244]/60 hover:border-indigo-300 dark:hover:border-indigo-500/40"
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
@@ -952,7 +952,7 @@ export function HeaderCommandBar({
                                     e.stopPropagation();
                                     dismissReminderOccurrence(item.occurrenceKey);
                                   }}
-                                  className="px-2 py-0.5 rounded bg-white dark:bg-[#111116] border border-slate-200 dark:border-[#2B2B36] text-[10px] font-medium text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white"
+                                  className="px-2 py-0.5 rounded bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] text-[10px] font-medium text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white"
                                 >
                                   Dispensar
                                 </button>
@@ -997,7 +997,7 @@ export function HeaderCommandBar({
                               onSelectTask?.(t);
                               setIsNotificationOpen(false);
                             }}
-                            className="p-2.5 rounded-lg border border-slate-200/70 dark:border-[#22222B] hover:border-indigo-300 dark:hover:border-indigo-500/40 bg-slate-50/40 dark:bg-[#181820]/60 hover:bg-slate-50 dark:hover:bg-[#1C1C26] cursor-pointer transition-colors space-y-1"
+                            className="p-2.5 rounded-lg border border-[#DCD7CC]/70 dark:border-[#343F56] hover:border-indigo-300 dark:hover:border-indigo-500/40 bg-[#F0EDE6]/40 dark:bg-[#293244]/60 hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] cursor-pointer transition-colors space-y-1"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span
@@ -1036,7 +1036,7 @@ export function HeaderCommandBar({
                 </div>
 
                 {/* Popover Footer */}
-                <div className="px-3.5 py-2.5 border-t border-slate-100 dark:border-[#22222B] bg-[#FAFAFB] dark:bg-[#111116] flex items-center justify-between text-xs">
+                <div className="px-3.5 py-2.5 border-t border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6] dark:bg-[#222938] flex items-center justify-between text-xs">
                   <button
                     type="button"
                     onClick={() => {
@@ -1061,7 +1061,7 @@ export function HeaderCommandBar({
           onClick={onOpenAccountsModal}
           className={`flex items-center gap-1.5 px-2.5 h-8 sm:h-9 rounded-lg border text-xs transition-colors cursor-pointer ${
             connectedAccountsCount > 0
-              ? "bg-transparent border-slate-200/80 dark:border-[#262632] text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-white/[0.06]"
+              ? "bg-transparent border-[#DCD7CC]/80 dark:border-[#343F56] text-slate-600 dark:text-zinc-300 hover:bg-[#E4E0D6] dark:hover:bg-white/[0.06]"
               : "bg-indigo-50 dark:bg-indigo-500/15 border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/70"
           }`}
           title="Gerenciar Contas Google Vinculadas"
@@ -1086,7 +1086,7 @@ export function HeaderCommandBar({
           type="button"
           onClick={toggleTheme}
           aria-label="Alternar modo claro e escuro"
-          className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-[#E4E0D6] dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
           title={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
         >
           {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
@@ -1110,9 +1110,9 @@ export function HeaderCommandBar({
     {/* Floating Confirmation Modal with Backdrop - Rendered outside header to avoid backdrop-filter coordinate containment */}
     {triageData && (
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-5 bg-slate-950/60 dark:bg-black/75 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
-        <div className="relative w-full max-w-2xl my-auto flex flex-col rounded-2xl bg-white dark:bg-[#13131A] border border-slate-200 dark:border-[#262632] shadow-2xl overflow-hidden transition-all max-h-[92dvh]">
+        <div className="relative w-full max-w-2xl my-auto flex flex-col rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-2xl overflow-hidden transition-all max-h-[92dvh]">
           {/* Header of confirmation - Fixed */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-[#22222B] bg-[#FAFAFB] dark:bg-[#101016] shrink-0">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6] dark:bg-[#1C2230] shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className={`p-1.5 rounded-xl shrink-0 ${
                   topSimilar && !isSimilarityDismissed
@@ -1141,7 +1141,7 @@ export function HeaderCommandBar({
               <button
                 type="button"
                 onClick={handleDiscardTriage}
-                className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-white p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                className="text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-white p-1 rounded-lg hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1170,7 +1170,7 @@ export function HeaderCommandBar({
                     </span>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-white dark:bg-[#12131d] border border-amber-200/70 dark:border-zinc-800 space-y-2">
+                  <div className="p-3.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-amber-200/70 dark:border-[#343F56] space-y-2">
                     <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
                       {topSimilar.task.title}
                     </h4>
@@ -1181,7 +1181,7 @@ export function HeaderCommandBar({
                       </p>
                     )}
 
-                    <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                    <div className="flex items-center gap-2 pt-1 border-t border-[#E5E0D6] dark:border-[#343F56] text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                       <span>Categoria: <strong className="text-slate-700 dark:text-slate-200">{topSimilar.task.category}</strong></span>
                       <span>•</span>
                       <span>Prioridade: <strong className="text-purple-600 dark:text-purple-400">{topSimilar.task.priority}</strong></span>
@@ -1199,7 +1199,7 @@ export function HeaderCommandBar({
                 </div>
 
                 {/* Demanda sendo digitada agora */}
-                <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#10111a] border border-slate-200 dark:border-zinc-800 space-y-1.5">
+                <div className="p-3.5 rounded-xl bg-[#F0EDE6] dark:bg-[#1C2230] border border-[#DCD7CC] dark:border-[#343F56] space-y-1.5">
                   <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Sua nova solicitação {triageAiSource === "fallback" ? "(aguardando refinamento IA)" : "(estruturada pela IA)"}:
                   </span>
@@ -1318,7 +1318,7 @@ export function HeaderCommandBar({
               <div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-3.5 custom-scrollbar">
 
               {/* Classification selector */}
-              <div className="p-2.5 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200/80 dark:border-zinc-800 flex flex-wrap items-center justify-between gap-2">
+              <div className="p-2.5 rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC]/80 dark:border-[#343F56] flex flex-wrap items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                     Classificação:
@@ -1334,7 +1334,7 @@ export function HeaderCommandBar({
                   )}
                 </div>
 
-                <div className="flex items-center gap-1 bg-white dark:bg-[#161722] p-1 rounded-xl border border-slate-200 dark:border-zinc-800">
+                <div className="flex items-center gap-1 bg-[#F7F6F1] dark:bg-[#293244] p-1 rounded-xl border border-[#DCD7CC] dark:border-[#343F56]">
                   <button
                     type="button"
                     onClick={() => setEditItemType("task")}
@@ -1401,7 +1401,7 @@ export function HeaderCommandBar({
                     type="text"
                     value={editTitle}
                     onChange={(e) => setEditTitle(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
 
@@ -1434,7 +1434,7 @@ export function HeaderCommandBar({
                     rows={4}
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 font-sans leading-relaxed"
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-slate-100 focus:outline-none focus:border-indigo-500 font-sans leading-relaxed"
                   />
                 </div>
               </div>
@@ -1474,7 +1474,7 @@ export function HeaderCommandBar({
                     {editValidationSteps.map((step, idx) => (
                       <div
                         key={step.id}
-                        className="flex items-center gap-2 p-1.5 px-2.5 rounded-xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 group"
+                        className="flex items-center gap-2 p-1.5 px-2.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] group"
                       >
                         <span className="text-[11px] font-mono font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
                           {idx + 1}.
@@ -1514,7 +1514,7 @@ export function HeaderCommandBar({
                       value={newHeaderStep}
                       onChange={(e) => setNewHeaderStep(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleAddHeaderStep()}
-                      className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-white dark:bg-[#141520] border border-indigo-300 dark:border-indigo-700 text-slate-900 dark:text-white outline-none"
+                      className="flex-1 px-3 py-1.5 text-xs rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-indigo-300 dark:border-indigo-700 text-slate-900 dark:text-white outline-none"
                       autoFocus
                     />
                     <button
@@ -1544,7 +1544,7 @@ export function HeaderCommandBar({
                   <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 block mb-1">
                     Conta:
                   </label>
-                  <div className="flex rounded-lg bg-slate-100 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 p-0.5">
+                  <div className="flex rounded-lg bg-[#E7E3DA] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] p-0.5">
                     <button
                       type="button"
                       onClick={() => setEditAccountType("work")}
@@ -1612,7 +1612,7 @@ export function HeaderCommandBar({
                         className={`flex-1 py-1.5 text-xs rounded-xl font-bold border transition-colors ${
                           editPriority === p
                             ? activeColor
-                            : "bg-slate-100 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 text-slate-600 dark:text-slate-400"
+                            : "bg-[#E7E3DA] dark:bg-[#171C26] border-[#DCD7CC] dark:border-[#343F56] text-slate-600 dark:text-slate-400"
                         }`}
                       >
                         {p}
@@ -1650,7 +1650,7 @@ export function HeaderCommandBar({
 
           {/* Actions - Always visible when filling the form */}
           {(!topSimilar || isSimilarityDismissed) && (
-            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
+            <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6]/70 dark:bg-[#1C2230] shrink-0">
                 <button
                   type="button"
                   onClick={handleDiscardTriage}
@@ -1698,7 +1698,7 @@ export function HeaderCommandBar({
               return (
                 <div
                   key={`toast-${item.occurrenceKey}`}
-                  className="pointer-events-auto rounded-xl bg-white dark:bg-[#14141B] border border-indigo-200 dark:border-indigo-500/40 shadow-popover p-3.5 space-y-2.5 animate-in fade-in slide-in-from-bottom-4 duration-200"
+                  className="pointer-events-auto rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-indigo-200 dark:border-indigo-500/40 shadow-popover p-3.5 space-y-2.5 animate-in fade-in slide-in-from-bottom-4 duration-200"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -1729,7 +1729,7 @@ export function HeaderCommandBar({
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-zinc-300 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#101016] border border-slate-200/70 dark:border-[#22222B]">
+                  <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-zinc-300 px-2.5 py-1.5 rounded-lg bg-[#F0EDE6] dark:bg-[#1C2230] border border-[#DCD7CC]/70 dark:border-[#343F56]">
                     <span className="flex items-center gap-1.5 font-mono font-medium tabular-nums">
                       <Clock className="w-3.5 h-3.5 text-indigo-500" />
                       {format(item.startDate, "dd/MM")} • {rangeLabel}
@@ -1743,14 +1743,14 @@ export function HeaderCommandBar({
                     <button
                       type="button"
                       onClick={() => snoozeReminderOccurrence(item.occurrenceKey, 5)}
-                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#262632] bg-white dark:bg-[#181820] text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#1F1F29] transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-lg border border-[#DCD7CC] dark:border-[#343F56] bg-[#F7F6F1] dark:bg-[#293244] text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] transition-colors cursor-pointer"
                     >
                       Adiar 5m
                     </button>
                     <button
                       type="button"
                       onClick={() => dismissReminderOccurrence(item.occurrenceKey)}
-                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#262632] bg-white dark:bg-[#181820] text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#1F1F29] transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-lg border border-[#DCD7CC] dark:border-[#343F56] bg-[#F7F6F1] dark:bg-[#293244] text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] transition-colors cursor-pointer"
                     >
                       Dispensar
                     </button>

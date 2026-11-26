@@ -426,7 +426,7 @@ export function CommandPalette({
     indigo: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800/60",
     emerald: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/60",
     purple: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800/60",
-    slate: "bg-slate-100 text-slate-600 border-slate-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700",
+    slate: "bg-[#E7E3DA] text-slate-600 border-[#DCD7CC] dark:bg-[#293244] dark:text-zinc-300 dark:border-[#404D68]",
   };
 
   // Group items preserving order
@@ -444,10 +444,10 @@ export function CommandPalette({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl rounded-2xl bg-white dark:bg-[#13131A] border border-slate-200 dark:border-[#262632] shadow-popover overflow-hidden flex flex-col max-h-[74vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-xl rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-popover overflow-hidden flex flex-col max-h-[74vh] animate-in zoom-in-95 duration-150"
       >
         {/* Search Input */}
-        <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-slate-100 dark:border-zinc-800/90">
+        <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-[#E5E0D6] dark:border-[#343F56]/90">
           <Search className="w-4 h-4 text-indigo-500 shrink-0" />
           <input
             ref={inputRef}
@@ -467,7 +467,7 @@ export function CommandPalette({
               <X className="w-3.5 h-3.5" />
             </button>
           )}
-          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-[10px] font-mono text-slate-500 dark:text-zinc-400">
+          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#E7E3DA] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] text-[10px] font-mono text-slate-500 dark:text-zinc-400">
             ESC
           </kbd>
         </div>
@@ -502,15 +502,15 @@ export function CommandPalette({
                       className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left transition-colors cursor-pointer ${
                         isSelected
                           ? "bg-indigo-50 dark:bg-indigo-500/15 text-slate-900 dark:text-white"
-                          : "text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-white/[0.04]"
+                          : "text-slate-700 dark:text-slate-300 hover:bg-[#EBE7DE] dark:hover:bg-white/[0.04]"
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0 flex-1">
                         <div
                           className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
                             isSelected
-                              ? "bg-white dark:bg-[#1a1b2b] border-indigo-200 dark:border-indigo-500/40 shadow-2xs"
-                              : "bg-slate-50 dark:bg-zinc-900/70 border-slate-200/70 dark:border-zinc-800"
+                              ? "bg-[#F7F6F1] dark:bg-[#293244] border-indigo-200 dark:border-indigo-500/40 shadow-2xs"
+                              : "bg-[#F0EDE6] dark:bg-[#222938]/70 border-[#DCD7CC]/70 dark:border-[#343F56]"
                           }`}
                         >
                           {item.icon}
@@ -548,16 +548,16 @@ export function CommandPalette({
         </div>
 
         {/* Footer hints */}
-        <div className="px-4 py-2 border-t border-slate-100 dark:border-zinc-800/90 bg-slate-50/70 dark:bg-[#0e0f18] flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400">
+        <div className="px-4 py-2 border-t border-[#E5E0D6] dark:border-[#343F56]/90 bg-[#F0EDE6]/70 dark:bg-[#1C2230] flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400">
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1">
-              <kbd className="px-1 py-0.5 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 font-mono text-[10px]">
+              <kbd className="px-1 py-0.5 rounded bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] font-mono text-[10px]">
                 ↑↓
               </kbd>
               Navegar
             </span>
             <span className="inline-flex items-center gap-1">
-              <kbd className="px-1 py-0.5 rounded bg-white dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 font-mono text-[10px] inline-flex items-center">
+              <kbd className="px-1 py-0.5 rounded bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] font-mono text-[10px] inline-flex items-center">
                 <CornerDownLeft className="w-2.5 h-2.5" />
               </kbd>
               Abrir

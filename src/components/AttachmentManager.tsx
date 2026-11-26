@@ -119,7 +119,7 @@ export function AttachmentManager({
             {label || "Anexos & Links Externos"}
           </span>
           {attachments.length > 0 && (
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-zinc-400 border border-slate-300 dark:border-zinc-700/60">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-[#293244] text-slate-700 dark:text-zinc-400 border border-slate-300 dark:border-[#404D68]/60">
               {attachments.length}
             </span>
           )}
@@ -132,7 +132,7 @@ export function AttachmentManager({
               type="button"
               disabled={isProcessingFile}
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80 text-slate-700 dark:text-zinc-300 border border-slate-300/80 dark:border-zinc-700/50 transition-all cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#E7E3DA] hover:bg-[#DDD8CD] dark:bg-[#293244]/80 dark:hover:bg-[#38445C]/80 text-slate-700 dark:text-zinc-300 border border-slate-300/80 dark:border-[#404D68]/50 transition-all cursor-pointer shadow-xs"
             >
               {isProcessingFile ? (
                 <Loader2 className="w-3 h-3 animate-spin text-slate-500 dark:text-zinc-400" />
@@ -153,7 +153,7 @@ export function AttachmentManager({
             <button
               type="button"
               onClick={() => setIsAddingLink((prev) => !prev)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80 text-slate-700 dark:text-zinc-300 border border-slate-300/80 dark:border-zinc-700/50 transition-all cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#E7E3DA] hover:bg-[#DDD8CD] dark:bg-[#293244]/80 dark:hover:bg-[#38445C]/80 text-slate-700 dark:text-zinc-300 border border-slate-300/80 dark:border-[#404D68]/50 transition-all cursor-pointer shadow-xs"
             >
               <LinkIcon className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
               <span>Link URL</span>
@@ -164,7 +164,7 @@ export function AttachmentManager({
 
       {/* Inline Form to Add External Link */}
       {isAddingLink && !readOnly && (
-        <div className="p-3 rounded-xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-300 dark:border-zinc-700/70 space-y-2.5 animate-fadeIn">
+        <div className="p-3 rounded-xl bg-[#F0EDE6] dark:bg-[#222938]/90 border border-slate-300 dark:border-[#404D68]/70 space-y-2.5 animate-fadeIn">
           <div className="text-[11px] font-medium text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
             <Globe className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
             <span>Adicionar Link Externo (Jira, GitHub, Docs, Figma, etc.)</span>
@@ -177,7 +177,7 @@ export function AttachmentManager({
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddLink()}
-              className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+              className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#F7F6F1] dark:bg-[#191F2C] border border-slate-300 dark:border-[#343F56] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
               autoFocus
             />
             <input
@@ -186,7 +186,7 @@ export function AttachmentManager({
               value={linkTitle}
               onChange={(e) => setLinkTitle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddLink()}
-              className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-slate-300 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+              className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#F7F6F1] dark:bg-[#191F2C] border border-slate-300 dark:border-[#343F56] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
             />
           </div>
 
@@ -248,7 +248,7 @@ export function AttachmentManager({
             return (
               <div
                 key={att.id}
-                className="group relative flex items-center justify-between p-2 rounded-xl bg-slate-100/90 hover:bg-slate-200/80 dark:bg-zinc-900/60 dark:hover:bg-zinc-800/60 border border-slate-200/90 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700/80 transition-all text-xs"
+                className="group relative flex items-center justify-between p-2 rounded-xl bg-[#E7E3DA]/90 hover:bg-[#DDD8CD]/80 dark:bg-[#222938]/60 dark:hover:bg-[#2F394D]/60 border border-[#DCD7CC]/90 dark:border-[#343F56]/80 hover:border-slate-300 dark:hover:border-zinc-700/80 transition-all text-xs"
               >
                 <div
                   className={`flex items-center gap-2.5 min-w-0 flex-1 ${canPreviewInModal ? "cursor-pointer" : ""}`}
@@ -260,7 +260,7 @@ export function AttachmentManager({
                       <Globe className="w-4 h-4" />
                     </div>
                   ) : isImage ? (
-                    <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 overflow-hidden shrink-0 flex items-center justify-center shadow-2xs">
+                    <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-[#293244] border border-slate-300 dark:border-[#404D68] overflow-hidden shrink-0 flex items-center justify-center shadow-2xs">
                       {att.url ? (
                         <img
                           src={att.url}
@@ -272,7 +272,7 @@ export function AttachmentManager({
                       )}
                     </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 flex items-center justify-center shrink-0 text-slate-600 dark:text-zinc-300 shadow-2xs">
+                    <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-[#293244] border border-slate-300 dark:border-[#404D68] flex items-center justify-center shrink-0 text-slate-600 dark:text-zinc-300 shadow-2xs">
                       <FileText className="w-4 h-4" />
                     </div>
                   )}

@@ -67,9 +67,9 @@ export function ExtendDeadlineModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-2xl bg-white dark:bg-[#13131A] border border-slate-200 dark:border-[#262632] shadow-popover transition-all">
+      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-popover transition-all">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-[#22222B] bg-[#FAFAFB] dark:bg-[#101016]">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6] dark:bg-[#1C2230]">
           <div className="flex items-center gap-3 min-w-0">
             <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 shrink-0">
               <Clock className="w-5 h-5" />
@@ -85,7 +85,7 @@ export function ExtendDeadlineModal({
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors shrink-0"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] transition-colors shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -93,11 +93,11 @@ export function ExtendDeadlineModal({
 
         {/* Content */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-2">
+          <div className="p-3.5 rounded-2xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] space-y-2">
             <h4 className="text-xs font-semibold text-slate-800 dark:text-slate-100 line-clamp-1">
               {task.title}
             </h4>
-            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-slate-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-1 border-t border-[#DCD7CC] dark:border-[#343F56]">
               <span>Prazo Original:</span>
               <span className="font-semibold text-slate-800 dark:text-slate-200">{originalDueFormatted}</span>
             </div>
@@ -107,7 +107,7 @@ export function ExtendDeadlineModal({
             </div>
             <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
               <span>Extensões anteriores:</span>
-              <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-[11px] font-medium">
+              <span className="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-[#293244] text-slate-700 dark:text-slate-300 text-[11px] font-medium">
                 {task.extension_count || 0} vez(es)
               </span>
             </div>
@@ -123,7 +123,7 @@ export function ExtendDeadlineModal({
               required
               value={newDueDate}
               onChange={(e) => setNewDueDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500"
             />
           </div>
 
@@ -137,7 +137,7 @@ export function ExtendDeadlineModal({
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Ex: Aguardando retorno do fornecedor ou validação da diretoria..."
-              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none font-sans"
+              className="w-full px-3.5 py-2.5 text-xs rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none font-sans"
             />
           </div>
 
@@ -148,7 +148,7 @@ export function ExtendDeadlineModal({
             </span>
           </div>
 
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-zinc-800">
+          <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#E5E0D6] dark:border-[#343F56]">
             <button
               type="button"
               onClick={onClose}

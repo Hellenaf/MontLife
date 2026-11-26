@@ -647,9 +647,9 @@ export function NewTaskModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-slate-950/55 dark:bg-black/75 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-2xl max-h-[94dvh] flex flex-col rounded-2xl bg-white dark:bg-[#13131A] border border-slate-200 dark:border-[#262632] shadow-popover overflow-hidden transition-all">
+      <div className="relative w-full max-w-2xl max-h-[94dvh] flex flex-col rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-popover overflow-hidden transition-all">
         {/* Header - Fixed */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-[#22222B] bg-[#FAFAFB] dark:bg-[#101016] shrink-0">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6] dark:bg-[#1C2230] shrink-0">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-xl border shrink-0 ${
               isInterstitialVisible
@@ -678,7 +678,7 @@ export function NewTaskModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -707,7 +707,7 @@ export function NewTaskModal({
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-white dark:bg-[#12131d] border border-amber-200/70 dark:border-zinc-800 space-y-2">
+              <div className="p-3.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-amber-200/70 dark:border-[#343F56] space-y-2">
                 <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
                   {topSimilar.task.title}
                 </h4>
@@ -718,7 +718,7 @@ export function NewTaskModal({
                   </p>
                 )}
 
-                <div className="flex items-center gap-2 pt-1 border-t border-slate-100 dark:border-zinc-800 text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                <div className="flex items-center gap-2 pt-1 border-t border-[#E5E0D6] dark:border-[#343F56] text-[10px] text-slate-500 dark:text-slate-400 font-medium">
                   <span>Categoria: <strong className="text-slate-700 dark:text-slate-200">{topSimilar.task.category}</strong></span>
                   <span>•</span>
                   <span>Prioridade: <strong className="text-purple-600 dark:text-purple-400">{topSimilar.task.priority}</strong></span>
@@ -736,7 +736,7 @@ export function NewTaskModal({
             </div>
 
             {/* Demanda sendo digitada */}
-            <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-[#10111a] border border-slate-200 dark:border-zinc-800 space-y-1.5">
+            <div className="p-3.5 rounded-xl bg-[#F0EDE6] dark:bg-[#1C2230] border border-[#DCD7CC] dark:border-[#343F56] space-y-1.5">
               <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Sua nova solicitação {hasAiEnhancedDraft && aiSource !== "fallback" ? "(estruturada pela IA)" : ""}:
               </span>
@@ -887,7 +887,7 @@ export function NewTaskModal({
               <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
                 1. Tipo de Registro:
               </label>
-              <div className="grid grid-cols-3 gap-1 sm:gap-1.5 p-1 bg-slate-100 dark:bg-[#0c0d13] rounded-xl border border-slate-200 dark:border-zinc-800">
+              <div className="grid grid-cols-3 gap-1 sm:gap-1.5 p-1 bg-[#E7E3DA] dark:bg-[#171C26] rounded-xl border border-[#DCD7CC] dark:border-[#343F56]">
                 <button
                   type="button"
                   onClick={() => {
@@ -896,7 +896,7 @@ export function NewTaskModal({
                   }}
                   className={`flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
                     itemType === "task"
-                      ? "bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                      ? "bg-[#F7F6F1] dark:bg-[#293244] text-indigo-600 dark:text-indigo-400 shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
@@ -925,7 +925,7 @@ export function NewTaskModal({
                   }}
                   className={`flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
                     itemType === "activity"
-                      ? "bg-white dark:bg-zinc-800 text-blue-600 dark:text-blue-400 shadow-sm"
+                      ? "bg-[#F7F6F1] dark:bg-[#293244] text-blue-600 dark:text-blue-400 shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
@@ -940,7 +940,7 @@ export function NewTaskModal({
                   }}
                   className={`flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
                     itemType === "reminder"
-                      ? "bg-white dark:bg-zinc-800 text-amber-600 dark:text-amber-400 shadow-sm"
+                      ? "bg-[#F7F6F1] dark:bg-[#293244] text-amber-600 dark:text-amber-400 shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
@@ -955,7 +955,7 @@ export function NewTaskModal({
               <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
                 Conta & Contexto:
               </label>
-              <div className="grid grid-cols-2 gap-1.5 p-1 bg-slate-100 dark:bg-[#0c0d13] rounded-xl border border-slate-200 dark:border-zinc-800">
+              <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#E7E3DA] dark:bg-[#171C26] rounded-xl border border-[#DCD7CC] dark:border-[#343F56]">
                 <button
                   type="button"
                   onClick={() => {
@@ -964,7 +964,7 @@ export function NewTaskModal({
                   }}
                   className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
                     accountType === "work"
-                      ? "bg-white dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400 shadow-sm"
+                      ? "bg-[#F7F6F1] dark:bg-[#293244] text-indigo-600 dark:text-indigo-400 shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
@@ -979,7 +979,7 @@ export function NewTaskModal({
                   }}
                   className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
                     accountType === "personal"
-                      ? "bg-white dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400 shadow-sm"
+                      ? "bg-[#F7F6F1] dark:bg-[#293244] text-emerald-600 dark:text-emerald-400 shadow-sm"
                       : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
                   }`}
                 >
@@ -1012,7 +1012,7 @@ export function NewTaskModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Digite um título ou cole a mensagem abaixo para a IA criar automaticamente..."
-              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+              className="w-full px-3 py-2 text-xs rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
             />
           </div>
 
@@ -1047,7 +1047,7 @@ export function NewTaskModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Cole aqui o e-mail completo, mensagem encaminhada, orientações recebidas ou rascunho informal..."
-              className="w-full p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 leading-relaxed resize-y font-sans"
+              className="w-full p-3 rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 leading-relaxed resize-y font-sans"
             />
 
             <label className="flex items-center gap-2 pt-0.5 text-[11px] text-slate-600 dark:text-slate-400 cursor-pointer select-none">
@@ -1108,7 +1108,7 @@ export function NewTaskModal({
                 {validationSteps.map((step, idx) => (
                   <div
                     key={step.id}
-                    className="flex items-center gap-2 p-1.5 px-2.5 rounded-xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 group"
+                    className="flex items-center gap-2 p-1.5 px-2.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] group"
                   >
                     <span className="text-[11px] font-mono font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
                       {idx + 1}.
@@ -1140,7 +1140,7 @@ export function NewTaskModal({
                   value={newStepText}
                   onChange={(e) => setNewStepText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddValidationStep())}
-                  className="w-full sm:flex-1 text-xs p-2 rounded-xl bg-white dark:bg-[#0c0d13] border border-indigo-300 dark:border-indigo-800 text-slate-800 dark:text-slate-100 focus:outline-hidden"
+                  className="w-full sm:flex-1 text-xs p-2 rounded-xl bg-[#F7F6F1] dark:bg-[#171C26] border border-indigo-300 dark:border-indigo-800 text-slate-800 dark:text-slate-100 focus:outline-hidden"
                   autoFocus
                 />
                 <button
@@ -1156,7 +1156,7 @@ export function NewTaskModal({
                     setIsAddingStep(false);
                     setNewStepText("");
                   }}
-                  className="px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-300 transition-colors"
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-[#293244] text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-300 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -1186,7 +1186,7 @@ export function NewTaskModal({
               <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
                 Prioridade & Nível SLA:
               </label>
-              <div className="grid grid-cols-4 gap-1 p-1 bg-slate-100 dark:bg-[#0c0d13] rounded-xl border border-slate-200 dark:border-zinc-800">
+              <div className="grid grid-cols-4 gap-1 p-1 bg-[#E7E3DA] dark:bg-[#171C26] rounded-xl border border-[#DCD7CC] dark:border-[#343F56]">
                 {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
                   const isSel = priority === p;
                   let colorClass = "text-slate-600 dark:text-slate-400";
@@ -1250,12 +1250,12 @@ export function NewTaskModal({
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
               placeholder="totvs, financeiro, biblioteca, reuniao..."
-              className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+              className="w-full px-3 py-2 text-xs rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
             />
           </div>
 
           {/* Anexos e Links Externos Reutilizável */}
-          <div className="pt-2 border-t border-slate-100 dark:border-zinc-800">
+          <div className="pt-2 border-t border-[#E5E0D6] dark:border-[#343F56]">
             <AttachmentManager
               attachments={attachments}
               onChange={setAttachments}
@@ -1275,7 +1275,7 @@ export function NewTaskModal({
 
       {/* Footer Actions - Visible when filling form */}
         {!isInterstitialVisible && (
-          <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
+          <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6]/70 dark:bg-[#1C2230] shrink-0">
             <button
               type="button"
               onClick={onClose}

@@ -301,7 +301,7 @@ export function AgendaDoDiaView({
   return (
     <div className="w-full max-w-[1680px] mx-auto space-y-3.5 pb-2 lg:pb-0 transition-colors animate-in fade-in duration-150">
       {/* 1. AGENDA TOOLBAR */}
-      <div className="py-2.5 px-3.5 sm:py-3 sm:px-4 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+      <div className="py-2.5 px-3.5 sm:py-3 sm:px-4 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {onOpenNewTaskModal && (
             <button
@@ -317,18 +317,18 @@ export function AgendaDoDiaView({
           <button
             type="button"
             onClick={handleToday}
-            className="px-3 h-8 rounded-lg border border-slate-200/90 dark:border-[#24242F] bg-white dark:bg-[#16161C] hover:bg-slate-50 dark:hover:bg-[#1C1C24] text-slate-700 dark:text-zinc-200 text-xs font-medium transition-colors cursor-pointer"
+            className="px-3 h-8 rounded-lg border border-[#DCD7CC]/90 dark:border-[#343F56] bg-[#F7F6F1] dark:bg-[#293244] hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] text-slate-700 dark:text-zinc-200 text-xs font-medium transition-colors cursor-pointer"
           >
             Hoje
           </button>
 
-          <div className="flex items-center gap-0.5 bg-slate-100/80 dark:bg-[#16161C] p-0.5 rounded-lg border border-slate-200/80 dark:border-[#24242F]">
+          <div className="flex items-center gap-0.5 bg-[#E7E3DA]/80 dark:bg-[#293244] p-0.5 rounded-lg border border-[#DCD7CC]/80 dark:border-[#343F56]">
             <button
               type="button"
               onClick={handlePrevMonth}
               aria-label="Mês Anterior"
               title="Mês Anterior"
-              className="p-1.5 rounded-md hover:bg-white dark:hover:bg-[#22222C] text-slate-600 dark:text-zinc-300 transition-colors cursor-pointer"
+              className="p-1.5 rounded-md hover:bg-[#FBF9F5] dark:hover:bg-[#2F394D] text-slate-600 dark:text-zinc-300 transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
@@ -337,7 +337,7 @@ export function AgendaDoDiaView({
               onClick={handleNextMonth}
               aria-label="Próximo Mês"
               title="Próximo Mês"
-              className="p-1.5 rounded-md hover:bg-white dark:hover:bg-[#22222C] text-slate-600 dark:text-zinc-300 transition-colors cursor-pointer"
+              className="p-1.5 rounded-md hover:bg-[#FBF9F5] dark:hover:bg-[#2F394D] text-slate-600 dark:text-zinc-300 transition-colors cursor-pointer"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
@@ -367,13 +367,13 @@ export function AgendaDoDiaView({
 
         {/* Right Filters & Sync */}
         <div className="flex items-center justify-between lg:justify-end gap-2 w-full lg:w-auto">
-          <div className="flex items-center gap-0.5 bg-slate-100/90 dark:bg-[#16161C] p-0.5 rounded-lg border border-slate-200/80 dark:border-[#24242F] text-xs font-medium overflow-x-auto no-scrollbar max-w-full">
+          <div className="flex items-center gap-0.5 bg-[#E7E3DA]/90 dark:bg-[#293244] p-0.5 rounded-lg border border-[#DCD7CC]/80 dark:border-[#343F56] text-xs font-medium overflow-x-auto no-scrollbar max-w-full">
             <button
               type="button"
               onClick={() => setAgendaSourceFilter("all")}
               className={`px-2.5 py-1 rounded-md transition-all cursor-pointer shrink-0 ${
                 agendaSourceFilter === "all"
-                  ? "bg-white dark:bg-[#23232E] text-slate-950 dark:text-white font-semibold shadow-xs-subtle"
+                  ? "bg-[#F7F6F1] dark:bg-[#313B50] text-slate-950 dark:text-white font-semibold shadow-xs-subtle"
                   : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -384,7 +384,7 @@ export function AgendaDoDiaView({
               onClick={() => setAgendaSourceFilter("work")}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer shrink-0 ${
                 agendaSourceFilter === "work"
-                  ? "bg-white dark:bg-[#23232E] text-blue-700 dark:text-blue-300 font-semibold shadow-xs-subtle"
+                  ? "bg-[#F7F6F1] dark:bg-[#313B50] text-blue-700 dark:text-blue-300 font-semibold shadow-xs-subtle"
                   : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -396,7 +396,7 @@ export function AgendaDoDiaView({
               onClick={() => setAgendaSourceFilter("personal")}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer shrink-0 ${
                 agendaSourceFilter === "personal"
-                  ? "bg-white dark:bg-[#23232E] text-violet-700 dark:text-violet-300 font-semibold shadow-xs-subtle"
+                  ? "bg-[#F7F6F1] dark:bg-[#313B50] text-violet-700 dark:text-violet-300 font-semibold shadow-xs-subtle"
                   : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
@@ -408,7 +408,7 @@ export function AgendaDoDiaView({
               onClick={() => setAgendaSourceFilter("gcal")}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer shrink-0 ${
                 agendaSourceFilter === "gcal"
-                  ? "bg-white dark:bg-[#23232E] text-amber-700 dark:text-amber-300 font-semibold shadow-xs-subtle"
+                  ? "bg-[#F7F6F1] dark:bg-[#313B50] text-amber-700 dark:text-amber-300 font-semibold shadow-xs-subtle"
                   : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
               }`}
               title="Exibir apenas os compromissos importados da sua Agenda Pessoal do Google"
@@ -425,7 +425,7 @@ export function AgendaDoDiaView({
               fetchGoogleCalendarEvents();
             }}
             disabled={isSyncingGcal || isLoadingGcal}
-            className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg bg-white dark:bg-[#16161C] hover:bg-slate-50 dark:hover:bg-[#1C1C24] border border-slate-200/80 dark:border-[#24242F] text-slate-700 dark:text-zinc-200 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 shrink-0"
+            className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg bg-[#F7F6F1] dark:bg-[#293244] hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] border border-[#DCD7CC]/80 dark:border-[#343F56] text-slate-700 dark:text-zinc-200 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 shrink-0"
             title="Atualizar agendamentos da Agenda Pessoal do Google"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGcal || isLoadingGcal ? "animate-spin text-indigo-500" : "text-slate-400"}`} />
@@ -438,8 +438,8 @@ export function AgendaDoDiaView({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
         {/* LEFT PANEL: MONTHLY CALENDAR */}
         <div className="order-2 lg:order-1 lg:col-span-7 flex flex-col h-full">
-          <div className="rounded-xl border border-slate-200/80 dark:border-[#22222B] bg-white dark:bg-[#111115] overflow-hidden flex flex-col h-full">
-            <div className="px-4 py-2.5 border-b border-slate-200/75 dark:border-[#1E1E26] bg-[#FAFAFB] dark:bg-[#0E0E13] flex items-center justify-between flex-wrap gap-2">
+          <div className="rounded-xl border border-[#DCD7CC]/80 dark:border-[#343F56] bg-[#F7F6F1] dark:bg-[#222938] overflow-hidden flex flex-col h-full">
+            <div className="px-4 py-2.5 border-b border-[#DCD7CC]/75 dark:border-[#2E384D] bg-[#F0EDE6] dark:bg-[#1C2230] flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
                 <div className="min-w-0">
@@ -453,7 +453,7 @@ export function AgendaDoDiaView({
               </span>
             </div>
 
-            <div className="grid grid-cols-7 border-b border-slate-200/75 dark:border-[#1E1E26] bg-[#FAFAFB] dark:bg-[#0D0D11] text-center">
+            <div className="grid grid-cols-7 border-b border-[#DCD7CC]/75 dark:border-[#2E384D] bg-[#F0EDE6] dark:bg-[#1C2230] text-center">
               {["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"].map((wd) => (
                 <div
                   key={wd}
@@ -464,7 +464,7 @@ export function AgendaDoDiaView({
               ))}
             </div>
 
-            <div className="grid grid-cols-7 gap-px bg-slate-200/70 dark:bg-[#1E1E26] flex-1">
+            <div className="grid grid-cols-7 gap-px bg-[#DCD7CC] dark:bg-[#293244] flex-1">
               {monthGridDays.map((day) => {
                 const dayTasks = tasks.filter((t) => isTaskScheduledForDay(t, day));
                 const dayGcal = unlinkedGcalEvents.filter((ev) => isGcalEventOnDay(ev, day));
@@ -487,8 +487,8 @@ export function AgendaDoDiaView({
                         : isDayToday
                         ? "bg-indigo-50/70 dark:bg-indigo-500/[0.12] text-indigo-700 dark:text-indigo-300 font-semibold"
                         : !isDayInCurrentMonth
-                        ? "bg-[#FAFAFB] dark:bg-[#0C0C10] text-slate-300 dark:text-zinc-600 hover:bg-white dark:hover:bg-[#14141B]"
-                        : "bg-white dark:bg-[#111115] text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-[#16161D]"
+                        ? "bg-[#F0EDE6] dark:bg-[#171C26] text-slate-300 dark:text-zinc-600 hover:bg-[#FBF9F5] dark:hover:bg-[#2F394D]"
+                        : "bg-[#F7F6F1] dark:bg-[#222938] text-slate-700 dark:text-zinc-200 hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D]"
                     }`}
                   >
                     {/* Top Row: Número do dia + badges indicadores */}
@@ -496,7 +496,7 @@ export function AgendaDoDiaView({
                       <span
                         className={`text-[11px] sm:text-xs font-bold rounded-md sm:rounded-lg w-5 h-5 flex items-center justify-center ${
                           isDaySelected
-                            ? "bg-white text-indigo-700 font-black shadow-xs"
+                            ? "bg-[#F7F6F1] text-indigo-700 font-black shadow-xs"
                             : isDayToday
                             ? "bg-indigo-600 text-white font-black"
                             : ""
@@ -511,7 +511,7 @@ export function AgendaDoDiaView({
                           className={`text-[8px] sm:text-[9px] font-mono px-1 sm:px-1.5 py-0.5 rounded font-bold leading-none ${
                             isDaySelected
                               ? "bg-white/20 text-white"
-                              : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-700"
+                              : "bg-[#E7E3DA] dark:bg-[#293244] text-slate-700 dark:text-slate-300 border border-[#DCD7CC] dark:border-[#404D68]"
                           }`}
                         >
                           {dayTasks.length + dayGcal.length}
@@ -525,19 +525,19 @@ export function AgendaDoDiaView({
                       <div className="flex items-center justify-center sm:justify-start gap-1">
                         {hasWork && (
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${isDaySelected ? "bg-white" : "bg-blue-500"}`}
+                            className={`w-1.5 h-1.5 rounded-full ${isDaySelected ? "bg-[#F7F6F1]" : "bg-blue-500"}`}
                             title="Demandas de Trabalho"
                           />
                         )}
                         {hasPersonal && (
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${isDaySelected ? "bg-white" : "bg-purple-500"}`}
+                            className={`w-1.5 h-1.5 rounded-full ${isDaySelected ? "bg-[#F7F6F1]" : "bg-purple-500"}`}
                             title="Demandas Pessoais"
                           />
                         )}
                         {hasGcal && (
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${isDaySelected ? "bg-white" : "bg-amber-400"}`}
+                            className={`w-1.5 h-1.5 rounded-full ${isDaySelected ? "bg-[#F7F6F1]" : "bg-amber-400"}`}
                             title="Compromisso da Agenda Google Pessoal"
                           />
                         )}
@@ -580,7 +580,7 @@ export function AgendaDoDiaView({
             </div>
 
             {/* Legenda Informativa */}
-            <div className="px-3.5 py-2 border-t border-slate-100 dark:border-zinc-800/60 bg-slate-50/60 dark:bg-[#10111a] flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
+            <div className="px-3.5 py-2 border-t border-[#E5E0D6] dark:border-[#343F56]/60 bg-[#F0EDE6]/60 dark:bg-[#1C2230] flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-400">
               <div className="flex items-center gap-3 flex-wrap">
                 <span className="flex items-center gap-1 font-medium text-[11px]">
                   <span className="w-2 h-2 rounded-full bg-blue-500" />
@@ -604,9 +604,9 @@ export function AgendaDoDiaView({
 
         {/* RIGHT PANEL: WEEK & DAY AGENDA */}
         <div className="order-1 lg:order-2 lg:col-span-5 flex flex-col h-full">
-          <div className="rounded-xl border border-slate-200/80 dark:border-[#22222B] bg-white dark:bg-[#111115] overflow-hidden flex flex-col h-full">
+          <div className="rounded-xl border border-[#DCD7CC]/80 dark:border-[#343F56] bg-[#F7F6F1] dark:bg-[#222938] overflow-hidden flex flex-col h-full">
             {/* 1. Week Strip */}
-            <div className="p-3 border-b border-slate-200/75 dark:border-[#1E1E26] bg-[#FAFAFB] dark:bg-[#0E0E13] space-y-2 shrink-0">
+            <div className="p-3 border-b border-[#DCD7CC]/75 dark:border-[#2E384D] bg-[#F0EDE6] dark:bg-[#1C2230] space-y-2 shrink-0">
               <div className="flex items-center justify-between flex-wrap gap-1 px-0.5">
                 <div className="flex items-center gap-1.5">
                   <CalendarIcon className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
@@ -638,7 +638,7 @@ export function AgendaDoDiaView({
                           ? "bg-indigo-600 text-white font-semibold"
                           : isDayToday
                           ? "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-500/30 font-semibold"
-                          : "bg-white dark:bg-[#15151B] text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-[#1C1C24] border border-slate-200/70 dark:border-[#23232D]"
+                          : "bg-[#F7F6F1] dark:bg-[#222938] text-slate-600 dark:text-zinc-400 hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] border border-[#DCD7CC]/70 dark:border-[#343F56]"
                       }`}
                     >
                       <span className="text-[10px] uppercase tracking-normal sm:tracking-wider opacity-80 mb-0.5 font-semibold sm:font-medium">
@@ -654,7 +654,7 @@ export function AgendaDoDiaView({
                         {totalDayItems > 0 ? (
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              isSelected ? "bg-white" : dayTasksCount > 0 ? "bg-indigo-400" : "bg-amber-400"
+                              isSelected ? "bg-[#F7F6F1]" : dayTasksCount > 0 ? "bg-indigo-400" : "bg-amber-400"
                             }`}
                           />
                         ) : null}
@@ -666,7 +666,7 @@ export function AgendaDoDiaView({
             </div>
 
             {/* 2. Sub-header: Dia Selecionado com Botão de Adicionar */}
-            <div className="px-3.5 sm:px-4 py-2.5 border-b border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 shrink-0 bg-slate-50/40 dark:bg-[#12131A]">
+            <div className="px-3.5 sm:px-4 py-2.5 border-b border-[#E5E0D6] dark:border-[#343F56]/80 flex items-center justify-between gap-2 shrink-0 bg-[#F0EDE6]/40 dark:bg-[#222938]">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="p-1.5 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
                   <Clock className="w-3.5 h-3.5" />
@@ -734,7 +734,7 @@ export function AgendaDoDiaView({
                     <button
                       type="button"
                       onClick={() => onOpenNewTaskModal(calendarDate)}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors cursor-pointer shadow-xs"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#E7E3DA] dark:bg-[#293244] text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-white transition-colors cursor-pointer shadow-xs"
                     >
                       <Plus className="w-3.5 h-3.5" />
                       Agendar Nova Demanda
@@ -776,7 +776,7 @@ export function AgendaDoDiaView({
                             className={`p-2.5 sm:p-3 rounded-xl border flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 sm:gap-2 cursor-pointer transition-all ${
                               isCurrentSelected
                                 ? "ring-2 ring-indigo-500 ring-offset-1 dark:ring-offset-[#141520] bg-indigo-50/40 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-700 shadow-xs"
-                                : "bg-slate-50/70 dark:bg-[#0c0d13] border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-xs"
+                                : "bg-[#F0EDE6]/70 dark:bg-[#171C26] border-[#DCD7CC] dark:border-[#343F56] hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-xs"
                             }`}
                           >
                             <div className="flex items-center gap-2 min-w-0">
@@ -887,7 +887,7 @@ export function AgendaDoDiaView({
                         return (
                           <div
                             key={ev.id}
-                            className="p-2.5 sm:p-3 rounded-xl bg-amber-50/40 dark:bg-[#181622] border border-amber-200/70 dark:border-amber-800/40 space-y-2 transition-all hover:shadow-xs"
+                            className="p-2.5 sm:p-3 rounded-xl bg-amber-50/40 dark:bg-[#293244] border border-amber-200/70 dark:border-amber-800/40 space-y-2 transition-all hover:shadow-xs"
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="space-y-1 min-w-0">
@@ -988,7 +988,7 @@ export function AgendaDoDiaView({
             </div>
 
             {/* 4. Rodapé Informativo combinando com o card da esquerda */}
-            <div className="px-3.5 py-1.5 border-t border-slate-100 dark:border-zinc-800/60 bg-slate-50/60 dark:bg-[#10111a] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
+            <div className="px-3.5 py-1.5 border-t border-[#E5E0D6] dark:border-[#343F56]/60 bg-[#F0EDE6]/60 dark:bg-[#1C2230] flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 shrink-0">
               <span className="font-semibold text-indigo-600 dark:text-indigo-400 text-[11px]">
                 {tasksForSelectedDay.length} {tasksForSelectedDay.length === 1 ? "demanda no site" : "demandas no site"}
               </span>

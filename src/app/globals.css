@@ -3,31 +3,35 @@
 @tailwind utilities;
 
 :root {
-  --background: #f6f7f9;
-  --foreground: #0f172a;
-  --surface: #ffffff;
-  --surface-subtle: #fafafb;
-  --surface-elevated: #ffffff;
-  --surface-hover: #f1f3f5;
-  --border: #e5e7eb;
-  --border-subtle: rgba(15, 23, 42, 0.07);
-  --muted: #64748b;
-  --primary: #4f46e5;
-  --primary-hover: #4338ca;
+  /* Light Mode: Warm Matte Paper & Soft Stone (Zero harsh pure-white glare) */
+  --background: #eae7df;
+  --foreground: #1f2430;
+  --surface: #f7f6f1;
+  --surface-subtle: #f0ede6;
+  --surface-elevated: #fbf9f5;
+  --surface-input: #e8e5dc;
+  --surface-hover: #e4e0d7;
+  --border: #dcd7cc;
+  --border-subtle: rgba(31, 36, 48, 0.08);
+  --muted: #5e6676;
+  --primary: #4b55d6;
+  --primary-hover: #3f48c4;
 }
 
 .dark {
-  --background: #09090b;
-  --foreground: #f4f4f5;
-  --surface: #111115;
-  --surface-subtle: #0c0c0f;
-  --surface-elevated: #16161c;
-  --surface-hover: #1c1c24;
-  --border: #23232d;
-  --border-subtle: rgba(255, 255, 255, 0.07);
-  --muted: #a1a1aa;
-  --primary: #6366f1;
-  --primary-hover: #818cf8;
+  /* Dark Mode: Soft Twilight Slate / Dimmed Midnight (Zero pitch-black abyss) */
+  --background: #171c26;
+  --foreground: #e6ebf5;
+  --surface: #222938;
+  --surface-subtle: #1c2230;
+  --surface-elevated: #293244;
+  --surface-input: #191f2c;
+  --surface-hover: #313b50;
+  --border: #343f56;
+  --border-subtle: rgba(230, 235, 245, 0.08);
+  --muted: #9aa6be;
+  --primary: #6c78ff;
+  --primary-hover: #808bff;
 }
 
 body {
@@ -44,18 +48,18 @@ body {
   overflow-x: hidden;
 }
 
-/* Crisp Selection Highlight */
+/* Gentle Selection Highlight */
 ::selection {
-  background-color: rgba(79, 70, 229, 0.16);
+  background-color: rgba(75, 85, 214, 0.16);
   color: inherit;
 }
 
 .dark ::selection {
-  background-color: rgba(99, 102, 241, 0.3);
-  color: #ffffff;
+  background-color: rgba(108, 120, 255, 0.32);
+  color: #f8fafc;
 }
 
-/* Reusable Executive Design System Utilities */
+/* Reusable Design System Utilities */
 @layer utilities {
   .surface-canvas {
     background-color: var(--background);
@@ -109,12 +113,12 @@ a,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.22);
+  background: rgba(94, 102, 118, 0.24);
   border-radius: 9999px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(161, 161, 170, 0.16);
+  background: rgba(154, 166, 190, 0.22);
 }
 
 ::-webkit-scrollbar-thumb:hover {

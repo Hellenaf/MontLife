@@ -723,7 +723,7 @@ export function CentralQuadrant({
       return {
         accent: "#d97706", // Amber / Warm Orange
         pillBg: "bg-amber-600 text-white hover:bg-amber-500",
-        cardBg: "bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 border-l-4 border-l-amber-500 border-slate-200 dark:border-zinc-800",
+        cardBg: "bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 border-l-4 border-l-amber-500 border-[#DCD7CC] dark:border-[#343F56]",
         sourceName: "Google Agenda",
         badgeBg: "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200",
         icon: <Activity className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />,
@@ -733,7 +733,7 @@ export function CentralQuadrant({
       return {
         accent: "#e37400", // Google Tangerine Orange
         pillBg: "bg-[#e37400] text-white hover:bg-[#c96600]",
-        cardBg: "bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 border-l-4 border-l-[#e37400] border-slate-200 dark:border-zinc-800",
+        cardBg: "bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-100 border-l-4 border-l-[#e37400] border-[#DCD7CC] dark:border-[#343F56]",
         sourceName: "Lembretes",
         badgeBg: "bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200",
         icon: <Bell className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />,
@@ -747,7 +747,7 @@ export function CentralQuadrant({
       return {
         accent: "#1a73e8", // Blue
         pillBg: "bg-[#1a73e8] text-white hover:bg-[#1557b0]",
-        cardBg: "bg-blue-50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 border-l-4 border-l-[#1a73e8] border-slate-200 dark:border-zinc-800",
+        cardBg: "bg-blue-50 dark:bg-blue-950/40 text-blue-900 dark:text-blue-100 border-l-4 border-l-[#1a73e8] border-[#DCD7CC] dark:border-[#343F56]",
         sourceName: "Trabalho (Notre Dame)",
         badgeBg: "bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200",
         icon: <Briefcase className="w-3 h-3 text-blue-600 dark:text-blue-400 shrink-0" />,
@@ -756,7 +756,7 @@ export function CentralQuadrant({
     return {
       accent: "#8e24aa", // Grape Purple
       pillBg: "bg-[#8e24aa] text-white hover:bg-[#7b1fa2]",
-      cardBg: "bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-100 border-l-4 border-l-[#8e24aa] border-slate-200 dark:border-zinc-800",
+      cardBg: "bg-purple-50 dark:bg-purple-950/40 text-purple-900 dark:text-purple-100 border-l-4 border-l-[#8e24aa] border-[#DCD7CC] dark:border-[#343F56]",
       sourceName: "Pessoal",
       badgeBg: "bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200",
       icon: <User className="w-3 h-3 text-purple-600 dark:text-purple-400 shrink-0" />,
@@ -770,15 +770,15 @@ export function CentralQuadrant({
   const currentTimeTopPx = (currentHour - START_HOUR) * 56 + (currentMinute / 60) * 56;
 
   return (
-    <main className="flex-1 h-full flex flex-col bg-white dark:bg-[#111115] overflow-hidden transition-colors duration-200">
+    <main className="flex-1 h-full flex flex-col bg-[#F7F6F1] dark:bg-[#222938] overflow-hidden transition-colors duration-200">
       {/* Top Underline Tab Bar */}
-      <div className="h-12 border-b border-slate-200/75 dark:border-[#1F1F28] px-4 sm:px-6 flex items-center justify-between gap-2 shrink-0 bg-white dark:bg-[#111115] overflow-x-auto no-scrollbar">
+      <div className="h-12 border-b border-[#DCD7CC]/75 dark:border-[#2E384D] px-4 sm:px-6 flex items-center justify-between gap-2 shrink-0 bg-[#F7F6F1] dark:bg-[#222938] overflow-x-auto no-scrollbar">
         <div className="flex items-center gap-4 h-full shrink-0">
           {onBackToTasks && (
             <button
               type="button"
               onClick={onBackToTasks}
-              className="lg:hidden flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-zinc-200 transition-colors shrink-0 cursor-pointer"
+              className="lg:hidden flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-[#E7E3DA] dark:bg-white/[0.06] text-slate-700 dark:text-zinc-200 transition-colors shrink-0 cursor-pointer"
               title="Voltar para a lista de demandas"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
@@ -837,7 +837,7 @@ export function CentralQuadrant({
               className={`hidden lg:inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border text-[11px] font-semibold transition-colors cursor-pointer ${
                 isKpiPanelOpen
                   ? "bg-indigo-50 dark:bg-indigo-500/15 border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300"
-                  : "border-slate-200/80 dark:border-[#24242F] bg-white dark:bg-[#16161C] hover:bg-slate-50 dark:hover:bg-[#1C1C24] text-slate-600 dark:text-zinc-300"
+                  : "border-[#DCD7CC]/80 dark:border-[#343F56] bg-[#F7F6F1] dark:bg-[#293244] hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] text-slate-600 dark:text-zinc-300"
               }`}
               title={isKpiPanelOpen ? "Fechar painel de Métricas & IA" : "Abrir painel de Métricas & Briefing IA"}
             >
@@ -854,7 +854,7 @@ export function CentralQuadrant({
 
       {/* Sticky Primary Action & Status Bar */}
       {activeTab === "details" && selectedTask && (
-        <div className="shrink-0 bg-[#FAFAFB]/95 dark:bg-[#0E0E13]/95 backdrop-blur-sm border-b border-slate-200/75 dark:border-[#1F1F28] px-4 sm:px-6 py-2 flex items-center justify-between gap-2 flex-wrap z-20">
+        <div className="shrink-0 bg-[#F0EDE6]/95 dark:bg-[#1C2230]/95 backdrop-blur-sm border-b border-[#DCD7CC]/75 dark:border-[#2E384D] px-4 sm:px-6 py-2 flex items-center justify-between gap-2 flex-wrap z-20">
           {/* Left: Segmented Status Switcher */}
           <div className="flex items-center gap-1.5 flex-wrap">
             {selectedTask.status === "COMPLETED" ? (
@@ -866,7 +866,7 @@ export function CentralQuadrant({
                 <button
                   type="button"
                   onClick={() => onUpdateStatus(selectedTask.id, "TODO")}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-white dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] hover:bg-slate-50 dark:hover:bg-[#1C1C24] text-slate-700 dark:text-zinc-200 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC]/80 dark:border-[#343F56] hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] text-slate-700 dark:text-zinc-200 transition-colors cursor-pointer"
                 >
                   <RotateCcw className="w-3 h-3 text-indigo-500" />
                   <span>Reabrir</span>
@@ -890,7 +890,7 @@ export function CentralQuadrant({
                 )}
               </div>
             ) : (
-              <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-200/60 dark:bg-[#16161C] border border-slate-200/70 dark:border-[#23232D] text-[11px]">
+              <div className="inline-flex items-center p-0.5 rounded-lg bg-[#E2DED4]/80 dark:bg-[#293244] border border-[#DCD7CC]/70 dark:border-[#343F56] text-[11px]">
                 {[
                   { status: "TODO" as TaskStatus, label: "A Fazer", dot: "bg-slate-400" },
                   { status: "IN_PROGRESS" as TaskStatus, label: "Em Andamento", dot: "bg-indigo-500" },
@@ -906,7 +906,7 @@ export function CentralQuadrant({
                       onClick={() => onUpdateStatus(selectedTask.id, stage.status)}
                       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
                         isCurrent
-                          ? "bg-white dark:bg-[#22222C] text-slate-950 dark:text-white font-semibold shadow-xs-subtle"
+                          ? "bg-[#F7F6F1] dark:bg-[#313B50] text-slate-950 dark:text-white font-semibold shadow-xs-subtle"
                           : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
                       }`}
                     >
@@ -939,7 +939,7 @@ export function CentralQuadrant({
                 <button
                   type="button"
                   onClick={() => onRequestExtendDeadline(selectedTask)}
-                  className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-xs font-medium bg-white dark:bg-[#16161C] hover:bg-slate-50 dark:hover:bg-[#1C1C24] border border-slate-200/80 dark:border-[#24242F] text-slate-700 dark:text-zinc-200 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-xs font-medium bg-[#F7F6F1] dark:bg-[#293244] hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] border border-[#DCD7CC]/80 dark:border-[#343F56] text-slate-700 dark:text-zinc-200 transition-colors cursor-pointer"
                   title="Adiar ou estender prazo"
                 >
                   <Calendar className="w-3.5 h-3.5 text-amber-500" />
@@ -966,7 +966,7 @@ export function CentralQuadrant({
                   e.stopPropagation();
                   setIsMoreActionsOpen((prev) => !prev);
                 }}
-                className="w-8 h-8 rounded-lg border border-slate-200/80 dark:border-[#24242F] bg-white dark:bg-[#16161C] text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-[#1C1C24] flex items-center justify-center transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg border border-[#DCD7CC]/80 dark:border-[#343F56] bg-[#F7F6F1] dark:bg-[#293244] text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] flex items-center justify-center transition-colors cursor-pointer"
                 title="Mais opções da demanda"
                 aria-label="Mais opções da demanda"
               >
@@ -976,7 +976,7 @@ export function CentralQuadrant({
               {isMoreActionsOpen && (
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 mt-1.5 w-52 rounded-xl bg-white dark:bg-[#16161D] border border-slate-200 dark:border-[#282834] shadow-popover py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
+                  className="absolute right-0 mt-1.5 w-52 rounded-xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] shadow-popover py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
                 >
                   {onTransferTask && (
                     <button
@@ -985,7 +985,7 @@ export function CentralQuadrant({
                         onTransferTask(selectedTask, isWorkItem(selectedTask) ? "personal" : "work");
                         setIsMoreActionsOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-zinc-200 hover:bg-[#EBE7DE] dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
                     >
                       <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-500" />
                       <span>
@@ -1003,7 +1003,7 @@ export function CentralQuadrant({
                       setIsAddingRecurrence(true);
                       setIsMoreActionsOpen(false);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-zinc-200 hover:bg-[#EBE7DE] dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
                   >
                     <Repeat className="w-3.5 h-3.5 text-indigo-500" />
                     <span>Registrar Nova Ocorrência</span>
@@ -1013,7 +1013,7 @@ export function CentralQuadrant({
                     selectedTask.status !== "CANCELED" &&
                     selectedTask.status !== "COMPLETED" && (
                       <>
-                        <div className="my-1 border-t border-slate-100 dark:border-[#22222B]" />
+                        <div className="my-1 border-t border-[#E5E0D6] dark:border-[#343F56]" />
                         <button
                           type="button"
                           onClick={() => {
@@ -1074,7 +1074,7 @@ export function CentralQuadrant({
                         value={tempTitle}
                         onChange={(e) => setTempTitle(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
-                        className="flex-1 px-3 py-2 rounded-lg text-lg sm:text-xl font-bold border border-indigo-500 bg-white dark:bg-[#16161C] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        className="flex-1 px-3 py-2 rounded-lg text-lg sm:text-xl font-bold border border-indigo-500 bg-[#F7F6F1] dark:bg-[#293244] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20"
                         placeholder="Título da demanda..."
                         autoFocus
                       />
@@ -1089,7 +1089,7 @@ export function CentralQuadrant({
                       <button
                         type="button"
                         onClick={() => setIsEditingTitle(false)}
-                        className="p-2 rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                        className="p-2 rounded-lg bg-[#E7E3DA] dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
                         title="Cancelar"
                       >
                         <X className="w-4 h-4" />
@@ -1107,7 +1107,7 @@ export function CentralQuadrant({
                       <button
                         type="button"
                         onClick={handleStartEditTitle}
-                        className="opacity-70 lg:opacity-0 lg:group-hover:opacity-100 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all shrink-0 cursor-pointer"
+                        className="opacity-70 lg:opacity-0 lg:group-hover:opacity-100 p-1.5 rounded-lg hover:bg-[#E4E0D6] dark:hover:bg-white/[0.06] text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all shrink-0 cursor-pointer"
                         title="Editar título"
                       >
                         <Edit3 className="w-4 h-4" />
@@ -1134,7 +1134,7 @@ export function CentralQuadrant({
                         rows={6}
                         value={tempDescription}
                         onChange={(e) => setTempDescription(e.target.value)}
-                        className="w-full p-3.5 rounded-xl text-sm border border-indigo-500 bg-white dark:bg-[#16161C] text-slate-900 dark:text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500/20 leading-relaxed resize-y"
+                        className="w-full p-3.5 rounded-xl text-sm border border-indigo-500 bg-[#F7F6F1] dark:bg-[#293244] text-slate-900 dark:text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500/20 leading-relaxed resize-y"
                         placeholder="Descrição da demanda..."
                         autoFocus
                       />
@@ -1142,7 +1142,7 @@ export function CentralQuadrant({
                         <button
                           type="button"
                           onClick={() => setIsEditingDescription(false)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-400 hover:bg-[#E4E0D6] dark:hover:bg-white/[0.06] cursor-pointer"
                         >
                           Cancelar
                         </button>
@@ -1174,7 +1174,7 @@ export function CentralQuadrant({
                 </div>
 
                 {/* CHECKLIST / PONTOS DE VALIDAÇÃO */}
-                <div className="pt-6 border-t border-slate-200/75 dark:border-[#1F1F28] space-y-3">
+                <div className="pt-6 border-t border-[#DCD7CC]/75 dark:border-[#2E384D] space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <CheckSquare className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
@@ -1193,7 +1193,7 @@ export function CentralQuadrant({
                       <button
                         type="button"
                         onClick={() => setIsAddingDetailStep(true)}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-[#E4E0D6] dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Etapa</span>
@@ -1202,7 +1202,7 @@ export function CentralQuadrant({
                   </div>
 
                   {selectedTask.validation_steps && selectedTask.validation_steps.length > 0 && (
-                    <div className="w-full bg-slate-100 dark:bg-white/[0.06] rounded-full h-1 overflow-hidden">
+                    <div className="w-full bg-[#E7E3DA] dark:bg-white/[0.06] rounded-full h-1 overflow-hidden">
                       <div
                         className="bg-indigo-600 dark:bg-indigo-400 h-1 rounded-full transition-all duration-300"
                         style={{
@@ -1220,7 +1220,7 @@ export function CentralQuadrant({
                     <button
                       type="button"
                       onClick={() => setIsAddingDetailStep(true)}
-                      className="w-full p-3.5 rounded-xl border border-dashed border-slate-200 dark:border-[#24242F] hover:border-indigo-400 dark:hover:border-indigo-500/40 bg-[#FAFAFB]/60 dark:bg-[#14141A]/50 text-left flex items-center gap-2.5 text-xs text-slate-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+                      className="w-full p-3.5 rounded-xl border border-dashed border-[#DCD7CC] dark:border-[#343F56] hover:border-indigo-400 dark:hover:border-indigo-500/40 bg-[#F0EDE6]/60 dark:bg-[#222938]/50 text-left flex items-center gap-2.5 text-xs text-slate-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer"
                     >
                       <Plus className="w-4 h-4 shrink-0" />
                       <span>Adicionar primeiro ponto de validação ou etapa...</span>
@@ -1233,7 +1233,7 @@ export function CentralQuadrant({
                           className={`group flex items-start justify-between gap-2.5 px-3 py-2 rounded-lg transition-colors ${
                             step.completed
                               ? "bg-emerald-50/40 dark:bg-emerald-500/[0.06] text-slate-500 dark:text-zinc-500"
-                              : "hover:bg-slate-50 dark:hover:bg-white/[0.03] text-slate-800 dark:text-zinc-200"
+                              : "hover:bg-[#EBE7DE] dark:hover:bg-white/[0.03] text-slate-800 dark:text-zinc-200"
                           }`}
                         >
                           <button
@@ -1278,7 +1278,7 @@ export function CentralQuadrant({
                         value={newDetailStepText}
                         onChange={(e) => setNewDetailStepText(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleAddDetailValidationStep()}
-                        className="w-full sm:flex-1 px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-[#16161C] border border-slate-200 dark:border-[#262632] text-slate-900 dark:text-white outline-none focus:border-indigo-500"
+                        className="w-full sm:flex-1 px-3 py-1.5 rounded-lg text-xs bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-white outline-none focus:border-indigo-500"
                         autoFocus
                       />
                       <div className="flex items-center gap-1.5 ml-auto shrink-0">
@@ -1295,7 +1295,7 @@ export function CentralQuadrant({
                             setIsAddingDetailStep(false);
                             setNewDetailStepText("");
                           }}
-                          className="px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-zinc-400 hover:bg-slate-200/70 dark:hover:bg-white/[0.06] text-xs font-medium cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-zinc-400 hover:bg-[#DDD8CD]/70 dark:hover:bg-white/[0.06] text-xs font-medium cursor-pointer"
                         >
                           Cancelar
                         </button>
@@ -1305,7 +1305,7 @@ export function CentralQuadrant({
                 </div>
 
                 {/* ASSISTENTE IA NA DEMANDA */}
-                <div className="p-4 rounded-xl bg-[#FAFAFB] dark:bg-[#14141B] border border-slate-200/80 dark:border-[#23232D] space-y-3">
+                <div className="p-4 rounded-xl bg-[#F0EDE6] dark:bg-[#273042] border border-[#DCD7CC]/90 dark:border-[#354158] space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
@@ -1320,7 +1320,7 @@ export function CentralQuadrant({
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-all cursor-pointer disabled:opacity-50 ${
                           aiAssistMode === "refine" && aiAssistResult
                             ? "bg-indigo-600 text-white border-indigo-600"
-                            : "bg-white dark:bg-[#181820] text-slate-700 dark:text-zinc-200 border-slate-200/90 dark:border-[#262632] hover:border-indigo-400"
+                            : "bg-[#F7F6F1] dark:bg-[#293244] text-slate-700 dark:text-zinc-200 border-[#DCD7CC]/90 dark:border-[#343F56] hover:border-indigo-400"
                         }`}
                       >
                         {isLoadingAiAssist && aiAssistMode === "refine" ? (
@@ -1338,7 +1338,7 @@ export function CentralQuadrant({
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-all cursor-pointer disabled:opacity-50 ${
                           aiAssistMode === "action_plan" && aiAssistResult
                             ? "bg-indigo-600 text-white border-indigo-600"
-                            : "bg-white dark:bg-[#181820] text-slate-700 dark:text-zinc-200 border-slate-200/90 dark:border-[#262632] hover:border-indigo-400"
+                            : "bg-[#F7F6F1] dark:bg-[#293244] text-slate-700 dark:text-zinc-200 border-[#DCD7CC]/90 dark:border-[#343F56] hover:border-indigo-400"
                         }`}
                       >
                         {isLoadingAiAssist && aiAssistMode === "action_plan" ? (
@@ -1356,7 +1356,7 @@ export function CentralQuadrant({
                         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-all cursor-pointer disabled:opacity-50 ${
                           aiAssistMode === "diagnose" && aiAssistResult
                             ? "bg-indigo-600 text-white border-indigo-600"
-                            : "bg-white dark:bg-[#181820] text-slate-700 dark:text-zinc-200 border-slate-200/90 dark:border-[#262632] hover:border-indigo-400"
+                            : "bg-[#F7F6F1] dark:bg-[#293244] text-slate-700 dark:text-zinc-200 border-[#DCD7CC]/90 dark:border-[#343F56] hover:border-indigo-400"
                         }`}
                       >
                         {isLoadingAiAssist && aiAssistMode === "diagnose" ? (
@@ -1374,7 +1374,7 @@ export function CentralQuadrant({
                   )}
 
                   {aiAssistResult && (
-                    <div className="p-3.5 rounded-lg bg-white dark:bg-[#101016] border border-indigo-200/80 dark:border-indigo-500/30 space-y-2.5 animate-in fade-in">
+                    <div className="p-3.5 rounded-lg bg-[#F7F6F1] dark:bg-[#1C2230] border border-indigo-200/80 dark:border-indigo-500/30 space-y-2.5 animate-in fade-in">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
                         <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
                           <Sparkles className="w-3.5 h-3.5" />
@@ -1398,7 +1398,7 @@ export function CentralQuadrant({
                       </p>
 
                       {aiAssistMode === "refine" && aiAssistResult.refined_title && (
-                        <div className="p-2.5 rounded-lg bg-[#FAFAFB] dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] space-y-1 text-xs">
+                        <div className="p-2.5 rounded-lg bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-1 text-xs">
                           <div className="font-semibold text-slate-900 dark:text-white">
                             {aiAssistResult.refined_title}
                           </div>
@@ -1454,7 +1454,7 @@ export function CentralQuadrant({
                     (selectedTask.attachments?.length || 0) +
                     (selectedTask.resolution_attachments?.length || 0);
                   return (
-                    <div className="pt-5 border-t border-slate-200/75 dark:border-[#1F1F28] space-y-3">
+                    <div className="pt-5 border-t border-[#DCD7CC]/75 dark:border-[#2E384D] space-y-3">
                       <button
                         type="button"
                         onClick={() => setIsAttachmentsExpanded((prev) => !prev)}
@@ -1491,7 +1491,7 @@ export function CentralQuadrant({
                           />
 
                           {selectedTask.resolution_attachments && selectedTask.resolution_attachments.length > 0 && (
-                            <div className="pt-3 border-t border-slate-100 dark:border-[#1E1E26]">
+                            <div className="pt-3 border-t border-[#E5E0D6] dark:border-[#2E384D]">
                               <AttachmentManager
                                 attachments={selectedTask.resolution_attachments || []}
                                 onChange={async (updated) => {
@@ -1512,7 +1512,7 @@ export function CentralQuadrant({
                 })()}
 
                 {/* COLLAPSIBLE SECTION: BASE DE SOLUÇÕES & RECORRÊNCIA */}
-                <div className="pt-5 border-t border-slate-200/75 dark:border-[#1F1F28] space-y-3 pb-4">
+                <div className="pt-5 border-t border-[#DCD7CC]/75 dark:border-[#2E384D] space-y-3 pb-4">
                   <div
                     onClick={() => setIsSolutionExpanded((prev) => !prev)}
                     className="w-full flex items-center justify-between gap-2 flex-wrap cursor-pointer group"
@@ -1522,7 +1522,7 @@ export function CentralQuadrant({
                       <span className="text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-zinc-200">
                         Solução & Recorrência
                       </span>
-                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300 font-mono text-[10px] font-semibold">
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#E7E3DA] dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300 font-mono text-[10px] font-semibold">
                         <Repeat className="w-2.5 h-2.5 text-indigo-500" />
                         {selectedTask.recurrence_count || 1}x
                       </span>
@@ -1557,7 +1557,7 @@ export function CentralQuadrant({
                   {isSolutionExpanded && (
                     <div className="space-y-4 animate-in fade-in duration-150">
                       {isAddingRecurrence && (
-                        <div className="p-4 rounded-xl bg-[#FAFAFB] dark:bg-[#14141B] border border-slate-200 dark:border-[#24242F] space-y-3 text-xs">
+                        <div className="p-4 rounded-xl bg-[#F0EDE6] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] space-y-3 text-xs">
                           <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-zinc-100">
                             <Repeat className="w-3.5 h-3.5 text-indigo-500" />
                             <span>Registrar Nova Execução (Sem Duplicar Base)</span>
@@ -1573,7 +1573,7 @@ export function CentralQuadrant({
                                 value={recurrenceNotes}
                                 onChange={(e) => setRecurrenceNotes(e.target.value)}
                                 placeholder="Descreva o contexto desta nova ocorrência..."
-                                className="w-full text-xs p-2.5 rounded-lg bg-white dark:bg-[#101016] border border-slate-200 dark:border-[#262632] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none"
+                                className="w-full text-xs p-2.5 rounded-lg bg-[#F7F6F1] dark:bg-[#1C2230] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none"
                               />
                             </div>
 
@@ -1586,7 +1586,7 @@ export function CentralQuadrant({
                                 value={recurrenceMethod}
                                 onChange={(e) => setRecurrenceMethod(e.target.value)}
                                 placeholder="Ex: Script alternativo aplicado..."
-                                className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#101016] border border-slate-200 dark:border-[#262632] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                                className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#F7F6F1] dark:bg-[#1C2230] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
                               />
                             </div>
 
@@ -1595,13 +1595,13 @@ export function CentralQuadrant({
                                 type="checkbox"
                                 checked={recurrenceReopen}
                                 onChange={(e) => setRecurrenceReopen(e.target.checked)}
-                                className="rounded border-slate-300 dark:border-zinc-700 text-indigo-600 focus:ring-0"
+                                className="rounded border-slate-300 dark:border-[#404D68] text-indigo-600 focus:ring-0"
                               />
                               <span>Reabrir demanda para Em Andamento</span>
                             </label>
                           </div>
 
-                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/80 dark:border-[#22222B]">
+                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#DCD7CC]/80 dark:border-[#343F56]">
                             <button
                               type="button"
                               onClick={() => {
@@ -1647,7 +1647,7 @@ export function CentralQuadrant({
                       )}
 
                       {selectedTask.execution_history && selectedTask.execution_history.length > 0 && (
-                        <div className="pt-2 border-t border-slate-100 dark:border-[#1E1E26] space-y-2">
+                        <div className="pt-2 border-t border-[#E5E0D6] dark:border-[#2E384D] space-y-2">
                           <span className="text-[11px] font-semibold text-slate-600 dark:text-zinc-300 flex items-center gap-1.5">
                             <Repeat className="w-3 h-3 text-indigo-500" />
                             Histórico de Execuções ({selectedTask.execution_history.length})
@@ -1656,7 +1656,7 @@ export function CentralQuadrant({
                             {selectedTask.execution_history.map((exec) => (
                               <div
                                 key={exec.id}
-                                className="p-2.5 rounded-lg bg-[#FAFAFB] dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] text-xs space-y-1"
+                                className="p-2.5 rounded-lg bg-[#F0EDE6] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] text-xs space-y-1"
                               >
                                 <div className="flex items-center justify-between flex-wrap gap-1 text-[11px] text-slate-500 dark:text-zinc-400 font-mono">
                                   <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
@@ -1681,7 +1681,7 @@ export function CentralQuadrant({
                       )}
 
                       {selectedTask.alternative_resolutions && selectedTask.alternative_resolutions.length > 0 && (
-                        <div className="pt-2 border-t border-slate-100 dark:border-[#1E1E26] space-y-2">
+                        <div className="pt-2 border-t border-[#E5E0D6] dark:border-[#2E384D] space-y-2">
                           <span className="text-[11px] font-semibold text-slate-600 dark:text-zinc-300 flex items-center gap-1.5">
                             <Sparkles className="w-3 h-3 text-amber-500" />
                             Métodos Alternativos Catalogados
@@ -1710,7 +1710,7 @@ export function CentralQuadrant({
               </div>
 
               {/* RIGHT ZONE: LINEAR-STYLE PROPERTIES INSPECTOR RAIL */}
-              <div className="border-t xl:border-t-0 xl:border-l border-slate-200/75 dark:border-[#1F1F28] bg-[#FAFAFB] dark:bg-[#0D0D11] px-5 py-6 space-y-5 text-xs">
+              <div className="border-t xl:border-t-0 xl:border-l border-[#DCD7CC]/75 dark:border-[#2E384D] bg-[#F0EDE6] dark:bg-[#1C2230] px-5 py-6 space-y-5 text-xs">
                 <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
                   Propriedades
                 </div>
@@ -1739,7 +1739,7 @@ export function CentralQuadrant({
                           className={`py-1 rounded-lg border font-mono text-[11px] font-semibold transition-colors cursor-pointer ${
                             isSel
                               ? activeClass
-                              : "bg-white dark:bg-[#15151B] text-slate-600 dark:text-zinc-400 border-slate-200/80 dark:border-[#24242F] hover:border-indigo-400"
+                              : "bg-[#F7F6F1] dark:bg-[#222938] text-slate-600 dark:text-zinc-400 border-[#DCD7CC]/80 dark:border-[#343F56] hover:border-indigo-400"
                           }`}
                         >
                           {p}
@@ -1750,7 +1750,7 @@ export function CentralQuadrant({
                 </div>
 
                 {/* Prazo, Horário, Lembrete & Google Meet */}
-                <div className="space-y-2 pt-3 border-t border-slate-200/70 dark:border-[#1E1E26]">
+                <div className="space-y-2 pt-3 border-t border-[#DCD7CC]/70 dark:border-[#2E384D]">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">
                       Prazo & Agenda
@@ -1767,7 +1767,7 @@ export function CentralQuadrant({
                   <button
                     type="button"
                     onClick={() => setIsScheduleExpanded((prev) => !prev)}
-                    className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-[#15151B] border border-slate-200/80 dark:border-[#24242F] hover:border-indigo-400 text-[11px] font-mono font-medium text-slate-800 dark:text-zinc-200 transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] hover:border-indigo-400 text-[11px] font-mono font-medium text-slate-800 dark:text-zinc-200 transition-colors cursor-pointer"
                   >
                     <span className="flex items-center gap-1.5 truncate">
                       <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
@@ -1806,7 +1806,7 @@ export function CentralQuadrant({
                               d.setHours(18, 0, 0, 0);
                               handleChangeDetailDueDate(d.toISOString());
                             }}
-                            className="px-2 py-1 rounded-md text-[11px] font-medium bg-white dark:bg-[#15151B] border border-slate-200/80 dark:border-[#24242F] hover:border-indigo-400 text-slate-600 dark:text-zinc-300 cursor-pointer"
+                            className="px-2 py-1 rounded-md text-[11px] font-medium bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] hover:border-indigo-400 text-slate-600 dark:text-zinc-300 cursor-pointer"
                           >
                             {preset.label}
                           </button>
@@ -1835,7 +1835,7 @@ export function CentralQuadrant({
                 </div>
 
                 {/* Categoria */}
-                <div className="space-y-1.5 pt-3 border-t border-slate-200/70 dark:border-[#1E1E26]">
+                <div className="space-y-1.5 pt-3 border-t border-[#DCD7CC]/70 dark:border-[#2E384D]">
                   <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 block">
                     Categoria
                   </span>
@@ -1872,7 +1872,7 @@ export function CentralQuadrant({
                         setTempCategory(selectedTask.category);
                         setIsEditingCategory(true);
                       }}
-                      className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#15151B] border border-slate-200/80 dark:border-[#24242F] hover:border-indigo-400 text-xs font-medium text-slate-800 dark:text-zinc-200 transition-colors group cursor-pointer"
+                      className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] hover:border-indigo-400 text-xs font-medium text-slate-800 dark:text-zinc-200 transition-colors group cursor-pointer"
                       title="Clique para editar a categoria"
                     >
                       <span className="truncate">{selectedTask.category}</span>
@@ -1882,7 +1882,7 @@ export function CentralQuadrant({
                 </div>
 
                 {/* Tipo & Espaço */}
-                <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-slate-200/70 dark:border-[#1E1E26]">
+                <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-[#DCD7CC]/70 dark:border-[#2E384D]">
                   <div className="space-y-1.5">
                     <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 block">
                       Tipo
@@ -1894,7 +1894,7 @@ export function CentralQuadrant({
                           onUpdateItemType(selectedTask.id, e.target.value as ItemType)
                         }
                         aria-label="Tipo do item"
-                        className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-[#15151B] border border-slate-200/80 dark:border-[#24242F] text-xs font-medium text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                        className="w-full px-2 py-1.5 rounded-lg bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] text-xs font-medium text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
                       >
                         <option value="task">Tarefa</option>
                         <option value="activity">Atividade</option>
@@ -1930,7 +1930,7 @@ export function CentralQuadrant({
                 </div>
 
                 {/* Tags */}
-                <div className="space-y-2 pt-3 border-t border-slate-200/70 dark:border-[#1E1E26]">
+                <div className="space-y-2 pt-3 border-t border-[#DCD7CC]/70 dark:border-[#2E384D]">
                   <div className="flex items-center justify-between">
                     <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 flex items-center gap-1">
                       <Tag className="w-3 h-3" />
@@ -1952,7 +1952,7 @@ export function CentralQuadrant({
                     {selectedTask.tags?.map((tag) => (
                       <span
                         key={tag}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-white dark:bg-[#15151B] text-slate-700 dark:text-zinc-300 border border-slate-200/80 dark:border-[#24242F]"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-[#F7F6F1] dark:bg-[#222938] text-slate-700 dark:text-zinc-300 border border-[#DCD7CC]/80 dark:border-[#343F56]"
                       >
                         <span>#{tag}</span>
                         <button
@@ -1980,7 +1980,7 @@ export function CentralQuadrant({
                           value={newTagInput}
                           onChange={(e) => setNewTagInput(e.target.value)}
                           onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
-                          className="flex-1 min-w-0 px-2 py-1 rounded-md text-xs border border-indigo-500 bg-white dark:bg-[#15151B] text-slate-800 dark:text-zinc-100 outline-none"
+                          className="flex-1 min-w-0 px-2 py-1 rounded-md text-xs border border-indigo-500 bg-[#F7F6F1] dark:bg-[#222938] text-slate-800 dark:text-zinc-100 outline-none"
                           autoFocus
                         />
                         <button
@@ -2003,7 +2003,7 @@ export function CentralQuadrant({
                 </div>
 
                 {/* Quiet Audit Metadata */}
-                <div className="pt-3 border-t border-slate-200/70 dark:border-[#1E1E26] space-y-1.5 text-[11px] text-slate-400 dark:text-zinc-500">
+                <div className="pt-3 border-t border-[#DCD7CC]/70 dark:border-[#2E384D] space-y-1.5 text-[11px] text-slate-400 dark:text-zinc-500">
                   {selectedTask.created_at && (
                     <div className="flex items-center justify-between">
                       <span>Criada em</span>
@@ -2044,8 +2044,8 @@ export function CentralQuadrant({
         {activeTab === "study" && (
           <div className="max-w-5xl mx-auto p-5 sm:p-8 space-y-5">
             {/* 1. SEÇÃO DE SITES, ARTIGOS TÉCNICOS & DOCUMENTAÇÕES */}
-            <div className="p-5 rounded-xl bg-[#FAFAFB] dark:bg-[#14141B] border border-slate-200/80 dark:border-[#23232D] space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3 flex-wrap gap-2">
+            <div className="p-5 rounded-xl bg-[#F0EDE6] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-4">
+              <div className="flex items-center justify-between border-b border-[#E5E0D6] dark:border-[#343F56]/80 pb-3 flex-wrap gap-2">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800">
                     <Globe className="w-5 h-5" />
@@ -2074,7 +2074,7 @@ export function CentralQuadrant({
 
               {/* Form to add custom article / documentation link */}
               {isAddingArticle && (
-                <div className="p-4 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 space-y-3 animate-in fade-in">
+                <div className="p-4 rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] space-y-3 animate-in fade-in">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                       <BookOpen className="w-3.5 h-3.5 text-sky-500" />
@@ -2099,7 +2099,7 @@ export function CentralQuadrant({
                         placeholder="https://developer.mozilla.org/... ou https://dev.to/..."
                         value={newArticleUrl}
                         onChange={(e) => setNewArticleUrl(e.target.value)}
-                        className="w-full h-8 px-3 text-xs rounded-lg bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white outline-none focus:border-sky-500"
+                        className="w-full h-8 px-3 text-xs rounded-lg bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#404D68] text-slate-900 dark:text-white outline-none focus:border-sky-500"
                         autoFocus
                       />
                     </div>
@@ -2112,7 +2112,7 @@ export function CentralQuadrant({
                         placeholder="Ex: Guia Oficial de Migração e Arquitetura..."
                         value={newArticleTitle}
                         onChange={(e) => setNewArticleTitle(e.target.value)}
-                        className="w-full h-8 px-3 text-xs rounded-lg bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white outline-none focus:border-sky-500"
+                        className="w-full h-8 px-3 text-xs rounded-lg bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#404D68] text-slate-900 dark:text-white outline-none focus:border-sky-500"
                       />
                     </div>
                   </div>
@@ -2123,7 +2123,7 @@ export function CentralQuadrant({
                       placeholder="Fonte / Autor (opcional, ex: Microsoft Learn, MDN, Medium)"
                       value={newArticleSource}
                       onChange={(e) => setNewArticleSource(e.target.value)}
-                      className="w-full sm:w-64 h-8 px-3 text-xs rounded-lg bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white outline-none focus:border-sky-500"
+                      className="w-full sm:w-64 h-8 px-3 text-xs rounded-lg bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#404D68] text-slate-900 dark:text-white outline-none focus:border-sky-500"
                     />
 
                     <div className="flex items-center justify-end gap-2 shrink-0">
@@ -2156,7 +2156,7 @@ export function CentralQuadrant({
                       href={art.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="group flex flex-col justify-between p-4 rounded-xl border border-slate-200 dark:border-zinc-800 bg-slate-50/60 dark:bg-[#111218] hover:border-sky-400 dark:hover:border-sky-500/50 hover:bg-white dark:hover:bg-[#161822] transition-all shadow-xs hover:shadow-md space-y-2.5"
+                      className="group flex flex-col justify-between p-4 rounded-xl border border-[#DCD7CC] dark:border-[#343F56] bg-[#F0EDE6]/60 dark:bg-[#222938] hover:border-sky-400 dark:hover:border-sky-500/50 hover:bg-[#FBF9F5] dark:hover:bg-[#2F394D] transition-all shadow-xs hover:shadow-md space-y-2.5"
                     >
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between gap-2">
@@ -2175,7 +2175,7 @@ export function CentralQuadrant({
                         )}
                       </div>
 
-                      <div className="pt-2 border-t border-slate-200/60 dark:border-zinc-800/80 flex items-center justify-between text-[11px]">
+                      <div className="pt-2 border-t border-[#DCD7CC]/60 dark:border-[#343F56]/80 flex items-center justify-between text-[11px]">
                         <span className="text-slate-400 dark:text-zinc-500 truncate max-w-[160px]">
                           {art.url.replace(/^https?:\/\//, "")}
                         </span>
@@ -2195,7 +2195,7 @@ export function CentralQuadrant({
 
               {/* Direct Quick Research Chips */}
               {selectedTask && (
-                <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center gap-2 flex-wrap text-xs">
+                <div className="pt-2 border-t border-[#E5E0D6] dark:border-[#343F56]/80 flex items-center gap-2 flex-wrap text-xs">
                   <span className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
                     Pesquisar diretamente:
                   </span>
@@ -2205,7 +2205,7 @@ export function CentralQuadrant({
                     )}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#E7E3DA] dark:bg-[#293244] hover:bg-[#DDD8CD] dark:hover:bg-[#38445C] text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-colors"
                   >
                     Google Web <ExternalLink className="w-2.5 h-2.5" />
                   </a>
@@ -2221,7 +2221,7 @@ export function CentralQuadrant({
                     href={`https://dev.to/search?q=${encodeURIComponent(selectedTask.title)}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-colors"
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-[#E7E3DA] dark:bg-[#293244] hover:bg-[#DDD8CD] dark:hover:bg-[#38445C] text-slate-700 dark:text-slate-300 text-[11px] font-medium transition-colors"
                   >
                     Dev.to <ExternalLink className="w-2.5 h-2.5" />
                   </a>
@@ -2230,8 +2230,8 @@ export function CentralQuadrant({
             </div>
 
             {/* 2. SEÇÃO DE VÍDEOS & TUTORIAIS DO YOUTUBE */}
-            <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3">
+            <div className="p-4 sm:p-6 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-sm space-y-4">
+              <div className="flex items-center justify-between border-b border-[#E5E0D6] dark:border-[#343F56]/80 pb-3">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
                     <Youtube className="w-5 h-5" />
@@ -2260,7 +2260,7 @@ export function CentralQuadrant({
                           type: "video/youtube",
                         })
                       }
-                      className="group block rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden bg-slate-50/50 dark:bg-[#181926] hover:border-rose-400 dark:hover:border-rose-500/50 transition-all shadow-sm hover:shadow-md cursor-pointer"
+                      className="group block rounded-2xl border border-[#DCD7CC] dark:border-[#343F56] overflow-hidden bg-[#F0EDE6]/50 dark:bg-[#293244] hover:border-rose-400 dark:hover:border-rose-500/50 transition-all shadow-sm hover:shadow-md cursor-pointer"
                       title="Clique para assistir ao tutorial no visualizador interno"
                     >
                       <div className="aspect-video w-full relative overflow-hidden bg-black/10">
@@ -2304,7 +2304,7 @@ export function CentralQuadrant({
       {/* GOOGLE CALENDAR QUICK EVENT MODAL / PREVIEW */}
       {previewTask && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl">
+          <div className="relative w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-2xl">
             {/* Top color bar */}
             <div
               className="h-2.5 w-full"
@@ -2335,7 +2335,7 @@ export function CentralQuadrant({
                 <button
                   type="button"
                   onClick={() => setPreviewTask(null)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+                  className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -2380,7 +2380,7 @@ export function CentralQuadrant({
                   {previewTask.tags?.map((tag) => (
                     <span
                       key={tag}
-                      className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300"
+                      className="text-[10px] px-1.5 py-0.5 rounded bg-[#E7E3DA] dark:bg-[#293244] text-slate-600 dark:text-slate-300"
                     >
                       #{tag}
                     </span>
@@ -2390,7 +2390,7 @@ export function CentralQuadrant({
 
               {/* Description preview */}
               {previewTask.description && (
-                <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800 text-xs text-slate-600 dark:text-slate-300 max-h-24 overflow-y-auto leading-relaxed">
+                <div className="p-3 rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-xs text-slate-600 dark:text-slate-300 max-h-24 overflow-y-auto leading-relaxed">
                   <FormattedText text={previewTask.description} />
                 </div>
               )}
@@ -2412,7 +2412,7 @@ export function CentralQuadrant({
               )}
 
               {/* Modal Actions */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-100 dark:border-zinc-800">
+              <div className="flex items-center justify-between pt-3 border-t border-[#E5E0D6] dark:border-[#343F56]">
                 {previewTask.status !== "COMPLETED" ? (
                   <button
                     type="button"

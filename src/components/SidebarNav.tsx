@@ -285,13 +285,13 @@ export function SidebarNav({
 
   return (
     <aside
-      className={`h-full flex flex-col bg-[#FAFAFB] dark:bg-[#0C0C0F] border-r border-slate-200/80 dark:border-[#22222B] text-slate-700 dark:text-zinc-300 shrink-0 select-none transition-all duration-200 ${
+      className={`h-full flex flex-col bg-[#ECE9E1] dark:bg-[#191F2C] border-r border-[#DCD7CC] dark:border-[#2E384D] text-slate-700 dark:text-slate-300 shrink-0 select-none transition-all duration-200 ${
         isCollapsed ? "w-[68px]" : "w-full lg:w-[232px] xl:w-[244px]"
       }`}
     >
       {/* 1. Brand Bar (Exact h-14 alignment with Top Header) */}
       <div
-        className={`h-14 flex items-center border-b border-slate-200/75 dark:border-[#1E1E26] shrink-0 ${
+        className={`h-14 flex items-center border-b border-[#DCD7CC]/75 dark:border-[#2E384D] shrink-0 ${
           isCollapsed ? "justify-center px-2" : "justify-between px-4"
         }`}
       >
@@ -320,7 +320,7 @@ export function SidebarNav({
           <button
             type="button"
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-[#DDD8CD]/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
             title="Fechar menu"
             aria-label="Fechar menu"
           >
@@ -332,7 +332,7 @@ export function SidebarNav({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer shrink-0"
+              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-[#DDD8CD]/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer shrink-0"
               title="Recolher menu lateral ([)"
               aria-label="Recolher menu lateral"
             >
@@ -348,7 +348,7 @@ export function SidebarNav({
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="w-9 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-100 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+            className="w-9 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-100 hover:bg-[#DDD8CD]/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
             title="Expandir menu lateral ([)"
             aria-label="Expandir menu lateral"
           >
@@ -385,8 +385,8 @@ export function SidebarNav({
                     : "justify-between px-2.5 h-9"
                 } ${
                   item.isActive
-                    ? "bg-slate-200/75 dark:bg-white/[0.08] text-slate-950 dark:text-white font-semibold"
-                    : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-200/45 dark:hover:bg-white/[0.04] font-medium"
+                    ? "bg-[#E2DED4]/85 dark:bg-white/[0.08] text-slate-950 dark:text-white font-semibold"
+                    : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-[#DDD8CD]/45 dark:hover:bg-white/[0.04] font-medium"
                 }`}
               >
                 {/* Crisp left accent bar for active route */}
@@ -409,7 +409,7 @@ export function SidebarNav({
                   <span
                     className={`text-[11px] font-mono tabular-nums px-1.5 py-0.5 rounded-md shrink-0 ${
                       item.isActive
-                        ? "bg-white/90 dark:bg-white/10 text-indigo-700 dark:text-indigo-300 font-semibold"
+                        ? "bg-[#F7F6F1]/90 dark:bg-white/10 text-indigo-700 dark:text-indigo-300 font-semibold"
                         : item.badgeAccent
                         ? "text-slate-600 dark:text-zinc-300 font-semibold"
                         : "text-slate-400 dark:text-zinc-500"
@@ -430,7 +430,7 @@ export function SidebarNav({
         </div>
 
         {/* 3. Workspaces Section */}
-        <div className="pt-4 border-t border-slate-200/70 dark:border-[#1E1E26] space-y-0.5">
+        <div className="pt-4 border-t border-[#DCD7CC]/70 dark:border-[#2E384D] space-y-0.5">
           {!isCollapsed && (
             <div className="px-2.5 pb-1.5 flex items-center justify-between">
               <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
@@ -457,8 +457,8 @@ export function SidebarNav({
               isCollapsed ? "justify-center h-9" : "justify-between px-2.5 h-8"
             } ${
               selectedAccountFilter === "all"
-                ? "bg-slate-200/75 dark:bg-white/[0.08] text-slate-950 dark:text-white font-semibold"
-                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-200/45 dark:hover:bg-white/[0.04] font-medium"
+                ? "bg-[#E2DED4]/85 dark:bg-white/[0.08] text-slate-950 dark:text-white font-semibold"
+                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-[#DDD8CD]/45 dark:hover:bg-white/[0.04] font-medium"
             }`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
@@ -502,8 +502,8 @@ export function SidebarNav({
                   isCollapsed ? "justify-center h-9" : "justify-between px-2.5 h-8"
                 } ${
                   isSelected
-                    ? "bg-slate-200/75 dark:bg-white/[0.08] text-slate-950 dark:text-white font-semibold"
-                    : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-200/45 dark:hover:bg-white/[0.04] font-medium"
+                    ? "bg-[#E2DED4]/85 dark:bg-white/[0.08] text-slate-950 dark:text-white font-semibold"
+                    : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-[#DDD8CD]/45 dark:hover:bg-white/[0.04] font-medium"
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -546,7 +546,7 @@ export function SidebarNav({
 
         {/* 4. Whisper-Quiet Productivity Meter */}
         {!isCollapsed && (
-          <div className="pt-4 border-t border-slate-200/70 dark:border-[#1E1E26] px-2.5 space-y-2">
+          <div className="pt-4 border-t border-[#DCD7CC]/70 dark:border-[#2E384D] px-2.5 space-y-2">
             <div className="flex items-center justify-between text-[11px]">
               <span className="font-medium text-slate-500 dark:text-zinc-400">
                 Taxa de conclusão
@@ -570,14 +570,14 @@ export function SidebarNav({
 
       {/* 5. Minimal Executive Footer */}
       <div
-        className={`pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-slate-200/75 dark:border-[#1E1E26] shrink-0 space-y-1.5 ${
+        className={`pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-[#DCD7CC]/75 dark:border-[#2E384D] shrink-0 space-y-1.5 ${
           isCollapsed ? "p-2 flex flex-col items-center" : "p-3"
         }`}
       >
         <button
           type="button"
           onClick={onOpenAccountsModal}
-          className={`w-full flex items-center rounded-lg text-[13px] font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-200/50 dark:hover:bg-white/[0.05] transition-colors cursor-pointer ${
+          className={`w-full flex items-center rounded-lg text-[13px] font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-[#DDD8CD]/50 dark:hover:bg-white/[0.05] transition-colors cursor-pointer ${
             isCollapsed ? "justify-center h-9" : "gap-2.5 px-2.5 h-8"
           }`}
           title="Configurações & Contas Google"
@@ -593,7 +593,7 @@ export function SidebarNav({
                 src={currentUser.picture}
                 alt={displayName}
                 title={`${displayName} (${displayEmail})`}
-                className="w-7 h-7 rounded-full border border-slate-200 dark:border-white/10 object-cover"
+                className="w-7 h-7 rounded-full border border-[#DCD7CC] dark:border-white/10 object-cover"
               />
             ) : (
               <div
@@ -618,13 +618,13 @@ export function SidebarNav({
             </button>
           </div>
         ) : (
-          <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-200/40 dark:hover:bg-white/[0.03] transition-colors">
+          <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-[#DDD8CD]/40 dark:hover:bg-white/[0.03] transition-colors">
             <div className="flex items-center gap-2.5 min-w-0">
               {currentUser?.picture ? (
                 <img
                   src={currentUser.picture}
                   alt={displayName}
-                  className="w-7 h-7 rounded-full border border-slate-200 dark:border-white/10 shrink-0 object-cover"
+                  className="w-7 h-7 rounded-full border border-[#DCD7CC] dark:border-white/10 shrink-0 object-cover"
                 />
               ) : (
                 <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-[11px] font-semibold shrink-0">

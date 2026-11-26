@@ -160,7 +160,7 @@ export function WikiTechnicalView({
   return (
     <div className="max-w-7xl mx-auto space-y-4 pb-6 lg:pb-8 animate-in fade-in duration-200">
       {/* 1. Header Toolbar */}
-      <div className="p-4 sm:p-5 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] flex flex-wrap items-center justify-between gap-3">
+      <div className="p-4 sm:p-5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-200/70 dark:border-indigo-500/25 flex items-center justify-center shrink-0">
             <BookOpen className="w-4 h-4" />
@@ -184,7 +184,7 @@ export function WikiTechnicalView({
           <button
             type="button"
             onClick={onBackToTasks}
-            className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-slate-200/90 dark:border-[#24242F] bg-white dark:bg-[#16161C] text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-[#1C1C24] text-xs font-medium transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-[#DCD7CC]/90 dark:border-[#343F56] bg-[#F7F6F1] dark:bg-[#293244] text-slate-700 dark:text-zinc-200 hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] text-xs font-medium transition-colors cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             <span>Demandas</span>
@@ -194,7 +194,7 @@ export function WikiTechnicalView({
 
       {/* 2. Top Metric KPI Cards */}
       <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+        <div className="p-3 sm:p-4 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
           <div className="w-8 h-8 rounded-lg bg-rose-50 dark:bg-rose-500/15 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
             <Youtube className="w-4 h-4" />
           </div>
@@ -208,7 +208,7 @@ export function WikiTechnicalView({
           </div>
         </div>
 
-        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+        <div className="p-3 sm:p-4 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
           <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
             <Lightbulb className="w-4 h-4" />
           </div>
@@ -222,7 +222,7 @@ export function WikiTechnicalView({
           </div>
         </div>
 
-        <div className="p-3 sm:p-4 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+        <div className="p-3 sm:p-4 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
           <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-4 h-4" />
           </div>
@@ -238,7 +238,7 @@ export function WikiTechnicalView({
       </div>
 
       {/* 3. Search & Category Filters */}
-      <div className="p-3.5 sm:p-4 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] space-y-3">
+      <div className="p-3.5 sm:p-4 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           <div className="relative flex-1">
             <Search className="w-4 h-4 text-slate-400 dark:text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -247,7 +247,7 @@ export function WikiTechnicalView({
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar tutoriais, tópicos de estudo, TOTVS, ERP, Power BI, soluções..."
-              className="w-full h-9 pl-9 pr-4 text-xs rounded-lg bg-slate-100/80 dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] focus:bg-white dark:focus:bg-[#181820] text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 font-medium transition-colors"
+              className="w-full h-9 pl-9 pr-4 text-xs rounded-lg bg-[#E7E3DA]/80 dark:bg-[#293244] border border-[#DCD7CC]/80 dark:border-[#343F56] focus:bg-[#FBF9F5] dark:focus:bg-[#262F40] text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 font-medium transition-colors"
             />
             {searchQuery && (
               <button
@@ -264,7 +264,7 @@ export function WikiTechnicalView({
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="w-full h-9 px-3 text-xs rounded-lg bg-white dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] text-slate-800 dark:text-zinc-200 font-medium focus:outline-none focus:border-indigo-500 cursor-pointer"
+              className="w-full h-9 px-3 text-xs rounded-lg bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC]/80 dark:border-[#343F56] text-slate-800 dark:text-zinc-200 font-medium focus:outline-none focus:border-indigo-500 cursor-pointer"
             >
               <option value="ALL">Todas as categorias ({categories.length})</option>
               {categories.map((c) => (
@@ -284,7 +284,7 @@ export function WikiTechnicalView({
             className={`px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === "all"
                 ? "bg-indigo-600 text-white font-semibold"
-                : "bg-slate-100/80 dark:bg-[#16161C] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
+                : "bg-[#E7E3DA]/80 dark:bg-[#293244] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
             }`}
           >
             Todos ({filteredVideos.length + filteredArticles.length + filteredQueries.length + filteredResolutions.length})
@@ -295,7 +295,7 @@ export function WikiTechnicalView({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === "articles"
                 ? "bg-indigo-600 text-white font-semibold"
-                : "bg-slate-100/80 dark:bg-[#16161C] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
+                : "bg-[#E7E3DA]/80 dark:bg-[#293244] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
@@ -307,7 +307,7 @@ export function WikiTechnicalView({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === "videos"
                 ? "bg-indigo-600 text-white font-semibold"
-                : "bg-slate-100/80 dark:bg-[#16161C] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
+                : "bg-[#E7E3DA]/80 dark:bg-[#293244] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
             }`}
           >
             <Youtube className="w-3.5 h-3.5" />
@@ -319,7 +319,7 @@ export function WikiTechnicalView({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === "queries"
                 ? "bg-indigo-600 text-white font-semibold"
-                : "bg-slate-100/80 dark:bg-[#16161C] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
+                : "bg-[#E7E3DA]/80 dark:bg-[#293244] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
             }`}
           >
             <Lightbulb className="w-3.5 h-3.5" />
@@ -331,7 +331,7 @@ export function WikiTechnicalView({
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-medium transition-colors shrink-0 whitespace-nowrap cursor-pointer ${
               activeTab === "resolutions"
                 ? "bg-indigo-600 text-white font-semibold"
-                : "bg-slate-100/80 dark:bg-[#16161C] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
+                : "bg-[#E7E3DA]/80 dark:bg-[#293244] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
             }`}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -354,7 +354,7 @@ export function WikiTechnicalView({
 
             {filteredArticles.length === 0 ? (
               activeTab === "articles" && (
-                <div className="py-12 text-center text-slate-400 space-y-2 bg-white dark:bg-[#141520] rounded-2xl border border-slate-200 dark:border-zinc-800">
+                <div className="py-12 text-center text-slate-400 space-y-2 bg-[#F7F6F1] dark:bg-[#222938] rounded-2xl border border-[#DCD7CC] dark:border-[#343F56]">
                   <Globe className="w-8 h-8 mx-auto opacity-30 text-sky-500" />
                   <p className="text-xs">Nenhum artigo ou site técnico encontrado com os filtros atuais.</p>
                 </div>
@@ -364,7 +364,7 @@ export function WikiTechnicalView({
                 {filteredArticles.map(({ article, task }, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 flex flex-col justify-between hover:border-sky-500/50 hover:shadow-md transition-all group"
+                    className="p-3.5 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] flex flex-col justify-between hover:border-sky-500/50 hover:shadow-md transition-all group"
                   >
                     <div className="space-y-2">
                       <div className="flex items-center justify-between gap-2">
@@ -399,7 +399,7 @@ export function WikiTechnicalView({
                       )}
                     </div>
 
-                    <div className="pt-2.5 mt-2.5 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 text-[10px]">
+                    <div className="pt-2.5 mt-2.5 border-t border-[#E5E0D6] dark:border-[#343F56]/80 flex items-center justify-between gap-2 text-[10px]">
                       <span
                         onClick={() => onSelectTask?.(task)}
                         className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer truncate min-w-0 flex-1"
@@ -407,7 +407,7 @@ export function WikiTechnicalView({
                       >
                         📌 {task.title}
                       </span>
-                      <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 shrink-0">
+                      <span className="px-1.5 py-0.5 rounded bg-[#E7E3DA] dark:bg-[#293244] text-slate-500 dark:text-slate-400 shrink-0">
                         {task.category}
                       </span>
                     </div>
@@ -430,7 +430,7 @@ export function WikiTechnicalView({
 
             {filteredVideos.length === 0 ? (
               activeTab === "videos" && (
-                <div className="py-12 text-center text-slate-400 space-y-2 bg-white dark:bg-[#141520] rounded-2xl border border-slate-200 dark:border-zinc-800">
+                <div className="py-12 text-center text-slate-400 space-y-2 bg-[#F7F6F1] dark:bg-[#222938] rounded-2xl border border-[#DCD7CC] dark:border-[#343F56]">
                   <Youtube className="w-8 h-8 mx-auto opacity-30 text-rose-500" />
                   <p className="text-xs">Nenhum vídeo encontrado com os filtros atuais.</p>
                 </div>
@@ -440,7 +440,7 @@ export function WikiTechnicalView({
                 {filteredVideos.map(({ video, task }, idx) => (
                   <div
                     key={idx}
-                    className="group flex flex-col rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 overflow-hidden hover:border-rose-500/50 hover:shadow-lg transition-all"
+                    className="group flex flex-col rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] overflow-hidden hover:border-rose-500/50 hover:shadow-lg transition-all"
                   >
                     <a
                       href={video.url}
@@ -476,7 +476,7 @@ export function WikiTechnicalView({
                         </p>
                       </div>
 
-                      <div className="pt-2 border-t border-slate-100 dark:border-zinc-800/80 flex items-center justify-between gap-2 text-[10px]">
+                      <div className="pt-2 border-t border-[#E5E0D6] dark:border-[#343F56]/80 flex items-center justify-between gap-2 text-[10px]">
                         <span
                           onClick={() => onSelectTask?.(task)}
                           className="text-purple-600 dark:text-purple-400 hover:underline cursor-pointer truncate min-w-0 flex-1"
@@ -484,7 +484,7 @@ export function WikiTechnicalView({
                         >
                           📌 {task.title}
                         </span>
-                        <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-500 dark:text-slate-400 shrink-0">
+                        <span className="px-1.5 py-0.5 rounded bg-[#E7E3DA] dark:bg-[#293244] text-slate-500 dark:text-slate-400 shrink-0">
                           {task.category}
                         </span>
                       </div>
@@ -508,7 +508,7 @@ export function WikiTechnicalView({
 
             {filteredQueries.length === 0 ? (
               activeTab === "queries" && (
-                <div className="py-12 text-center text-slate-400 space-y-2 bg-white dark:bg-[#141520] rounded-2xl border border-slate-200 dark:border-zinc-800">
+                <div className="py-12 text-center text-slate-400 space-y-2 bg-[#F7F6F1] dark:bg-[#222938] rounded-2xl border border-[#DCD7CC] dark:border-[#343F56]">
                   <Lightbulb className="w-8 h-8 mx-auto opacity-30 text-indigo-400" />
                   <p className="text-xs">Nenhum tópico de estudo encontrado com os filtros atuais.</p>
                 </div>
@@ -518,7 +518,7 @@ export function WikiTechnicalView({
                 {filteredQueries.map(({ query, task }, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 flex items-start justify-between gap-3 hover:border-indigo-500/40 transition-all shadow-xs"
+                    className="p-3.5 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] flex items-start justify-between gap-3 hover:border-indigo-500/40 transition-all shadow-xs"
                   >
                     <div className="space-y-1.5 min-w-0">
                       <div className="flex items-center gap-1.5">
@@ -551,7 +551,7 @@ export function WikiTechnicalView({
                         href={`https://www.google.com/search?q=${encodeURIComponent(query)}`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="p-1.5 rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:text-white transition-colors"
+                        className="p-1.5 rounded-lg bg-[#E7E3DA] dark:bg-[#293244] text-slate-600 dark:text-slate-300 hover:text-white transition-colors"
                         title="Pesquisar no Google"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
@@ -576,7 +576,7 @@ export function WikiTechnicalView({
 
             {filteredResolutions.length === 0 ? (
               activeTab === "resolutions" && (
-                <div className="py-12 text-center text-slate-400 space-y-2 bg-white dark:bg-[#141520] rounded-2xl border border-slate-200 dark:border-zinc-800">
+                <div className="py-12 text-center text-slate-400 space-y-2 bg-[#F7F6F1] dark:bg-[#222938] rounded-2xl border border-[#DCD7CC] dark:border-[#343F56]">
                   <CheckCircle2 className="w-8 h-8 mx-auto opacity-30 text-emerald-500" />
                   <p className="text-xs">Nenhuma solução técnica documentada encontrada.</p>
                 </div>
@@ -586,7 +586,7 @@ export function WikiTechnicalView({
                 {filteredResolutions.map((task) => (
                   <div
                     key={task.id}
-                    className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 hover:border-emerald-500/40 transition-all space-y-3 shadow-xs"
+                    className="p-3.5 sm:p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] hover:border-emerald-500/40 transition-all space-y-3 shadow-xs"
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2 sm:gap-3">
                       <div className="space-y-1 min-w-0">
@@ -594,7 +594,7 @@ export function WikiTechnicalView({
                           <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                             Resolvida
                           </span>
-                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300">
+                          <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#E7E3DA] dark:bg-[#293244] text-slate-600 dark:text-slate-300">
                             {task.category}
                           </span>
                           {task.tags?.map((t) => (
@@ -622,7 +622,7 @@ export function WikiTechnicalView({
                     </div>
 
                     {/* Resolution Body */}
-                    <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#0c0d13] border border-slate-200 dark:border-zinc-800/80 text-xs text-slate-700 dark:text-slate-300">
+                    <div className="p-3 rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56]/80 text-xs text-slate-700 dark:text-slate-300">
                       <FormattedText text={task.resolution_notes || ""} />
                     </div>
 
@@ -639,7 +639,7 @@ export function WikiTechnicalView({
                               key={att.id}
                               href={att.url}
                               download={att.name}
-                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 transition-colors"
+                              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-[#E7E3DA] dark:bg-[#293244] hover:bg-[#DDD8CD] dark:hover:bg-[#38445C] text-slate-700 dark:text-slate-200 transition-colors"
                             >
                               <Download className="w-3 h-3 text-purple-500" />
                               <span className="truncate max-w-[200px]">{att.name}</span>

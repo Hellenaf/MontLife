@@ -30,7 +30,7 @@ export function MontLifeLogo({
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
       <div
-        className={`${sizeMap[size]} shrink-0 overflow-hidden shadow-xs border border-slate-200/80 dark:border-white/10 bg-[#101014] flex items-center justify-center relative group select-none`}
+        className={`${sizeMap[size]} shrink-0 overflow-hidden shadow-xs border border-[#DCD7CC]/80 dark:border-white/10 bg-[#101014] flex items-center justify-center relative group select-none`}
       >
         <img
           src="/brand-logo-square.png"

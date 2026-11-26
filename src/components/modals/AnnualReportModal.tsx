@@ -353,7 +353,7 @@ Relatório gerado via MontLife.`;
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
         id="printable-report"
-        className="relative w-full max-w-5xl max-h-[94dvh] rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl flex flex-col overflow-hidden print:border-none print:shadow-none print:bg-white"
+        className="relative w-full max-w-5xl max-h-[94dvh] rounded-3xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-2xl flex flex-col overflow-hidden print:border-none print:shadow-none print:bg-white"
       >
         {/* Top Action Bar (Hidden when printing) */}
         <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 sm:p-5 border-b border-[#2E2B44] bg-[#0F0E17] shrink-0">

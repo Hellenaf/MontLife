@@ -403,7 +403,7 @@ export function LeftTasksQuadrant({
         return "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-500/10 dark:text-indigo-400 dark:border-indigo-500/30";
       case "P4":
       default:
-        return "bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-zinc-400 dark:border-zinc-700";
+        return "bg-[#E7E3DA] text-slate-700 border-[#DCD7CC] dark:bg-[#293244] dark:text-zinc-400 dark:border-[#404D68]";
     }
   };
 
@@ -490,7 +490,7 @@ export function LeftTasksQuadrant({
       default:
         return (
           <span
-            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-slate-500/10 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400 border border-slate-300 dark:border-zinc-700/60 tracking-tight"
+            className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[9px] font-semibold bg-slate-500/10 dark:bg-[#293244] text-slate-600 dark:text-zinc-400 border border-slate-300 dark:border-[#404D68]/60 tracking-tight"
             title="Etapa no Kanban: A Fazer"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-zinc-400" />
@@ -540,12 +540,12 @@ export function LeftTasksQuadrant({
           isCompactMode ? "px-3.5 py-2.5" : "px-4 py-3"
         } ${
           isSelected
-            ? "bg-indigo-50/60 dark:bg-indigo-500/[0.09]"
+            ? "bg-indigo-500/[0.09] dark:bg-indigo-500/[0.16]"
             : isCanceled
-            ? "bg-rose-50/20 dark:bg-rose-950/10 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-white/[0.025]"
+            ? "bg-rose-50/20 dark:bg-rose-950/15 opacity-70 hover:opacity-100 hover:bg-[#EBE7DE] dark:hover:bg-white/[0.04]"
             : isCompleted
-            ? "opacity-65 hover:opacity-100 hover:bg-slate-50/80 dark:hover:bg-white/[0.025]"
-            : "hover:bg-slate-50/90 dark:hover:bg-white/[0.025]"
+            ? "opacity-65 hover:opacity-100 hover:bg-[#EBE7DE]/80 dark:hover:bg-white/[0.04]"
+            : "hover:bg-[#ECE8DF]/80 dark:hover:bg-white/[0.04]"
         }`}
       >
         {/* Crisp Left Active Indicator */}
@@ -623,7 +623,7 @@ export function LeftTasksQuadrant({
                     setActiveMenuTaskId((prev) => (prev === task.id ? null : task.id));
                   }}
                   title="Opções da demanda"
-                  className="p-1 -mr-1 rounded-md text-slate-400 lg:opacity-0 lg:group-hover:opacity-100 focus:opacity-100 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-200/60 dark:hover:bg-white/[0.08] transition-all cursor-pointer"
+                  className="p-1 -mr-1 rounded-md text-slate-400 lg:opacity-0 lg:group-hover:opacity-100 focus:opacity-100 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-[#DDD8CD]/60 dark:hover:bg-white/[0.08] transition-all cursor-pointer"
                 >
                   <MoreVertical className="w-3.5 h-3.5" />
                 </button>
@@ -718,7 +718,7 @@ export function LeftTasksQuadrant({
         {activeMenuTaskId === task.id && (
           <div
             onClick={(e) => e.stopPropagation()}
-            className="absolute right-3 top-8 z-30 w-48 rounded-xl bg-white dark:bg-[#16161D] border border-slate-200 dark:border-[#282834] shadow-popover py-1 animate-in fade-in zoom-in-95"
+            className="absolute right-3 top-8 z-30 w-48 rounded-xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] shadow-popover py-1 animate-in fade-in zoom-in-95"
           >
             {!isCompleted && (
               <button
@@ -781,7 +781,7 @@ export function LeftTasksQuadrant({
               </button>
             )}
 
-            <div className="my-1 border-t border-slate-100 dark:border-zinc-800" />
+            <div className="my-1 border-t border-[#E5E0D6] dark:border-[#343F56]" />
 
             <button
               type="button"
@@ -802,9 +802,9 @@ export function LeftTasksQuadrant({
   };
 
   return (
-    <aside className="w-full lg:w-[332px] xl:w-[368px] h-full flex flex-col border-r border-slate-200/80 dark:border-[#22222B] bg-white dark:bg-[#0E0E12] shrink-0 overflow-hidden transition-colors duration-200">
+    <aside className="w-full lg:w-[332px] xl:w-[368px] h-full flex flex-col border-r border-[#DCD7CC] dark:border-[#2E384D] bg-[#F3F1EB] dark:bg-[#1E2534] shrink-0 overflow-hidden transition-colors duration-200">
       {/* Top Filter & Search Bar */}
-      <div className="px-3.5 py-3 border-b border-slate-200/75 dark:border-[#1E1E26] bg-white dark:bg-[#0E0E12] space-y-2.5 shrink-0">
+      <div className="px-3.5 py-3 border-b border-[#DCD7CC]/80 dark:border-[#2E384D] bg-[#F3F1EB] dark:bg-[#1E2534] space-y-2.5 shrink-0">
         {/* Primary Row: Search + Filters Trigger + Density + Sync */}
         <div className="flex items-center gap-1.5">
           <div className="relative flex-1 min-w-0">
@@ -814,7 +814,7 @@ export function LeftTasksQuadrant({
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Filtrar demandas..."
-              className="w-full h-8.5 h-8 pl-8 pr-7 rounded-lg bg-slate-100/80 dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] focus:bg-white dark:focus:bg-[#181820] text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500/80"
+              className="w-full h-8.5 h-8 pl-8 pr-7 rounded-lg bg-[#E7E3DA]/80 dark:bg-[#293244] border border-[#DCD7CC]/80 dark:border-[#343F56] focus:bg-[#FBF9F5] dark:focus:bg-[#262F40] text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500/80"
             />
             {searchTerm && (
               <button
@@ -835,7 +835,7 @@ export function LeftTasksQuadrant({
             className={`h-8 px-2.5 rounded-lg border flex items-center gap-1 text-xs font-medium shrink-0 transition-colors cursor-pointer ${
               isFiltersOpen || activeFiltersCount > 0 || accountFilter !== "all"
                 ? "bg-indigo-600 text-white border-indigo-600"
-                : "bg-white dark:bg-[#16161C] text-slate-600 dark:text-zinc-300 border-slate-200/80 dark:border-[#24242F] hover:bg-slate-50 dark:hover:bg-[#1C1C24]"
+                : "bg-[#F7F6F1] dark:bg-[#293244] text-slate-600 dark:text-zinc-300 border-[#DCD7CC]/80 dark:border-[#343F56] hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D]"
             }`}
           >
             <Filter className="w-3.5 h-3.5" />
@@ -854,7 +854,7 @@ export function LeftTasksQuadrant({
             className={`hidden sm:flex w-8 h-8 rounded-lg border items-center justify-center shrink-0 transition-colors cursor-pointer ${
               isCompactMode
                 ? "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30"
-                : "bg-white dark:bg-[#16161C] text-slate-500 dark:text-zinc-400 border-slate-200/80 dark:border-[#24242F] hover:bg-slate-50 dark:hover:bg-[#1C1C24]"
+                : "bg-[#F7F6F1] dark:bg-[#293244] text-slate-500 dark:text-zinc-400 border-[#DCD7CC]/80 dark:border-[#343F56] hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D]"
             }`}
           >
             {isCompactMode ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
@@ -877,7 +877,7 @@ export function LeftTasksQuadrant({
             onClick={handleSyncGoogleTasks}
             disabled={isSyncing}
             title="Atualizar e consolidar demandas"
-            className="w-8 h-8 rounded-lg bg-white dark:bg-[#16161C] hover:bg-slate-50 dark:hover:bg-[#1C1C24] text-slate-500 dark:text-zinc-400 border border-slate-200/80 dark:border-[#24242F] flex items-center justify-center shrink-0 transition-colors disabled:opacity-50 cursor-pointer"
+            className="w-8 h-8 rounded-lg bg-[#F7F6F1] dark:bg-[#293244] hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D] text-slate-500 dark:text-zinc-400 border border-[#DCD7CC]/80 dark:border-[#343F56] flex items-center justify-center shrink-0 transition-colors disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-indigo-500" : ""}`} />
           </button>
@@ -900,9 +900,9 @@ export function LeftTasksQuadrant({
               aria-label="Ordenar demandas"
               className="bg-transparent text-[11px] font-medium text-slate-600 dark:text-zinc-300 focus:outline-none cursor-pointer"
             >
-              <option value="due_asc" className="dark:bg-[#14141B]">Prazo mais próximo</option>
-              <option value="priority" className="dark:bg-[#14141B]">Prioridade (P1→P4)</option>
-              <option value="recent" className="dark:bg-[#14141B]">Mais recentes</option>
+              <option value="due_asc" className="dark:bg-[#222938]">Prazo mais próximo</option>
+              <option value="priority" className="dark:bg-[#222938]">Prioridade (P1→P4)</option>
+              <option value="recent" className="dark:bg-[#222938]">Mais recentes</option>
             </select>
           </div>
         </div>
@@ -946,7 +946,7 @@ export function LeftTasksQuadrant({
               <button
                 type="button"
                 onClick={() => setCategoryFilter("ALL")}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-zinc-700 text-[11px] font-semibold cursor-pointer"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E7E3DA] dark:bg-[#293244] text-slate-700 dark:text-slate-300 border border-[#DCD7CC] dark:border-[#404D68] text-[11px] font-semibold cursor-pointer"
               >
                 <span className="truncate max-w-[110px]">{categoryFilter}</span>
                 <X className="w-3 h-3" />
@@ -977,7 +977,7 @@ export function LeftTasksQuadrant({
 
         {/* Desktop Collapsible Filter Panel */}
         {isFiltersOpen && (
-          <div className="hidden lg:block pt-2.5 mt-1 border-t border-slate-100 dark:border-zinc-800/80 space-y-2.5 animate-in fade-in duration-150">
+          <div className="hidden lg:block pt-2.5 mt-1 border-t border-[#E5E0D6] dark:border-[#343F56]/80 space-y-2.5 animate-in fade-in duration-150">
             {/* Tipo */}
             <div className="space-y-1">
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 block">
@@ -997,7 +997,7 @@ export function LeftTasksQuadrant({
                     className={`py-1 px-1.5 rounded-lg font-semibold transition-colors cursor-pointer ${
                       itemTypeFilter === opt.id
                         ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        : "bg-[#E7E3DA] dark:bg-[#293244] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     {opt.label}
@@ -1020,7 +1020,7 @@ export function LeftTasksQuadrant({
                     className={`py-1 rounded-lg font-mono font-semibold transition-colors cursor-pointer ${
                       priorityFilter === p
                         ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                        : "bg-[#E7E3DA] dark:bg-[#293244] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                     }`}
                   >
                     {p === "ALL" ? "Todas" : p}
@@ -1038,7 +1038,7 @@ export function LeftTasksQuadrant({
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full h-8 px-2 rounded-lg bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 font-medium"
+                  className="w-full h-8 px-2 rounded-lg bg-[#E7E3DA] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] text-xs text-slate-800 dark:text-slate-200 focus:outline-none focus:border-indigo-500 font-medium"
                 >
                   <option value="ALL">Todas as categorias ({dynamicCategories.length})</option>
                   {dynamicCategories.map((cat) => {
@@ -1068,7 +1068,7 @@ export function LeftTasksQuadrant({
                       className={`px-2 py-0.5 rounded-md font-medium transition-colors cursor-pointer ${
                         selectedTagFilter === t
                           ? "bg-indigo-600 text-white"
-                          : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/70 dark:border-zinc-800"
+                          : "bg-[#E7E3DA] dark:bg-[#293244] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-[#DCD7CC]/70 dark:border-[#343F56]"
                       }`}
                     >
                       #{t}
@@ -1120,7 +1120,7 @@ export function LeftTasksQuadrant({
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-h-[82dvh] overflow-y-auto rounded-t-3xl bg-white dark:bg-[#131420] border-t border-slate-200 dark:border-zinc-800 p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-200"
+            className="w-full max-h-[82dvh] overflow-y-auto rounded-t-3xl bg-[#F7F6F1] dark:bg-[#222938] border-t border-[#DCD7CC] dark:border-[#343F56] p-4 pb-[max(1.25rem,env(safe-area-inset-bottom))] space-y-4 shadow-2xl animate-in slide-in-from-bottom duration-200"
           >
             <div className="w-10 h-1 rounded-full bg-slate-300 dark:bg-zinc-700 mx-auto" />
             <div className="flex items-center justify-between">
@@ -1147,7 +1147,7 @@ export function LeftTasksQuadrant({
                   className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer ${
                     accountFilter === "all"
                       ? "bg-indigo-600 text-white"
-                      : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300"
+                      : "bg-[#E7E3DA] dark:bg-[#293244] text-slate-700 dark:text-slate-300"
                   }`}
                 >
                   Todos
@@ -1162,7 +1162,7 @@ export function LeftTasksQuadrant({
                       className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 cursor-pointer ${
                         isSel
                           ? "bg-indigo-600 text-white"
-                          : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300"
+                          : "bg-[#E7E3DA] dark:bg-[#293244] text-slate-700 dark:text-slate-300"
                       }`}
                     >
                       {acc.id === "work" ? <Briefcase className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
@@ -1190,7 +1190,7 @@ export function LeftTasksQuadrant({
                     className={`py-2 rounded-xl font-semibold cursor-pointer ${
                       itemTypeFilter === opt.id
                         ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300"
+                        : "bg-[#E7E3DA] dark:bg-[#293244] text-slate-700 dark:text-slate-300"
                     }`}
                   >
                     {opt.label}
@@ -1211,7 +1211,7 @@ export function LeftTasksQuadrant({
                     className={`py-2 rounded-xl font-mono font-semibold cursor-pointer ${
                       priorityFilter === p
                         ? "bg-indigo-600 text-white"
-                        : "bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300"
+                        : "bg-[#E7E3DA] dark:bg-[#293244] text-slate-700 dark:text-slate-300"
                     }`}
                   >
                     {p === "ALL" ? "Todas" : p}
@@ -1227,7 +1227,7 @@ export function LeftTasksQuadrant({
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl bg-slate-100 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 text-xs text-slate-900 dark:text-white font-medium"
+                  className="w-full h-10 px-3 rounded-xl bg-[#E7E3DA] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] text-xs text-slate-900 dark:text-white font-medium"
                 >
                   <option value="ALL">Todas as categorias</option>
                   {dynamicCategories.map((cat) => (
@@ -1240,7 +1240,7 @@ export function LeftTasksQuadrant({
             )}
 
             {/* Densidade */}
-            <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between pt-2 border-t border-[#E5E0D6] dark:border-[#343F56]">
               <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                 Modo de lista compacta
               </span>
@@ -1250,7 +1250,7 @@ export function LeftTasksQuadrant({
                 className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer ${
                   isCompactMode
                     ? "bg-indigo-600 text-white"
-                    : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300"
+                    : "bg-[#E7E3DA] dark:bg-[#293244] text-slate-600 dark:text-slate-300"
                 }`}
               >
                 {isCompactMode ? "Ativado" : "Desativado"}
@@ -1264,7 +1264,7 @@ export function LeftTasksQuadrant({
                   clearAllFilters();
                   setAccountFilter("all");
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 text-xs font-semibold cursor-pointer"
+                className="flex-1 py-2.5 rounded-xl bg-[#E7E3DA] dark:bg-[#293244] text-slate-700 dark:text-slate-300 text-xs font-semibold cursor-pointer"
               >
                 Limpar Filtros
               </button>
@@ -1302,29 +1302,29 @@ export function LeftTasksQuadrant({
             )}
           </div>
         ) : statusFilter === "COMPLETED" ? (
-          <div className="divide-y divide-slate-100 dark:divide-[#1A1A22]">
+          <div className="divide-y divide-[#E6E2D8] dark:divide-[#2E384D]">
             {completedTasks.map((task) => renderTaskCard(task, true))}
           </div>
         ) : (
           <>
             {/* Active Tasks */}
             {activeTasks.length === 0 && completedTasks.length > 0 ? (
-              <div className="m-4 p-4 rounded-xl bg-[#FAFAFB] dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] text-center text-xs text-slate-600 dark:text-zinc-400">
+              <div className="m-4 p-4 rounded-xl bg-[#F0EDE6] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] text-center text-xs text-slate-600 dark:text-zinc-400">
                 Todas as demandas ativas estão concluídas.
               </div>
             ) : (
-              <div className="divide-y divide-slate-100 dark:divide-[#1A1A22]">
+              <div className="divide-y divide-[#E6E2D8] dark:divide-[#2E384D]">
                 {activeTasks.map((task) => renderTaskCard(task, false))}
               </div>
             )}
 
             {/* Collapsible Completed Tasks Section */}
             {completedTasks.length > 0 && (
-              <div className="border-t border-slate-200/80 dark:border-[#1E1E26]">
+              <div className="border-t border-[#DCD7CC]/80 dark:border-[#2E384D]">
                 <button
                   type="button"
                   onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 bg-[#FAFAFB] dark:bg-[#111116] hover:bg-slate-100/80 dark:hover:bg-[#15151C] text-xs font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-[#F0EDE6] dark:bg-[#222938] hover:bg-[#E4E0D6]/80 dark:hover:bg-[#2F394D] text-xs font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <ChevronDown
@@ -1343,7 +1343,7 @@ export function LeftTasksQuadrant({
                 </button>
 
                 {isCompletedExpanded && (
-                  <div className="divide-y divide-slate-100 dark:divide-[#1A1A22] border-t border-slate-100 dark:border-[#1A1A22] animate-in fade-in duration-150">
+                  <div className="divide-y divide-[#E6E2D8] dark:divide-[#2E384D] border-t border-[#E5E0D6] dark:border-[#2E384D] animate-in fade-in duration-150">
                     {completedTasks.map((task) => renderTaskCard(task, true))}
                   </div>
                 )}
@@ -1352,11 +1352,11 @@ export function LeftTasksQuadrant({
 
             {/* Collapsible Canceled Tasks Section */}
             {canceledTasks.length > 0 && (
-              <div className="border-t border-slate-200/80 dark:border-[#1E1E26]">
+              <div className="border-t border-[#DCD7CC]/80 dark:border-[#2E384D]">
                 <button
                   type="button"
                   onClick={() => setIsCanceledExpanded(!isCanceledExpanded)}
-                  className="w-full flex items-center justify-between px-4 py-2.5 bg-[#FAFAFB] dark:bg-[#111116] hover:bg-slate-100/80 dark:hover:bg-[#15151C] text-xs font-medium text-rose-600/90 dark:text-rose-400/90 transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-[#F0EDE6] dark:bg-[#222938] hover:bg-[#E4E0D6]/80 dark:hover:bg-[#2F394D] text-xs font-medium text-rose-600/90 dark:text-rose-400/90 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <ChevronDown
@@ -1376,7 +1376,7 @@ export function LeftTasksQuadrant({
                 </button>
 
                 {isCanceledExpanded && (
-                  <div className="divide-y divide-slate-100 dark:divide-[#1A1A22] border-t border-slate-100 dark:border-[#1A1A22] animate-in fade-in duration-150">
+                  <div className="divide-y divide-[#E6E2D8] dark:divide-[#2E384D] border-t border-[#E5E0D6] dark:border-[#2E384D] animate-in fade-in duration-150">
                     {canceledTasks.map((task) => renderTaskCard(task, true))}
                   </div>
                 )}
@@ -1396,7 +1396,7 @@ export function LeftTasksQuadrant({
           }}
         >
           <div
-            className="w-full max-w-md rounded-2xl bg-white dark:bg-[#161724] border border-slate-200 dark:border-zinc-800 p-5 shadow-2xl space-y-4 animate-in zoom-in-95"
+            className="w-full max-w-md rounded-2xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] p-5 shadow-2xl space-y-4 animate-in zoom-in-95"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
@@ -1410,7 +1410,7 @@ export function LeftTasksQuadrant({
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                   Tem certeza que deseja excluir permanentemente esta demanda?
                 </p>
-                <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-zinc-800/80 p-2.5 rounded-lg border border-slate-200 dark:border-zinc-700/60 line-clamp-2">
+                <div className="text-xs font-semibold text-slate-800 dark:text-slate-200 bg-[#E7E3DA] dark:bg-[#293244]/80 p-2.5 rounded-lg border border-[#DCD7CC] dark:border-[#404D68]/60 line-clamp-2">
                   {taskToDelete.title}
                 </div>
                 <p className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">
@@ -1419,11 +1419,11 @@ export function LeftTasksQuadrant({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-zinc-800">
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E0D6] dark:border-[#343F56]">
               <button
                 type="button"
                 onClick={() => setTaskToDelete(null)}
-                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                className="px-3.5 py-1.5 text-xs font-semibold rounded-lg bg-[#E7E3DA] dark:bg-[#293244] hover:bg-[#DDD8CD] dark:hover:bg-[#38445C] text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
