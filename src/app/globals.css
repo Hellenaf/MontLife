@@ -3,27 +3,31 @@
 @tailwind utilities;
 
 :root {
-  --background: #f8fafc;
+  --background: #f6f7f9;
   --foreground: #0f172a;
   --surface: #ffffff;
+  --surface-subtle: #fafafb;
   --surface-elevated: #ffffff;
-  --surface-hover: #f1f5f9;
-  --border: #e2e8f0;
-  --border-subtle: rgba(226, 232, 240, 0.75);
+  --surface-hover: #f1f3f5;
+  --border: #e5e7eb;
+  --border-subtle: rgba(15, 23, 42, 0.07);
   --muted: #64748b;
   --primary: #4f46e5;
+  --primary-hover: #4338ca;
 }
 
 .dark {
-  --background: #0b0c10;
-  --foreground: #f1f5f9;
-  --surface: #12131a;
-  --surface-elevated: #161724;
-  --surface-hover: #191b26;
-  --border: #1e202e;
-  --border-subtle: rgba(39, 39, 52, 0.85);
-  --muted: #94a3b8;
+  --background: #09090b;
+  --foreground: #f4f4f5;
+  --surface: #111115;
+  --surface-subtle: #0c0c0f;
+  --surface-elevated: #16161c;
+  --surface-hover: #1c1c24;
+  --border: #23232d;
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --muted: #a1a1aa;
   --primary: #6366f1;
+  --primary-hover: #818cf8;
 }
 
 body {
@@ -33,10 +37,44 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   min-height: 100vh;
   min-height: 100dvh;
   width: 100%;
   overflow-x: hidden;
+}
+
+/* Crisp Selection Highlight */
+::selection {
+  background-color: rgba(79, 70, 229, 0.16);
+  color: inherit;
+}
+
+.dark ::selection {
+  background-color: rgba(99, 102, 241, 0.3);
+  color: #ffffff;
+}
+
+/* Reusable Executive Design System Utilities */
+@layer utilities {
+  .surface-canvas {
+    background-color: var(--background);
+  }
+  .surface-panel {
+    background-color: var(--surface);
+  }
+  .surface-subtle {
+    background-color: var(--surface-subtle);
+  }
+  .surface-elevated {
+    background-color: var(--surface-elevated);
+  }
+  .hairline-border {
+    border-color: var(--border);
+  }
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
 }
 
 /* iOS Safe Area Inset */
@@ -60,10 +98,10 @@ a,
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Custom Scrollbar */
+/* Refined Architectural Scrollbar */
 ::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -71,16 +109,16 @@ a,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
+  background: rgba(100, 116, 139, 0.22);
   border-radius: 9999px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.15);
+  background: rgba(161, 161, 170, 0.16);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.5);
+  background: rgba(99, 102, 241, 0.45);
 }
 
 /* Print Styles for Presentation-Grade Executive Report */

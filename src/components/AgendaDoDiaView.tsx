@@ -299,18 +299,15 @@ export function AgendaDoDiaView({
   const handleToday = () => setCalendarDate(new Date());
 
   return (
-    <div className="w-full max-w-[1680px] mx-auto space-y-3 pb-2 lg:pb-0 transition-colors animate-in fade-in duration-150">
-      {/* ========================================================================= */}
-      {/* 1. AGENDA TOOLBAR EXPANDIDA */}
-      {/* ========================================================================= */}
-      <div className="py-2.5 px-3 sm:py-3 sm:px-4 rounded-2xl sm:rounded-3xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-        {/* Lado Esquerdo: + Nova Demanda + Hoje + Controles do Mês + Título */}
+    <div className="w-full max-w-[1680px] mx-auto space-y-3.5 pb-2 lg:pb-0 transition-colors animate-in fade-in duration-150">
+      {/* 1. AGENDA TOOLBAR */}
+      <div className="py-2.5 px-3.5 sm:py-3 sm:px-4 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
           {onOpenNewTaskModal && (
             <button
               type="button"
               onClick={() => onOpenNewTaskModal(calendarDate)}
-              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 rounded-xl sm:rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold transition-all shadow-md shadow-indigo-600/20 active:scale-95 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors active:scale-[0.98] cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Nova Demanda</span>
@@ -320,18 +317,18 @@ export function AgendaDoDiaView({
           <button
             type="button"
             onClick={handleToday}
-            className="px-3 py-1.5 rounded-xl sm:rounded-2xl border border-slate-300 dark:border-zinc-700 hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors shadow-2xs active:scale-95 cursor-pointer"
+            className="px-3 h-8 rounded-lg border border-slate-200/90 dark:border-[#24242F] bg-white dark:bg-[#16161C] hover:bg-slate-50 dark:hover:bg-[#1C1C24] text-slate-700 dark:text-zinc-200 text-xs font-medium transition-colors cursor-pointer"
           >
             Hoje
           </button>
 
-          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-[#181926] p-0.5 rounded-xl border border-slate-200 dark:border-zinc-700">
+          <div className="flex items-center gap-0.5 bg-slate-100/80 dark:bg-[#16161C] p-0.5 rounded-lg border border-slate-200/80 dark:border-[#24242F]">
             <button
               type="button"
               onClick={handlePrevMonth}
               aria-label="Mês Anterior"
               title="Mês Anterior"
-              className="p-1.5 sm:p-1 rounded-lg hover:bg-white dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+              className="p-1.5 rounded-md hover:bg-white dark:hover:bg-[#22222C] text-slate-600 dark:text-zinc-300 transition-colors cursor-pointer"
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>
@@ -340,19 +337,19 @@ export function AgendaDoDiaView({
               onClick={handleNextMonth}
               aria-label="Próximo Mês"
               title="Próximo Mês"
-              className="p-1.5 sm:p-1 rounded-lg hover:bg-white dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+              className="p-1.5 rounded-md hover:bg-white dark:hover:bg-[#22222C] text-slate-600 dark:text-zinc-300 transition-colors cursor-pointer"
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
 
           <div className="min-w-0">
-            <h2 className="text-sm sm:text-lg font-black text-slate-900 dark:text-white capitalize leading-tight flex items-center gap-2">
-              <span>{format(calendarDate, "MMMM 'de' yyyy", { locale: ptBR })}</span>
+            <h2 className="text-sm sm:text-base font-bold tracking-tight text-slate-950 dark:text-zinc-50 capitalize leading-tight">
+              {format(calendarDate, "MMMM 'de' yyyy", { locale: ptBR })}
             </h2>
-            <p className="text-[11px] text-slate-500 dark:text-slate-400 capitalize leading-tight truncate">
-              Dia em foco:{" "}
-              <strong className="text-indigo-600 dark:text-indigo-400 font-bold">
+            <p className="text-[11px] text-slate-500 dark:text-zinc-400 capitalize leading-tight truncate">
+              Em foco:{" "}
+              <strong className="text-indigo-600 dark:text-indigo-400 font-semibold">
                 <span className="sm:hidden">
                   {`${SHORT_WEEKDAYS[calendarDate.getDay()]}, ${format(
                     calendarDate,
@@ -368,17 +365,16 @@ export function AgendaDoDiaView({
           </div>
         </div>
 
-        {/* Lado Direito: Filtros da Agenda do Dia + Indicador Google Calendar */}
+        {/* Right Filters & Sync */}
         <div className="flex items-center justify-between lg:justify-end gap-2 w-full lg:w-auto">
-          {/* Seletor de visualização exclusivo da Agenda do Dia */}
-          <div className="flex items-center gap-0.5 bg-slate-100 dark:bg-[#161724] p-0.5 rounded-xl border border-slate-200 dark:border-zinc-800 text-xs font-medium overflow-x-auto no-scrollbar max-w-full">
+          <div className="flex items-center gap-0.5 bg-slate-100/90 dark:bg-[#16161C] p-0.5 rounded-lg border border-slate-200/80 dark:border-[#24242F] text-xs font-medium overflow-x-auto no-scrollbar max-w-full">
             <button
               type="button"
               onClick={() => setAgendaSourceFilter("all")}
-              className={`px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 ${
+              className={`px-2.5 py-1 rounded-md transition-all cursor-pointer shrink-0 ${
                 agendaSourceFilter === "all"
-                  ? "bg-white dark:bg-[#202234] text-slate-900 dark:text-white font-bold shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-[#23232E] text-slate-950 dark:text-white font-semibold shadow-xs-subtle"
+                  : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               Tudo ({tasksForSelectedDay.length + gcalEventsForSelectedDay.length})
@@ -386,10 +382,10 @@ export function AgendaDoDiaView({
             <button
               type="button"
               onClick={() => setAgendaSourceFilter("work")}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer shrink-0 ${
                 agendaSourceFilter === "work"
-                  ? "bg-blue-600 text-white font-bold shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-[#23232E] text-blue-700 dark:text-blue-300 font-semibold shadow-xs-subtle"
+                  : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <Briefcase className="w-3 h-3" />
@@ -398,10 +394,10 @@ export function AgendaDoDiaView({
             <button
               type="button"
               onClick={() => setAgendaSourceFilter("personal")}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer shrink-0 ${
                 agendaSourceFilter === "personal"
-                  ? "bg-purple-600 text-white font-bold shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-[#23232E] text-violet-700 dark:text-violet-300 font-semibold shadow-xs-subtle"
+                  : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
               }`}
             >
               <User className="w-3 h-3" />
@@ -410,10 +406,10 @@ export function AgendaDoDiaView({
             <button
               type="button"
               onClick={() => setAgendaSourceFilter("gcal")}
-              className={`flex items-center gap-1 px-2.5 py-1 rounded-lg transition-all cursor-pointer shrink-0 ${
+              className={`flex items-center gap-1 px-2.5 py-1 rounded-md transition-all cursor-pointer shrink-0 ${
                 agendaSourceFilter === "gcal"
-                  ? "bg-amber-600 text-white font-bold shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-white dark:bg-[#23232E] text-amber-700 dark:text-amber-300 font-semibold shadow-xs-subtle"
+                  : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
               }`}
               title="Exibir apenas os compromissos importados da sua Agenda Pessoal do Google"
             >
@@ -422,7 +418,6 @@ export function AgendaDoDiaView({
             </button>
           </div>
 
-          {/* Botão de sincronização manual do Google Calendar */}
           <button
             type="button"
             onClick={() => {
@@ -430,61 +425,46 @@ export function AgendaDoDiaView({
               fetchGoogleCalendarEvents();
             }}
             disabled={isSyncingGcal || isLoadingGcal}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 sm:py-1 rounded-xl bg-slate-100 dark:bg-[#181926] hover:bg-slate-200 dark:hover:bg-zinc-800 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-all cursor-pointer shadow-2xs active:scale-95 disabled:opacity-50 shrink-0"
+            className="flex items-center gap-1.5 px-2.5 h-8 rounded-lg bg-white dark:bg-[#16161C] hover:bg-slate-50 dark:hover:bg-[#1C1C24] border border-slate-200/80 dark:border-[#24242F] text-slate-700 dark:text-zinc-200 text-xs font-medium transition-colors cursor-pointer disabled:opacity-50 shrink-0"
             title="Atualizar agendamentos da Agenda Pessoal do Google"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGcal || isLoadingGcal ? "animate-spin text-amber-500" : "text-slate-500"}`} />
-            <span className="hidden sm:inline">Sincronizar Google</span>
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingGcal || isLoadingGcal ? "animate-spin text-indigo-500" : "text-slate-400"}`} />
+            <span className="hidden sm:inline">Sincronizar</span>
           </button>
         </div>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. GRADE AMPLIADA: MÊS EXPANDIDO (ESQUERDA) + SEMANA & DIA (DIREITA) */}
-      {/* No Mobile (< lg), Semana & Dia aparecem primeiro (order-1) para acesso rápido */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-stretch">
-        {/* ========================================================================= */}
-        {/* PAINEL ESQUERDO: CALENDÁRIO MENSAL AMPLIADO (COL-SPAN-7) */}
-        {/* ========================================================================= */}
+      {/* 2. GRID: MONTH (LEFT) + WEEK & DAY (RIGHT) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-stretch">
+        {/* LEFT PANEL: MONTHLY CALENDAR */}
         <div className="order-2 lg:order-1 lg:col-span-7 flex flex-col h-full">
-          <div className="rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm overflow-hidden flex flex-col h-full">
-            {/* Header do Calendário Mensal */}
-            <div className="px-3.5 sm:px-4 py-2 sm:py-2.5 border-b border-slate-200 dark:border-zinc-800 bg-slate-50/80 dark:bg-[#151622] flex items-center justify-between flex-wrap gap-2">
+          <div className="rounded-xl border border-slate-200/80 dark:border-[#22222B] bg-white dark:bg-[#111115] overflow-hidden flex flex-col h-full">
+            <div className="px-4 py-2.5 border-b border-slate-200/75 dark:border-[#1E1E26] bg-[#FAFAFB] dark:bg-[#0E0E13] flex items-center justify-between flex-wrap gap-2">
               <div className="flex items-center gap-2 min-w-0">
-                <div className="p-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
-                  <Calendar className="w-3.5 h-3.5" />
-                </div>
+                <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
                 <div className="min-w-0">
-                  <h3 className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider truncate">
-                    Calendário Geral & Google Agenda
+                  <h3 className="text-xs font-semibold text-slate-900 dark:text-zinc-100 truncate">
+                    Calendário Mensal & Google Agenda
                   </h3>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight hidden sm:block">
-                    Clique em qualquer data para inspecionar os agendamentos corporativos e pessoais.
-                  </p>
                 </div>
               </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="text-[10px] sm:text-[11px] font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/60 px-2 py-0.5 rounded-lg border border-indigo-200 dark:border-indigo-800/60 whitespace-nowrap">
-                  {monthTasksCount} demandas • {monthGcalCount} Google
-                </span>
-              </div>
+              <span className="text-[11px] font-mono tabular-nums font-medium text-slate-500 dark:text-zinc-400">
+                {monthTasksCount} demandas • {monthGcalCount} Google
+              </span>
             </div>
 
-            {/* Cabeçalho dos Dias da Semana (SEG -> DOM) */}
-            <div className="grid grid-cols-7 border-b border-slate-200/80 dark:border-zinc-800/80 bg-slate-100/60 dark:bg-[#10111a] text-center">
+            <div className="grid grid-cols-7 border-b border-slate-200/75 dark:border-[#1E1E26] bg-[#FAFAFB] dark:bg-[#0D0D11] text-center">
               {["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"].map((wd) => (
                 <div
                   key={wd}
-                  className="py-1.5 sm:py-2 text-[10px] sm:text-[11px] font-black text-slate-600 dark:text-slate-300 tracking-normal sm:tracking-wider"
+                  className="py-2 text-[10px] font-semibold text-slate-400 dark:text-zinc-500 tracking-wider"
                 >
                   {wd}
                 </div>
               ))}
             </div>
 
-            {/* Grade Ampliada de Dias do Mês */}
-            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 bg-slate-200/70 dark:bg-zinc-800/50 p-1 sm:p-1.5 flex-1">
+            <div className="grid grid-cols-7 gap-px bg-slate-200/70 dark:bg-[#1E1E26] flex-1">
               {monthGridDays.map((day) => {
                 const dayTasks = tasks.filter((t) => isTaskScheduledForDay(t, day));
                 const dayGcal = unlinkedGcalEvents.filter((ev) => isGcalEventOnDay(ev, day));
@@ -501,14 +481,14 @@ export function AgendaDoDiaView({
                     key={day.toISOString()}
                     type="button"
                     onClick={() => setCalendarDate(day)}
-                    className={`min-h-[48px] sm:min-h-[86px] lg:min-h-[96px] xl:min-h-[100px] p-1 sm:p-2.5 rounded-lg sm:rounded-xl flex flex-col justify-between transition-all cursor-pointer relative group text-left overflow-hidden ${
+                    className={`min-h-[52px] sm:min-h-[86px] lg:min-h-[96px] p-1.5 sm:p-2 flex flex-col justify-between transition-colors cursor-pointer relative group text-left overflow-hidden ${
                       isDaySelected
-                        ? "bg-indigo-600 text-white font-bold shadow-md shadow-indigo-600/30 scale-[1.01] z-10 ring-2 ring-indigo-400"
+                        ? "bg-indigo-600 text-white font-semibold z-10"
                         : isDayToday
-                        ? "bg-indigo-50/90 dark:bg-indigo-950/70 text-indigo-700 dark:text-indigo-300 font-bold ring-2 ring-indigo-500/50"
+                        ? "bg-indigo-50/70 dark:bg-indigo-500/[0.12] text-indigo-700 dark:text-indigo-300 font-semibold"
                         : !isDayInCurrentMonth
-                        ? "bg-white/40 dark:bg-[#0e0f16]/40 text-slate-300 dark:text-zinc-600 hover:bg-white dark:hover:bg-[#141520]"
-                        : "bg-white dark:bg-[#13141f] text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-[#181926]"
+                        ? "bg-[#FAFAFB] dark:bg-[#0C0C10] text-slate-300 dark:text-zinc-600 hover:bg-white dark:hover:bg-[#14141B]"
+                        : "bg-white dark:bg-[#111115] text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-[#16161D]"
                     }`}
                   >
                     {/* Top Row: Número do dia + badges indicadores */}
@@ -622,27 +602,24 @@ export function AgendaDoDiaView({
           </div>
         </div>
 
-        {/* ========================================================================= */}
-        {/* PAINEL DIREITO: AGENDA & COMPROMISSOS DO DIA (COL-SPAN-5) */}
-        {/* ========================================================================= */}
+        {/* RIGHT PANEL: WEEK & DAY AGENDA */}
         <div className="order-1 lg:order-2 lg:col-span-5 flex flex-col h-full">
-          <div className="rounded-2xl sm:rounded-3xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#12131A] shadow-sm overflow-hidden flex flex-col h-full">
-            {/* 1. Header do Card: Semana Selecionada (Navegação Rápida) */}
-            <div className="p-2.5 sm:p-3 border-b border-slate-200/80 dark:border-zinc-800/80 bg-slate-50/80 dark:bg-[#151622] space-y-1.5 shrink-0">
-              <div className="flex items-center justify-between flex-wrap gap-1 px-1">
+          <div className="rounded-xl border border-slate-200/80 dark:border-[#22222B] bg-white dark:bg-[#111115] overflow-hidden flex flex-col h-full">
+            {/* 1. Week Strip */}
+            <div className="p-3 border-b border-slate-200/75 dark:border-[#1E1E26] bg-[#FAFAFB] dark:bg-[#0E0E13] space-y-2 shrink-0">
+              <div className="flex items-center justify-between flex-wrap gap-1 px-0.5">
                 <div className="flex items-center gap-1.5">
-                  <CalendarIcon className="w-3.5 h-3.5 text-indigo-500" />
-                  <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wider">
+                  <CalendarIcon className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                  <span className="text-[11px] font-semibold text-slate-800 dark:text-zinc-200 uppercase tracking-wider">
                     Semana Selecionada
                   </span>
                 </div>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                <span className="text-[11px] text-slate-500 dark:text-zinc-400 font-medium">
                   {format(weekStart, "d 'de' MMM", { locale: ptBR })} —{" "}
                   {format(weekEnd, "d 'de' MMM yyyy", { locale: ptBR })}
                 </span>
               </div>
 
-              {/* 7 Dias da Semana com contadores */}
               <div className="grid grid-cols-7 gap-1 pt-0.5">
                 {weekDays.map((day) => {
                   const isSelected = isSameDay(day, calendarDate);
@@ -656,12 +633,12 @@ export function AgendaDoDiaView({
                       key={day.toISOString()}
                       type="button"
                       onClick={() => setCalendarDate(day)}
-                      className={`py-2 px-0.5 sm:py-3 sm:px-1.5 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
+                      className={`py-2 px-0.5 sm:py-2.5 sm:px-1 rounded-lg flex flex-col items-center justify-center transition-colors cursor-pointer ${
                         isSelected
-                          ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30 font-bold scale-[1.03]"
+                          ? "bg-indigo-600 text-white font-semibold"
                           : isDayToday
-                          ? "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 font-semibold"
-                          : "bg-white dark:bg-[#0c0d13] text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800/80 border border-slate-200/60 dark:border-zinc-800/60"
+                          ? "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-500/30 font-semibold"
+                          : "bg-white dark:bg-[#15151B] text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-[#1C1C24] border border-slate-200/70 dark:border-[#23232D]"
                       }`}
                     >
                       <span className="text-[10px] uppercase tracking-normal sm:tracking-wider opacity-80 mb-0.5 font-semibold sm:font-medium">

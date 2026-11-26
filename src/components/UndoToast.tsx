@@ -61,7 +61,7 @@ export function UndoToast({ toast, onDismiss }: UndoToastProps) {
       aria-live="polite"
       className="no-print fixed z-[95] bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] lg:bottom-5 left-3 right-3 sm:left-auto sm:right-5 sm:max-w-md animate-in fade-in slide-in-from-bottom-3 duration-200"
     >
-      <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl bg-slate-900/95 dark:bg-[#171828]/95 text-white border border-slate-700/80 dark:border-zinc-700/80 shadow-2xl backdrop-blur-md">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 rounded-xl bg-slate-950/95 dark:bg-[#16161E]/95 text-white border border-slate-800 dark:border-[#282834] shadow-popover backdrop-blur-md">
         <div className="flex items-center gap-2.5 min-w-0">
           {icon}
           <div className="min-w-0">

@@ -16,9 +16,9 @@ import {
   PinOff,
   Trash2,
   ChevronLeft,
+  ChevronDown,
   Check,
   CheckCircle2,
-  Clock,
   Briefcase,
   User,
   Lightbulb,
@@ -32,6 +32,16 @@ import {
   Square,
   CheckSquare,
   Calendar,
+  Archive,
+  ArchiveRestore,
+  Copy,
+  Tag,
+  Target,
+  List,
+  AlignLeft,
+  FileCheck2,
+  Clock,
+  Sparkle,
 } from "lucide-react";
 import { formatDistanceToNow, parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -40,7 +50,10 @@ import {
   NoteCategory,
   NoteChecklistItem,
   NoteColor,
+  NoteOrganizeMode,
   Task,
+  Priority,
+  ItemType,
   ExtractedNoteTaskDraft,
 } from "@/types";
 
@@ -64,10 +77,18 @@ interface NotesViewProps {
   onSelectTask: (task: Task) => void;
 }
 
+type ScopePresetId = "reuniao" | "ideia" | "escopo_demanda" | "checklist";
+
 const CATEGORY_META: Record<
   NoteCategory,
   { label: string; badgeClass: string; icon: React.ReactNode }
 > = {
+  geral: {
+    label: "Livre",
+    badgeClass:
+      "bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-slate-300 dark:border-zinc-700",
+    icon: <FileText className="w-3 h-3" />,
+  },
   reuniao: {
     label: "Reunião",
     badgeClass:
@@ -86,13 +107,117 @@ const CATEGORY_META: Record<
       "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-800/60",
     icon: <ListChecks className="w-3 h-3" />,
   },
-  geral: {
-    label: "Geral",
-    badgeClass:
-      "bg-slate-100 text-slate-700 border-slate-200 dark:bg-zinc-800 dark:text-slate-300 dark:border-zinc-700",
-    icon: <FileText className="w-3 h-3" />,
+};
+
+const SCOPE_PRESETS: Record<
+  ScopePresetId,
+  {
+    label: string;
+    shortDesc: string;
+    category: NoteCategory;
+    color: NoteColor;
+    icon: React.ReactNode;
+    buildTemplate: (todayLabel: string) => {
+      title: string;
+      content: string;
+      checklist: NoteChecklistItem[];
+    };
+  }
+> = {
+  escopo_demanda: {
+    label: "Escopo de Demanda",
+    shortDesc: "Contexto, requisitos e critérios para virar tarefa",
+    category: "geral",
+    color: "purple",
+    icon: <Target className="w-3.5 h-3.5 text-purple-500" />,
+    buildTemplate: () => ({
+      title: "",
+      content:
+        "Contexto / Problema:\n\nSistema ou área envolvida:\n\nO que precisa ser feito:\n• \n\nCritérios de validação:\n• ",
+      checklist: [],
+    }),
+  },
+  reuniao: {
+    label: "Modo Reunião",
+    shortDesc: "Pauta, participantes, decisões e próximos passos",
+    category: "reuniao",
+    color: "blue",
+    icon: <Users className="w-3.5 h-3.5 text-blue-500" />,
+    buildTemplate: (todayLabel) => ({
+      title: `Reunião • ${todayLabel}`,
+      content: "Pauta:\n\nParticipantes:\n\nPontos discutidos:\n• \n\nDecisões tomadas:\n• \n\nPróximos passos:\n",
+      checklist: [],
+    }),
+  },
+  ideia: {
+    label: "Modo Ideia",
+    shortDesc: "Objetivo, proposta de melhoria e impacto esperado",
+    category: "ideia",
+    color: "amber",
+    icon: <Lightbulb className="w-3.5 h-3.5 text-amber-500" />,
+    buildTemplate: () => ({
+      title: "",
+      content: "Ideia / Proposta:\n\nProblema que resolve:\n\nBenefício esperado:\n",
+      checklist: [],
+    }),
+  },
+  checklist: {
+    label: "Modo Checklist",
+    shortDesc: "Lista direta de itens acionáveis",
+    category: "checklist",
+    color: "emerald",
+    icon: <ListChecks className="w-3.5 h-3.5 text-emerald-500" />,
+    buildTemplate: () => ({
+      title: "",
+      content: "",
+      checklist: [],
+    }),
   },
 };
+
+const AI_ORGANIZE_MODES: {
+  id: NoteOrganizeMode;
+  label: string;
+  desc: string;
+  icon: React.ReactNode;
+}[] = [
+  {
+    id: "auto",
+    label: "Organização Completa",
+    desc: "Estrutura texto, cria título, resumo, pontos-chave e tags",
+    icon: <Wand2 className="w-3.5 h-3.5 text-purple-500" />,
+  },
+  {
+    id: "demand_scope",
+    label: "Preparar Escopo de Demanda",
+    desc: "Reescreve em Objetivo, Contexto, Requisitos e Critérios",
+    icon: <Target className="w-3.5 h-3.5 text-indigo-500" />,
+  },
+  {
+    id: "topics",
+    label: "Estruturar em Tópicos",
+    desc: "Agrupa anotações soltas em tópicos limpos por assunto",
+    icon: <List className="w-3.5 h-3.5 text-blue-500" />,
+  },
+  {
+    id: "summary",
+    label: "Resumir & Enxugar",
+    desc: "Condensa notas longas preservando fatos e pendências",
+    icon: <AlignLeft className="w-3.5 h-3.5 text-amber-500" />,
+  },
+  {
+    id: "checklist",
+    label: "Extrair para Checklist",
+    desc: "Converte pendências em itens acionáveis no checklist",
+    icon: <ListChecks className="w-3.5 h-3.5 text-emerald-500" />,
+  },
+  {
+    id: "polish",
+    label: "Corrigir & Polir Texto",
+    desc: "Melhora clareza e pontuação mantendo seu estilo",
+    icon: <FileCheck2 className="w-3.5 h-3.5 text-sky-500" />,
+  },
+];
 
 const COLOR_STYLES: Record<
   NoteColor,
@@ -100,8 +225,8 @@ const COLOR_STYLES: Record<
 > = {
   default: {
     dot: "bg-slate-400",
-    accentBorder: "border-l-slate-400 dark:border-l-zinc-600",
-    subtleBg: "bg-white dark:bg-[#12131c]",
+    accentBorder: "border-l-slate-300 dark:border-l-zinc-700",
+    subtleBg: "bg-white dark:bg-[#15151C]",
     label: "Padrão",
   },
   purple: {
@@ -142,6 +267,17 @@ function isWorkAccountType(accountType?: string): boolean {
   return true;
 }
 
+function getConvertedTaskCount(note: Note): number {
+  return Array.from(
+    new Set([
+      ...(note.converted_task_ids || []),
+      ...(note.checklist || [])
+        .map((c) => c.linked_task_id)
+        .filter((id): id is string => Boolean(id)),
+    ])
+  ).length;
+}
+
 export function NotesView({
   notes,
   tasks,
@@ -153,43 +289,60 @@ export function NotesView({
   onOpenNewTaskModalWithDraft,
   onSelectTask,
 }: NotesViewProps) {
-  // Quick Capture bar state
+  // Quick Capture bar state (always free-form, zero forced category!)
   const [quickText, setQuickText] = useState("");
-  const [quickCategory, setQuickCategory] = useState<NoteCategory>("reuniao");
   const [isCreatingQuick, setIsCreatingQuick] = useState(false);
 
-  // List & Filtering state
+  // Dropdown menus
+  const [showTopScopeMenu, setShowTopScopeMenu] = useState(false);
+  const [showEditorScopeMenu, setShowEditorScopeMenu] = useState(false);
+  const [showAiModesMenu, setShowAiModesMenu] = useState(false);
+  const [showColorPicker, setShowColorPicker] = useState(false);
+
+  // List & Filtering state (single filter location below search!)
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterChip, setFilterChip] = useState<"all" | NoteCategory | "pinned">("all");
+  const [filterChip, setFilterChip] = useState<
+    "all" | NoteCategory | "pinned" | "converted"
+  >("all");
+  const [showArchived, setShowArchived] = useState(false);
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
   const [mobileScreen, setMobileScreen] = useState<"list" | "editor">("list");
 
   // Local editor draft state (synced with selected note + debounced autosave)
   const [draftTitle, setDraftTitle] = useState("");
   const [draftContent, setDraftContent] = useState("");
+  const [selectedTextExcerpt, setSelectedTextExcerpt] = useState("");
   const [saveState, setSaveState] = useState<"saved" | "saving" | "dirty">("saved");
   const [newChecklistText, setNewChecklistText] = useState("");
-  const [showColorPicker, setShowColorPicker] = useState(false);
+  const [isAddingTag, setIsAddingTag] = useState(false);
+  const [newTagInput, setNewTagInput] = useState("");
+  const [copiedFeedback, setCopiedFeedback] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // Voice Dictation (Web Speech API)
   const [speechSupported, setSpeechSupported] = useState(false);
-  const [listeningTarget, setListeningTarget] = useState<"quick" | "editor" | "checklist" | null>(null);
+  const [listeningTarget, setListeningTarget] = useState<"quick" | "editor" | "checklist" | null>(
+    null
+  );
   const recognitionRef = useRef<any>(null);
   const listeningTargetRef = useRef<"quick" | "editor" | "checklist" | null>(null);
 
   // AI Actions state
   const [isOrganizingAi, setIsOrganizingAi] = useState(false);
+  const [organizingModeLabel, setOrganizingModeLabel] = useState<string | null>(null);
   const [isExtractingAi, setIsExtractingAi] = useState(false);
+  const [isBatchOrganizing, setIsBatchOrganizing] = useState(false);
   const [aiMessage, setAiMessage] = useState<string | null>(null);
   const [undoSnapshot, setUndoSnapshot] = useState<{
     noteId: string;
     title: string;
     content: string;
+    category: NoteCategory;
     checklist: NoteChecklistItem[];
     tags: string[];
     ai_summary?: string | null;
     key_decisions?: string[];
+    demand_readiness?: "pronta" | "parcial" | "referencia" | null;
   } | null>(null);
 
   // Extracted tasks review modal state
@@ -200,8 +353,11 @@ export function NotesView({
     drafts: (ExtractedNoteTaskDraft & { selected: boolean })[];
   } | null>(null);
   const [isCreatingBatchTasks, setIsCreatingBatchTasks] = useState(false);
+  const [showChecklistSection, setShowChecklistSection] = useState(false);
 
+  const titleInputRef = useRef<HTMLInputElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const checklistInputRef = useRef<HTMLInputElement | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const dirtyNoteRef = useRef<{
     noteId: string;
@@ -209,10 +365,27 @@ export function NotesView({
     content: string;
   } | null>(null);
 
-  // Filtered notes based on workspace filter, chip & search query
+  // Close popovers on outside click
+  useEffect(() => {
+    if (!showTopScopeMenu && !showEditorScopeMenu && !showAiModesMenu && !showColorPicker) return;
+    const handleOutside = () => {
+      setShowTopScopeMenu(false);
+      setShowEditorScopeMenu(false);
+      setShowAiModesMenu(false);
+      setShowColorPicker(false);
+    };
+    window.addEventListener("click", handleOutside);
+    return () => window.removeEventListener("click", handleOutside);
+  }, [showTopScopeMenu, showEditorScopeMenu, showAiModesMenu, showColorPicker]);
+
+  const activeNotesCount = useMemo(() => notes.filter((n) => !n.archived).length, [notes]);
+  const archivedNotesCount = useMemo(() => notes.filter((n) => n.archived).length, [notes]);
+
+  // Filtered notes based on workspace filter, archive toggle, chip & search query
   const filteredNotes = useMemo(() => {
     return notes.filter((n) => {
-      if (n.archived) return false;
+      if (showArchived ? !n.archived : Boolean(n.archived)) return false;
+
       if (accountFilter !== "all") {
         const wantsWork =
           accountFilter === "work" ||
@@ -227,9 +400,11 @@ export function NotesView({
       }
 
       if (filterChip === "pinned" && !n.pinned) return false;
+      if (filterChip === "converted" && getConvertedTaskCount(n) === 0) return false;
       if (
         filterChip !== "all" &&
         filterChip !== "pinned" &&
+        filterChip !== "converted" &&
         n.category !== filterChip
       ) {
         return false;
@@ -239,14 +414,15 @@ export function NotesView({
         const q = searchTerm.toLowerCase().trim();
         const inTitle = (n.title || "").toLowerCase().includes(q);
         const inContent = (n.content || "").toLowerCase().includes(q);
+        const inSummary = (n.ai_summary || "").toLowerCase().includes(q);
         const inTags = (n.tags || []).some((t) => t.toLowerCase().includes(q));
         const inChecklist = (n.checklist || []).some((c) => c.text.toLowerCase().includes(q));
-        if (!inTitle && !inContent && !inTags && !inChecklist) return false;
+        if (!inTitle && !inContent && !inSummary && !inTags && !inChecklist) return false;
       }
 
       return true;
     });
-  }, [notes, accountFilter, filterChip, searchTerm]);
+  }, [notes, accountFilter, filterChip, searchTerm, showArchived]);
 
   const activeNote = useMemo(() => {
     if (selectedNoteId) {
@@ -267,7 +443,7 @@ export function NotesView({
     setSaveState("saving");
     try {
       await onUpdateNote(pending.noteId, {
-        title: pending.title.trim() || "Sem título",
+        title: pending.title.trim(),
         content: pending.content,
       });
     } finally {
@@ -284,14 +460,21 @@ export function NotesView({
     if (!activeNoteId) {
       setDraftTitle("");
       setDraftContent("");
+      setSelectedTextExcerpt("");
       setSaveState("saved");
       return;
     }
-    setDraftTitle(activeNoteTitle);
+    setDraftTitle(activeNoteTitle === "Sem título" ? "" : activeNoteTitle);
     setDraftContent(activeNoteContent);
+    setSelectedTextExcerpt("");
     setSaveState("saved");
     setShowColorPicker(false);
+    setShowEditorScopeMenu(false);
+    setShowAiModesMenu(false);
     setConfirmDeleteId(null);
+    setIsAddingTag(false);
+    setNewTagInput("");
+    setShowChecklistSection(false);
     setAiMessage(null);
   }, [activeNoteId]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -305,14 +488,14 @@ export function NotesView({
         const pending = dirtyNoteRef.current;
         dirtyNoteRef.current = null;
         void onUpdateNote(pending.noteId, {
-          title: pending.title.trim() || "Sem título",
+          title: pending.title.trim(),
           content: pending.content,
         });
       }
     };
   }, [onUpdateNote]);
 
-  // Initialize Speech Recognition safely (graceful fallback if browser lacks Web Speech API)
+  // Initialize Speech Recognition safely
   useEffect(() => {
     if (typeof window === "undefined") return;
     const SpeechRecognition =
@@ -341,7 +524,9 @@ export function NotesView({
         setNewChecklistText((prev) => (prev ? `${prev} ${transcript}` : transcript));
       } else if (target === "editor") {
         setDraftContent((prev) => {
-          const next = prev ? `${prev}${prev.endsWith("\n") ? "" : "\n"}${transcript}` : transcript;
+          const next = prev
+            ? `${prev}${prev.endsWith("\n") ? "" : "\n"}${transcript}`
+            : transcript;
           if (activeNote) {
             dirtyNoteRef.current = {
               noteId: activeNote.id,
@@ -401,6 +586,11 @@ export function NotesView({
     }
   };
 
+  const getDefaultAccountType = () =>
+    accountFilter === "personal" || accountFilter.toLowerCase().includes("pess")
+      ? "personal"
+      : "work";
+
   const handleSelectNote = async (note: Note) => {
     if (dirtyNoteRef.current && dirtyNoteRef.current.noteId !== note.id) {
       await flushPendingSave();
@@ -420,6 +610,38 @@ export function NotesView({
     }, 700);
   };
 
+  // Create a completely BLANK free-form note (no forced meeting/idea scope!)
+  const handleCreateBlankNote = async () => {
+    if (isCreatingQuick) return;
+    await flushPendingSave();
+    setIsCreatingQuick(true);
+    setShowArchived(false);
+    try {
+      const created = await onCreateNote({
+        title: "",
+        content: "",
+        category: "geral",
+        account_type: getDefaultAccountType(),
+        color: "default",
+        checklist: [],
+        tags: [],
+      });
+      if (created) {
+        setSelectedNoteId(created.id);
+        setDraftTitle("");
+        setDraftContent("");
+        setMobileScreen("editor");
+        setFilterChip("all");
+        requestAnimationFrame(() => {
+          textareaRef.current?.focus();
+        });
+      }
+    } finally {
+      setIsCreatingQuick(false);
+    }
+  };
+
+  // Quick capture bar -> saves a free note immediately without forcing category
   const handleQuickCreate = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const raw = quickText.trim();
@@ -427,21 +649,18 @@ export function NotesView({
 
     await flushPendingSave();
     setIsCreatingQuick(true);
+    setShowArchived(false);
     try {
       const firstLine = raw.split(/\r?\n/)[0].trim();
       const autoTitle =
-        firstLine.length > 52 ? `${firstLine.slice(0, 50).trim()}...` : firstLine;
-      const defaultAcc =
-        accountFilter === "personal" || accountFilter.toLowerCase().includes("pess")
-          ? "personal"
-          : "work";
+        firstLine.length > 56 ? `${firstLine.slice(0, 54).trim()}...` : firstLine;
 
       const created = await onCreateNote({
-        title: autoTitle || "Anotação Rápida",
+        title: autoTitle,
         content: raw,
-        category: quickCategory,
-        account_type: defaultAcc,
-        color: quickCategory === "reuniao" ? "blue" : quickCategory === "ideia" ? "amber" : "default",
+        category: "geral",
+        account_type: getDefaultAccountType(),
+        color: "default",
         checklist: [],
         tags: [],
       });
@@ -457,40 +676,25 @@ export function NotesView({
     }
   };
 
-  const handleCreateTemplateNote = async (template: "reuniao" | "ideia" | "checklist") => {
+  // Optional Scope Mode creation (when user explicitly chooses a scope template)
+  const handleCreateScopedNote = async (presetId: ScopePresetId) => {
+    if (isCreatingQuick) return;
+    setShowTopScopeMenu(false);
     await flushPendingSave();
     setIsCreatingQuick(true);
+    setShowArchived(false);
     try {
-      const defaultAcc =
-        accountFilter === "personal" || accountFilter.toLowerCase().includes("pess")
-          ? "personal"
-          : "work";
+      const preset = SCOPE_PRESETS[presetId];
       const todayLabel = format(new Date(), "dd/MM HH:mm", { locale: ptBR });
-      const configByTemplate = {
-        reuniao: {
-          title: `Reunião • ${todayLabel}`,
-          content: "Pauta:\n\nPontos discutidos:\n- \n\nPróximos passos:\n",
-          color: "blue" as NoteColor,
-          checklist: [{ id: `chk-${Date.now()}`, text: "Definir responsáveis e prazos", checked: false }],
-        },
-        ideia: {
-          title: `Ideia • ${todayLabel}`,
-          content: "Objetivo da ideia:\n\nBenefício esperado:\n",
-          color: "amber" as NoteColor,
-          checklist: [],
-        },
-        checklist: {
-          title: `Checklist • ${todayLabel}`,
-          content: "",
-          color: "emerald" as NoteColor,
-          checklist: [{ id: `chk-${Date.now()}`, text: "Primeiro ponto a verificar", checked: false }],
-        },
-      }[template];
+      const tpl = preset.buildTemplate(todayLabel);
 
       const created = await onCreateNote({
-        ...configByTemplate,
-        category: template,
-        account_type: defaultAcc,
+        title: tpl.title,
+        content: tpl.content,
+        category: preset.category,
+        account_type: getDefaultAccountType(),
+        color: preset.color,
+        checklist: tpl.checklist,
         tags: [],
       });
       if (created) {
@@ -498,12 +702,128 @@ export function NotesView({
         setDraftTitle(created.title);
         setDraftContent(created.content);
         setMobileScreen("editor");
+        if (presetId === "checklist") {
+          setShowChecklistSection(true);
+          requestAnimationFrame(() => checklistInputRef.current?.focus());
+        } else {
+          requestAnimationFrame(() => {
+            if (!tpl.title) titleInputRef.current?.focus();
+            else textareaRef.current?.focus();
+          });
+        }
       }
     } finally {
       setIsCreatingQuick(false);
     }
   };
 
+  // Apply optional Scope Mode inside the currently open note without erasing existing text
+  const handleApplyScopeToActiveNote = async (presetId: ScopePresetId) => {
+    if (!activeNote) return;
+    setShowEditorScopeMenu(false);
+    const preset = SCOPE_PRESETS[presetId];
+    const todayLabel = format(new Date(), "dd/MM HH:mm", { locale: ptBR });
+    const tpl = preset.buildTemplate(todayLabel);
+
+    const nextTitle = draftTitle.trim() ? draftTitle : tpl.title;
+    const nextContent = draftContent.trim()
+      ? tpl.content
+        ? `${draftContent.trim()}\n\n${tpl.content}`
+        : draftContent
+      : tpl.content;
+
+    setDraftTitle(nextTitle);
+    setDraftContent(nextContent);
+    await onUpdateNote(activeNote.id, {
+      title: nextTitle,
+      content: nextContent,
+      category: preset.category,
+      color: activeNote.color === "default" ? preset.color : activeNote.color,
+    });
+    if (presetId === "checklist") {
+      setShowChecklistSection(true);
+      requestAnimationFrame(() => checklistInputRef.current?.focus());
+    } else {
+      requestAnimationFrame(() => textareaRef.current?.focus());
+    }
+  };
+
+  // Lightweight editor helper insertions
+  const insertSnippetAtCursor = (snippet: string) => {
+    if (!activeNote) return;
+    const el = textareaRef.current;
+    if (!el) {
+      const next = draftContent ? `${draftContent}\n${snippet}` : snippet;
+      setDraftContent(next);
+      scheduleAutosave(activeNote.id, draftTitle, next);
+      return;
+    }
+    const start = el.selectionStart ?? draftContent.length;
+    const end = el.selectionEnd ?? draftContent.length;
+    const before = draftContent.slice(0, start);
+    const after = draftContent.slice(end);
+    const prefix = before && !before.endsWith("\n") && snippet.startsWith("•") ? "\n" : "";
+    const next = `${before}${prefix}${snippet}${after}`;
+    setDraftContent(next);
+    scheduleAutosave(activeNote.id, draftTitle, next);
+    requestAnimationFrame(() => {
+      const pos = start + prefix.length + snippet.length;
+      el.focus();
+      el.setSelectionRange(pos, pos);
+    });
+  };
+
+  const handleCopyNoteText = async () => {
+    if (!activeNote) return;
+    const parts = [
+      draftTitle.trim(),
+      draftContent.trim(),
+      (activeNote.checklist || []).length > 0
+        ? "\nChecklist:\n" +
+          (activeNote.checklist || [])
+            .map((c) => `${c.checked ? "[x]" : "[ ]"} ${c.text}`)
+            .join("\n")
+        : "",
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+    try {
+      await navigator.clipboard.writeText(parts);
+      setCopiedFeedback(true);
+      setTimeout(() => setCopiedFeedback(false), 1800);
+    } catch {}
+  };
+
+  const handleTrackSelection = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    const start = el.selectionStart ?? 0;
+    const end = el.selectionEnd ?? 0;
+    if (end > start) {
+      setSelectedTextExcerpt(draftContent.slice(start, end).trim());
+    } else {
+      setSelectedTextExcerpt("");
+    }
+  };
+
+  // Tags management
+  const handleAddTag = async () => {
+    if (!activeNote) return;
+    const clean = newTagInput.trim().replace(/^#/, "").toLowerCase();
+    if (!clean) return;
+    const nextTags = Array.from(new Set([...(activeNote.tags || []), clean])).slice(0, 8);
+    setNewTagInput("");
+    setIsAddingTag(false);
+    await onUpdateNote(activeNote.id, { tags: nextTags });
+  };
+
+  const handleRemoveTag = async (tagToRemove: string) => {
+    if (!activeNote) return;
+    const nextTags = (activeNote.tags || []).filter((t) => t !== tagToRemove);
+    await onUpdateNote(activeNote.id, { tags: nextTags });
+  };
+
+  // Checklist actions
   const handleAddChecklistItem = async () => {
     if (!activeNote) return;
     const clean = newChecklistText.trim();
@@ -539,9 +859,10 @@ export function NotesView({
     onOpenNewTaskModalWithDraft(
       {
         title: item.text,
-        description: `Ponto originado da anotação "${activeNote.title}": ${item.text}.`,
+        description: `Ponto originado da anotação "${activeNote.title || "Anotação Rápida"}": ${item.text}.`,
         account_type: activeNote.account_type || "work",
         item_type: "task",
+        tags: activeNote.tags || [],
       },
       activeNote.id,
       item.id
@@ -550,8 +871,8 @@ export function NotesView({
 
   const handleConvertWholeNoteOrSelection = () => {
     if (!activeNote) return;
-    let selectedExcerpt = "";
-    if (textareaRef.current) {
+    let selectedExcerpt = selectedTextExcerpt;
+    if (!selectedExcerpt && textareaRef.current) {
       const start = textareaRef.current.selectionStart ?? 0;
       const end = textareaRef.current.selectionEnd ?? 0;
       if (end > start) {
@@ -560,7 +881,8 @@ export function NotesView({
     }
 
     const effectiveContent = selectedExcerpt || draftContent.trim();
-    const firstLine = (selectedExcerpt || draftTitle || effectiveContent).split(/\r?\n/)[0]?.trim() || "";
+    const firstLine =
+      (selectedExcerpt || draftTitle || effectiveContent).split(/\r?\n/)[0]?.trim() || "";
     onOpenNewTaskModalWithDraft(
       {
         title: firstLine.slice(0, 70),
@@ -568,15 +890,28 @@ export function NotesView({
         account_type: activeNote.account_type || "work",
         item_type: activeNote.category === "reuniao" ? "activity" : "task",
         tags: activeNote.tags || [],
+        validation_steps: (activeNote.checklist || [])
+          .filter((c) => !c.checked)
+          .map((c) => c.text),
       },
       activeNote.id
     );
   };
 
-  const handleOrganizeWithAI = async () => {
+  // AI Organization with selectable style/mode
+  const handleOrganizeWithAI = async (mode: NoteOrganizeMode = "auto") => {
     if (!activeNote || isOrganizingAi) return;
+    setShowAiModesMenu(false);
     await flushPendingSave();
+
+    if (!draftTitle.trim() && !draftContent.trim() && (activeNote.checklist || []).length === 0) {
+      setAiMessage("Escreva ou dite algo na nota antes de pedir para a IA organizar.");
+      return;
+    }
+
+    const modeMeta = AI_ORGANIZE_MODES.find((m) => m.id === mode);
     setIsOrganizingAi(true);
+    setOrganizingModeLabel(modeMeta?.label || "Organizando");
     setAiMessage(null);
 
     try {
@@ -584,10 +919,12 @@ export function NotesView({
         noteId: activeNote.id,
         title: draftTitle,
         content: draftContent,
+        category: activeNote.category,
         checklist: activeNote.checklist || [],
         tags: activeNote.tags || [],
         ai_summary: activeNote.ai_summary,
         key_decisions: activeNote.key_decisions,
+        demand_readiness: activeNote.demand_readiness,
       };
 
       const res = await fetch("/api/notes/ai", {
@@ -595,6 +932,7 @@ export function NotesView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "organize",
+          mode,
           title: draftTitle,
           content: draftContent,
           checklist: activeNote.checklist || [],
@@ -608,34 +946,50 @@ export function NotesView({
       }
 
       setUndoSnapshot(snapshot);
-      const nextTitle =
+      const isGenericTitle =
         !draftTitle.trim() ||
         draftTitle.startsWith("Reunião •") ||
         draftTitle.startsWith("Ideia •") ||
         draftTitle === "Sem título" ||
-        draftTitle === "Anotação Rápida"
-          ? data.refined_title || draftTitle
-          : draftTitle;
-      const nextContent = data.organized_content || draftContent;
+        draftTitle === "Anotação Rápida" ||
+        draftTitle.endsWith("...");
+
+      const nextTitle = isGenericTitle ? data.refined_title || draftTitle : draftTitle;
+      const nextContent =
+        mode === "checklist" && draftContent.trim()
+          ? data.organized_content || draftContent
+          : data.organized_content || draftContent;
 
       const existingTexts = new Set(
         (activeNote.checklist || []).map((c) => c.text.trim().toLowerCase())
       );
-      const newChecklistItems: NoteChecklistItem[] = Array.isArray(data.checklist_items)
-        ? data.checklist_items
-            .filter((txt: string) => txt && !existingTexts.has(txt.trim().toLowerCase()))
-            .map((txt: string, idx: number) => ({
-              id: `chk-${Date.now()}-${idx}`,
-              text: txt.trim(),
-              checked: false,
-              linked_task_id: null,
-            }))
-        : [];
+      // Só gera/adiciona itens de checklist quando o usuário solicitar explicitamente o modo "checklist"
+      const newChecklistItems: NoteChecklistItem[] =
+        mode === "checklist" && Array.isArray(data.checklist_items)
+          ? data.checklist_items
+              .filter((txt: string) => txt && !existingTexts.has(txt.trim().toLowerCase()))
+              .map((txt: string, idx: number) => ({
+                id: `chk-${Date.now()}-${idx}`,
+                text: txt.trim(),
+                checked: false,
+                linked_task_id: null,
+              }))
+          : [];
 
       const mergedChecklist = [...(activeNote.checklist || []), ...newChecklistItems];
+      if (mode === "checklist") {
+        setShowChecklistSection(true);
+      }
       const mergedTags = Array.from(
         new Set([...(activeNote.tags || []), ...(Array.isArray(data.tags) ? data.tags : [])])
       ).slice(0, 6);
+
+      const nextReadiness =
+        data.demand_readiness === "pronta" ||
+        data.demand_readiness === "parcial" ||
+        data.demand_readiness === "referencia"
+          ? data.demand_readiness
+          : activeNote.demand_readiness ?? null;
 
       setDraftTitle(nextTitle);
       setDraftContent(nextContent);
@@ -646,12 +1000,21 @@ export function NotesView({
         tags: mergedTags,
         ai_summary: data.ai_summary || null,
         key_decisions: Array.isArray(data.key_decisions) ? data.key_decisions : [],
+        demand_readiness: nextReadiness,
       });
-      setAiMessage("Nota estruturada pela IA! Use 'Desfazer' se quiser voltar ao rascunho anterior.");
+
+      const addedStepsMsg =
+        newChecklistItems.length > 0
+          ? ` (+${newChecklistItems.length} ${newChecklistItems.length === 1 ? "item" : "itens"} no checklist)`
+          : "";
+      setAiMessage(
+        `${modeMeta?.label || "Nota organizada"} aplicada pela IA${addedStepsMsg}. Use "Desfazer" se quiser voltar ao rascunho original.`
+      );
     } catch {
       setAiMessage("Erro ao comunicar com o serviço de IA.");
     } finally {
       setIsOrganizingAi(false);
+      setOrganizingModeLabel(null);
     }
   };
 
@@ -662,18 +1025,89 @@ export function NotesView({
     await onUpdateNote(activeNote.id, {
       title: undoSnapshot.title,
       content: undoSnapshot.content,
+      category: undoSnapshot.category,
       checklist: undoSnapshot.checklist,
       tags: undoSnapshot.tags,
       ai_summary: undoSnapshot.ai_summary ?? null,
       key_decisions: undoSnapshot.key_decisions ?? [],
+      demand_readiness: undoSnapshot.demand_readiness ?? null,
     });
     setUndoSnapshot(null);
     setAiMessage("Rascunho original restaurado.");
   };
 
+  // Batch AI Organization across active notes (titles, tags, summaries, readiness)
+  const handleBatchOrganizeNotes = async () => {
+    if (isBatchOrganizing) return;
+    const candidates = notes
+      .filter((n) => !n.archived && ((n.title || "").trim() || (n.content || "").trim()))
+      .slice(0, 15);
+    if (candidates.length === 0) return;
+
+    await flushPendingSave();
+    setIsBatchOrganizing(true);
+    setAiMessage(null);
+    try {
+      const res = await fetch("/api/notes/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "batch_organize",
+          notes: candidates.map((n) => ({
+            id: n.id,
+            title: n.title,
+            content: n.content,
+            category: n.category,
+            tags: n.tags,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success || !Array.isArray(data.updates)) {
+        setAiMessage(data?.error || "Não foi possível organizar a lista de notas.");
+        return;
+      }
+
+      let updatedCount = 0;
+      for (const upd of data.updates) {
+        const current = notes.find((n) => n.id === upd.id);
+        if (!current) continue;
+        const mergedTags = Array.from(new Set([...(current.tags || []), ...(upd.tags || [])])).slice(
+          0,
+          6
+        );
+        const nextTitle = upd.title || current.title;
+        await onUpdateNote(current.id, {
+          title: nextTitle,
+          tags: mergedTags,
+          ai_summary: upd.ai_summary || current.ai_summary || null,
+          demand_readiness: upd.demand_readiness || current.demand_readiness || null,
+        });
+        if (activeNote && current.id === activeNote.id && !draftTitle.trim() && nextTitle) {
+          setDraftTitle(nextTitle);
+        }
+        updatedCount++;
+      }
+
+      setAiMessage(
+        `${updatedCount} ${updatedCount === 1 ? "anotação organizada" : "anotações organizadas"} com títulos, resumos, tags e sinalização de demanda pela IA!`
+      );
+    } catch {
+      setAiMessage("Erro ao organizar anotações em lote com IA.");
+    } finally {
+      setIsBatchOrganizing(false);
+    }
+  };
+
+  // Extract multiple demands from active note with AI
   const handleExtractTasksWithAI = async () => {
     if (!activeNote || isExtractingAi) return;
     await flushPendingSave();
+    if (!draftTitle.trim() && !draftContent.trim() && (activeNote.checklist || []).length === 0) {
+      setAiMessage("Escreva algo na anotação antes de extrair demandas com IA.");
+      return;
+    }
+
     setIsExtractingAi(true);
     setAiMessage(null);
 
@@ -746,27 +1180,39 @@ export function NotesView({
   const activeColorStyle =
     COLOR_STYLES[(activeNote?.color as NoteColor) || "default"] || COLOR_STYLES.default;
 
+  const wordCount = useMemo(() => {
+    const clean = draftContent.trim();
+    if (!clean) return 0;
+    return clean.split(/\s+/).length;
+  }, [draftContent]);
+
+  const isBlankActiveNote =
+    Boolean(activeNote) &&
+    !draftTitle.trim() &&
+    !draftContent.trim() &&
+    (activeNote?.checklist || []).length === 0;
+
   return (
     <div className="w-full max-w-[1600px] mx-auto h-full flex flex-col gap-3">
       {/* ========================================================================= */}
-      {/* 1. BARRA DE CAPTURA RÁPIDA (MOBILE & DESKTOP) */}
+      {/* 1. MENU SUPERIOR LIMPO: CAPTURA RÁPIDA + NOVA NOTA EM BRANCO (SEM BARRA DE CATEGORIAS!) */}
       {/* ========================================================================= */}
       <div
-        className={`rounded-2xl bg-white dark:bg-[#12131c] border border-slate-200 dark:border-zinc-800/90 shadow-sm p-2.5 sm:p-3.5 space-y-2.5 shrink-0 ${
+        className={`rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] p-3.5 space-y-2.5 shrink-0 ${
           mobileScreen === "editor" ? "hidden lg:block" : "block"
         }`}
       >
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 min-w-0">
-            <div className="p-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-800/50 shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
               <StickyNote className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white leading-tight">
-                Bloco de Notas & Reuniões
+              <h1 className="text-sm font-semibold text-slate-950 dark:text-zinc-50 leading-tight tracking-tight">
+                Anotações Rápidas
               </h1>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                Anote ideias, atas e pontos rápidos e transforme em demandas com IA.
+              <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
+                Anote livremente, organize com IA e transforme em demanda quando precisar.
               </p>
             </div>
           </div>
@@ -774,44 +1220,84 @@ export function NotesView({
           <div className="flex items-center gap-1.5 shrink-0">
             <button
               type="button"
-              onClick={() => handleCreateTemplateNote("reuniao")}
+              onClick={handleCreateBlankNote}
               disabled={isCreatingQuick}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 text-xs font-semibold transition-all active:scale-95 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+              title="Criar uma nova anotação em branco"
             >
-              <Users className="w-3.5 h-3.5" />
-              <span>+ Reunião</span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Nova Nota</span>
             </button>
-            <button
-              type="button"
-              onClick={() => handleCreateTemplateNote("ideia")}
-              disabled={isCreatingQuick}
-              className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/50 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 text-xs font-semibold transition-all active:scale-95 cursor-pointer"
-            >
-              <Lightbulb className="w-3.5 h-3.5" />
-              <span>+ Ideia</span>
-            </button>
+
+            <div className="relative">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowTopScopeMenu((prev) => !prev);
+                }}
+                disabled={isCreatingQuick}
+                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-lg bg-white hover:bg-slate-50 dark:bg-[#16161C] dark:hover:bg-[#1C1C24] text-slate-700 dark:text-zinc-200 border border-slate-200/80 dark:border-[#24242F] text-xs font-medium transition-colors cursor-pointer"
+                title="Criar nota usando um modo/escopo opcional"
+              >
+                <span>Escopos</span>
+                <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+              </button>
+
+              {showTopScopeMenu && (
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="absolute right-0 mt-1.5 w-64 rounded-xl bg-white dark:bg-[#16161D] border border-slate-200 dark:border-[#282834] shadow-popover p-1.5 z-40 animate-in fade-in zoom-in-95 duration-100"
+                >
+                  <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                    Modos de Escopo (Opcional)
+                  </div>
+                  {(Object.keys(SCOPE_PRESETS) as ScopePresetId[]).map((presetId) => {
+                    const preset = SCOPE_PRESETS[presetId];
+                    return (
+                      <button
+                        key={presetId}
+                        type="button"
+                        onClick={() => handleCreateScopedNote(presetId)}
+                        className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-lg hover:bg-slate-50 dark:hover:bg-white/[0.05] text-left transition-colors cursor-pointer"
+                      >
+                        <div className="mt-0.5 shrink-0">{preset.icon}</div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold text-slate-800 dark:text-zinc-100">
+                            {preset.label}
+                          </div>
+                          <div className="text-[11px] text-slate-500 dark:text-zinc-400 leading-snug">
+                            {preset.shortDesc}
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Captura imediata com ditado por voz */}
-        <form onSubmit={handleQuickCreate} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <div className="flex items-center gap-1.5 flex-1 min-w-0 bg-slate-100 dark:bg-[#171825] border border-slate-200 dark:border-zinc-800 rounded-xl px-2.5 py-1.5 focus-within:border-purple-500 focus-within:ring-1 focus-within:ring-purple-500">
+        {/* Barra de Captura Rápida Limpa */}
+        <form onSubmit={handleQuickCreate} className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0 bg-slate-100/80 dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] focus-within:bg-white dark:focus-within:bg-[#181820] rounded-lg px-3 py-1 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/15 transition-all">
             <input
               type="text"
               value={quickText}
               onChange={(e) => setQuickText(e.target.value)}
-              placeholder="Anotar ideia rápida ou ponto de reunião..."
-              className="flex-1 min-w-0 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 outline-none py-1"
+              placeholder="Anotar algo rápido para lembrar ou transformar em demanda depois..."
+              className="flex-1 min-w-0 bg-transparent text-xs sm:text-[13px] text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 outline-none py-1"
             />
             {speechSupported && (
               <button
                 type="button"
                 onClick={() => toggleDictation("quick")}
                 title={listeningTarget === "quick" ? "Parar ditado" : "Ditar nota por voz"}
-                className={`p-1.5 rounded-lg transition-colors shrink-0 cursor-pointer ${
+                className={`p-1.5 rounded-md transition-colors shrink-0 cursor-pointer ${
                   listeningTarget === "quick"
                     ? "bg-rose-500/15 text-rose-500 animate-pulse"
-                    : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white"
+                    : "text-slate-400 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-white"
                 }`}
               >
                 {listeningTarget === "quick" ? (
@@ -823,79 +1309,85 @@ export function NotesView({
             )}
           </div>
 
-          <div className="flex items-center gap-1.5 justify-between sm:justify-end shrink-0">
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#171825] p-1 rounded-xl border border-slate-200 dark:border-zinc-800 text-[11px]">
-              {(["reuniao", "ideia", "checklist", "geral"] as NoteCategory[]).map((cat) => (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setQuickCategory(cat)}
-                  className={`px-2 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                    quickCategory === cat
-                      ? "bg-white dark:bg-[#222436] text-purple-600 dark:text-purple-300 shadow-2xs"
-                      : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
-                  }`}
-                >
-                  {CATEGORY_META[cat].label}
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="submit"
-              disabled={!quickText.trim() || isCreatingQuick}
-              className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 text-white text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-40 cursor-pointer shrink-0"
-            >
-              {isCreatingQuick ? (
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              ) : (
-                <Plus className="w-3.5 h-3.5" />
-              )}
-              <span>Salvar</span>
-            </button>
-          </div>
+          <button
+            type="submit"
+            disabled={!quickText.trim() || isCreatingQuick}
+            className="inline-flex items-center justify-center gap-1.5 px-4 h-9 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-semibold transition-colors disabled:opacity-35 cursor-pointer shrink-0"
+          >
+            {isCreatingQuick ? (
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            ) : (
+              <Check className="w-3.5 h-3.5" />
+            )}
+            <span>Salvar</span>
+          </button>
         </form>
       </div>
 
-      {/* ========================================================================= */}
-      {/* 2. ÁREA PRINCIPAL: SPLIT-PANE NO DESKTOP | LISTA <-> EDITOR NO MOBILE */}
-      {/* ========================================================================= */}
+      {/* 2. SPLIT-PANE NOTES WORKSPACE */}
       <div className="flex-1 min-h-0 flex flex-col lg:flex-row gap-3 overflow-hidden">
-        {/* COLUNA ESQUERDA: LISTA DE NOTAS */}
         <section
           className={`${
             mobileScreen === "list" ? "flex" : "hidden"
-          } lg:flex flex-col w-full lg:w-[320px] xl:w-[360px] shrink-0 rounded-2xl bg-white dark:bg-[#12131c] border border-slate-200 dark:border-zinc-800/90 shadow-sm overflow-hidden min-h-0 flex-1 lg:flex-none`}
+          } lg:flex flex-col w-full lg:w-[330px] xl:w-[364px] shrink-0 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] overflow-hidden min-h-0 flex-1 lg:flex-none`}
         >
-          {/* Busca + Chips */}
-          <div className="p-3 border-b border-slate-100 dark:border-zinc-800/80 space-y-2 shrink-0">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Buscar anotações, atas, pontos..."
-                className="w-full h-9 pl-8 pr-3 rounded-xl bg-slate-100 dark:bg-[#171825] border border-slate-200 dark:border-zinc-800 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500"
-              />
+          <div className="p-3 border-b border-slate-200/75 dark:border-[#1E1E26] space-y-2 shrink-0">
+            <div className="flex items-center gap-1.5">
+              <div className="relative flex-1 min-w-0">
+                <Search className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Buscar anotações, tags, resumos..."
+                  className="w-full h-8 pl-8 pr-7 rounded-lg bg-slate-100/80 dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] focus:bg-white dark:focus:bg-[#181820] text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                />
+                {searchTerm && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchTerm("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={handleBatchOrganizeNotes}
+                disabled={isBatchOrganizing || activeNotesCount === 0}
+                title="Usar IA para gerar títulos, resumos, tags e sinalizar quais notas estão prontas para virar demanda"
+                className="h-8 px-2.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-500/30 inline-flex items-center gap-1 text-[11px] font-semibold shrink-0 transition-colors disabled:opacity-40 cursor-pointer"
+              >
+                {isBatchOrganizing ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3.5 h-3.5" />
+                )}
+                <span>IA</span>
+              </button>
             </div>
 
+            {/* Menu de Filtros abaixo da busca */}
             <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5 text-[11px]">
               {[
-                { id: "all", label: `Todas (${notes.filter((n) => !n.archived).length})` },
+                { id: "all", label: `Todas (${showArchived ? archivedNotesCount : activeNotesCount})` },
+                { id: "geral", label: "Livres" },
                 { id: "reuniao", label: "Reuniões" },
                 { id: "ideia", label: "Ideias" },
                 { id: "checklist", label: "Checklist" },
                 { id: "pinned", label: "Fixadas" },
+                { id: "converted", label: "Viraram Demanda" },
               ].map((chip) => (
                 <button
                   key={chip.id}
                   type="button"
                   onClick={() => setFilterChip(chip.id as any)}
-                  className={`px-2.5 py-1 rounded-lg font-semibold whitespace-nowrap transition-all shrink-0 cursor-pointer ${
+                  className={`px-2.5 py-1 rounded-md font-medium whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
                     filterChip === chip.id
-                      ? "bg-purple-600 text-white shadow-2xs"
-                      : "bg-slate-100 dark:bg-[#171825] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                      ? "bg-indigo-600 text-white font-semibold"
+                      : "bg-slate-100/80 dark:bg-[#16161C] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
                   }`}
                 >
                   {chip.label}
@@ -907,30 +1399,38 @@ export function NotesView({
           {/* Lista rolável de notas */}
           <div className="flex-1 overflow-y-auto p-2.5 space-y-2 custom-scrollbar">
             {filteredNotes.length === 0 ? (
-              <div className="py-12 px-4 text-center space-y-2 text-slate-400 dark:text-slate-500">
+              <div className="py-12 px-4 text-center space-y-2.5 text-slate-400 dark:text-slate-500">
                 <StickyNote className="w-8 h-8 mx-auto opacity-35 text-amber-500" />
                 <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Nenhuma anotação por aqui ainda
+                  {showArchived
+                    ? "Nenhuma anotação arquivada"
+                    : "Nenhuma anotação encontrada"}
                 </p>
                 <p className="text-[11px] leading-relaxed">
-                  Use a barra acima ou toque em <strong>+ Reunião</strong> para registrar pontos e depois transformá-los em demandas.
+                  {showArchived
+                    ? "Notas arquivadas aparecem aqui para consulta futura."
+                    : "Crie uma nota em branco ou digite algo rápido no campo acima."}
                 </p>
+                {!showArchived && (
+                  <button
+                    type="button"
+                    onClick={handleCreateBlankNote}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Nova Nota em Branco</span>
+                  </button>
+                )}
               </div>
             ) : (
               filteredNotes.map((note) => {
                 const isSelected = activeNote?.id === note.id;
                 const catMeta = CATEGORY_META[note.category] || CATEGORY_META.geral;
-                const colMeta = COLOR_STYLES[(note.color as NoteColor) || "default"] || COLOR_STYLES.default;
+                const colMeta =
+                  COLOR_STYLES[(note.color as NoteColor) || "default"] || COLOR_STYLES.default;
                 const checkedCount = (note.checklist || []).filter((c) => c.checked).length;
                 const totalChecklist = (note.checklist || []).length;
-                const convertedCount = Array.from(
-                  new Set([
-                    ...(note.converted_task_ids || []),
-                    ...(note.checklist || [])
-                      .map((c) => c.linked_task_id)
-                      .filter((id): id is string => Boolean(id)),
-                  ])
-                ).length;
+                const convertedCount = getConvertedTaskCount(note);
 
                 let relDate = "";
                 try {
@@ -940,103 +1440,132 @@ export function NotesView({
                   });
                 } catch {}
 
+                const displayTitle =
+                  note.title && note.title.trim() && note.title !== "Sem título"
+                    ? note.title
+                    : note.content?.trim()
+                    ? note.content.trim().split(/\r?\n/)[0].slice(0, 52)
+                    : "Nota em branco";
+
                 return (
                   <button
                     key={note.id}
                     type="button"
                     onClick={() => handleSelectNote(note)}
-                    className={`w-full text-left p-3 rounded-xl border border-l-4 ${colMeta.accentBorder} transition-all cursor-pointer space-y-1.5 ${
+                    className={`w-full text-left p-3 rounded-xl border border-l-[3px] ${colMeta.accentBorder} transition-all cursor-pointer space-y-1.5 ${
                       isSelected
-                        ? "border-purple-500/70 bg-purple-50/70 dark:bg-purple-950/30 shadow-sm ring-1 ring-purple-500/30"
-                        : `${colMeta.subtleBg} border-slate-200/80 dark:border-zinc-800/80 hover:border-purple-300 dark:hover:border-purple-700/60`
+                        ? "border-indigo-500/70 bg-indigo-50/70 dark:bg-indigo-950/30 shadow-sm ring-1 ring-indigo-500/25"
+                        : `${colMeta.subtleBg} border-slate-200/80 dark:border-zinc-800/80 hover:border-indigo-300 dark:hover:border-indigo-700/60`
                     }`}
                   >
-                    <div className="flex items-center justify-between gap-2">
-                      <span
-                        className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-[10px] font-semibold ${catMeta.badgeClass}`}
-                      >
-                        {catMeta.icon}
-                        <span>{catMeta.label}</span>
-                      </span>
+                    <div className="flex items-start justify-between gap-2">
+                      <h3 className="text-[13px] font-bold text-slate-900 dark:text-white line-clamp-1 flex-1 min-w-0">
+                        {displayTitle}
+                      </h3>
 
-                      <div className="flex items-center gap-1.5 shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
                         {note.pinned && <Pin className="w-3 h-3 text-amber-500 fill-amber-500" />}
-                        {convertedCount > 0 && (
+                        {convertedCount > 0 ? (
                           <span className="px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-[10px] font-bold">
                             {convertedCount} dem.
                           </span>
-                        )}
+                        ) : note.demand_readiness === "pronta" ? (
+                          <span
+                            className="px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 text-[10px] font-semibold"
+                            title="A IA identificou ações prontas para virar demanda"
+                          >
+                            Pronta
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
-                    <h3 className="text-xs sm:text-[13px] font-bold text-slate-900 dark:text-white line-clamp-1">
-                      {note.title || "Sem título"}
-                    </h3>
-
-                    {(note.content || note.ai_summary) && (
+                    {(note.ai_summary || note.content) && (
                       <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-snug">
                         {note.ai_summary || note.content}
                       </p>
                     )}
 
-                    <div className="flex items-center justify-between text-[10px] text-slate-400 dark:text-slate-500 pt-0.5">
-                      <span className="flex items-center gap-2">
+                    <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400 dark:text-slate-500 pt-0.5">
+                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                        {note.category !== "geral" && (
+                          <span
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded border text-[10px] font-semibold ${catMeta.badgeClass}`}
+                          >
+                            {catMeta.icon}
+                            <span>{catMeta.label}</span>
+                          </span>
+                        )}
                         {totalChecklist > 0 && (
-                          <span className="inline-flex items-center gap-1 text-slate-600 dark:text-slate-300 font-medium">
+                          <span className="inline-flex items-center gap-0.5 text-slate-600 dark:text-slate-300 font-mono font-semibold">
                             <ListChecks className="w-3 h-3 text-indigo-500" />
                             {checkedCount}/{totalChecklist}
                           </span>
                         )}
-                        {isWorkAccountType(note.account_type) ? (
-                          <span className="inline-flex items-center gap-0.5 text-blue-600 dark:text-blue-400">
-                            <Briefcase className="w-2.5 h-2.5" /> Trabalho
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-0.5 text-purple-600 dark:text-purple-400">
-                            <User className="w-2.5 h-2.5" /> Pessoal
+                        {note.tags && note.tags.length > 0 && (
+                          <span className="text-indigo-600/80 dark:text-indigo-400/80 truncate max-w-[90px]">
+                            #{note.tags[0]}
                           </span>
                         )}
-                      </span>
-                      <span className="truncate">{relDate}</span>
+                      </div>
+                      <span className="truncate shrink-0">{relDate}</span>
                     </div>
                   </button>
                 );
               })
             )}
           </div>
+
+          {/* Rodapé da lista: Alternar Ativas / Arquivadas */}
+          {archivedNotesCount > 0 && (
+            <div className="px-3 py-2 border-t border-slate-100 dark:border-zinc-800/80 bg-slate-50/70 dark:bg-[#101119] flex items-center justify-between text-[11px] shrink-0">
+              <button
+                type="button"
+                onClick={() => setShowArchived((prev) => !prev)}
+                className="inline-flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+              >
+                <Archive className="w-3.5 h-3.5" />
+                <span>
+                  {showArchived
+                    ? `Voltar para ativas (${activeNotesCount})`
+                    : `Ver arquivadas (${archivedNotesCount})`}
+                </span>
+              </button>
+            </div>
+          )}
         </section>
 
-        {/* COLUNA DIREITA: EDITOR COMPLETO + IA + CHECKLIST */}
+        {/* COLUNA DIREITA: EDITOR COMPLETO + MODOS OPCIONAIS + SUÍTE DE IA */}
         <section
           className={`${
             mobileScreen === "editor" ? "flex" : "hidden"
-          } lg:flex flex-1 min-w-0 min-h-0 flex-col rounded-2xl bg-white dark:bg-[#12131c] border border-slate-200 dark:border-zinc-800/90 shadow-sm overflow-hidden`}
+          } lg:flex flex-1 min-w-0 min-h-0 flex-col rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] overflow-hidden`}
         >
           {!activeNote ? (
             <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3 text-slate-400 dark:text-slate-500">
-              <StickyNote className="w-10 h-10 opacity-30 text-purple-500" />
+              <StickyNote className="w-10 h-10 opacity-30 text-indigo-500" />
               <div className="space-y-1 max-w-sm">
                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
-                  Selecione ou crie uma anotação
+                  Comece uma anotação em branco
                 </h3>
                 <p className="text-xs leading-relaxed">
-                  Registre pontos de reuniões, ideias e listas rápidas. Quando quiser, peça para a IA organizar ou transformar tudo em demandas com prazo e checklist.
+                  Anote ideias, recados ou detalhes rápidos sem burocracia. Quando quiser, peça para a IA organizar ou transformar em demanda.
                 </p>
               </div>
               <button
                 type="button"
-                onClick={() => handleCreateTemplateNote("reuniao")}
+                onClick={handleCreateBlankNote}
                 className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Nova Anotação de Reunião</span>
+                <span>Nova Nota em Branco</span>
               </button>
             </div>
           ) : (
             <>
               {/* Header do Editor */}
-              <div className="px-3 sm:px-5 py-2.5 border-b border-slate-100 dark:border-zinc-800/80 bg-slate-50/70 dark:bg-[#151624] flex items-center justify-between gap-2 flex-wrap shrink-0">
-                <div className="flex items-center gap-2 min-w-0">
+              <div className="px-4 sm:px-5 py-2.5 border-b border-slate-200/75 dark:border-[#1E1E26] bg-[#FAFAFB] dark:bg-[#0E0E13] flex items-center justify-between gap-2 flex-wrap shrink-0">
+                <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
                   <button
                     type="button"
                     onClick={async () => {
@@ -1049,19 +1578,71 @@ export function NotesView({
                     <span>Notas</span>
                   </button>
 
+                  {/* Seletor sutil de Modo/Escopo (Livre por padrão) */}
                   <select
                     value={activeNote.category}
                     onChange={(e) =>
                       onUpdateNote(activeNote.id, { category: e.target.value as NoteCategory })
                     }
-                    className="h-8 px-2 rounded-xl bg-white dark:bg-[#1b1d2c] border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none"
+                    title="Modo de organização da nota (opcional)"
+                    className="h-8 px-2.5 rounded-xl bg-white dark:bg-[#1b1d2c] border border-slate-200 dark:border-zinc-700 text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
                   >
-                    <option value="reuniao">Reunião</option>
-                    <option value="ideia">Ideia</option>
-                    <option value="checklist">Checklist</option>
-                    <option value="geral">Geral</option>
+                    <option value="geral">Modo: Livre</option>
+                    <option value="reuniao">Modo: Reunião</option>
+                    <option value="ideia">Modo: Ideia</option>
+                    <option value="checklist">Modo: Checklist</option>
                   </select>
 
+                  {/* Botão opcional para inserir estrutura de escopo sem perder texto */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowEditorScopeMenu((prev) => !prev);
+                      }}
+                      className="h-8 inline-flex items-center gap-1 px-2.5 rounded-xl bg-white dark:bg-[#1b1d2c] border border-slate-200 dark:border-zinc-700 hover:border-indigo-400 text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                      title="Inserir escopo estruturado nesta nota (opcional)"
+                    >
+                      <Sparkle className="w-3 h-3 text-indigo-500" />
+                      <span className="hidden sm:inline">Inserir Escopo</span>
+                      <ChevronDown className="w-3 h-3 opacity-70" />
+                    </button>
+
+                    {showEditorScopeMenu && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute left-0 mt-1.5 w-64 rounded-2xl bg-white dark:bg-[#171828] border border-slate-200 dark:border-zinc-700 shadow-xl p-1.5 z-30 animate-in fade-in zoom-in-95 duration-100"
+                      >
+                        <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                          Aplicar Escopo na Nota
+                        </div>
+                        {(Object.keys(SCOPE_PRESETS) as ScopePresetId[]).map((presetId) => {
+                          const preset = SCOPE_PRESETS[presetId];
+                          return (
+                            <button
+                              key={presetId}
+                              type="button"
+                              onClick={() => handleApplyScopeToActiveNote(presetId)}
+                              className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-white/[0.05] text-left transition-colors cursor-pointer"
+                            >
+                              <div className="mt-0.5 shrink-0">{preset.icon}</div>
+                              <div className="min-w-0">
+                                <div className="text-xs font-semibold text-slate-800 dark:text-white">
+                                  {preset.label}
+                                </div>
+                                <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                                  {preset.shortDesc}
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Contexto Trabalho / Pessoal */}
                   <button
                     type="button"
                     onClick={() =>
@@ -1071,7 +1652,7 @@ export function NotesView({
                           : "work",
                       })
                     }
-                    className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-[11px] font-semibold border cursor-pointer transition-colors ${
+                    className={`h-8 inline-flex items-center gap-1 px-2.5 rounded-xl text-[11px] font-semibold border cursor-pointer transition-colors ${
                       isWorkAccountType(activeNote.account_type)
                         ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-300 dark:border-blue-800/60"
                         : "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60"
@@ -1092,8 +1673,9 @@ export function NotesView({
                   </button>
                 </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500 mr-1">
+                {/* Ações Utilitárias Direitas */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 mr-1 hidden sm:inline">
                     {saveState === "saving"
                       ? "Salvando..."
                       : saveState === "dirty"
@@ -1101,18 +1683,38 @@ export function NotesView({
                       : "Salvo"}
                   </span>
 
+                  {/* Copiar */}
+                  <button
+                    type="button"
+                    onClick={handleCopyNoteText}
+                    className="p-1.5 rounded-xl hover:bg-slate-200/70 dark:hover:bg-zinc-800 text-slate-500 dark:text-slate-400 cursor-pointer"
+                    title="Copiar conteúdo da nota"
+                  >
+                    {copiedFeedback ? (
+                      <Check className="w-4 h-4 text-emerald-500" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </button>
+
                   {/* Seletor de Cor */}
                   <div className="relative">
                     <button
                       type="button"
-                      onClick={() => setShowColorPicker((prev) => !prev)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowColorPicker((prev) => !prev);
+                      }}
                       className="p-1.5 rounded-xl hover:bg-slate-200/70 dark:hover:bg-zinc-800 text-slate-500 dark:text-slate-400 cursor-pointer"
                       title="Cor da anotação"
                     >
                       <Palette className="w-4 h-4" />
                     </button>
                     {showColorPicker && (
-                      <div className="absolute right-0 mt-1 p-2 rounded-xl bg-white dark:bg-[#1a1b28] border border-slate-200 dark:border-zinc-700 shadow-xl flex items-center gap-1.5 z-20">
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute right-0 mt-1 p-2 rounded-xl bg-white dark:bg-[#1a1b28] border border-slate-200 dark:border-zinc-700 shadow-xl flex items-center gap-1.5 z-30"
+                      >
                         {(Object.keys(COLOR_STYLES) as NoteColor[]).map((col) => (
                           <button
                             key={col}
@@ -1122,7 +1724,7 @@ export function NotesView({
                               setShowColorPicker(false);
                             }}
                             className={`w-5 h-5 rounded-full ${COLOR_STYLES[col].dot} ${
-                              activeNote.color === col ? "ring-2 ring-offset-2 ring-purple-500" : ""
+                              activeNote.color === col ? "ring-2 ring-offset-2 ring-indigo-500" : ""
                             } cursor-pointer`}
                             title={COLOR_STYLES[col].label}
                           />
@@ -1142,7 +1744,27 @@ export function NotesView({
                     }`}
                     title={activeNote.pinned ? "Desafixar nota" : "Fixar nota no topo"}
                   >
-                    {activeNote.pinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
+                    {activeNote.pinned ? (
+                      <PinOff className="w-4 h-4" />
+                    ) : (
+                      <Pin className="w-4 h-4" />
+                    )}
+                  </button>
+
+                  {/* Arquivar / Restaurar */}
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onUpdateNote(activeNote.id, { archived: !activeNote.archived })
+                    }
+                    className="p-1.5 rounded-xl hover:bg-slate-200/70 dark:hover:bg-zinc-800 text-slate-500 dark:text-slate-400 cursor-pointer"
+                    title={activeNote.archived ? "Restaurar para notas ativas" : "Arquivar anotação"}
+                  >
+                    {activeNote.archived ? (
+                      <ArchiveRestore className="w-4 h-4 text-indigo-500" />
+                    ) : (
+                      <Archive className="w-4 h-4" />
+                    )}
                   </button>
 
                   {/* Delete */}
@@ -1173,82 +1795,140 @@ export function NotesView({
                 </div>
               </div>
 
-              {/* Barra de Superpoderes de IA & Conversão em Demanda */}
-              <div className="px-3 sm:px-5 py-2 border-b border-slate-100 dark:border-zinc-800/70 bg-gradient-to-r from-purple-50/80 via-indigo-50/50 to-transparent dark:from-purple-950/30 dark:via-indigo-950/20 dark:to-transparent flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
-                <button
-                  type="button"
-                  onClick={handleOrganizeWithAI}
-                  disabled={isOrganizingAi}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white dark:bg-[#1a1b2a] border border-purple-200 dark:border-purple-800/70 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/50 text-xs font-bold shadow-2xs transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
-                >
-                  {isOrganizingAi ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Wand2 className="w-3.5 h-3.5 text-purple-500" />
-                  )}
-                  <span>Organizar com IA</span>
-                </button>
+              {/* Barra Completa de IA & Conversão em Demanda */}
+              <div className="px-4 sm:px-5 py-2 border-b border-slate-200/75 dark:border-[#1E1E26] bg-white dark:bg-[#111115] flex items-center justify-between gap-2 flex-wrap shrink-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {/* Split button: Organizar com IA + Menu de Modos Especializados */}
+                  <div className="relative inline-flex items-center">
+                    <button
+                      type="button"
+                      onClick={() => handleOrganizeWithAI("auto")}
+                      disabled={isOrganizingAi}
+                      className="inline-flex items-center gap-1.5 pl-3 pr-2.5 py-1.5 rounded-l-xl bg-white dark:bg-[#1a1b2a] border border-purple-200 dark:border-purple-800/70 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/50 text-xs font-bold shadow-2xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                    >
+                      {isOrganizingAi ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      ) : (
+                        <Wand2 className="w-3.5 h-3.5 text-purple-500" />
+                      )}
+                      <span>{isOrganizingAi ? organizingModeLabel || "Organizando..." : "Organizar com IA"}</span>
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isOrganizingAi}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAiModesMenu((prev) => !prev);
+                      }}
+                      title="Escolher estilo de organização da IA"
+                      className="px-2 py-1.5 rounded-r-xl bg-white dark:bg-[#1a1b2a] border border-l-0 border-purple-200 dark:border-purple-800/70 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/50 text-xs font-bold shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </button>
 
-                <button
-                  type="button"
-                  onClick={handleExtractTasksWithAI}
-                  disabled={isExtractingAi}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 text-white text-xs font-bold shadow-sm transition-all active:scale-95 disabled:opacity-50 shrink-0 cursor-pointer"
-                >
-                  {isExtractingAi ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <Sparkles className="w-3.5 h-3.5" />
-                  )}
-                  <span>Extrair Demandas com IA</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleConvertWholeNoteOrSelection}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 text-xs font-bold transition-all active:scale-95 shrink-0 cursor-pointer"
-                  title="Transformar nota ou trecho selecionado em uma demanda detalhada"
-                >
-                  <ArrowRight className="w-3.5 h-3.5" />
-                  <span>Virar Demanda</span>
-                </button>
-
-                {speechSupported && (
-                  <button
-                    type="button"
-                    onClick={() => toggleDictation("editor")}
-                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all shrink-0 cursor-pointer ${
-                      listeningTarget === "editor"
-                        ? "bg-rose-500 text-white border-rose-500 animate-pulse"
-                        : "bg-white dark:bg-[#1a1b2a] border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-slate-300"
-                    }`}
-                  >
-                    {listeningTarget === "editor" ? (
-                      <MicOff className="w-3.5 h-3.5" />
-                    ) : (
-                      <Mic className="w-3.5 h-3.5 text-rose-500" />
+                    {showAiModesMenu && (
+                      <div
+                        onClick={(e) => e.stopPropagation()}
+                        className="absolute left-0 top-full mt-1.5 w-72 rounded-2xl bg-white dark:bg-[#171828] border border-slate-200 dark:border-zinc-700 shadow-2xl p-1.5 z-40 animate-in fade-in zoom-in-95 duration-100"
+                      >
+                        <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                          Como a IA deve organizar esta nota?
+                        </div>
+                        {AI_ORGANIZE_MODES.map((m) => (
+                          <button
+                            key={m.id}
+                            type="button"
+                            onClick={() => handleOrganizeWithAI(m.id)}
+                            className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl hover:bg-indigo-50/70 dark:hover:bg-white/[0.05] text-left transition-colors cursor-pointer"
+                          >
+                            <div className="mt-0.5 shrink-0">{m.icon}</div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-semibold text-slate-800 dark:text-white">
+                                {m.label}
+                              </div>
+                              <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                                {m.desc}
+                              </div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     )}
-                    <span className="hidden sm:inline">
-                      {listeningTarget === "editor" ? "Ouvindo..." : "Ditar"}
-                    </span>
-                  </button>
-                )}
+                  </div>
 
-                {undoSnapshot && undoSnapshot.noteId === activeNote.id && (
+                  {/* Extrair Múltiplas Demandas com IA */}
                   <button
                     type="button"
-                    onClick={handleUndoOrganize}
-                    className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-semibold shrink-0 cursor-pointer"
+                    onClick={handleExtractTasksWithAI}
+                    disabled={isExtractingAi}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                    title="Deixar a IA identificar e criar uma ou várias demandas a partir desta anotação"
                   >
-                    <Undo2 className="w-3.5 h-3.5" />
-                    <span>Desfazer</span>
+                    {isExtractingAi ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3.5 h-3.5" />
+                    )}
+                    <span>Extrair Demandas</span>
                   </button>
-                )}
+
+                  {/* Conversão Direta (Nota Inteira ou Trecho Selecionado) */}
+                  <button
+                    type="button"
+                    onClick={handleConvertWholeNoteOrSelection}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition-all active:scale-95 cursor-pointer ${
+                      selectedTextExcerpt
+                        ? "bg-emerald-600 hover:bg-emerald-500 text-white border-emerald-600 shadow-xs"
+                        : "bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
+                    }`}
+                    title={
+                      selectedTextExcerpt
+                        ? "Transformar o trecho selecionado em demanda"
+                        : "Transformar esta nota em uma demanda detalhada"
+                    }
+                  >
+                    <ArrowRight className="w-3.5 h-3.5" />
+                    <span>{selectedTextExcerpt ? "Virar Demanda (seleção)" : "Virar Demanda"}</span>
+                  </button>
+
+                  {speechSupported && (
+                    <button
+                      type="button"
+                      onClick={() => toggleDictation("editor")}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
+                        listeningTarget === "editor"
+                          ? "bg-rose-500 text-white border-rose-500 animate-pulse"
+                          : "bg-white dark:bg-[#1a1b2a] border-slate-200 dark:border-zinc-700 text-slate-600 dark:text-slate-300"
+                      }`}
+                      title="Ditar diretamente no corpo da nota"
+                    >
+                      {listeningTarget === "editor" ? (
+                        <MicOff className="w-3.5 h-3.5" />
+                      ) : (
+                        <Mic className="w-3.5 h-3.5 text-rose-500" />
+                      )}
+                      <span className="hidden xl:inline">
+                        {listeningTarget === "editor" ? "Ouvindo..." : "Ditar"}
+                      </span>
+                    </button>
+                  )}
+
+                  {undoSnapshot && undoSnapshot.noteId === activeNote.id && (
+                    <button
+                      type="button"
+                      onClick={handleUndoOrganize}
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-200/80 hover:bg-slate-300/80 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 text-xs font-semibold cursor-pointer"
+                    >
+                      <Undo2 className="w-3.5 h-3.5" />
+                      <span>Desfazer IA</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Feedback de IA */}
               {aiMessage && (
-                <div className="mx-3 sm:mx-5 mt-2.5 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-xs text-indigo-800 dark:text-indigo-200 flex items-center justify-between gap-2 shrink-0">
+                <div className="mx-3 sm:mx-5 mt-2.5 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-xs text-indigo-800 dark:text-indigo-200 flex items-center justify-between gap-2 shrink-0 animate-in fade-in">
                   <span>{aiMessage}</span>
                   <button
                     type="button"
@@ -1262,9 +1942,10 @@ export function NotesView({
 
               {/* Corpo Rolável do Editor */}
               <div className="flex-1 overflow-y-auto p-3.5 sm:p-5 space-y-4 custom-scrollbar">
-                {/* Título + Texto Livre */}
-                <div className={`space-y-2.5 border-l-4 pl-3 ${activeColorStyle.accentBorder}`}>
+                {/* Título + Barra Leve de Inserção + Área de Texto Livre */}
+                <div className={`space-y-2.5 border-l-[3px] pl-3.5 ${activeColorStyle.accentBorder}`}>
                   <input
+                    ref={titleInputRef}
                     type="text"
                     value={draftTitle}
                     onChange={(e) => {
@@ -1272,30 +1953,187 @@ export function NotesView({
                       setDraftTitle(val);
                       scheduleAutosave(activeNote.id, val, draftContent);
                     }}
-                    placeholder="Título da anotação ou reunião..."
-                    className="w-full text-base sm:text-xl font-bold text-slate-900 dark:text-white bg-transparent outline-none placeholder-slate-400"
+                    placeholder="Título da anotação (opcional — a IA também pode criar depois)..."
+                    className="w-full text-base sm:text-xl font-bold text-slate-900 dark:text-white bg-transparent outline-none placeholder-slate-400/80"
                   />
+
+                  {/* Barra rápida de escrita + status de palavras */}
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex items-center gap-1 flex-wrap">
+                      <button
+                        type="button"
+                        onClick={() => insertSnippetAtCursor("• ")}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200/80 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                        title="Inserir tópico"
+                      >
+                        <List className="w-3 h-3" />
+                        <span>Tópico</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          insertSnippetAtCursor(`[${format(new Date(), "dd/MM HH:mm", { locale: ptBR })}] `)
+                        }
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 hover:bg-slate-200/80 dark:bg-zinc-800/80 dark:hover:bg-zinc-700 text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                        title="Inserir data e hora atual"
+                      >
+                        <Clock className="w-3 h-3" />
+                        <span>Data/Hora</span>
+                      </button>
+                      {(activeNote.checklist || []).length === 0 && !showChecklistSection && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowChecklistSection(true);
+                            requestAnimationFrame(() => checklistInputRef.current?.focus());
+                          }}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/60 transition-colors cursor-pointer"
+                          title="Adicionar checklist a esta anotação"
+                        >
+                          <ListChecks className="w-3 h-3" />
+                          <span>+ Checklist</span>
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 text-[11px] text-slate-400 dark:text-zinc-500 font-mono">
+                      {activeNote.demand_readiness === "pronta" && linkedTasksList.length === 0 && (
+                        <button
+                          type="button"
+                          onClick={handleExtractTasksWithAI}
+                          className="font-sans inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 text-[10px] font-bold hover:bg-purple-100 cursor-pointer"
+                        >
+                          <Sparkles className="w-2.5 h-2.5" />
+                          Pronta para virar demanda
+                        </button>
+                      )}
+                      <span>{wordCount} {wordCount === 1 ? "palavra" : "palavras"}</span>
+                    </div>
+                  </div>
 
                   <textarea
                     ref={textareaRef}
-                    rows={7}
+                    rows={8}
                     value={draftContent}
                     onChange={(e) => {
                       const val = e.target.value;
                       setDraftContent(val);
                       scheduleAutosave(activeNote.id, draftTitle, val);
                     }}
-                    placeholder="Escreva os pontos da reunião, ideias, pendências ou links aqui... (Você também pode selecionar um trecho e clicar em 'Virar Demanda')"
-                    className="w-full text-xs sm:text-sm text-slate-700 dark:text-slate-200 bg-slate-50/70 dark:bg-[#0d0e15] border border-slate-200/80 dark:border-zinc-800 rounded-xl p-3 outline-none focus:border-purple-500 leading-relaxed resize-y min-h-[150px]"
+                    onSelect={handleTrackSelection}
+                    onKeyUp={handleTrackSelection}
+                    onMouseUp={handleTrackSelection}
+                    placeholder="Escreva livremente o que precisar registrar... Dica: depois você pode clicar em 'Organizar com IA' ou selecionar qualquer trecho para transformar em demanda."
+                    className="w-full text-xs sm:text-sm text-slate-800 dark:text-slate-100 bg-slate-50/70 dark:bg-[#0d0e15] border border-slate-200/80 dark:border-zinc-800 rounded-xl p-3.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 leading-relaxed resize-y min-h-[170px]"
                   />
+
+                  {/* Sugestões opcionais discretas quando a folha está totalmente em branco */}
+                  {isBlankActiveNote && (
+                    <div className="flex items-center gap-1.5 flex-wrap pt-0.5 text-[11px] text-slate-400 dark:text-zinc-500">
+                      <span>Folha livre — ou aplique um escopo opcional:</span>
+                      {(Object.keys(SCOPE_PRESETS) as ScopePresetId[]).map((presetId) => (
+                        <button
+                          key={presetId}
+                          type="button"
+                          onClick={() => handleApplyScopeToActiveNote(presetId)}
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-indigo-50 dark:bg-zinc-800/80 dark:hover:bg-indigo-950/50 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 font-semibold transition-colors cursor-pointer"
+                        >
+                          {SCOPE_PRESETS[presetId].icon}
+                          <span>{SCOPE_PRESETS[presetId].label.replace("Modo ", "")}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Tags da Nota (Manuais + IA) */}
+                  <div className="flex items-center gap-1.5 flex-wrap pt-1">
+                    <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    {(activeNote.tags || []).map((tg) => (
+                      <span
+                        key={tg}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-zinc-700 text-[11px] font-medium"
+                      >
+                        <span>#{tg}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tg)}
+                          className="text-slate-400 hover:text-rose-500 cursor-pointer"
+                        >
+                          <X className="w-2.5 h-2.5" />
+                        </button>
+                      </span>
+                    ))}
+
+                    {isAddingTag ? (
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="text"
+                          autoFocus
+                          value={newTagInput}
+                          onChange={(e) => setNewTagInput(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              void handleAddTag();
+                            }
+                            if (e.key === "Escape") {
+                              setIsAddingTag(false);
+                              setNewTagInput("");
+                            }
+                          }}
+                          placeholder="tag..."
+                          className="w-24 px-2 py-0.5 rounded-md border border-indigo-400 bg-white dark:bg-[#1a1b26] text-[11px] text-slate-900 dark:text-white outline-none"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddTag}
+                          className="p-0.5 rounded bg-indigo-600 text-white cursor-pointer"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsAddingTag(false);
+                            setNewTagInput("");
+                          }}
+                          className="p-0.5 text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingTag(true)}
+                        className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Tag</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
-                {/* Resumo IA & Decisões Chave */}
-                {(activeNote.ai_summary || (activeNote.key_decisions && activeNote.key_decisions.length > 0)) && (
+                {/* Síntese & Pontos-Chave da IA */}
+                {(activeNote.ai_summary ||
+                  (activeNote.key_decisions && activeNote.key_decisions.length > 0)) && (
                   <div className="p-3.5 rounded-2xl bg-purple-50/70 dark:bg-purple-950/25 border border-purple-200/80 dark:border-purple-800/50 space-y-2">
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-300">
-                      <Sparkles className="w-3.5 h-3.5" />
-                      <span>Síntese & Decisões da IA</span>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-purple-700 dark:text-purple-300">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>Síntese & Pontos-Chave (IA)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onUpdateNote(activeNote.id, { ai_summary: null, key_decisions: [] })
+                        }
+                        className="text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                        title="Ocultar resumo da IA"
+                      >
+                        Limpar
+                      </button>
                     </div>
                     {activeNote.ai_summary && (
                       <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
@@ -1307,7 +2145,7 @@ export function NotesView({
                         {activeNote.key_decisions.map((dec, idx) => (
                           <li
                             key={idx}
-                            className="text-[11px] text-slate-600 dark:text-slate-300 flex items-start gap-1.5"
+                            className="text-xs text-slate-600 dark:text-slate-300 flex items-start gap-1.5"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
                             <span>{dec}</span>
@@ -1318,23 +2156,51 @@ export function NotesView({
                   </div>
                 )}
 
-                {/* Pontos / Checklist da Reunião (com conversão 1-toque em demanda) */}
-                <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 dark:bg-[#161724] border border-slate-200/80 dark:border-zinc-800 space-y-3">
-                  <div className="flex items-center justify-between gap-2">
+                {/* Pontos de Ação & Checklist (exibido apenas se a nota já tiver itens ou se o usuário solicitar) */}
+                {(showChecklistSection || (activeNote.checklist || []).length > 0) && (
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 dark:bg-[#161724] border border-slate-200/80 dark:border-zinc-800 space-y-3 animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
                       <ListChecks className="w-4 h-4 text-indigo-500" />
                       <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                        Pontos de Ação & Checklist ({(activeNote.checklist || []).length})
+                        Checklist ({(activeNote.checklist || []).length})
                       </h4>
                     </div>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                      Toque em → Demanda para enviar direto ao fluxo
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {(activeNote.checklist || []).length > 0 && (
+                        <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
+                          Toque em <strong>→ Demanda</strong> para enviar direto ao fluxo
+                        </span>
+                      )}
+                      {draftContent.trim().length > 8 && (
+                        <button
+                          type="button"
+                          disabled={isOrganizingAi}
+                          onClick={() => handleOrganizeWithAI("checklist")}
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-purple-50 hover:bg-purple-100 dark:bg-purple-950/50 dark:hover:bg-purple-900/50 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-800/60 text-[11px] font-semibold transition-colors cursor-pointer disabled:opacity-40"
+                          title="Gerar itens do checklist a partir do texto da nota com IA"
+                        >
+                          <Sparkles className="w-3 h-3" />
+                          <span>Gerar c/ IA</span>
+                        </button>
+                      )}
+                      {(activeNote.checklist || []).length === 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setShowChecklistSection(false)}
+                          className="text-[11px] text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
+                          title="Ocultar checklist vazio"
+                        >
+                          Ocultar
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Input adicionar item */}
                   <div className="flex items-center gap-1.5">
                     <input
+                      ref={checklistInputRef}
                       type="text"
                       value={newChecklistText}
                       onChange={(e) => setNewChecklistText(e.target.value)}
@@ -1344,7 +2210,7 @@ export function NotesView({
                           void handleAddChecklistItem();
                         }
                       }}
-                      placeholder="Adicionar ponto ou próximo passo..."
+                      placeholder="Adicionar item ao checklist..."
                       className="flex-1 h-9 px-3 rounded-xl bg-white dark:bg-[#0d0e15] border border-slate-200 dark:border-zinc-800 text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500"
                     />
                     {speechSupported && (
@@ -1410,7 +2276,7 @@ export function NotesView({
                                 <button
                                   type="button"
                                   onClick={() => onSelectTask(linkedTask)}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold cursor-pointer hover:underline"
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 text-[11px] font-bold cursor-pointer hover:underline"
                                 >
                                   <span>Ver demanda</span>
                                   <ExternalLink className="w-2.5 h-2.5" />
@@ -1419,7 +2285,7 @@ export function NotesView({
                                 <button
                                   type="button"
                                   onClick={() => handleConvertSingleChecklistItem(item)}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 text-[10px] font-bold cursor-pointer transition-colors"
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 text-[11px] font-bold cursor-pointer transition-colors"
                                   title="Transformar este ponto em demanda"
                                 >
                                   <ArrowRight className="w-3 h-3" />
@@ -1442,6 +2308,7 @@ export function NotesView({
                     </div>
                   )}
                 </div>
+                )}
 
                 {/* Demandas originadas desta nota */}
                 {linkedTasksList.length > 0 && (
@@ -1458,7 +2325,7 @@ export function NotesView({
                           onClick={() => onSelectTask(task)}
                           className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white dark:bg-[#141624] border border-emerald-200 dark:border-emerald-800/70 text-xs font-semibold text-slate-800 dark:text-slate-100 hover:border-emerald-400 transition-colors cursor-pointer shadow-2xs"
                         >
-                          <span className="text-[10px] font-mono font-bold text-purple-600 dark:text-purple-400">
+                          <span className="text-[10px] font-mono font-bold text-indigo-600 dark:text-purple-400">
                             {task.priority}
                           </span>
                           <span className="truncate max-w-[200px] sm:max-w-[280px]">
@@ -1492,7 +2359,7 @@ export function NotesView({
                     Demandas Identificadas pela IA ({extractedModalData.drafts.length})
                   </h3>
                   <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                    Selecione quais deseja criar diretamente ou edite antes de salvar.
+                    Revise título, prioridade, descrição ou clique em &quot;Editar antes&quot; para abrir o formulário completo.
                   </p>
                 </div>
               </div>
@@ -1511,7 +2378,7 @@ export function NotesView({
                   key={idx}
                   className={`p-3 rounded-2xl border transition-all space-y-2 ${
                     draft.selected
-                      ? "bg-purple-50/40 dark:bg-purple-950/20 border-purple-300 dark:border-purple-700/60"
+                      ? "bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-300 dark:border-indigo-700/60"
                       : "bg-slate-50/60 dark:bg-[#101118] border-slate-200 dark:border-zinc-800 opacity-65"
                   }`}
                 >
@@ -1533,13 +2400,13 @@ export function NotesView({
                       className="mt-1 cursor-pointer shrink-0"
                     >
                       {draft.selected ? (
-                        <CheckSquare className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+                        <CheckSquare className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                       ) : (
                         <Square className="w-4 h-4 text-slate-400" />
                       )}
                     </button>
 
-                    <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex-1 min-w-0 space-y-2">
                       <input
                         type="text"
                         value={draft.title}
@@ -1555,23 +2422,83 @@ export function NotesView({
                               : null
                           )
                         }
-                        className="w-full text-xs sm:text-sm font-bold text-slate-900 dark:text-white bg-white dark:bg-[#181926] border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1 outline-none focus:border-purple-500"
+                        className="w-full text-xs sm:text-sm font-bold text-slate-900 dark:text-white bg-white dark:bg-[#181926] border border-slate-200 dark:border-zinc-700 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500"
                       />
-                      <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
-                        {draft.description}
-                      </p>
+
+                      <textarea
+                        rows={2}
+                        value={draft.description}
+                        onChange={(e) =>
+                          setExtractedModalData((prev) =>
+                            prev
+                              ? {
+                                  ...prev,
+                                  drafts: prev.drafts.map((d, i) =>
+                                    i === idx ? { ...d, description: e.target.value } : d
+                                  ),
+                                }
+                              : null
+                          )
+                        }
+                        className="w-full text-[11px] text-slate-600 dark:text-slate-300 bg-white/80 dark:bg-[#12131c] border border-slate-200/80 dark:border-zinc-800 rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 leading-relaxed resize-none"
+                      />
 
                       <div className="flex items-center justify-between flex-wrap gap-1.5 pt-0.5">
-                        <div className="flex items-center gap-1.5 flex-wrap text-[10px]">
-                          <span className="px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold">
-                            {draft.priority}
-                          </span>
-                          <span className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 font-semibold">
+                        <div className="flex items-center gap-1.5 flex-wrap text-[11px]">
+                          <select
+                            value={draft.priority}
+                            onChange={(e) =>
+                              setExtractedModalData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      drafts: prev.drafts.map((d, i) =>
+                                        i === idx
+                                          ? { ...d, priority: e.target.value as Priority }
+                                          : d
+                                      ),
+                                    }
+                                  : null
+                              )
+                            }
+                            className="px-2 py-0.5 rounded-md bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 font-mono font-bold text-indigo-600 dark:text-purple-300 outline-none cursor-pointer"
+                          >
+                            <option value="P1">P1</option>
+                            <option value="P2">P2</option>
+                            <option value="P3">P3</option>
+                            <option value="P4">P4</option>
+                          </select>
+
+                          <select
+                            value={draft.item_type}
+                            onChange={(e) =>
+                              setExtractedModalData((prev) =>
+                                prev
+                                  ? {
+                                      ...prev,
+                                      drafts: prev.drafts.map((d, i) =>
+                                        i === idx
+                                          ? { ...d, item_type: e.target.value as ItemType }
+                                          : d
+                                      ),
+                                    }
+                                  : null
+                              )
+                            }
+                            className="px-2 py-0.5 rounded-md bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                          >
+                            <option value="task">Tarefa</option>
+                            <option value="activity">Atividade</option>
+                            <option value="reminder">Lembrete</option>
+                          </select>
+
+                          <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 font-semibold">
                             {draft.category}
                           </span>
+
                           {draft.extracted_due_date_iso && (
-                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-semibold">
-                              <Calendar className="w-2.5 h-2.5" />
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-semibold">
+                              <Calendar className="w-3 h-3" />
                               {(() => {
                                 try {
                                   return format(parseISO(draft.extracted_due_date_iso), "dd/MM HH:mm", {
@@ -1618,7 +2545,7 @@ export function NotesView({
                   extractedModalData.drafts.filter((d) => d.selected).length === 0
                 }
                 onClick={handleConfirmBatchCreateTasks}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-95 text-white text-xs font-bold shadow-md disabled:opacity-40 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md disabled:opacity-40 cursor-pointer"
               >
                 {isCreatingBatchTasks ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1637,4 +2564,3 @@ export function NotesView({
     </div>
   );
 }
-

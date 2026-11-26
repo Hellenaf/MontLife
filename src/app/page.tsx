@@ -59,7 +59,7 @@ export default function MontOpsDashboard() {
   const [centralActiveTab, setCentralActiveTab] = useState<"details" | "study">("details");
   const [mobileActiveView, setMobileActiveView] = useState<"tasks" | "details" | "kpi">("tasks");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isDesktopKpiOpen, setIsDesktopKpiOpen] = useState<boolean>(true);
+  const [isDesktopKpiOpen, setIsDesktopKpiOpen] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [undoToast, setUndoToast] = useState<UndoToastData | null>(null);
@@ -117,7 +117,7 @@ export default function MontOpsDashboard() {
     if (typeof window === "undefined") return;
     try {
       const savedKpi = localStorage.getItem("montlife_desktop_kpi_open");
-      if (savedKpi === "false") setIsDesktopKpiOpen(false);
+      if (savedKpi === "true") setIsDesktopKpiOpen(true);
       const savedSidebar = localStorage.getItem("montlife_sidebar_collapsed");
       if (savedSidebar === "true") setIsSidebarCollapsed(true);
     } catch {}
@@ -501,7 +501,7 @@ export default function MontOpsDashboard() {
     const nowIso = new Date().toISOString();
     const optimisticNote: Note = {
       id: `note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      title: (draft.title || "").trim() || "Sem título",
+      title: typeof draft.title === "string" ? draft.title.trim() : "",
       content: draft.content || "",
       category: draft.category || "geral",
       account_type: draft.account_type || "work",
@@ -512,6 +512,7 @@ export default function MontOpsDashboard() {
       checklist: Array.isArray(draft.checklist) ? draft.checklist : [],
       ai_summary: draft.ai_summary || null,
       key_decisions: Array.isArray(draft.key_decisions) ? draft.key_decisions : [],
+      demand_readiness: draft.demand_readiness ?? null,
       converted_task_ids: [],
       created_at: nowIso,
       updated_at: nowIso,
@@ -1172,8 +1173,8 @@ export default function MontOpsDashboard() {
   const allCategories = useMemo(() => getAllCategories(tasks), [tasks]);
 
   return (
-    <div className="w-full h-screen h-[100dvh] overflow-hidden flex bg-slate-50 dark:bg-[#090A0F] text-slate-800 dark:text-slate-100 transition-colors duration-200">
-      {/* 1. Sidebar Nav (Far Left, from the mockup) */}
+    <div className="w-full h-screen h-[100dvh] overflow-hidden flex bg-[#F6F7F9] dark:bg-[#09090B] text-slate-900 dark:text-zinc-100 transition-colors duration-200">
+      {/* 1. Sidebar Nav */}
       <div className="hidden lg:flex h-full no-print">
         <SidebarNav
           accounts={safeAccounts}
@@ -1251,6 +1252,8 @@ export default function MontOpsDashboard() {
             accounts={safeAccounts}
             tasks={tasks}
             availableCategories={allCategories}
+            activeNav={activeNav}
+            accountFilter={accountFilter}
             onTaskCreated={handleTaskCreated}
             onSelectTask={navigateToTaskDetails}
             onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
@@ -1269,15 +1272,15 @@ export default function MontOpsDashboard() {
 
         {/* Banner de Modo Offline */}
         {!isOnline && (
-          <div className="no-print bg-amber-500 text-slate-950 font-medium px-3 sm:px-4 py-2 flex items-center justify-between text-xs shrink-0 shadow-xs z-30">
+          <div className="no-print bg-amber-50 dark:bg-amber-950/70 border-b border-amber-200/80 dark:border-amber-800/60 text-amber-900 dark:text-amber-200 font-medium px-4 py-2 flex items-center justify-between text-xs shrink-0 z-30">
             <div className="flex items-center gap-2">
-              <WifiOff className="w-4 h-4 shrink-0" />
+              <WifiOff className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
               <span>
-                <strong>Modo Offline Ativo:</strong> Você está sem conexão com a internet. Suas alterações estão seguras no cache local e serão sincronizadas automaticamente assim que você reconectar.
+                <strong>Modo Offline:</strong> Sem conexão. Alterações salvas no cache local e sincronizadas ao reconectar.
               </span>
             </div>
             {offlinePendingCount > 0 && (
-              <span className="bg-slate-900 text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+              <span className="bg-amber-600 text-white px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold">
                 {offlinePendingCount} na fila
               </span>
             )}
@@ -1286,15 +1289,15 @@ export default function MontOpsDashboard() {
 
         {/* Feedback de Sincronização Offline */}
         {offlineSyncMessage && (
-          <div className="no-print bg-emerald-600 text-white font-medium px-3 sm:px-4 py-2 flex items-center justify-between text-xs shrink-0 shadow-xs z-30 animate-in fade-in">
+          <div className="no-print bg-emerald-50 dark:bg-emerald-950/70 border-b border-emerald-200/80 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-200 font-medium px-4 py-2 flex items-center justify-between text-xs shrink-0 z-30 animate-in fade-in">
             <div className="flex items-center gap-2">
-              <Wifi className="w-4 h-4 shrink-0" />
+              <Wifi className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>{offlineSyncMessage}</span>
             </div>
             <button
               type="button"
               onClick={() => setOfflineSyncMessage(null)}
-              className="text-white hover:text-emerald-100 font-bold px-2 py-0.5 rounded text-xs cursor-pointer"
+              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-white px-2 py-0.5 rounded text-xs cursor-pointer"
             >
               ✕
             </button>
@@ -1303,41 +1306,39 @@ export default function MontOpsDashboard() {
 
         {/* Banner if no account is connected */}
         {!hasConnectedAccount && accountsLoaded && (
-          <div className="no-print bg-purple-50 dark:bg-purple-950/60 border-b border-purple-200 dark:border-purple-800 px-3 sm:px-4 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-purple-900 dark:text-purple-200 shrink-0">
+          <div className="no-print bg-indigo-50/70 dark:bg-indigo-950/40 border-b border-indigo-200/70 dark:border-indigo-900/50 px-4 py-2 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 text-xs text-indigo-950 dark:text-indigo-200 shrink-0">
             <div className="flex items-start sm:items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-purple-500 animate-pulse shrink-0 mt-1 sm:mt-0" />
+              <span className="w-2 h-2 rounded-full bg-indigo-500 shrink-0 mt-1 sm:mt-0" />
               <p className="leading-snug">
-                <strong>Nenhuma conta Google vinculada.</strong> Conecte suas contas para associar seus espaços de trabalho e autenticar com segurança.
+                <strong>Nenhuma conta Google vinculada.</strong> Conecte suas contas para sincronizar agenda e organizar seus espaços.
               </p>
             </div>
-            <div className="flex items-center gap-2 shrink-0 self-end sm:self-auto">
-              <button
-                type="button"
-                onClick={() => setIsAccountsModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 sm:py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white font-semibold text-[11px] shadow-sm transition-all cursor-pointer"
-              >
-                + Vincular Conta Google
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={() => setIsAccountsModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-[11px] transition-colors shrink-0 cursor-pointer"
+            >
+              + Vincular Google
+            </button>
           </div>
         )}
 
         {/* OAuth Feedback Toast Banner */}
         {oauthFeedback && (
-          <div className="bg-emerald-50 dark:bg-emerald-950/80 border-b border-emerald-200 dark:border-emerald-800 px-3 sm:px-4 py-2 flex items-center justify-between gap-2 text-xs text-emerald-800 dark:text-emerald-200 shrink-0">
+          <div className="bg-emerald-50 dark:bg-emerald-950/60 border-b border-emerald-200/80 dark:border-emerald-800/60 px-4 py-2 flex items-center justify-between gap-2 text-xs text-emerald-800 dark:text-emerald-200 shrink-0">
             <span className="leading-snug">{oauthFeedback}</span>
             <button
               onClick={() => setOauthFeedback(null)}
-              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-white px-2 py-0.5 rounded text-xs shrink-0"
+              className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 dark:hover:text-white px-2 py-0.5 rounded text-xs shrink-0 cursor-pointer"
             >
               ✕
             </button>
           </div>
         )}
 
-        {/* Main Content: Dedicated Agenda do Dia View OR Wiki Técnica View OR 3 Columns Demand Grid */}
+        {/* Main Content Canvas */}
         {activeNav === "agenda" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-4 lg:p-3.5 pb-4 lg:pb-3.5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-[#F6F7F9] dark:bg-[#09090B]">
             <AgendaDoDiaView
               tasks={tasks}
               accountFilter={accountFilter}
@@ -1354,7 +1355,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "notas" ? (
-          <main className="flex-1 min-h-0 overflow-hidden p-2.5 sm:p-4 lg:p-4 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-hidden p-3 sm:p-4 bg-[#F6F7F9] dark:bg-[#09090B]">
             <NotesView
               notes={notes}
               tasks={tasks}
@@ -1368,7 +1369,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "wiki" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-5 pb-4 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-[#F6F7F9] dark:bg-[#09090B]">
             <WikiTechnicalView
               tasks={tasks}
               onSelectTask={navigateToTaskDetails}
@@ -1380,7 +1381,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "kanban" ? (
-          <main className="flex-1 min-h-0 overflow-hidden p-2.5 sm:p-5 pb-4 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-hidden p-3 sm:p-5 bg-[#F6F7F9] dark:bg-[#09090B]">
             <KanbanView
               tasks={tasks}
               accountFilter={accountFilter}
@@ -1399,7 +1400,7 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "relatorios" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-5 pb-4 lg:pb-5 bg-slate-100/50 dark:bg-[#0c0d13]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-[#F6F7F9] dark:bg-[#09090B]">
             <ReportsView
               tasks={tasks}
               accountFilter={accountFilter}
@@ -1411,8 +1412,8 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : (
-          <div className="flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden">
-            {/* Quadrante Esquerdo: Minhas Tarefas (Clean Drill-Down UX on Mobile!) */}
+          <div className="relative flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden bg-[#F6F7F9] dark:bg-[#09090B]">
+            {/* Master Column: Task Inbox List */}
             <div className={`${mobileActiveView === "tasks" ? "flex" : "hidden"} lg:flex flex-1 min-h-0 lg:flex-none lg:h-full w-full lg:w-auto lg:shrink-0`}>
               <LeftTasksQuadrant
                 tasks={tasks}
@@ -1450,7 +1451,7 @@ export default function MontOpsDashboard() {
               />
             </div>
 
-            {/* Quadrante Central: Detalhes da Demanda */}
+            {/* Detail Column: Editorial Canvas + Properties Rail */}
             <div className={`${mobileActiveView === "details" ? "flex" : "hidden"} lg:flex flex-1 min-h-0 lg:h-full min-w-0`}>
               <CentralQuadrant
                 selectedTask={selectedTask}
@@ -1482,13 +1483,26 @@ export default function MontOpsDashboard() {
               />
             </div>
 
-            {/* Quadrante Direito: Métricas & Briefing IA + Resumo Anual */}
-            <div className={`${mobileActiveView === "kpi" ? "flex" : "hidden"} ${isDesktopKpiOpen ? "lg:flex" : "lg:hidden"} flex-1 min-h-0 lg:flex-none lg:h-full w-full lg:w-auto lg:shrink-0`}>
+            {/* Executive Metrics & AI Briefing: Slide-over Drawer on lg–xl, Docked Panel on 2xl+ */}
+            {isDesktopKpiOpen && (
+              <div
+                onClick={handleToggleDesktopKpi}
+                className="hidden lg:block 2xl:hidden fixed inset-0 top-14 bg-slate-950/30 dark:bg-black/50 backdrop-blur-[1px] z-30 animate-in fade-in duration-150"
+              />
+            )}
+            <div
+              className={`${mobileActiveView === "kpi" ? "flex" : "hidden"} ${
+                isDesktopKpiOpen
+                  ? "lg:flex lg:fixed lg:right-0 lg:top-14 lg:bottom-0 lg:z-40 lg:shadow-2xl 2xl:static 2xl:z-auto 2xl:shadow-none"
+                  : "lg:hidden"
+              } flex-1 min-h-0 lg:flex-none lg:h-auto 2xl:h-full w-full lg:w-[320px] xl:w-[336px] 2xl:w-[304px] lg:shrink-0`}
+            >
               <RightKpiQuadrant
                 tasks={tasks}
                 onOpenReportModal={() => setActiveNav("relatorios")}
                 pinnedNotesCount={notes.filter((n) => Boolean(n.pinned) && !n.archived).length}
                 onBackToTasks={() => setMobileActiveView("tasks")}
+                onCloseDesktop={handleToggleDesktopKpi}
                 onSelectTaskById={(taskId) => {
                   const found = tasks.find((t) => t.id === taskId);
                   if (found) navigateToTaskDetails(found);
@@ -1499,8 +1513,8 @@ export default function MontOpsDashboard() {
         )}
       </div>
 
-      {/* Mobile Bottom Navigation Bar (Fixed for PWA on Phones) */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 min-h-[64px] pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] bg-white/95 dark:bg-[#10111a]/95 backdrop-blur-lg border-t border-slate-200 dark:border-zinc-800/80 px-1.5 flex items-center justify-around z-40">
+      {/* Mobile Bottom Navigation Bar */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 min-h-[62px] pt-1 pb-[max(0.45rem,env(safe-area-inset-bottom))] bg-white/95 dark:bg-[#0C0C0F]/95 backdrop-blur-lg border-t border-slate-200/80 dark:border-[#22222B] px-1.5 flex items-center justify-around z-40">
         <button
           type="button"
           onClick={() => {
@@ -1509,18 +1523,18 @@ export default function MontOpsDashboard() {
           }}
           className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
             activeNav === "tarefas"
-              ? "text-purple-600 dark:text-purple-400 font-bold"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+              : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
           }`}
         >
           <div
-            className={`relative px-2.5 py-1 rounded-xl transition-colors ${
-              activeNav === "tarefas" ? "bg-purple-600/10 dark:bg-purple-500/20" : ""
+            className={`relative px-2.5 py-1 rounded-lg transition-colors ${
+              activeNav === "tarefas" ? "bg-indigo-50 dark:bg-indigo-500/15" : ""
             }`}
           >
             <ListTodo className="w-5 h-5" />
             {openTasksCount > 0 && (
-              <span className="absolute -top-0.5 right-0 px-1 text-[9px] font-bold rounded-full bg-purple-600 text-white leading-tight">
+              <span className="absolute -top-0.5 right-0 px-1 text-[9px] font-mono font-bold rounded-full bg-indigo-600 text-white leading-tight">
                 {openTasksCount}
               </span>
             )}
@@ -1533,18 +1547,18 @@ export default function MontOpsDashboard() {
           onClick={() => setActiveNav("notas")}
           className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
             activeNav === "notas"
-              ? "text-purple-600 dark:text-purple-400 font-bold"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+              : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
           }`}
         >
           <div
-            className={`relative px-2.5 py-1 rounded-xl transition-colors ${
-              activeNav === "notas" ? "bg-purple-600/10 dark:bg-purple-500/20" : ""
+            className={`relative px-2.5 py-1 rounded-lg transition-colors ${
+              activeNav === "notas" ? "bg-indigo-50 dark:bg-indigo-500/15" : ""
             }`}
           >
             <StickyNote className="w-5 h-5" />
             {notes.filter((n) => !n.archived).length > 0 && (
-              <span className="absolute -top-0.5 right-0 px-1 text-[9px] font-bold rounded-full bg-amber-500 text-white leading-tight">
+              <span className="absolute -top-0.5 right-0 px-1 text-[9px] font-mono font-bold rounded-full bg-slate-700 dark:bg-zinc-600 text-white leading-tight">
                 {notes.filter((n) => !n.archived).length}
               </span>
             )}
@@ -1557,13 +1571,13 @@ export default function MontOpsDashboard() {
           onClick={() => setActiveNav("agenda")}
           className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
             activeNav === "agenda"
-              ? "text-purple-600 dark:text-purple-400 font-bold"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+              : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
           }`}
         >
           <div
-            className={`px-2.5 py-1 rounded-xl transition-colors ${
-              activeNav === "agenda" ? "bg-purple-600/10 dark:bg-purple-500/20" : ""
+            className={`px-2.5 py-1 rounded-lg transition-colors ${
+              activeNav === "agenda" ? "bg-indigo-50 dark:bg-indigo-500/15" : ""
             }`}
           >
             <Calendar className="w-5 h-5" />
@@ -1576,13 +1590,13 @@ export default function MontOpsDashboard() {
           onClick={() => setActiveNav("kanban")}
           className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
             activeNav === "kanban"
-              ? "text-purple-600 dark:text-purple-400 font-bold"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+              : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
           }`}
         >
           <div
-            className={`px-2.5 py-1 rounded-xl transition-colors ${
-              activeNav === "kanban" ? "bg-purple-600/10 dark:bg-purple-500/20" : ""
+            className={`px-2.5 py-1 rounded-lg transition-colors ${
+              activeNav === "kanban" ? "bg-indigo-50 dark:bg-indigo-500/15" : ""
             }`}
           >
             <Kanban className="w-5 h-5" />
@@ -1598,17 +1612,17 @@ export default function MontOpsDashboard() {
             activeNav === "wiki" ||
             activeNav === "relatorios" ||
             activeNav === "config"
-              ? "text-purple-600 dark:text-purple-400 font-bold"
-              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+              : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
           }`}
         >
           <div
-            className={`px-2.5 py-1 rounded-xl transition-colors ${
+            className={`px-2.5 py-1 rounded-lg transition-colors ${
               isMobileMenuOpen ||
               activeNav === "wiki" ||
               activeNav === "relatorios" ||
               activeNav === "config"
-                ? "bg-purple-600/10 dark:bg-purple-500/20"
+                ? "bg-indigo-50 dark:bg-indigo-500/15"
                 : ""
             }`}
           >

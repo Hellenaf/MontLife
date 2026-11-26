@@ -14,24 +14,23 @@ export function MontLifeLogo({
   className = "",
 }: MontLifeLogoProps) {
   const sizeMap = {
-    sm: "w-7 h-7",
-    md: "w-9 h-9",
-    lg: "w-11 h-11",
-    xl: "w-14 h-14",
+    sm: "w-7 h-7 rounded-lg",
+    md: "w-8 h-8 rounded-lg",
+    lg: "w-10 h-10 rounded-xl",
+    xl: "w-12 h-12 rounded-xl",
   };
 
   const textMap = {
     sm: "text-sm",
-    md: "text-base",
+    md: "text-[15px]",
     lg: "text-lg",
-    xl: "text-2xl",
+    xl: "text-xl",
   };
 
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
-      {/* 3D Stylized M Brand Logo Icon */}
       <div
-        className={`${sizeMap[size]} shrink-0 rounded-xl overflow-hidden shadow-lg shadow-purple-900/30 border border-purple-500/25 bg-[#10101a] flex items-center justify-center relative group select-none`}
+        className={`${sizeMap[size]} shrink-0 overflow-hidden shadow-xs border border-slate-200/80 dark:border-white/10 bg-[#101014] flex items-center justify-center relative group select-none`}
       >
         <img
           src="/brand-logo-square.png"
@@ -43,7 +42,9 @@ export function MontLifeLogo({
 
       {showText && (
         <div className="min-w-0">
-          <span className={`font-bold ${textMap[size]} tracking-tight text-white block truncate`}>
+          <span
+            className={`font-semibold ${textMap[size]} tracking-tight text-slate-900 dark:text-zinc-100 block truncate`}
+          >
             MontLife
           </span>
         </div>

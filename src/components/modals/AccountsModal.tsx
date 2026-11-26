@@ -291,26 +291,26 @@ function AccountsModalContent({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-xl rounded-3xl bg-white dark:bg-[#141326] border border-slate-200 dark:border-[#282647] shadow-2xl overflow-hidden transition-all max-h-[92dvh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/55 dark:bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="relative w-full max-w-xl rounded-2xl bg-white dark:bg-[#13131A] border border-slate-200 dark:border-[#262632] shadow-popover overflow-hidden transition-all max-h-[92dvh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#100f1f] shrink-0">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-[#22222B] bg-[#FAFAFB] dark:bg-[#101016] shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-950/60 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 shrink-0">
-              <ShieldCheck className="w-5 h-5" />
+            <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-200/70 dark:border-indigo-500/25 flex items-center justify-center shrink-0">
+              <ShieldCheck className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+              <h3 className="text-sm font-semibold text-slate-950 dark:text-zinc-50 truncate">
                 Contas Google Vinculadas
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1">
-                Perfil Mestre com suporte a múltiplas contas ilimitadas
+              <p className="text-xs text-slate-500 dark:text-zinc-400 line-clamp-1">
+                Perfil Mestre com suporte a múltiplas contas
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors cursor-pointer shrink-0"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -318,14 +318,14 @@ function AccountsModalContent({
 
         {/* Master Profile Info Banner */}
         <div className="px-4 sm:px-6 pt-3 sm:pt-4 shrink-0">
-          <div className="p-3 sm:p-3.5 rounded-2xl bg-gradient-to-r from-purple-950/30 via-indigo-950/30 to-slate-900/40 border border-purple-500/20 text-xs text-slate-300 flex items-start gap-2.5 sm:gap-3">
-            <Sparkles className="w-4 h-4 text-purple-400 shrink-0 mt-0.5" />
-            <div className="space-y-1">
-              <span className="font-semibold text-white block">
+          <div className="p-3.5 rounded-xl bg-indigo-50/60 dark:bg-indigo-500/[0.08] border border-indigo-200/70 dark:border-indigo-500/20 text-xs flex items-start gap-2.5">
+            <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <span className="font-semibold text-slate-900 dark:text-zinc-100 block">
                 Vínculo Unificado (Perfil Mestre)
               </span>
-              <p className="text-[11px] text-slate-300/80 leading-relaxed">
-                Todas as contas listadas abaixo respondem a um único perfil. Você pode fazer login com qualquer um dos e-mails vinculados e acessar todos os seus espaços simultaneamente.
+              <p className="text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed">
+                Todas as contas listadas abaixo respondem a um único perfil. Faça login com qualquer e-mail vinculado e acesse todos os seus espaços.
               </p>
             </div>
           </div>

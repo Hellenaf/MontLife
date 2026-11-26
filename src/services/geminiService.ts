@@ -7,6 +7,7 @@ import {
   ItemType,
   NoteCategory,
   NoteChecklistItem,
+  NoteOrganizeMode,
   ExtractedNoteTaskDraft,
   TaskAiAssistResponse,
   DailyBriefingResponse,
@@ -1368,6 +1369,14 @@ const ORGANIZE_NOTE_SCHEMA = {
     key_decisions: { type: Type.ARRAY, items: { type: Type.STRING } },
     checklist_items: { type: Type.ARRAY, items: { type: Type.STRING } },
     tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+    suggested_category: {
+      type: Type.STRING,
+      enum: ["geral", "reuniao", "ideia", "checklist"],
+    },
+    demand_readiness: {
+      type: Type.STRING,
+      enum: ["pronta", "parcial", "referencia"],
+    },
   },
   required: [
     "refined_title",
@@ -1376,6 +1385,8 @@ const ORGANIZE_NOTE_SCHEMA = {
     "key_decisions",
     "checklist_items",
     "tags",
+    "suggested_category",
+    "demand_readiness",
   ],
 };
 
@@ -1387,7 +1398,9 @@ function buildNoteContextText(params: {
 }): string {
   const parts: string[] = [];
   if (params.title?.trim()) parts.push(`Título atual: ${params.title.trim()}`);
-  if (params.category) parts.push(`Tipo da nota: ${params.category}`);
+  if (params.category && params.category !== "geral") {
+    parts.push(`Escopo/Modo atual: ${params.category}`);
+  }
   if (params.content?.trim()) parts.push(`Conteúdo:\n${params.content.trim()}`);
   if (params.checklist && params.checklist.length > 0) {
     const checklistLines = params.checklist
@@ -1398,11 +1411,27 @@ function buildNoteContextText(params: {
   return parts.join("\n\n").trim();
 }
 
+function inferNoteCategoryHeuristic(text: string, current?: NoteCategory): NoteCategory {
+  if (current && current !== "geral") return current;
+  const lower = text.toLowerCase();
+  if (/\b(reuni[aã]o|ata|pauta|alinhamento|participantes|combinado|call|meet)\b/.test(lower)) {
+    return "reuniao";
+  }
+  if (/\b(ideia|sugest[aã]o|melhoria|brainstorm|proposta|poderia|seria legal)\b/.test(lower)) {
+    return "ideia";
+  }
+  if (/\b(checklist|lista de verifica|passo a passo|itens pendentes)\b/.test(lower)) {
+    return "checklist";
+  }
+  return "geral";
+}
+
 export async function organizeNoteWithAI(params: {
   title: string;
   content: string;
   checklist?: NoteChecklistItem[];
   category?: NoteCategory;
+  mode?: NoteOrganizeMode;
   apiKey?: string;
 }): Promise<{
   refined_title: string;
@@ -1411,8 +1440,11 @@ export async function organizeNoteWithAI(params: {
   key_decisions: string[];
   checklist_items: string[];
   tags: string[];
+  suggested_category: NoteCategory;
+  demand_readiness: "pronta" | "parcial" | "referencia";
   ai_source: "gemini" | "cache" | "fallback";
 }> {
+  const mode: NoteOrganizeMode = params.mode || "auto";
   const contextText = buildNoteContextText(params);
   const rawLines = (params.content || "")
     .split(/\r?\n/)
@@ -1422,23 +1454,46 @@ export async function organizeNoteWithAI(params: {
   const fallbackResult = () => {
     const fallbackTitle =
       params.title?.trim() ||
-      synthesizeRefinedTitle(rawLines[0] || params.content || "Anotação de Reunião");
+      synthesizeRefinedTitle(rawLines[0] || params.content || "Anotação Rápida");
     const actionVerbs =
-      /^(?:fazer|enviar|verificar|ajustar|implementar|cobrar|agendar|atualizar|revisar|criar|pagar|ligar|validar|confirmar|solicitar|responder)\b/i;
+      /^(?:fazer|enviar|verificar|ajustar|implementar|cobrar|agendar|atualizar|revisar|criar|pagar|ligar|validar|confirmar|solicitar|responder|corrigir|configurar|montar)\b/i;
     const candidateActions = rawLines
       .map((l) => cleanStepPrefix(l))
       .filter((l) => l.length >= 6 && (actionVerbs.test(l) || rawLines.length <= 6))
       .slice(0, 6);
     const heuristic = classifyTaskHeuristic(fallbackTitle, params.content || "");
     const firstSummary = rawLines.slice(0, 2).join(" ").slice(0, 220);
+    const suggestedCat = inferNoteCategoryHeuristic(`${fallbackTitle} ${params.content}`, params.category);
+
+    let organizedText = rawLines.join("\n") || (params.content || "").trim();
+    if (mode === "topics" && rawLines.length > 0) {
+      organizedText = rawLines.map((l) => `• ${cleanStepPrefix(l)}`).join("\n");
+    } else if (mode === "demand_scope") {
+      organizedText = [
+        `Objetivo:\n${fallbackTitle}`,
+        `Contexto & Detalhes:\n${rawLines.join(" ") || params.content.trim()}`,
+        candidateActions.length > 0
+          ? `Próximos Passos / Critérios:\n${candidateActions.map((c) => `• ${c}`).join("\n")}`
+          : "",
+      ]
+        .filter(Boolean)
+        .join("\n\n");
+    } else if (mode === "summary") {
+      organizedText = firstSummary || organizedText;
+    }
 
     return {
       refined_title: fallbackTitle,
-      organized_content: rawLines.join("\n") || (params.content || "").trim(),
+      organized_content: organizedText,
       ai_summary: firstSummary || "Anotação organizada localmente.",
       key_decisions: rawLines.slice(0, 3).map((l) => cleanStepPrefix(l)).filter(Boolean),
-      checklist_items: candidateActions,
+      checklist_items: mode === "checklist" ? candidateActions : [],
       tags: heuristic.tags.slice(0, 4),
+      suggested_category: suggestedCat,
+      demand_readiness: (candidateActions.length > 0 ? "pronta" : "referencia") as
+        | "pronta"
+        | "parcial"
+        | "referencia",
       ai_source: "fallback" as const,
     };
   };
@@ -1452,17 +1507,40 @@ export async function organizeNoteWithAI(params: {
     return fallbackResult();
   }
 
+  const modeInstructions: Record<NoteOrganizeMode, string> = {
+    auto: "Reorganize de forma completa, clara e escaneável (usando pequenos blocos temáticos ou tópicos limpos quando fizer sentido, sem markdown pesado como **). Foque em deixar fácil de consultar depois ou transformar em demanda.",
+    topics: "Estruture TODO o conteúdo em tópicos curtos e bem agrupados por tema usando marcadores '• '. Elimine repetições mantendo 100% dos fatos, nomes, códigos e números.",
+    summary: "Condense a anotação em um resumo executivo super enxuto (3 a 6 linhas ou 3 a 5 bullets curtos) preservando apenas o essencial, decisões e pendências.",
+    demand_scope: "Transforme esta anotação solta em um ESCOPO DE DEMANDA pronto para execução, estruturado exatamente com os blocos:\nObjetivo:\nContexto:\nO que precisa ser feito:\nCritérios de validação:\nDeixe direto, profissional e pronto para virar uma demanda com 1 clique.",
+    checklist: "Mantenha o 'organized_content' fiel e limpo (apenas corrigindo clareza), e concentre-se em extrair TODOS os itens acionáveis e pendências em 'checklist_items' (de 2 a 10 itens objetivos).",
+    polish: "Corrija apenas ortografia, pontuação, concordância e fluidez (ideal para anotações rápidas ou ditadas por voz), preservando fielmente a estrutura e o tom do autor sem reescrever o sentido.",
+  };
+
   try {
     const ai = new GoogleGenAI({ apiKey: key });
-    const prompt = `Você é o assistente executivo de produtividade do MontLife.
-Organize a anotação/rascunho abaixo (pode ser uma ata rápida de reunião, texto ditado por voz no celular ou ideias soltas) em português claro, corporativo e prático:
+    const prompt = `Você é o assistente de organização de anotações rápidas do MontLife.
+O usuário usa as anotações para registrar coisas rápidas no dia a dia (rascunhos livres, lembretes, ideias soltas, pontos de conversa/reunião) com o objetivo de manter tudo bem organizado e poder transformar em demanda quando precisar.
 
-1. 'refined_title': Título claro e informativo (máximo 65 caracteres).
-2. 'organized_content': Texto organizado, corrigido e fácil de ler no celular (use parágrafos curtos ou tópicos simples limpos, mantendo 100% dos fatos, sistemas, números e nomes mencionados).
-3. 'ai_summary': Resumo executivo objetivo em 1 ou 2 frases.
-4. 'key_decisions': Lista curta (0 a 5 itens) com as decisões tomadas ou pontos principais combinados.
-5. 'checklist_items': Lista prática (1 a 8 itens) com os próximos passos acionáveis identificados (sem numeração nem marcador no início).
-6. 'tags': 2 a 4 tags curtas.
+MODO SOLICITADO: ${mode}
+INSTRUÇÃO ESPECÍFICA DO MODO:
+${modeInstructions[mode]}
+
+Retorne estritamente o JSON:
+1. 'refined_title': Título claro, objetivo e fácil de buscar depois (máximo 65 caracteres).
+2. 'organized_content': Texto organizado conforme a instrução do modo acima (mantenha 100% dos dados reais, sistemas, códigos, datas, valores e pessoas mencionados; evite asteriscos **).
+3. 'ai_summary': Síntese executiva em 1 ou 2 frases curtas.
+4. 'key_decisions': Lista curta (0 a 5 itens) com decisões, definições ou conclusões importantes (retorne [] se for apenas lembrete/rascunho simples).
+5. 'checklist_items': ${
+      mode === "checklist"
+        ? "Lista prática (2 a 10 itens) com todas as ações concretas e pendências identificadas (sem numeração ou hífen no início)."
+        : "Retorne OBRIGATORIAMENTE um array vazio [] (o usuário NÃO solicitou criação de checklist neste modo)."
+    }
+6. 'tags': 2 a 4 tags curtas em minúsculas para organização e busca.
+7. 'suggested_category': classifique se a nota se encaixa melhor em 'geral' (anotação livre padrão), 'reuniao', 'ideia' ou 'checklist'. Use 'geral' sempre que for uma nota rápida comum.
+8. 'demand_readiness':
+   - 'pronta' se já contém ação clara pronta para virar demanda no fluxo;
+   - 'parcial' se tem potencial para virar demanda mas falta detalhar algo;
+   - 'referencia' se é apenas anotação informativa/consulta rápida.
 
 Anotação:
 """
@@ -1473,7 +1551,7 @@ ${contextText}
       responseMimeType: "application/json",
       responseSchema: ORGANIZE_NOTE_SCHEMA,
       temperature: 0.25,
-      maxOutputTokens: 1800,
+      maxOutputTokens: 2000,
     });
 
     const jsonStr = generation ? extractJsonObject(generation.text) : null;
@@ -1481,6 +1559,19 @@ ${contextText}
 
     const parsed = JSON.parse(jsonStr);
     const fb = fallbackResult();
+    const validCat: NoteCategory = ["geral", "reuniao", "ideia", "checklist"].includes(
+      parsed.suggested_category
+    )
+      ? parsed.suggested_category
+      : fb.suggested_category;
+    const validReadiness: "pronta" | "parcial" | "referencia" = [
+      "pronta",
+      "parcial",
+      "referencia",
+    ].includes(parsed.demand_readiness)
+      ? parsed.demand_readiness
+      : fb.demand_readiness;
+
     return {
       refined_title: (parsed.refined_title || "").trim() || fb.refined_title,
       organized_content: (parsed.organized_content || "").trim() || fb.organized_content,
@@ -1488,15 +1579,151 @@ ${contextText}
       key_decisions: Array.isArray(parsed.key_decisions)
         ? parsed.key_decisions.map((s: string) => cleanStepPrefix(s)).filter(Boolean)
         : fb.key_decisions,
-      checklist_items: Array.isArray(parsed.checklist_items)
-        ? parsed.checklist_items.map((s: string) => cleanStepPrefix(s)).filter(Boolean)
-        : fb.checklist_items,
+      checklist_items:
+        mode === "checklist"
+          ? Array.isArray(parsed.checklist_items)
+            ? parsed.checklist_items.map((s: string) => cleanStepPrefix(s)).filter(Boolean)
+            : fb.checklist_items
+          : [],
       tags: Array.isArray(parsed.tags) && parsed.tags.length > 0 ? parsed.tags.slice(0, 5) : fb.tags,
+      suggested_category: validCat,
+      demand_readiness: validReadiness,
       ai_source: "gemini",
     };
   } catch (err) {
     console.warn("organizeNoteWithAI failed, using heuristic fallback:", err);
     return fallbackResult();
+  }
+}
+
+const BATCH_ORGANIZE_NOTES_SCHEMA = {
+  type: Type.OBJECT,
+  properties: {
+    updates: {
+      type: Type.ARRAY,
+      items: {
+        type: Type.OBJECT,
+        properties: {
+          id: { type: Type.STRING },
+          title: { type: Type.STRING },
+          tags: { type: Type.ARRAY, items: { type: Type.STRING } },
+          ai_summary: { type: Type.STRING },
+          demand_readiness: {
+            type: Type.STRING,
+            enum: ["pronta", "parcial", "referencia"],
+          },
+        },
+        required: ["id", "title", "tags", "ai_summary", "demand_readiness"],
+      },
+    },
+  },
+  required: ["updates"],
+};
+
+export async function batchOrganizeNotesWithAI(
+  notes: { id: string; title: string; content: string; category?: NoteCategory; tags?: string[] }[],
+  apiKey?: string
+): Promise<{
+  updates: {
+    id: string;
+    title: string;
+    tags: string[];
+    ai_summary: string;
+    demand_readiness: "pronta" | "parcial" | "referencia";
+  }[];
+  ai_source: "gemini" | "fallback";
+}> {
+  const candidates = notes
+    .filter((n) => n && n.id && ((n.title || "").trim() || (n.content || "").trim()))
+    .slice(0, 15);
+
+  const buildFallback = () => ({
+    updates: candidates.map((n) => {
+      const firstLine = (n.content || "").split(/\r?\n/).find((l) => l.trim())?.trim() || "";
+      const needsTitle =
+        !n.title?.trim() || n.title === "Sem título" || n.title === "Anotação Rápida";
+      const cleanTitle = needsTitle
+        ? synthesizeRefinedTitle(firstLine || n.content || "Anotação")
+        : n.title.trim();
+      const heur = classifyTaskHeuristic(cleanTitle, n.content || "");
+      const mergedTags = Array.from(new Set([...(n.tags || []), ...heur.tags])).slice(0, 4);
+      const hasAction =
+        /\b(fazer|enviar|verificar|ajustar|implementar|cobrar|agendar|atualizar|revisar|criar|corrigir|solicitar)\b/i.test(
+          `${cleanTitle} ${n.content}`
+        );
+      return {
+        id: n.id,
+        title: cleanTitle,
+        tags: mergedTags,
+        ai_summary: firstLine.slice(0, 160) || cleanTitle,
+        demand_readiness: (hasAction ? "pronta" : "referencia") as
+          | "pronta"
+          | "parcial"
+          | "referencia",
+      };
+    }),
+    ai_source: "fallback" as const,
+  });
+
+  if (candidates.length === 0) return { updates: [], ai_source: "fallback" };
+
+  const key = (apiKey || process.env.GEMINI_API_KEY || "").trim();
+  if (!key || key === "sua_chave_da_gemini_api") return buildFallback();
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: key });
+    const listText = candidates
+      .map(
+        (n, i) =>
+          `${i + 1}. ID=${n.id} | Título="${n.title || "(vazio)"}" | Conteúdo="${(n.content || "").slice(0, 260).replace(/\s+/g, " ")}"`
+      )
+      .join("\n");
+
+    const prompt = `Você é o organizador inteligente do Bloco de Notas do MontLife.
+Para cada anotação abaixo (use EXATAMENTE o ID informado), gere:
+- 'title': mantenha o título se já estiver bom e específico, ou crie um título claro e direto (máx 60 chars) se estiver vazio/genérico ("Sem título", "Anotação Rápida", etc.).
+- 'tags': 2 a 4 tags curtas em minúsculas para facilitar a busca.
+- 'ai_summary': resumo curto de 1 frase objetiva.
+- 'demand_readiness': 'pronta' (tem tarefa clara para virar demanda), 'parcial' (pode virar demanda) ou 'referencia' (apenas consulta/registro).
+
+Anotações:
+${listText}`;
+
+    const generation = await generateWithActiveGeminiModels(ai, prompt, {
+      responseMimeType: "application/json",
+      responseSchema: BATCH_ORGANIZE_NOTES_SCHEMA,
+      temperature: 0.2,
+      maxOutputTokens: 2000,
+    });
+
+    const jsonStr = generation ? extractJsonObject(generation.text) : null;
+    if (!jsonStr) return buildFallback();
+
+    const parsed = JSON.parse(jsonStr);
+    const validIds = new Set(candidates.map((c) => c.id));
+    const updates = Array.isArray(parsed.updates)
+      ? parsed.updates
+          .filter((u: any) => u && validIds.has(u.id))
+          .map((u: any) => ({
+            id: String(u.id),
+            title: String(u.title || "").trim(),
+            tags: Array.isArray(u.tags)
+              ? u.tags
+                  .filter((t: unknown): t is string => typeof t === "string" && t.trim().length > 0)
+                  .slice(0, 4)
+              : [],
+            ai_summary: String(u.ai_summary || "").trim(),
+            demand_readiness: (["pronta", "parcial", "referencia"].includes(u.demand_readiness)
+              ? u.demand_readiness
+              : "referencia") as "pronta" | "parcial" | "referencia",
+          }))
+      : [];
+
+    if (updates.length === 0) return buildFallback();
+    return { updates, ai_source: "gemini" };
+  } catch (err) {
+    console.warn("batchOrganizeNotesWithAI failed, using fallback:", err);
+    return buildFallback();
   }
 }
 

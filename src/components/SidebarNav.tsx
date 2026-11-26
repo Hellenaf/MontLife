@@ -2,7 +2,6 @@
 
 import React from "react";
 import {
-  Home,
   BookOpen,
   Settings,
   Briefcase,
@@ -11,16 +10,13 @@ import {
   LogOut,
   Calendar,
   CheckSquare,
-  Sparkles,
-  TrendingUp,
   Layers,
-  ChevronRight,
-  ShieldCheck,
   LayoutGrid,
   StickyNote,
   X,
   PanelLeftClose,
   PanelLeftOpen,
+  Plus,
 } from "lucide-react";
 import { ConnectedAccount, Task, AccountType } from "@/types";
 import { MontLifeLogo } from "@/components/MontLifeLogo";
@@ -54,31 +50,31 @@ export function SidebarNav({
   activeNav,
   onSelectNav,
   onOpenAccountsModal,
-  onOpenReportModal,
   selectedAccountFilter = "all",
   onSelectAccountFilter,
   onLogout,
-  completedTasksCount = 0,
   notesCount = 0,
   currentUser,
   onClose,
   isCollapsed = false,
   onToggleCollapse,
 }: SidebarNavProps) {
-  // Display user information
   const displayName = currentUser?.name || "Usuário MontLife";
-  const safeAccountsList = Array.isArray(accounts) ? accounts.filter((a): a is ConnectedAccount => Boolean(a && typeof a === "object")) : [];
+  const safeAccountsList = Array.isArray(accounts)
+    ? accounts.filter((a): a is ConnectedAccount => Boolean(a && typeof a === "object"))
+    : [];
   const displayEmail =
     currentUser?.email ||
     safeAccountsList.find((a) => typeof a.email === "string" && a.email)?.email ||
     "usuario@montlife.com";
 
-  const userInitials = displayName
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0].toUpperCase())
-    .join("") || "ML";
+  const userInitials =
+    displayName
+      .split(" ")
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((w) => w[0].toUpperCase())
+      .join("") || "ML";
 
   // Operational metrics
   const totalTasks = tasks.length;
@@ -95,30 +91,42 @@ export function SidebarNav({
   const completionPercentage =
     totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 100;
 
-  // Helper to identify Work vs Personal with strict mutual exclusion
   const isWorkTask = (t: Task): boolean => {
     if (t.transferred_to === "personal") return false;
-    if (t.manually_assigned && (t.account_type === "personal" || t.account_type === "Pessoal")) return false;
+    if (
+      t.manually_assigned &&
+      (t.account_type === "personal" || t.account_type === "Pessoal")
+    )
+      return false;
     return true;
   };
 
-  const isPersonalTask = (t: Task): boolean => {
-    return !isWorkTask(t);
-  };
+  const isPersonalTask = (t: Task): boolean => !isWorkTask(t);
 
-  // Helper to match task against workspace
-  const isTaskInWorkspace = (t: Task, accId: string, label: string, email?: string) => {
+  const isTaskInWorkspace = (
+    t: Task,
+    accId: string,
+    label: string,
+    email?: string
+  ) => {
     const fId = (accId || "").toLowerCase();
     const fLabel = (label || "").toLowerCase();
     const fEmail = (email || "").toLowerCase();
 
-    // If Trabalho / Work
-    if (fId.includes("work") || fLabel.includes("trab") || fEmail.includes("notredame") || fEmail.includes("haferreira")) {
+    if (
+      fId.includes("work") ||
+      fLabel.includes("trab") ||
+      fEmail.includes("notredame") ||
+      fEmail.includes("haferreira")
+    ) {
       return isWorkTask(t);
     }
 
-    // If Pessoal / Personal
-    if (fId.includes("person") || fLabel.includes("pess") || fEmail.includes("hellen")) {
+    if (
+      fId.includes("person") ||
+      fLabel.includes("pess") ||
+      fEmail.includes("hellen")
+    ) {
       return isPersonalTask(t);
     }
 
@@ -130,7 +138,6 @@ export function SidebarNav({
     return false;
   };
 
-  // Derive dynamic list of workspaces from connected accounts
   const dynamicWorkspaces = React.useMemo(() => {
     const list: { id: string; label: string; email?: string; count: number }[] = [];
     const seen = new Set<string>();
@@ -138,36 +145,70 @@ export function SidebarNav({
     const safeList = Array.isArray(accounts)
       ? accounts.filter((a): a is ConnectedAccount => Boolean(a && typeof a === "object"))
       : [];
-    const connected = safeList.filter((a) => Boolean(a.is_connected || a.access_token || a.refresh_token) && typeof a.email === "string" && a.email);
+    const connected = safeList.filter(
+      (a) =>
+        Boolean(a.is_connected || a.access_token || a.refresh_token) &&
+        typeof a.email === "string" &&
+        a.email
+    );
 
     for (const acc of connected) {
       const accId = typeof acc.id === "string" ? acc.id.toLowerCase() : "";
       const accLabel = typeof acc.label === "string" ? acc.label.toLowerCase() : "";
       const accEmail = typeof acc.email === "string" ? acc.email.toLowerCase() : "";
 
-      const isWork = accId.includes("work") || accLabel.includes("trab") || accEmail.includes("notredame");
-      const isPersonal = accId.includes("personal") || accLabel.includes("pess") || accEmail.includes("hellen");
-      const isHellenUser = currentUser?.email?.toLowerCase().includes("hellen") || currentUser?.email?.toLowerCase().includes("notredame");
+      const isWork =
+        accId.includes("work") ||
+        accLabel.includes("trab") ||
+        accEmail.includes("notredame");
+      const isPersonal =
+        accId.includes("personal") ||
+        accLabel.includes("pess") ||
+        accEmail.includes("hellen");
+      const isHellenUser =
+        currentUser?.email?.toLowerCase().includes("hellen") ||
+        currentUser?.email?.toLowerCase().includes("notredame");
       const defaultWorkLabel = isHellenUser ? "Trabalho (Notre Dame)" : "Trabalho";
-      const standardId = isWork ? "work" : isPersonal ? "personal" : (acc.id || accEmail || "geral");
-      const lbl = typeof acc.label === "string" && acc.label.trim()
-        ? acc.label.trim()
-        : (isWork ? defaultWorkLabel : isPersonal ? "Pessoal" : "Geral");
+      const standardId = isWork
+        ? "work"
+        : isPersonal
+        ? "personal"
+        : acc.id || accEmail || "geral";
+      const lbl =
+        typeof acc.label === "string" && acc.label.trim()
+          ? acc.label.trim()
+          : isWork
+          ? defaultWorkLabel
+          : isPersonal
+          ? "Pessoal"
+          : "Geral";
 
       if (!seen.has(standardId)) {
         seen.add(standardId);
-        const count = tasks.filter((t) => isTaskInWorkspace(t, acc.id, lbl, acc.email)).length;
+        const count = tasks.filter((t) =>
+          isTaskInWorkspace(t, acc.id, lbl, acc.email)
+        ).length;
         list.push({ id: standardId, label: lbl, email: acc.email, count });
       }
     }
 
     if (list.length === 0) {
-      const isHellenUser = currentUser?.email?.toLowerCase().includes("hellen") || currentUser?.email?.toLowerCase().includes("notredame");
+      const isHellenUser =
+        currentUser?.email?.toLowerCase().includes("hellen") ||
+        currentUser?.email?.toLowerCase().includes("notredame");
       const workLabel = isHellenUser ? "Trabalho (Notre Dame)" : "Trabalho";
-      const workEmail = isHellenUser ? "haferreira@notredamecampinas.net.br" : (currentUser?.email || undefined);
-      const personalEmail = isHellenUser ? "hellenalvesferreira.s2@gmail.com" : (currentUser?.email || undefined);
-      const workCount = tasks.filter((t) => isTaskInWorkspace(t, "work", workLabel, workEmail)).length;
-      const personalCount = tasks.filter((t) => isTaskInWorkspace(t, "personal", "Pessoal", personalEmail)).length;
+      const workEmail = isHellenUser
+        ? "haferreira@notredamecampinas.net.br"
+        : currentUser?.email || undefined;
+      const personalEmail = isHellenUser
+        ? "hellenalvesferreira.s2@gmail.com"
+        : currentUser?.email || undefined;
+      const workCount = tasks.filter((t) =>
+        isTaskInWorkspace(t, "work", workLabel, workEmail)
+      ).length;
+      const personalCount = tasks.filter((t) =>
+        isTaskInWorkspace(t, "personal", "Pessoal", personalEmail)
+      ).length;
       return [
         { id: "work", label: workLabel, count: workCount },
         { id: "personal", label: "Pessoal", count: personalCount },
@@ -175,7 +216,7 @@ export function SidebarNav({
     }
 
     return list;
-  }, [accounts, tasks]);
+  }, [accounts, tasks, currentUser?.email]);
 
   const handleLogout = () => {
     if (onLogout) {
@@ -185,15 +226,72 @@ export function SidebarNav({
     }
   };
 
+  const navItems: {
+    id: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    badge?: string | number;
+    badgeAccent?: boolean;
+    isActive: boolean;
+    tooltip: string;
+  }[] = [
+    {
+      id: "tarefas",
+      label: "Minhas Demandas",
+      icon: CheckSquare,
+      badge: pendingTasks > 0 ? pendingTasks : totalTasks > 0 ? totalTasks : undefined,
+      badgeAccent: pendingTasks > 0,
+      isActive: activeNav === "tarefas" || activeNav === "inicio",
+      tooltip: `Minhas Demandas (${pendingTasks} abertas)`,
+    },
+    {
+      id: "kanban",
+      label: "Fluxo Kanban",
+      icon: LayoutGrid,
+      isActive: activeNav === "kanban",
+      tooltip: "Fluxo Kanban",
+    },
+    {
+      id: "agenda",
+      label: "Agenda do Dia",
+      icon: Calendar,
+      isActive: activeNav === "agenda",
+      tooltip: "Agenda do Dia",
+    },
+    {
+      id: "notas",
+      label: "Anotações",
+      icon: StickyNote,
+      badge: notesCount > 0 ? notesCount : undefined,
+      isActive: activeNav === "notas",
+      tooltip: `Anotações (${notesCount})`,
+    },
+    {
+      id: "wiki",
+      label: "Wiki Técnica",
+      icon: BookOpen,
+      isActive: activeNav === "wiki",
+      tooltip: "Wiki Técnica",
+    },
+    {
+      id: "relatorios",
+      label: "Relatórios",
+      icon: BarChart3,
+      badge: completedTasks > 0 ? `${slaOnTimePct}%` : undefined,
+      isActive: activeNav === "relatorios",
+      tooltip: `Relatórios (${slaOnTimePct}% SLA)`,
+    },
+  ];
+
   return (
     <aside
-      className={`h-full flex flex-col bg-white dark:bg-[#0b0a17] border-r border-slate-200/90 dark:border-[#1e1c36] text-slate-700 dark:text-slate-200 shrink-0 select-none transition-all duration-200 ${
-        isCollapsed ? "w-[72px]" : "w-full lg:w-[236px] xl:w-[248px]"
+      className={`h-full flex flex-col bg-[#FAFAFB] dark:bg-[#0C0C0F] border-r border-slate-200/80 dark:border-[#22222B] text-slate-700 dark:text-zinc-300 shrink-0 select-none transition-all duration-200 ${
+        isCollapsed ? "w-[68px]" : "w-full lg:w-[232px] xl:w-[244px]"
       }`}
     >
-      {/* 1. Brand Logo & Title (MontLife) + Collapse Toggle */}
+      {/* 1. Brand Bar (Exact h-14 alignment with Top Header) */}
       <div
-        className={`h-16 flex items-center border-b border-slate-200/80 dark:border-[#1e1c36]/80 shrink-0 ${
+        className={`h-14 flex items-center border-b border-slate-200/75 dark:border-[#1E1E26] shrink-0 ${
           isCollapsed ? "justify-center px-2" : "justify-between px-4"
         }`}
       >
@@ -204,16 +302,16 @@ export function SidebarNav({
             className={isCollapsed ? "cursor-pointer" : "cursor-default"}
             title={isCollapsed ? "Expandir menu lateral ([)" : "MontLife"}
           >
-            <MontLifeLogo size="md" />
+            <MontLifeLogo size="sm" />
           </button>
           {!isCollapsed && (
             <div className="min-w-0">
-              <span className="font-bold text-base tracking-tight text-slate-900 dark:text-white block leading-tight">
+              <span className="font-bold text-[15px] tracking-tight text-slate-900 dark:text-zinc-100 block leading-none">
                 MontLife
               </span>
-              <p className="text-[11px] text-indigo-600/80 dark:text-purple-300/70 truncate">
-                Gestão & Produtividade
-              </p>
+              <span className="text-[10px] font-medium text-slate-400 dark:text-zinc-500 block mt-0.5 truncate">
+                Workspace Operacional
+              </span>
             </div>
           )}
         </div>
@@ -222,11 +320,11 @@ export function SidebarNav({
           <button
             type="button"
             onClick={onClose}
-            className="lg:hidden p-1.5 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
             title="Fechar menu"
             aria-label="Fechar menu"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         ) : (
           onToggleCollapse &&
@@ -234,7 +332,7 @@ export function SidebarNav({
             <button
               type="button"
               onClick={onToggleCollapse}
-              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+              className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer shrink-0"
               title="Recolher menu lateral ([)"
               aria-label="Recolher menu lateral"
             >
@@ -244,13 +342,13 @@ export function SidebarNav({
         )}
       </div>
 
-      {/* Expand button when collapsed */}
+      {/* Expand trigger when collapsed */}
       {isCollapsed && onToggleCollapse && (
         <div className="px-2 pt-2.5 flex justify-center">
           <button
             type="button"
             onClick={onToggleCollapse}
-            className="w-10 h-9 rounded-xl flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 transition-colors cursor-pointer"
+            className="w-9 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-800 dark:text-zinc-500 dark:hover:text-zinc-100 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
             title="Expandir menu lateral ([)"
             aria-label="Expandir menu lateral"
           >
@@ -259,292 +357,122 @@ export function SidebarNav({
         </div>
       )}
 
-      {/* Main Scrollable Body */}
-      <div className={`flex-1 overflow-y-auto custom-scrollbar space-y-4 ${isCollapsed ? "p-2" : "p-3"}`}>
-        {/* 2. Main Navigation Links */}
-        <div className="space-y-1">
+      {/* Main Scrollable Navigation */}
+      <div
+        className={`flex-1 overflow-y-auto space-y-5 ${
+          isCollapsed ? "px-2 py-3" : "px-3 py-3.5"
+        }`}
+      >
+        {/* 2. Primary Views */}
+        <div className="space-y-0.5">
           {!isCollapsed && (
-            <div className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-purple-300/60">
-              Navegação
+            <div className="px-2.5 pb-1.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+              Menu
             </div>
           )}
 
-          {/* Minhas Demandas (Opção Principal) */}
-          <button
-            type="button"
-            onClick={() => onSelectNav("tarefas")}
-            title={isCollapsed ? `Minhas Demandas (${pendingTasks} abertas)` : undefined}
-            className={`w-full flex items-center rounded-xl text-xs font-semibold transition-all cursor-pointer relative ${
-              isCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2.5"
-            } ${
-              activeNav === "tarefas" || activeNav === "inicio"
-                ? "bg-indigo-600 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 text-white shadow-sm shadow-indigo-600/25 font-bold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5"
-            }`}
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <CheckSquare
-                className={`w-4 h-4 shrink-0 ${
-                  activeNav === "tarefas" || activeNav === "inicio"
-                    ? "text-white"
-                    : "text-indigo-500 dark:text-blue-400"
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSelectNav(item.id)}
+                title={isCollapsed ? item.tooltip : undefined}
+                className={`group relative w-full flex items-center rounded-lg text-[13px] transition-all cursor-pointer ${
+                  isCollapsed
+                    ? "justify-center h-9"
+                    : "justify-between px-2.5 h-9"
+                } ${
+                  item.isActive
+                    ? "bg-slate-200/75 dark:bg-white/[0.08] text-slate-950 dark:text-white font-semibold"
+                    : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-200/45 dark:hover:bg-white/[0.04] font-medium"
                 }`}
-              />
-              {!isCollapsed && <span className="truncate">Minhas Demandas</span>}
-            </div>
-            {!isCollapsed ? (
-              <div className="flex items-center gap-1.5 shrink-0">
-                {pendingTasks > 0 ? (
+              >
+                {/* Crisp left accent bar for active route */}
+                {item.isActive && !isCollapsed && (
+                  <span className="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-indigo-600 dark:bg-indigo-400" />
+                )}
+
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <Icon
+                    className={`w-4 h-4 shrink-0 transition-colors ${
+                      item.isActive
+                        ? "text-indigo-600 dark:text-indigo-400"
+                        : "text-slate-400 dark:text-zinc-500 group-hover:text-slate-600 dark:group-hover:text-zinc-300"
+                    }`}
+                  />
+                  {!isCollapsed && <span className="truncate">{item.label}</span>}
+                </div>
+
+                {!isCollapsed && item.badge !== undefined && (
                   <span
-                    className={`text-[11px] font-bold px-2 py-0.5 rounded-full font-mono ${
-                      activeNav === "tarefas" || activeNav === "inicio"
-                        ? "bg-white/20 text-white"
-                        : "bg-indigo-50 text-indigo-700 dark:bg-indigo-500/25 dark:text-indigo-200 border border-indigo-200/70 dark:border-indigo-500/30"
+                    className={`text-[11px] font-mono tabular-nums px-1.5 py-0.5 rounded-md shrink-0 ${
+                      item.isActive
+                        ? "bg-white/90 dark:bg-white/10 text-indigo-700 dark:text-indigo-300 font-semibold"
+                        : item.badgeAccent
+                        ? "text-slate-600 dark:text-zinc-300 font-semibold"
+                        : "text-slate-400 dark:text-zinc-500"
                     }`}
                   >
-                    {pendingTasks}
-                  </span>
-                ) : (
-                  <span className="text-[11px] px-1.5 py-0.5 rounded-full bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-300 font-mono">
-                    {totalTasks}
+                    {item.badge}
                   </span>
                 )}
-              </div>
-            ) : (
-              pendingTasks > 0 && (
-                <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-indigo-500 text-white text-[9px] font-bold flex items-center justify-center">
-                  {pendingTasks}
-                </span>
-              )
-            )}
-          </button>
 
-          {/* Fluxo Kanban */}
-          <button
-            type="button"
-            onClick={() => onSelectNav("kanban")}
-            title={isCollapsed ? "Fluxo Kanban" : undefined}
-            className={`w-full flex items-center rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              isCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2.5"
-            } ${
-              activeNav === "kanban"
-                ? "bg-indigo-600 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 text-white shadow-sm shadow-indigo-600/25 font-bold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5"
-            }`}
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <LayoutGrid
-                className={`w-4 h-4 shrink-0 ${
-                  activeNav === "kanban" ? "text-white" : "text-purple-500 dark:text-purple-400"
-                }`}
-              />
-              {!isCollapsed && <span className="truncate">Fluxo Kanban</span>}
-            </div>
-            {!isCollapsed && (
-              <span
-                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
-                  activeNav === "kanban"
-                    ? "bg-white/20 text-white"
-                    : "bg-slate-100 dark:bg-purple-500/20 text-slate-600 dark:text-purple-300"
-                }`}
-              >
-                Board
-              </span>
-            )}
-          </button>
-
-          {/* Agenda do Dia */}
-          <button
-            type="button"
-            onClick={() => onSelectNav("agenda")}
-            title={isCollapsed ? "Agenda do Dia" : undefined}
-            className={`w-full flex items-center rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              isCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2.5"
-            } ${
-              activeNav === "agenda"
-                ? "bg-indigo-600 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 text-white shadow-sm shadow-indigo-600/25 font-bold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5"
-            }`}
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <Calendar
-                className={`w-4 h-4 shrink-0 ${
-                  activeNav === "agenda" ? "text-white" : "text-emerald-600 dark:text-emerald-400"
-                }`}
-              />
-              {!isCollapsed && <span className="truncate">Agenda do Dia</span>}
-            </div>
-            {!isCollapsed && (
-              <span
-                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
-                  activeNav === "agenda"
-                    ? "bg-white/20 text-white"
-                    : "bg-emerald-50 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
-                }`}
-              >
-                Hoje
-              </span>
-            )}
-          </button>
-
-          {/* Bloco de Notas */}
-          <button
-            type="button"
-            onClick={() => onSelectNav("notas")}
-            title={isCollapsed ? `Bloco de Notas (${notesCount})` : undefined}
-            className={`w-full flex items-center rounded-xl text-xs font-semibold transition-all cursor-pointer relative ${
-              isCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2.5"
-            } ${
-              activeNav === "notas"
-                ? "bg-indigo-600 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 text-white shadow-sm shadow-indigo-600/25 font-bold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5"
-            }`}
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <StickyNote
-                className={`w-4 h-4 shrink-0 ${
-                  activeNav === "notas" ? "text-white" : "text-amber-500 dark:text-amber-400"
-                }`}
-              />
-              {!isCollapsed && <span className="truncate">Bloco de Notas</span>}
-            </div>
-            {!isCollapsed &&
-              (notesCount > 0 ? (
-                <span
-                  className={`text-[11px] font-bold px-2 py-0.5 rounded-full font-mono ${
-                    activeNav === "notas"
-                      ? "bg-white/20 text-white"
-                      : "bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-200/70 dark:border-amber-500/30"
-                  }`}
-                >
-                  {notesCount}
-                </span>
-              ) : (
-                <span
-                  className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
-                    activeNav === "notas"
-                      ? "bg-white/20 text-white"
-                      : "bg-slate-100 dark:bg-purple-500/20 text-slate-600 dark:text-purple-300"
-                  }`}
-                >
-                  IA
-                </span>
-              ))}
-          </button>
-
-          {/* Wiki Técnica */}
-          <button
-            type="button"
-            onClick={() => onSelectNav("wiki")}
-            title={isCollapsed ? "Wiki Técnica" : undefined}
-            className={`w-full flex items-center rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              isCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2.5"
-            } ${
-              activeNav === "wiki"
-                ? "bg-indigo-600 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 text-white shadow-sm shadow-indigo-600/25 font-bold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5"
-            }`}
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <BookOpen
-                className={`w-4 h-4 shrink-0 ${
-                  activeNav === "wiki" ? "text-white" : "text-sky-600 dark:text-sky-400"
-                }`}
-              />
-              {!isCollapsed && <span className="truncate">Wiki Técnica</span>}
-            </div>
-            {!isCollapsed && (
-              <span
-                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md ${
-                  activeNav === "wiki"
-                    ? "bg-white/20 text-white"
-                    : "bg-slate-100 dark:bg-purple-500/20 text-slate-600 dark:text-purple-300"
-                }`}
-              >
-                IA
-              </span>
-            )}
-          </button>
-
-          {/* Relatórios */}
-          <button
-            type="button"
-            onClick={() => onSelectNav("relatorios")}
-            title={isCollapsed ? `Relatórios (${slaOnTimePct}% SLA)` : undefined}
-            className={`w-full flex items-center rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-              isCollapsed ? "justify-center p-2.5" : "justify-between px-3 py-2.5"
-            } ${
-              activeNav === "relatorios"
-                ? "bg-indigo-600 dark:bg-gradient-to-r dark:from-purple-600 dark:to-indigo-600 text-white shadow-sm shadow-indigo-600/25 font-bold"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/80 dark:hover:bg-white/5"
-            }`}
-          >
-            <div className="flex items-center gap-2.5 min-w-0">
-              <BarChart3
-                className={`w-4 h-4 shrink-0 ${
-                  activeNav === "relatorios" ? "text-white" : "text-rose-500 dark:text-rose-400"
-                }`}
-              />
-              {!isCollapsed && <span className="truncate">Relatórios</span>}
-            </div>
-            {!isCollapsed && (
-              <span
-                className={`text-[11px] font-mono font-bold ${
-                  activeNav === "relatorios"
-                    ? "text-white"
-                    : "text-emerald-600 dark:text-emerald-400"
-                }`}
-              >
-                {slaOnTimePct}%
-              </span>
-            )}
-          </button>
+                {isCollapsed && item.id === "tarefas" && pendingTasks > 0 && (
+                  <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-indigo-600 text-white text-[9px] font-bold flex items-center justify-center">
+                    {pendingTasks > 99 ? "99" : pendingTasks}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
-        {/* 3. Espaços de Trabalho (Workspaces Dinâmicos com "Todos" em primeiro) */}
-        <div className="pt-3 border-t border-slate-200/80 dark:border-[#1e1c36]/60 space-y-1.5">
+        {/* 3. Workspaces Section */}
+        <div className="pt-4 border-t border-slate-200/70 dark:border-[#1E1E26] space-y-0.5">
           {!isCollapsed && (
-            <div className="px-2 pb-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-purple-300/60 flex items-center justify-between">
-              <span>Espaços</span>
+            <div className="px-2.5 pb-1.5 flex items-center justify-between">
+              <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                Espaços
+              </span>
               <button
                 type="button"
                 onClick={onOpenAccountsModal}
-                className="text-[11px] font-semibold normal-case tracking-normal text-indigo-600 dark:text-purple-400 hover:underline transition-colors cursor-pointer"
-                title="Gerenciar Contas"
+                className="inline-flex items-center gap-0.5 text-[11px] font-medium text-slate-400 hover:text-indigo-600 dark:text-zinc-500 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                title="Gerenciar contas vinculadas"
               >
-                + Vincular
+                <Plus className="w-3 h-3" />
+                <span>Conta</span>
               </button>
             </div>
           )}
 
-          {/* Opção 1: Todos os Espaços */}
+          {/* Todos */}
           <button
             type="button"
             onClick={() => onSelectAccountFilter?.("all")}
-            className={`w-full flex items-center rounded-xl border transition-all text-left cursor-pointer ${
-              isCollapsed ? "justify-center p-2" : "justify-between p-2"
+            title={`Todos os espaços (${totalTasks})`}
+            className={`w-full flex items-center rounded-lg text-[13px] transition-all cursor-pointer ${
+              isCollapsed ? "justify-center h-9" : "justify-between px-2.5 h-8"
             } ${
               selectedAccountFilter === "all"
-                ? "bg-indigo-50 dark:bg-purple-600/25 border-indigo-300 dark:border-purple-500/60 text-indigo-950 dark:text-white shadow-2xs"
-                : "bg-slate-50/70 dark:bg-white/[0.02] hover:bg-slate-100 dark:hover:bg-white/[0.05] border-slate-200/70 dark:border-white/5 text-slate-700 dark:text-slate-300"
+                ? "bg-slate-200/75 dark:bg-white/[0.08] text-slate-950 dark:text-white font-semibold"
+                : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-200/45 dark:hover:bg-white/[0.04] font-medium"
             }`}
-            title={`Todos os espaços (${totalTasks})`}
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-7 h-7 rounded-lg bg-indigo-100 dark:bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
-                <Layers className="w-3.5 h-3.5" />
-              </div>
-              {!isCollapsed && (
-                <div className="text-left min-w-0">
-                  <span className="text-xs font-semibold block truncate">Todos</span>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block truncate">
-                    Visão Consolidada
-                  </span>
-                </div>
-              )}
+              <Layers
+                className={`w-3.5 h-3.5 shrink-0 ${
+                  selectedAccountFilter === "all"
+                    ? "text-indigo-600 dark:text-indigo-400"
+                    : "text-slate-400 dark:text-zinc-500"
+                }`}
+              />
+              {!isCollapsed && <span className="truncate">Todos os espaços</span>}
             </div>
             {!isCollapsed && (
-              <span className="text-[11px] font-bold font-mono px-1.5 py-0.5 rounded-full bg-indigo-100/80 dark:bg-purple-500/20 text-indigo-700 dark:text-purple-300">
+              <span className="text-[11px] font-mono tabular-nums text-slate-400 dark:text-zinc-500">
                 {totalTasks}
               </span>
             )}
@@ -561,46 +489,53 @@ export function SidebarNav({
                 (selectedAccountFilter.toLowerCase().includes("pess") ||
                   selectedAccountFilter.toLowerCase().includes("person") ||
                   selectedAccountFilter.toLowerCase().includes("hellen")));
-            const isWorkWs = ws.label.toLowerCase().includes("trab");
+            const isWorkWs =
+              ws.id === "work" || ws.label.toLowerCase().includes("trab");
+
             return (
               <button
                 key={ws.id}
                 type="button"
-                onClick={() => onSelectAccountFilter?.(ws.id as any)}
-                className={`w-full flex items-center rounded-xl border transition-all text-left cursor-pointer ${
-                  isCollapsed ? "justify-center p-2" : "justify-between p-2"
+                onClick={() => onSelectAccountFilter?.(ws.id as AccountType)}
+                title={`${ws.label} (${ws.count})${ws.email ? ` • ${ws.email}` : ""}`}
+                className={`w-full flex items-center rounded-lg text-[13px] transition-all cursor-pointer ${
+                  isCollapsed ? "justify-center h-9" : "justify-between px-2.5 h-8"
                 } ${
                   isSelected
-                    ? "bg-indigo-50 dark:bg-purple-600/25 border-indigo-300 dark:border-purple-500/60 text-indigo-950 dark:text-white shadow-2xs"
-                    : "bg-slate-50/70 dark:bg-white/[0.02] hover:bg-slate-100 dark:hover:bg-white/[0.05] border-slate-200/70 dark:border-white/5 text-slate-700 dark:text-slate-300"
+                    ? "bg-slate-200/75 dark:bg-white/[0.08] text-slate-950 dark:text-white font-semibold"
+                    : "text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-200/45 dark:hover:bg-white/[0.04] font-medium"
                 }`}
-                title={`${ws.label} (${ws.count})${ws.email ? ` • ${ws.email}` : ""}`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div
-                    className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
-                      isWorkWs
-                        ? "bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400"
-                        : "bg-purple-100 dark:bg-purple-500/20 text-purple-600 dark:text-purple-400"
-                    }`}
-                  >
-                    {isWorkWs ? (
-                      <Briefcase className="w-3.5 h-3.5" />
+                  {isCollapsed ? (
+                    isWorkWs ? (
+                      <Briefcase
+                        className={`w-3.5 h-3.5 shrink-0 ${
+                          isSelected
+                            ? "text-blue-600 dark:text-blue-400"
+                            : "text-slate-400 dark:text-zinc-500"
+                        }`}
+                      />
                     ) : (
-                      <User className="w-3.5 h-3.5" />
-                    )}
-                  </div>
-                  {!isCollapsed && (
-                    <div className="text-left min-w-0">
-                      <span className="text-xs font-semibold block truncate">{ws.label}</span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 block truncate">
-                        {ws.email || "Workspace"}
-                      </span>
-                    </div>
+                      <User
+                        className={`w-3.5 h-3.5 shrink-0 ${
+                          isSelected
+                            ? "text-violet-600 dark:text-violet-400"
+                            : "text-slate-400 dark:text-zinc-500"
+                        }`}
+                      />
+                    )
+                  ) : (
+                    <span
+                      className={`w-2 h-2 rounded-full shrink-0 ${
+                        isWorkWs ? "bg-blue-500" : "bg-violet-500"
+                      }`}
+                    />
                   )}
+                  {!isCollapsed && <span className="truncate">{ws.label}</span>}
                 </div>
                 {!isCollapsed && (
-                  <span className="text-[11px] font-bold font-mono px-1.5 py-0.5 rounded-full bg-slate-200/70 dark:bg-purple-500/20 text-slate-700 dark:text-purple-300">
+                  <span className="text-[11px] font-mono tabular-nums text-slate-400 dark:text-zinc-500 shrink-0">
                     {ws.count}
                   </span>
                 )}
@@ -609,69 +544,48 @@ export function SidebarNav({
           })}
         </div>
 
-        {/* 4. Saúde Operacional & Produtividade Card (Only in expanded mode) */}
+        {/* 4. Whisper-Quiet Productivity Meter */}
         {!isCollapsed && (
-          <div className="pt-3 border-t border-slate-200/80 dark:border-[#1e1c36]/60">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-50/90 via-white to-purple-50/60 dark:from-purple-950/40 dark:via-[#181630] dark:to-indigo-950/40 border border-indigo-200/70 dark:border-purple-500/20 space-y-2">
-              <div className="flex items-center justify-between text-xs font-bold text-slate-800 dark:text-amber-300">
-                <div className="flex items-center gap-1.5">
-                  <TrendingUp className="w-3.5 h-3.5 text-indigo-600 dark:text-amber-400" />
-                  <span className="text-xs">Produtividade</span>
-                </div>
-                <span className="text-emerald-600 dark:text-emerald-400 font-mono text-xs tabular-nums">
-                  {completionPercentage}%
-                </span>
-              </div>
-
-              <div className="w-full h-1.5 rounded-full bg-slate-200/80 dark:bg-white/10 overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full transition-all duration-500"
-                  style={{ width: `${Math.min(completionPercentage, 100)}%` }}
-                />
-              </div>
-
-              <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-snug">
-                {completedTasks} de {totalTasks} demandas concluídas.
-              </p>
+          <div className="pt-4 border-t border-slate-200/70 dark:border-[#1E1E26] px-2.5 space-y-2">
+            <div className="flex items-center justify-between text-[11px]">
+              <span className="font-medium text-slate-500 dark:text-zinc-400">
+                Taxa de conclusão
+              </span>
+              <span className="font-mono font-semibold text-slate-800 dark:text-zinc-200 tabular-nums">
+                {completionPercentage}%
+              </span>
             </div>
+            <div className="w-full h-1 rounded-full bg-slate-200/80 dark:bg-white/[0.08] overflow-hidden">
+              <div
+                className="h-full bg-indigo-600 dark:bg-indigo-400 rounded-full transition-all duration-500"
+                style={{ width: `${Math.min(completionPercentage, 100)}%` }}
+              />
+            </div>
+            <p className="text-[11px] text-slate-400 dark:text-zinc-500 tabular-nums">
+              {completedTasks} de {totalTasks} demandas entregues
+            </p>
           </div>
         )}
       </div>
 
-      {/* 5. Bottom Section: Configurações + Perfil */}
+      {/* 5. Minimal Executive Footer */}
       <div
-        className={`pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-slate-200/80 dark:border-[#1e1c36]/80 space-y-2 shrink-0 bg-slate-50/80 dark:bg-[#0d0c1b] ${
+        className={`pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-slate-200/75 dark:border-[#1E1E26] shrink-0 space-y-1.5 ${
           isCollapsed ? "p-2 flex flex-col items-center" : "p-3"
         }`}
       >
-        {/* Botão de Configurações */}
         <button
           type="button"
           onClick={onOpenAccountsModal}
-          className={`w-full flex items-center rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-950 dark:hover:text-white bg-white dark:bg-white/[0.03] hover:bg-slate-100 dark:hover:bg-white/[0.08] border border-slate-200/80 dark:border-white/5 transition-all shadow-2xs group cursor-pointer ${
-            isCollapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2"
+          className={`w-full flex items-center rounded-lg text-[13px] font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-200/50 dark:hover:bg-white/[0.05] transition-colors cursor-pointer ${
+            isCollapsed ? "justify-center h-9" : "gap-2.5 px-2.5 h-8"
           }`}
           title="Configurações & Contas Google"
         >
-          <div className="w-7 h-7 rounded-lg bg-indigo-50 dark:bg-purple-500/20 flex items-center justify-center text-indigo-600 dark:text-purple-400 group-hover:scale-105 transition-transform shrink-0">
-            <Settings className="w-4 h-4" />
-          </div>
-          {!isCollapsed && (
-            <>
-              <div className="text-left min-w-0 flex-1">
-                <span className="block text-xs font-semibold text-slate-900 dark:text-white">
-                  Configurações
-                </span>
-                <span className="block text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                  Contas & preferências
-                </span>
-              </div>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-            </>
-          )}
+          <Settings className="w-4 h-4 text-slate-400 dark:text-zinc-500 shrink-0" />
+          {!isCollapsed && <span className="truncate">Configurações</span>}
         </button>
 
-        {/* Perfil do Usuário com botão direto de Sair */}
         {isCollapsed ? (
           <div className="flex flex-col items-center gap-2 pt-1 w-full">
             {currentUser?.picture ? (
@@ -679,12 +593,12 @@ export function SidebarNav({
                 src={currentUser.picture}
                 alt={displayName}
                 title={`${displayName} (${displayEmail})`}
-                className="w-8 h-8 rounded-full border border-indigo-300 dark:border-purple-400/40 shadow-xs object-cover"
+                className="w-7 h-7 rounded-full border border-slate-200 dark:border-white/10 object-cover"
               />
             ) : (
               <div
                 title={`${displayName} (${displayEmail})`}
-                className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-xs"
+                className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-[11px] font-semibold"
               >
                 {userInitials}
               </div>
@@ -694,36 +608,34 @@ export function SidebarNav({
               onClick={async () => {
                 try {
                   await fetch("/api/auth/logout", { method: "POST" });
-                } catch (e) {
-                  console.warn("Logout error:", e);
-                }
+                } catch {}
                 handleLogout();
               }}
-              className="w-10 h-9 rounded-xl flex items-center justify-center text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/20 transition-colors cursor-pointer"
-              title="Sair para a tela de login"
+              className="w-9 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer"
+              title="Sair"
             >
               <LogOut className="w-4 h-4" />
             </button>
           </div>
         ) : (
-          <div className="p-2.5 rounded-xl bg-white dark:bg-white/[0.02] border border-slate-200/80 dark:border-white/5 flex items-center justify-between gap-2">
+          <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg hover:bg-slate-200/40 dark:hover:bg-white/[0.03] transition-colors">
             <div className="flex items-center gap-2.5 min-w-0">
               {currentUser?.picture ? (
                 <img
                   src={currentUser.picture}
                   alt={displayName}
-                  className="w-8 h-8 rounded-full border border-indigo-200 dark:border-purple-400/40 shrink-0 shadow-xs object-cover"
+                  className="w-7 h-7 rounded-full border border-slate-200 dark:border-white/10 shrink-0 object-cover"
                 />
               ) : (
-                <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-500 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-xs">
+                <div className="w-7 h-7 rounded-full bg-indigo-600 flex items-center justify-center text-white text-[11px] font-semibold shrink-0">
                   {userInitials}
                 </div>
               )}
               <div className="min-w-0">
-                <span className="text-xs font-bold text-slate-900 dark:text-white block truncate">
+                <span className="text-xs font-semibold text-slate-900 dark:text-zinc-100 block truncate leading-tight">
                   {displayName}
                 </span>
-                <span className="text-[11px] text-slate-500 dark:text-purple-300/60 block truncate">
+                <span className="text-[11px] text-slate-400 dark:text-zinc-500 block truncate leading-tight mt-0.5">
                   {displayEmail}
                 </span>
               </div>
@@ -734,16 +646,14 @@ export function SidebarNav({
               onClick={async () => {
                 try {
                   await fetch("/api/auth/logout", { method: "POST" });
-                } catch (e) {
-                  console.warn("Logout error:", e);
-                }
+                } catch {}
                 handleLogout();
               }}
-              className="flex items-center gap-1 px-2 py-1.5 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-white hover:bg-rose-500 border border-rose-200 dark:border-rose-500/20 hover:border-rose-500 transition-all shrink-0 active:scale-95 cursor-pointer"
-              title="Sair para a tela de login"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:text-zinc-500 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors shrink-0 cursor-pointer"
+              title="Sair da conta"
+              aria-label="Sair da conta"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span>Sair</span>
             </button>
           </div>
         )}

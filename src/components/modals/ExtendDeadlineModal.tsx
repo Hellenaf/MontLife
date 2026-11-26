@@ -67,9 +67,9 @@ export function ExtendDeadlineModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl transition-all custom-scrollbar">
+      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-2xl bg-white dark:bg-[#13131A] border border-slate-200 dark:border-[#262632] shadow-popover transition-all">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#101118]">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-100 dark:border-[#22222B] bg-[#FAFAFB] dark:bg-[#101016]">
           <div className="flex items-center gap-3 min-w-0">
             <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800 shrink-0">
               <Clock className="w-5 h-5" />

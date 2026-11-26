@@ -555,17 +555,17 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
   return (
     <div className="max-w-7xl mx-auto space-y-4 pb-8 lg:pb-12 animate-in fade-in duration-200">
       {/* 1. Header Toolbar (Hidden when printing) */}
-      <div className="no-print p-3.5 sm:p-5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-wrap items-center justify-between gap-3">
+      <div className="no-print p-4 sm:p-5 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-rose-500 flex items-center justify-center text-white shadow-lg shadow-purple-600/30 shrink-0">
-            <Award className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-200/70 dark:border-indigo-500/25 flex items-center justify-center shrink-0">
+            <Award className="w-4 h-4" />
           </div>
           <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+              <h2 className="text-base font-bold tracking-tight text-slate-950 dark:text-zinc-50">
                 Relatórios & Prestação de Contas
               </h2>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/80">
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300">
                 {scopeFilter === "work"
                   ? "Atividades Profissionais"
                   : scopeFilter === "personal"
@@ -573,35 +573,33 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
                   : "Consolidado Geral"}
               </span>
             </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              Painel analítico de produtividade, auditoria de SLA e volume de entregas para apresentação.
+            <p className="text-xs text-slate-500 dark:text-zinc-400">
+              Painel analítico de produtividade, auditoria de SLA e volume de entregas.
             </p>
           </div>
         </div>
 
         {/* Action Buttons */}
         <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap w-full sm:w-auto">
-          {/* Toggle Presentation Mode */}
           <button
             type="button"
             onClick={() => setIsPreviewMode(!isPreviewMode)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold shadow-xs transition-all cursor-pointer ${
+            className={`flex items-center gap-1.5 px-3 h-8 rounded-lg border text-xs font-medium transition-colors cursor-pointer ${
               isPreviewMode
-                ? "bg-indigo-600 text-white border-indigo-500 shadow-indigo-600/20"
-                : "border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/80 text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-700"
+                ? "bg-slate-900 dark:bg-white text-white dark:text-zinc-950 border-slate-900 dark:border-white font-semibold"
+                : "border-slate-200/90 dark:border-[#24242F] bg-white dark:bg-[#16161C] text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-[#1C1C24]"
             }`}
-            title="Alternar entre o painel interativo e a visualização executiva do relatório para apresentação"
+            title="Alternar entre painel interativo e visualização executiva do relatório"
           >
             {isPreviewMode ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
             <span>{isPreviewMode ? "Voltar ao Painel" : "Modo Apresentação"}</span>
           </button>
 
-          {/* AI Executive Summary button */}
           <button
             type="button"
             onClick={handleGenerateAiSummary}
             disabled={isGeneratingAi}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:opacity-90 text-xs font-bold text-white shadow-md shadow-purple-600/20 transition-all disabled:opacity-50 active:scale-95 cursor-pointer"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:hover:bg-indigo-500/25 border border-indigo-200/80 dark:border-indigo-500/30 text-xs font-semibold text-indigo-700 dark:text-indigo-300 transition-colors disabled:opacity-50 cursor-pointer"
             title="Gerar parecer textual formal com Google Gemini"
           >
             {isGeneratingAi ? (
@@ -609,45 +607,42 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             ) : (
               <Sparkles className="w-3.5 h-3.5" />
             )}
-            <span>{isGeneratingAi ? "Sintetizando..." : "Síntese com IA"}</span>
+            <span>{isGeneratingAi ? "Sintetizando..." : "Síntese IA"}</span>
           </button>
 
-          {/* Print / Generate Report Button */}
           <button
             type="button"
             onClick={handlePrint}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-xs font-bold text-white shadow-sm transition-all active:scale-95 cursor-pointer"
-            title="Gerar e Imprimir Relatório Executivo (Visualização Limpa / PDF Nativo)"
+            className="flex items-center gap-1.5 px-3.5 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white transition-colors active:scale-[0.98] cursor-pointer"
+            title="Gerar e Imprimir Relatório Executivo (PDF Nativo)"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>Gerar Relatório</span>
+            <span>Gerar PDF</span>
           </button>
 
-          {/* Copy to Email */}
           <button
             type="button"
             onClick={handleCopyEmailReport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/80 text-xs text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-slate-200/90 dark:border-[#24242F] bg-white dark:bg-[#16161C] text-xs font-medium text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-[#1C1C24] transition-colors cursor-pointer"
             title="Copiar texto formatado para enviar por e-mail"
           >
             {copiedFeedback ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-500" />
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Copiado!</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">Copiado</span>
               </>
             ) : (
               <>
                 <Copy className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Copiar p/ E-mail</span>
+                <span className="hidden sm:inline">Copiar</span>
               </>
             )}
           </button>
 
-          {/* CSV Export */}
           <button
             type="button"
             onClick={handleExportCsv}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-zinc-700 bg-slate-50 dark:bg-zinc-800/80 text-xs text-slate-700 dark:text-slate-200 hover:text-indigo-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-700 transition-colors shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-lg border border-slate-200/90 dark:border-[#24242F] bg-white dark:bg-[#16161C] text-xs font-medium text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-[#1C1C24] transition-colors cursor-pointer"
             title="Exportar planilha CSV"
           >
             <FileSpreadsheet className="w-3.5 h-3.5" />
@@ -656,18 +651,16 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
         </div>
       </div>
 
-      {/* 2. Filter Bar: Year + Month + Sub-tabs (Empilha com clareza no mobile, única linha no desktop) */}
-      <div className="no-print p-3 sm:p-3.5 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 shadow-sm flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
-        {/* 1. Period Selector: Year (Compact Menu / Dropdown) + Month Pills */}
+      {/* 2. Filter Bar: Year + Month + Sub-tabs */}
+      <div className="no-print p-3 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
         <div className="flex items-center gap-1.5 w-full lg:w-auto overflow-x-auto no-scrollbar pb-0.5 lg:pb-0">
-          {/* Year Select ("Menuzinho de Ano") */}
           <div className="relative shrink-0">
             <select
               value={selectedYear}
               onChange={(e) =>
                 setSelectedYear(e.target.value === "ALL" ? "ALL" : Number(e.target.value))
               }
-              className="h-8 pl-2.5 pr-7 rounded-xl bg-slate-100 dark:bg-[#16152a] border border-slate-200 dark:border-zinc-700 text-xs font-bold text-slate-800 dark:text-slate-100 focus:outline-none focus:border-indigo-500 shadow-xs cursor-pointer appearance-none transition-all"
+              className="h-8 pl-2.5 pr-7 rounded-lg bg-slate-100/80 dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] text-xs font-semibold text-slate-800 dark:text-zinc-100 focus:outline-none focus:border-indigo-500 cursor-pointer appearance-none transition-colors"
               title="Filtrar por ano ou compilado geral"
             >
               <option value="ALL">Todos os Anos</option>
@@ -680,16 +673,15 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             <ChevronDown className="w-3 h-3 text-slate-400 dark:text-zinc-500 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
           </div>
 
-          {/* Month Selector Pills */}
-          <div className="flex items-center gap-0.5 p-0.5 bg-slate-100 dark:bg-[#16152a] rounded-xl border border-slate-200 dark:border-zinc-700 shrink-0">
+          <div className="flex items-center gap-0.5 p-0.5 bg-slate-100/80 dark:bg-[#16161C] rounded-lg border border-slate-200/80 dark:border-[#24242F] shrink-0">
             {months.map((m) => (
               <button
                 key={String(m.value)}
                 type="button"
                 onClick={() => setSelectedMonth(m.value as any)}
-                className={`px-2 py-0.5 rounded-lg text-[11px] font-medium shrink-0 transition-all cursor-pointer ${
+                className={`px-2 py-0.5 rounded-md text-[11px] font-medium shrink-0 transition-all cursor-pointer ${
                   selectedMonth === m.value
-                    ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white font-bold shadow-xs"
+                    ? "bg-white dark:bg-[#23232E] text-slate-950 dark:text-white font-semibold shadow-xs-subtle"
                     : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
                 }`}
               >
@@ -699,16 +691,15 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
           </div>
         </div>
 
-        {/* 3. View Tabs (Métricas vs Lista) */}
         {!isPreviewMode && (
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#16152a] p-1 rounded-xl border border-slate-200 dark:border-zinc-700 w-full lg:w-auto overflow-x-auto no-scrollbar shrink-0">
+          <div className="flex items-center gap-0.5 bg-slate-100/80 dark:bg-[#16161C] p-0.5 rounded-lg border border-slate-200/80 dark:border-[#24242F] w-full lg:w-auto overflow-x-auto no-scrollbar shrink-0">
             <button
               type="button"
               onClick={() => setActiveTab("dashboard")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "dashboard"
-                  ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs font-bold"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                  ? "bg-white dark:bg-[#23232E] text-slate-950 dark:text-white shadow-xs-subtle font-semibold"
+                  : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white"
               }`}
             >
               Métricas & SLA
@@ -716,25 +707,25 @@ export function ReportsView({ tasks, accountFilter = "all", onBackToTasks }: Rep
             <button
               type="button"
               onClick={() => setActiveTab("activities")}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                 activeTab === "activities"
-                  ? "bg-white dark:bg-zinc-800 text-slate-900 dark:text-white shadow-xs font-bold"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                  ? "bg-white dark:bg-[#23232E] text-slate-950 dark:text-white shadow-xs-subtle font-semibold"
+                  : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white"
               }`}
             >
-              Lista de Atividades ({filteredTasks.length})
+              Atividades ({filteredTasks.length})
             </button>
             {aiSummary && (
               <button
                 type="button"
                 onClick={() => setActiveTab("ai_summary")}
-                className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer shrink-0 whitespace-nowrap ${
+                className={`flex items-center gap-1 px-3 py-1 rounded-md text-xs font-medium transition-all cursor-pointer shrink-0 whitespace-nowrap ${
                   activeTab === "ai_summary"
-                    ? "bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-400 shadow-xs font-bold"
-                    : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white"
+                    ? "bg-white dark:bg-[#23232E] text-indigo-600 dark:text-indigo-400 shadow-xs-subtle font-semibold"
+                    : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white"
                 }`}
               >
-                <Sparkles className="w-3 h-3 text-purple-500" />
+                <Sparkles className="w-3 h-3 text-indigo-500" />
                 <span>Parecer IA</span>
               </button>
             )}

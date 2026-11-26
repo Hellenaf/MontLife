@@ -67,6 +67,8 @@ interface HeaderCommandBarProps {
   accounts: ConnectedAccount[];
   tasks?: Task[];
   availableCategories?: string[];
+  activeNav?: string;
+  accountFilter?: string;
   onTaskCreated: (task: Task) => void;
   onOpenAccountsModal: () => void;
   onOpenReportModal: () => void;
@@ -80,6 +82,8 @@ export function HeaderCommandBar({
   accounts,
   tasks = [],
   availableCategories,
+  activeNav = "tarefas",
+  accountFilter = "all",
   onTaskCreated,
   onOpenAccountsModal,
   onOpenReportModal,
@@ -674,46 +678,85 @@ export function HeaderCommandBar({
     (a) => a && typeof a === "object" && Boolean(a.is_connected || a.access_token || a.refresh_token) && typeof a.email === "string" && a.email
   ).length;
 
+  const currentViewLabel: Record<string, string> = {
+    tarefas: "Demandas",
+    inicio: "Demandas",
+    kanban: "Fluxo Kanban",
+    agenda: "Agenda",
+    notas: "Anotações",
+    wiki: "Wiki Técnica",
+    relatorios: "Relatórios",
+  };
+  const viewTitle = currentViewLabel[activeNav] || "Demandas";
+  const workspaceLabel =
+    !accountFilter || accountFilter === "all"
+      ? null
+      : accountFilter.toLowerCase().includes("trab") || accountFilter === "work"
+      ? "Trabalho"
+      : accountFilter.toLowerCase().includes("pess") || accountFilter === "personal"
+      ? "Pessoal"
+      : accountFilter;
+
   return (
     <>
-      <header className="relative z-40 w-full shrink-0 bg-white/95 dark:bg-[#0e0d1d]/95 backdrop-blur-md border-b border-slate-200 dark:border-[#1f1d38] px-3 sm:px-6 py-1.5 md:py-0 md:h-16 flex flex-wrap md:flex-nowrap items-center justify-between shadow-sm transition-colors duration-200 gap-x-2 gap-y-1.5 md:gap-4">
-      {/* Brand (visible on mobile/tablet where sidebar is hidden) */}
-      <div className="order-1 flex items-center gap-2 shrink-0 lg:hidden">
-        <MontLifeLogo size="sm" showText={false} />
-        <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-white md:hidden">
-          MontLife
-        </span>
+      <header className="relative z-40 w-full shrink-0 bg-white/95 dark:bg-[#111115]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-[#22222B] px-3 sm:px-5 py-1.5 md:py-0 md:h-14 flex flex-wrap md:flex-nowrap items-center justify-between transition-colors duration-200 gap-x-2 gap-y-1.5 md:gap-4">
+      {/* Left: Mobile Brand OR Desktop Contextual Breadcrumb */}
+      <div className="order-1 flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 lg:hidden">
+          <MontLifeLogo size="sm" showText={false} />
+          <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-zinc-100 md:hidden">
+            MontLife
+          </span>
+        </div>
+        <div className="hidden lg:flex items-center gap-2 text-[13px] min-w-0">
+          <span className="font-semibold text-slate-900 dark:text-zinc-100 tracking-tight truncate">
+            {viewTitle}
+          </span>
+          {workspaceLabel && (
+            <>
+              <span className="text-slate-300 dark:text-zinc-700">/</span>
+              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-100 dark:bg-white/[0.06] text-[11px] font-medium text-slate-600 dark:text-zinc-300">
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${
+                    workspaceLabel === "Trabalho" ? "bg-blue-500" : "bg-violet-500"
+                  }`}
+                />
+                {workspaceLabel}
+              </span>
+            </>
+          )}
+        </div>
       </div>
 
-      {/* Center Command Bar + Nova Demanda + Bloco de Notas */}
-      <div className="order-3 md:order-2 w-full md:w-auto md:flex-1 md:max-w-2xl flex items-center gap-1.5 sm:gap-2 min-w-0">
+      {/* Center Command & AI Input Bar */}
+      <div className="order-3 md:order-2 w-full md:w-auto md:flex-1 md:max-w-xl flex items-center gap-2 min-w-0">
         <form
           onSubmit={handleRunTriage}
-          className="relative flex items-center flex-1 min-w-0 rounded-xl focus-within:ring-2 focus-within:ring-purple-500/25 transition-shadow"
+          className="relative flex items-center flex-1 min-w-0 rounded-lg transition-all"
         >
-          <Sparkles className="w-4 h-4 text-purple-500 absolute left-3 pointer-events-none shrink-0" />
+          <Sparkles className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 absolute left-3 pointer-events-none shrink-0" />
           <input
             ref={commandInputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Digite um comando com IA..."
-            className="w-full h-9 sm:h-10 pl-9 pr-24 sm:pr-36 rounded-xl bg-slate-100/90 dark:bg-[#16152a] border border-slate-200 dark:border-[#282647] text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500 transition-all font-medium truncate"
+            placeholder="Descreva uma demanda para a IA criar ou pressione Ctrl+K..."
+            className="w-full h-9 pl-8.5 pl-9 pr-28 sm:pr-36 rounded-lg bg-slate-100/80 dark:bg-[#18181F] hover:bg-slate-100 dark:hover:bg-[#1B1B24] focus:bg-white dark:focus:bg-[#16161C] border border-slate-200/80 dark:border-[#262632] focus:border-indigo-500/80 focus:ring-2 focus:ring-indigo-500/15 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none transition-all font-medium truncate"
             disabled={isProcessing}
           />
 
-          <div className="absolute right-1.5 flex items-center gap-1">
+          <div className="absolute right-1 flex items-center gap-0.5">
             {onOpenCommandPalette ? (
               <button
                 type="button"
                 onClick={onOpenCommandPalette}
                 title="Abrir busca global e comandos (Ctrl+K)"
-                className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/90 dark:bg-[#22203b] border border-slate-200 dark:border-zinc-700 hover:border-indigo-400 text-[10px] font-mono text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 mr-0.5 transition-colors cursor-pointer select-none"
+                className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-white dark:bg-[#22222C] border border-slate-200/90 dark:border-[#323240] hover:border-indigo-400 text-[10px] font-mono text-slate-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-300 mr-0.5 transition-colors cursor-pointer select-none"
               >
                 Ctrl K
               </button>
             ) : (
-              <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded-md bg-white/80 dark:bg-[#22203b] border border-slate-200 dark:border-zinc-700 text-[10px] font-mono text-slate-400 dark:text-slate-500 mr-0.5 select-none">
+              <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded bg-white/80 dark:bg-[#22222C] border border-slate-200 dark:border-[#323240] text-[10px] font-mono text-slate-400 dark:text-zinc-500 mr-0.5 select-none">
                 Ctrl K
               </kbd>
             )}
@@ -721,8 +764,8 @@ export function HeaderCommandBar({
               <button
                 type="button"
                 onClick={() => onOpenNewTaskModal(input)}
-                title="Expandir formulário detalhado (textos longos / mensagens recebidas)"
-                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                title="Expandir formulário detalhado"
+                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-200/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>
@@ -732,10 +775,10 @@ export function HeaderCommandBar({
               type="button"
               onClick={toggleVoiceInput}
               title={isListening ? "Parar gravação" : "Falar comando por voz"}
-              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                 isListening
-                  ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 animate-pulse"
-                  : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-zinc-800"
+                  ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 animate-pulse"
+                  : "text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-200/60 dark:hover:bg-white/[0.06]"
               }`}
             >
               {isListening ? (
@@ -748,8 +791,8 @@ export function HeaderCommandBar({
             <button
               type="submit"
               disabled={isProcessing || !input.trim()}
-              className="flex items-center justify-center w-7 h-7 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-all disabled:opacity-40 cursor-pointer"
-              title="Executar comando inteligente"
+              className="flex items-center justify-center w-7 h-7 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all disabled:opacity-35 cursor-pointer"
+              title="Criar demanda com IA"
             >
               {isProcessing ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -759,35 +802,25 @@ export function HeaderCommandBar({
             </button>
           </div>
         </form>
+      </div>
 
+      {/* Right Utility Cluster */}
+      <div className="order-2 md:order-3 ml-auto md:ml-0 flex items-center gap-1.5 shrink-0">
         {onOpenNewTaskModal && (
           <button
             type="button"
             onClick={() => onOpenNewTaskModal("")}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 h-9 sm:h-10 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm transition-all shrink-0 active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 h-8 sm:h-9 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shrink-0 active:scale-[0.98] cursor-pointer"
             title="Adicionar demanda detalhada"
           >
             <Plus className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Nova Demanda</span>
           </button>
         )}
-      </div>
 
-      {/* Right Navigation & Tools */}
-      <div className="order-2 md:order-3 ml-auto md:ml-0 flex items-center gap-1.5 sm:gap-2 shrink-0">
-        {/* Calm Date & Time Indicator (no distracting seconds/pulse) */}
-        <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/80 dark:bg-[#16152a] border border-slate-200/80 dark:border-[#282647] text-xs text-slate-600 dark:text-slate-300 font-medium">
-          <Clock className="w-3.5 h-3.5 text-indigo-500 dark:text-purple-400" />
-          <span className="capitalize">
-            {format(currentTime, "EEE, d 'de' MMM", { locale: ptBR })}
-          </span>
-          <span className="text-slate-300 dark:text-zinc-600">•</span>
-          <span className="font-semibold font-mono text-slate-800 dark:text-slate-100 tabular-nums">
-            {format(currentTime, "HH:mm")}
-          </span>
-        </div>
+        <div className="hidden md:block w-px h-5 bg-slate-200/80 dark:bg-[#23232D] mx-0.5" />
 
-        {/* Notifications Bell with real-time deadline alerts */}
+        {/* Notifications Bell */}
         <div ref={notificationRef} className="relative">
           <button
             type="button"
@@ -797,22 +830,22 @@ export function HeaderCommandBar({
               }
               setIsNotificationOpen((prev) => !prev);
             }}
-            className={`relative p-2 rounded-xl border transition-all shadow-sm ${
+            className={`relative w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center transition-colors cursor-pointer ${
               isNotificationOpen
-                ? "bg-purple-50 dark:bg-[#201e3b] border-purple-300 dark:border-purple-600 text-purple-700 dark:text-purple-300"
-                : "border-slate-200 dark:border-[#282647] bg-white dark:bg-[#16152a] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
+                ? "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300"
+                : "text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-white/[0.06]"
             }`}
-            title="Alertas de Vencimento e Prazos"
+            title="Alertas de Vencimento e Lembretes"
           >
             <Bell className="w-4 h-4" />
             {totalBadgeAlertsCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs animate-pulse">
+              <span className="absolute top-1 right-1 min-w-[15px] h-[15px] px-1 rounded-full bg-rose-500 text-white text-[9px] font-mono font-bold flex items-center justify-center ring-2 ring-white dark:ring-[#111115]">
                 {totalBadgeAlertsCount}
               </span>
             )}
           </button>
 
-          {/* Interactive Notifications Popover (rendered via Portal on document.body so it stays above Kanban cards & all sections) */}
+          {/* Interactive Notifications Popover */}
           {isNotificationOpen &&
             notificationCoords &&
             typeof document !== "undefined" &&
@@ -824,54 +857,52 @@ export function HeaderCommandBar({
                   left: `${notificationCoords.left}px`,
                   width: `${notificationCoords.width}px`,
                 }}
-                className="fixed rounded-2xl bg-white dark:bg-[#141326] border border-slate-200 dark:border-[#282647] shadow-2xl z-[90] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
+                className="fixed rounded-xl bg-white dark:bg-[#14141A] border border-slate-200 dark:border-[#262632] shadow-popover z-[90] overflow-hidden animate-in fade-in zoom-in-95 duration-100"
               >
-                <div className="p-3.5 border-b border-slate-100 dark:border-white/5 flex items-center justify-between bg-slate-50/70 dark:bg-[#100f1f]">
+                <div className="px-4 py-3 border-b border-slate-100 dark:border-[#22222B] flex items-center justify-between bg-[#FAFAFB] dark:bg-[#111116]">
                   <div className="flex items-center gap-2">
-                    <div className="p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/60 text-rose-500">
-                      <Bell className="w-4 h-4" />
-                    </div>
+                    <Bell className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
                     <div>
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
-                        Central de Alertas & Lembretes
+                      <h4 className="text-xs font-semibold text-slate-900 dark:text-zinc-100">
+                        Alertas & Lembretes
                       </h4>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                      <p className="text-[11px] text-slate-500 dark:text-zinc-400">
                         {reminderItems.length > 0
-                          ? `${reminderItems.length} lembrete${reminderItems.length > 1 ? "s" : ""} e ${deadlineAlertTasks.length} prazo${deadlineAlertTasks.length !== 1 ? "s" : ""}`
-                          : `Demandas no último dia ou com prazo atingido (${deadlineAlertTasks.length})`}
+                          ? `${reminderItems.length} lembrete${reminderItems.length > 1 ? "s" : ""} • ${deadlineAlertTasks.length} prazo${deadlineAlertTasks.length !== 1 ? "s" : ""}`
+                          : `${deadlineAlertTasks.length} demanda${deadlineAlertTasks.length !== 1 ? "s" : ""} próxima${deadlineAlertTasks.length !== 1 ? "s" : ""} do vencimento`}
                       </p>
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => setIsNotificationOpen(false)}
-                    className="text-slate-400 hover:text-slate-700 dark:hover:text-white text-xs p-1"
+                    className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/[0.06] cursor-pointer"
                   >
-                    ✕
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
                 {notifPermission === "default" && (
-                  <div className="px-3 py-2 bg-purple-50/80 dark:bg-purple-950/30 border-b border-purple-100 dark:border-purple-900/40 flex items-center justify-between gap-2">
-                    <span className="text-[11px] text-purple-800 dark:text-purple-200 leading-tight">
+                  <div className="px-3.5 py-2 bg-indigo-50/70 dark:bg-indigo-950/30 border-b border-indigo-100 dark:border-indigo-900/40 flex items-center justify-between gap-2">
+                    <span className="text-[11px] text-indigo-900 dark:text-indigo-200 leading-tight">
                       Ative alertas do navegador para não perder reuniões.
                     </span>
                     <button
                       type="button"
                       onClick={requestBrowserNotifications}
-                      className="shrink-0 px-2.5 py-1 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[10px] font-bold transition-colors cursor-pointer"
+                      className="shrink-0 px-2.5 py-1 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-semibold transition-colors cursor-pointer"
                     >
                       Ativar
                     </button>
                   </div>
                 )}
 
-                <div className="max-h-80 overflow-y-auto p-2 space-y-2 custom-scrollbar">
+                <div className="max-h-80 overflow-y-auto p-2 space-y-2">
                   {reminderItems.length > 0 && (
-                    <div className="space-y-1.5">
-                      <div className="px-1.5 pt-0.5 flex items-center justify-between">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-purple-600 dark:text-purple-400">
-                          🔔 Lembretes de Horário ({reminderItems.length})
+                    <div className="space-y-1">
+                      <div className="px-2 pt-1">
+                        <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+                          Lembretes de Horário ({reminderItems.length})
                         </span>
                       </div>
                       {reminderItems.map((item) => {
@@ -885,34 +916,34 @@ export function HeaderCommandBar({
                               onSelectTask?.(item.task);
                               setIsNotificationOpen(false);
                             }}
-                            className={`p-2.5 rounded-xl border cursor-pointer transition-all space-y-1 ${
+                            className={`p-2.5 rounded-lg border cursor-pointer transition-colors space-y-1 ${
                               item.isActive && !isDismissed
-                                ? "border-purple-300 dark:border-purple-500/50 bg-purple-50/70 dark:bg-purple-950/30 hover:bg-purple-100/60 dark:hover:bg-purple-950/45"
-                                : "border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#18172e]/60 hover:border-purple-300 dark:hover:border-purple-500/40"
+                                ? "border-indigo-200 dark:border-indigo-500/40 bg-indigo-50/60 dark:bg-indigo-950/25 hover:bg-indigo-50 dark:hover:bg-indigo-950/40"
+                                : "border-slate-200/70 dark:border-[#22222B] bg-slate-50/50 dark:bg-[#181820]/60 hover:border-indigo-300 dark:hover:border-indigo-500/40"
                             }`}
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span
-                                className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                                className={`px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider ${
                                   item.isActive && !isDismissed
-                                    ? "bg-purple-600 text-white"
+                                    ? "bg-indigo-600 text-white"
                                     : "bg-indigo-50 text-indigo-700 border border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800"
                                 }`}
                               >
                                 {item.isActive && !isDismissed
-                                  ? "🔔 Lembrete Ativo"
-                                  : `⏰ Aviso às ${format(item.triggerDate, "HH:mm")}`}
+                                  ? "Lembrete Ativo"
+                                  : `Aviso às ${format(item.triggerDate, "HH:mm")}`}
                               </span>
-                              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
+                              <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono tabular-nums">
                                 {format(item.startDate, "dd/MM")} • {rangeLabel}
                               </span>
                             </div>
-                            <h5 className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2">
+                            <h5 className="text-xs font-semibold text-slate-900 dark:text-zinc-100 line-clamp-2">
                               {item.task.title}
                             </h5>
-                            <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+                            <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-zinc-400 pt-0.5">
                               <span>
-                                Antecedência: <strong className="text-purple-600 dark:text-purple-400">{leadLabel}</strong>
+                                Antecedência: <strong className="text-indigo-600 dark:text-indigo-400">{leadLabel}</strong>
                               </span>
                               {item.isActive && !isDismissed && (
                                 <button
@@ -921,7 +952,7 @@ export function HeaderCommandBar({
                                     e.stopPropagation();
                                     dismissReminderOccurrence(item.occurrenceKey);
                                   }}
-                                  className="px-2 py-0.5 rounded-md bg-white dark:bg-[#121122] border border-purple-200 dark:border-purple-800 text-[10px] font-semibold text-purple-700 dark:text-purple-300 hover:bg-purple-50"
+                                  className="px-2 py-0.5 rounded bg-white dark:bg-[#111116] border border-slate-200 dark:border-[#2B2B36] text-[10px] font-medium text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white"
                                 >
                                   Dispensar
                                 </button>
@@ -934,21 +965,21 @@ export function HeaderCommandBar({
                   )}
 
                   {deadlineAlertTasks.length === 0 && reminderItems.length === 0 ? (
-                    <div className="py-8 text-center text-slate-400 space-y-1.5">
-                      <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-500 opacity-60" />
-                      <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                        Tudo em dia!
+                    <div className="py-8 text-center text-slate-400 dark:text-zinc-500 space-y-1.5">
+                      <CheckCircle2 className="w-7 h-7 mx-auto text-emerald-500 opacity-70" />
+                      <p className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
+                        Tudo em dia
                       </p>
-                      <p className="text-[11px] text-slate-400">
-                        Nenhuma demanda atingindo o limite de prazo no momento.
+                      <p className="text-[11px]">
+                        Nenhum prazo crítico ou lembrete ativo agora.
                       </p>
                     </div>
                   ) : deadlineAlertTasks.length > 0 ? (
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       {reminderItems.length > 0 && (
-                        <div className="px-1.5 pt-1">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-                            ⏳ Prazos Próximos ou Atrasados ({deadlineAlertTasks.length})
+                        <div className="px-2 pt-1">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                            Prazos Próximos ou Atrasados ({deadlineAlertTasks.length})
                           </span>
                         </div>
                       )}
@@ -966,11 +997,11 @@ export function HeaderCommandBar({
                               onSelectTask?.(t);
                               setIsNotificationOpen(false);
                             }}
-                            className="p-2.5 rounded-xl border border-slate-100 dark:border-white/5 hover:border-purple-300 dark:hover:border-purple-500/40 bg-slate-50/50 dark:bg-[#18172e]/60 hover:bg-purple-50/30 dark:hover:bg-[#1e1c38] cursor-pointer transition-all space-y-1"
+                            className="p-2.5 rounded-lg border border-slate-200/70 dark:border-[#22222B] hover:border-indigo-300 dark:hover:border-indigo-500/40 bg-slate-50/40 dark:bg-[#181820]/60 hover:bg-slate-50 dark:hover:bg-[#1C1C26] cursor-pointer transition-colors space-y-1"
                           >
                             <div className="flex items-center justify-between gap-2">
                               <span
-                                className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                                className={`px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider ${
                                   isOverdue
                                     ? "bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-950/60 dark:text-rose-400 dark:border-rose-800"
                                     : isDueToday
@@ -979,21 +1010,21 @@ export function HeaderCommandBar({
                                 }`}
                               >
                                 {isOverdue
-                                  ? "🚨 Atrasada"
+                                  ? "Atrasada"
                                   : isDueToday
-                                  ? "⚠️ Vence Hoje"
-                                  : "⏳ Vence em 24h"}
+                                  ? "Vence Hoje"
+                                  : "Em 24h"}
                               </span>
-                              <span className="text-[10px] text-slate-400 font-mono">
+                              <span className="text-[10px] text-slate-400 dark:text-zinc-500 font-mono tabular-nums">
                                 {format(dueDate, "dd/MM")} • {formatTaskTimeRange(t)}
                               </span>
                             </div>
-                            <h5 className="text-xs font-semibold text-slate-900 dark:text-white line-clamp-2">
+                            <h5 className="text-xs font-semibold text-slate-900 dark:text-zinc-100 line-clamp-2">
                               {t.title}
                             </h5>
-                            <div className="flex items-center justify-between text-[10px] text-slate-500 pt-0.5">
+                            <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-zinc-400 pt-0.5">
                               <span className="truncate max-w-[180px]">{t.category}</span>
-                              <span className="font-bold text-purple-600 dark:text-purple-400">
+                              <span className="font-mono font-semibold text-slate-700 dark:text-zinc-300">
                                 {t.priority}
                               </span>
                             </div>
@@ -1005,19 +1036,19 @@ export function HeaderCommandBar({
                 </div>
 
                 {/* Popover Footer */}
-                <div className="p-2.5 border-t border-slate-100 dark:border-white/5 bg-slate-50/50 dark:bg-[#100f1f] flex items-center justify-between text-xs">
+                <div className="px-3.5 py-2.5 border-t border-slate-100 dark:border-[#22222B] bg-[#FAFAFB] dark:bg-[#111116] flex items-center justify-between text-xs">
                   <button
                     type="button"
                     onClick={() => {
                       setIsNotificationOpen(false);
                       onOpenReportModal();
                     }}
-                    className="text-purple-600 dark:text-purple-400 hover:underline font-semibold text-[11px]"
+                    className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold text-[11px] cursor-pointer"
                   >
-                    Ver Relatório Completo de SLA
+                    Relatório de SLA
                   </button>
-                  <span className="text-[10px] text-slate-400">
-                    {totalBadgeAlertsCount} {totalBadgeAlertsCount === 1 ? "alerta ativo" : "alertas ativos"}
+                  <span className="text-[10px] text-slate-400 dark:text-zinc-500 tabular-nums">
+                    {totalBadgeAlertsCount} {totalBadgeAlertsCount === 1 ? "alerta" : "alertas"}
                   </span>
                 </div>
               </div>,
@@ -1025,43 +1056,40 @@ export function HeaderCommandBar({
             )}
         </div>
 
-        {/* Connected Accounts Status */}
+        {/* Connected Accounts Indicator */}
         <button
           onClick={onOpenAccountsModal}
-          className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border text-xs transition-all cursor-pointer ${
+          className={`flex items-center gap-1.5 px-2.5 h-8 sm:h-9 rounded-lg border text-xs transition-colors cursor-pointer ${
             connectedAccountsCount > 0
-              ? "bg-slate-50 dark:bg-[#16152a] border-slate-200 dark:border-[#282647] text-slate-700 dark:text-slate-300 hover:border-purple-400"
-              : "bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800 text-purple-700 dark:text-purple-300 hover:bg-purple-100/60"
+              ? "bg-transparent border-slate-200/80 dark:border-[#262632] text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-white/[0.06]"
+              : "bg-indigo-50 dark:bg-indigo-500/15 border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/70"
           }`}
           title="Gerenciar Contas Google Vinculadas"
         >
           <span
             className={`w-2 h-2 rounded-full shrink-0 ${
-              connectedAccountsCount > 0
-                ? "bg-emerald-500 shadow-xs shadow-emerald-500/50"
-                : "bg-slate-300 dark:bg-zinc-600"
+              connectedAccountsCount > 0 ? "bg-emerald-500" : "bg-slate-300 dark:bg-zinc-600"
             }`}
           />
-          <span className="font-semibold text-xs hidden md:inline">
+          <span className="font-medium text-xs hidden xl:inline">
             {connectedAccountsCount > 0
-              ? `${connectedAccountsCount} ${connectedAccountsCount === 1 ? "Conta Conectada" : "Contas Conectadas"}`
+              ? `${connectedAccountsCount} ${connectedAccountsCount === 1 ? "conta" : "contas"}`
               : "Vincular Google"}
           </span>
-          <span className="font-bold text-[11px] md:hidden whitespace-nowrap">
-            {connectedAccountsCount > 0 ? connectedAccountsCount : "Vincular"}
+          <span className="font-mono font-semibold text-[11px] xl:hidden">
+            {connectedAccountsCount > 0 ? connectedAccountsCount : "Google"}
           </span>
         </button>
 
-
-        {/* Theme Switcher Toggle (Light / Dark) */}
+        {/* Theme Switcher Toggle */}
         <button
           type="button"
           onClick={toggleTheme}
           aria-label="Alternar modo claro e escuro"
-          className="p-2 rounded-xl border border-slate-200 dark:border-[#282647] bg-white dark:bg-[#16152a] text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm active:scale-95"
+          className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
           title={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
         >
-          {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+          {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
         </button>
       </div>
     </header>
@@ -1081,10 +1109,10 @@ export function HeaderCommandBar({
 
     {/* Floating Confirmation Modal with Backdrop - Rendered outside header to avoid backdrop-filter coordinate containment */}
     {triageData && (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-5 bg-black/80 backdrop-blur-sm animate-in fade-in duration-150 overflow-y-auto">
-        <div className="relative w-full max-w-2xl my-auto flex flex-col rounded-2xl sm:rounded-3xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden transition-all max-h-[92dvh]">
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-2.5 sm:p-5 bg-slate-950/60 dark:bg-black/75 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
+        <div className="relative w-full max-w-2xl my-auto flex flex-col rounded-2xl bg-white dark:bg-[#13131A] border border-slate-200 dark:border-[#262632] shadow-2xl overflow-hidden transition-all max-h-[92dvh]">
           {/* Header of confirmation - Fixed */}
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-zinc-800 bg-slate-50/70 dark:bg-[#101118] shrink-0">
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-[#22222B] bg-[#FAFAFB] dark:bg-[#101016] shrink-0">
               <div className="flex items-center gap-2.5">
                 <div className={`p-1.5 rounded-xl shrink-0 ${
                   topSimilar && !isSimilarityDismissed
@@ -1670,23 +1698,23 @@ export function HeaderCommandBar({
               return (
                 <div
                   key={`toast-${item.occurrenceKey}`}
-                  className="pointer-events-auto rounded-2xl bg-white dark:bg-[#151428] border border-purple-300 dark:border-purple-600/70 shadow-2xl shadow-purple-900/20 p-3.5 space-y-2.5 animate-in fade-in slide-in-from-bottom-4 duration-200"
+                  className="pointer-events-auto rounded-xl bg-white dark:bg-[#14141B] border border-indigo-200 dark:border-indigo-500/40 shadow-popover p-3.5 space-y-2.5 animate-in fade-in slide-in-from-bottom-4 duration-200"
                 >
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <div className="p-2 rounded-xl bg-purple-600 text-white shrink-0 shadow-xs">
-                        <Bell className="w-4 h-4 animate-bounce" />
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="p-2 rounded-lg bg-indigo-600 text-white shrink-0">
+                        <Bell className="w-4 h-4" />
                       </div>
                       <div className="min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
                             Lembrete • {statusText}
                           </span>
-                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-semibold">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-medium">
                             {leadLabel}
                           </span>
                         </div>
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate mt-0.5">
+                        <h4 className="text-xs font-semibold text-slate-900 dark:text-zinc-100 truncate mt-0.5">
                           {item.task.title}
                         </h4>
                       </div>
@@ -1694,19 +1722,19 @@ export function HeaderCommandBar({
                     <button
                       type="button"
                       onClick={() => dismissReminderOccurrence(item.occurrenceKey)}
-                      className="p-1 text-slate-400 hover:text-slate-700 dark:hover:text-white shrink-0"
+                      className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white shrink-0 cursor-pointer"
                       title="Dispensar lembrete"
                     >
                       <X className="w-4 h-4" />
                     </button>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-300 px-2.5 py-1.5 rounded-xl bg-slate-50 dark:bg-[#0f0e1d] border border-slate-100 dark:border-white/5">
-                    <span className="flex items-center gap-1.5 font-mono font-semibold">
-                      <Clock className="w-3.5 h-3.5 text-purple-500" />
+                  <div className="flex items-center justify-between text-[11px] text-slate-600 dark:text-zinc-300 px-2.5 py-1.5 rounded-lg bg-slate-50 dark:bg-[#101016] border border-slate-200/70 dark:border-[#22222B]">
+                    <span className="flex items-center gap-1.5 font-mono font-medium tabular-nums">
+                      <Clock className="w-3.5 h-3.5 text-indigo-500" />
                       {format(item.startDate, "dd/MM")} • {rangeLabel}
                     </span>
-                    <span className="text-[10px] text-slate-400 truncate max-w-[110px]">
+                    <span className="text-[10px] text-slate-400 dark:text-zinc-500 truncate max-w-[110px]">
                       {item.task.category}
                     </span>
                   </div>
@@ -1715,14 +1743,14 @@ export function HeaderCommandBar({
                     <button
                       type="button"
                       onClick={() => snoozeReminderOccurrence(item.occurrenceKey, 5)}
-                      className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-[#282647] bg-white dark:bg-[#191830] text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#22203e] transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#262632] bg-white dark:bg-[#181820] text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#1F1F29] transition-colors cursor-pointer"
                     >
                       Adiar 5m
                     </button>
                     <button
                       type="button"
                       onClick={() => dismissReminderOccurrence(item.occurrenceKey)}
-                      className="px-2.5 py-1.5 rounded-xl border border-slate-200 dark:border-[#282647] bg-white dark:bg-[#191830] text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#22203e] transition-colors cursor-pointer"
+                      className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-[#262632] bg-white dark:bg-[#181820] text-[11px] font-medium text-slate-600 dark:text-zinc-300 hover:bg-slate-50 dark:hover:bg-[#1F1F29] transition-colors cursor-pointer"
                     >
                       Dispensar
                     </button>
@@ -1732,7 +1760,7 @@ export function HeaderCommandBar({
                         onSelectTask?.(item.task);
                         dismissReminderOccurrence(item.occurrenceKey);
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-bold shadow-xs transition-colors cursor-pointer"
+                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-semibold transition-colors cursor-pointer"
                     >
                       Abrir Demanda
                     </button>

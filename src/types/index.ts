@@ -214,6 +214,14 @@ export type NoteCategory = "reuniao" | "ideia" | "checklist" | "geral";
 
 export type NoteColor = "default" | "purple" | "blue" | "amber" | "emerald" | "rose";
 
+export type NoteOrganizeMode =
+  | "auto"
+  | "topics"
+  | "summary"
+  | "demand_scope"
+  | "checklist"
+  | "polish";
+
 export interface NoteChecklistItem {
   id: string;
   text: string;
@@ -236,6 +244,7 @@ export interface Note {
   checklist: NoteChecklistItem[];
   ai_summary?: string | null;
   key_decisions?: string[];
+  demand_readiness?: "pronta" | "parcial" | "referencia" | null;
   converted_task_ids?: string[];
   created_at: string;
   updated_at: string;

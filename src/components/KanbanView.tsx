@@ -134,17 +134,17 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     title: "A Fazer & Triagem",
     statuses: ["TODO", "TRIAGE"],
     accentColor: "border-slate-400 dark:border-zinc-500",
-    badgeBg: "bg-white dark:bg-zinc-800 text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-zinc-700/60 shadow-xs",
-    headerBg: "bg-slate-200/70 dark:bg-zinc-950/40",
+    badgeBg: "bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300",
+    headerBg: "bg-transparent",
     targetStatus: "TODO",
   },
   {
     id: "in_progress",
     title: "Em Andamento",
     statuses: ["IN_PROGRESS"],
-    accentColor: "border-blue-500 dark:border-indigo-500",
-    badgeBg: "bg-white dark:bg-indigo-950 text-blue-700 dark:text-indigo-300 border border-blue-200 dark:border-indigo-800/60 shadow-xs",
-    headerBg: "bg-blue-100/60 dark:bg-indigo-950/20",
+    accentColor: "border-indigo-500",
+    badgeBg: "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
+    headerBg: "bg-transparent",
     targetStatus: "IN_PROGRESS",
   },
   {
@@ -152,8 +152,8 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     title: "Aguardando / Validação",
     statuses: ["WAITING"],
     accentColor: "border-amber-500",
-    badgeBg: "bg-white dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 shadow-xs",
-    headerBg: "bg-amber-100/60 dark:bg-amber-950/20",
+    badgeBg: "bg-amber-50 dark:bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    headerBg: "bg-transparent",
     targetStatus: "WAITING",
   },
   {
@@ -161,8 +161,8 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     title: "Concluído",
     statuses: ["COMPLETED"],
     accentColor: "border-emerald-500",
-    badgeBg: "bg-white dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 shadow-xs",
-    headerBg: "bg-emerald-100/60 dark:bg-emerald-950/20",
+    badgeBg: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    headerBg: "bg-transparent",
     targetStatus: "COMPLETED",
   },
 ];
@@ -433,7 +433,7 @@ export function KanbanView({
   return (
     <div className="h-full flex flex-col space-y-3.5 select-none overflow-hidden">
       {/* Top Filter and Command Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3 rounded-2xl bg-white dark:bg-[#0b0c10] border border-slate-200 dark:border-zinc-800/80 shadow-xs shrink-0">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#111115] border border-slate-200/80 dark:border-[#22222B] shrink-0">
         <div className="flex items-center gap-2 flex-1 max-w-md">
           <div className="relative flex-1">
             <Search className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -442,18 +442,17 @@ export function KanbanView({
               placeholder="Filtrar tarefas no Kanban..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-xs pl-8 pr-3 py-1.5 rounded-lg bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 transition-all"
+              className="w-full h-8 text-xs pl-8 pr-3 rounded-lg bg-slate-100/80 dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] focus:bg-white dark:focus:bg-[#181820] text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
             />
           </div>
         </div>
 
         {/* Filter Pills and Action Buttons */}
         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar sm:flex-wrap">
-          {/* Priority Quick Filter */}
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value as any)}
-            className="text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-slate-700 dark:text-zinc-300 focus:outline-hidden cursor-pointer shrink-0 shadow-xs"
+            className="h-8 text-xs px-2.5 rounded-lg bg-white dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] text-slate-700 dark:text-zinc-300 focus:outline-none focus:border-indigo-500 cursor-pointer shrink-0"
           >
             <option value="all">Todas Prioridades</option>
             <option value="P1">P1 - Crítica</option>
@@ -462,24 +461,22 @@ export function KanbanView({
             <option value="P4">P4 - Baixa</option>
           </select>
 
-          {/* Add Section Button */}
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
-            className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-zinc-200 border border-slate-200 dark:border-zinc-700 transition-all shrink-0 cursor-pointer"
+            className="h-8 inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium bg-white hover:bg-slate-50 dark:bg-[#16161C] dark:hover:bg-[#1C1C24] text-slate-700 dark:text-zinc-200 border border-slate-200/80 dark:border-[#24242F] transition-colors shrink-0 cursor-pointer"
             title="Adicionar uma nova seção customizada ao fluxo Kanban"
           >
             <Plus className="w-3.5 h-3.5 text-indigo-500" />
             <span>Nova Seção</span>
           </button>
 
-          {/* Reset Columns Button (if modified) */}
           {(columns.length !== DEFAULT_COLUMNS.length ||
             columns.some((c, i) => c.title !== DEFAULT_COLUMNS[i]?.title)) && (
             <button
               type="button"
               onClick={handleResetColumns}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all shrink-0 cursor-pointer"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors shrink-0 cursor-pointer"
               title="Restaurar seções originais do Kanban"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -498,18 +495,18 @@ export function KanbanView({
               key={col.id}
               type="button"
               onClick={() => setActiveMobileColId(col.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all shrink-0 cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors shrink-0 cursor-pointer ${
                 isActive
-                  ? "bg-indigo-600 text-white border-indigo-500 shadow-xs"
-                  : "bg-white dark:bg-[#0b0c10] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-zinc-800"
+                  ? "bg-indigo-600 text-white border-indigo-600 font-semibold"
+                  : "bg-white dark:bg-[#111115] text-slate-600 dark:text-zinc-300 border-slate-200/80 dark:border-[#22222B]"
               }`}
             >
               <span className="truncate max-w-[140px]">{col.title}</span>
               <span
-                className={`text-[10px] font-mono px-1.5 py-0.2 rounded-md font-bold ${
+                className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold tabular-nums ${
                   isActive
                     ? "bg-white/20 text-white"
-                    : "bg-slate-100 dark:bg-zinc-800 text-slate-600 dark:text-zinc-400"
+                    : "bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-zinc-400"
                 }`}
               >
                 {count}
@@ -519,8 +516,8 @@ export function KanbanView({
         })}
       </div>
 
-      {/* Kanban Columns Container (Single Active Column on Mobile, Horizontal Multi-Column on md+) */}
-      <div className="w-full flex-1 flex gap-3 sm:gap-4 min-h-0 overflow-x-hidden md:overflow-x-auto pb-2 md:pb-4 items-stretch custom-scrollbar">
+      {/* Kanban Columns Container */}
+      <div className="w-full flex-1 flex gap-3.5 min-h-0 overflow-x-hidden md:overflow-x-auto pb-2 md:pb-3 items-stretch">
         {columns.map((col) => {
           const colTasks = filteredTasks.filter((t) => col.statuses.includes(t.status));
           const isOverThisCol = draggedOverColId === col.id;
@@ -553,15 +550,15 @@ export function KanbanView({
               }}
               className={`${
                 isMobileActiveCol ? "flex" : "hidden"
-              } md:flex flex-col rounded-2xl bg-slate-100/90 dark:bg-[#0b0c10] border transition-all duration-200 overflow-hidden flex-1 w-full min-w-0 md:min-w-[270px] shadow-xs ${
+              } md:flex flex-col rounded-xl bg-slate-200/45 dark:bg-[#0E0E13] border transition-all duration-150 overflow-hidden flex-1 w-full min-w-0 md:min-w-[276px] ${
                 isOverThisCol
-                  ? "border-indigo-500 ring-2 ring-indigo-500/50 bg-indigo-50/50 dark:bg-[#10121d]"
-                  : "border-slate-200/90 dark:border-zinc-800/80"
+                  ? "border-indigo-500 ring-2 ring-indigo-500/30 bg-indigo-50/40 dark:bg-indigo-500/[0.06]"
+                  : "border-slate-200/80 dark:border-[#1E1E27]"
               }`}
             >
-              {/* Column Header */}
+              {/* Clean Architectural Column Header */}
               <div
-                className={`p-3 border-b border-slate-200/90 dark:border-zinc-800/80 flex items-center justify-between border-t-2 ${col.accentColor} ${col.headerBg}`}
+                className={`px-3.5 py-2.5 border-b border-slate-200/75 dark:border-[#1E1E27] flex items-center justify-between border-t-2 ${col.accentColor}`}
               >
                 {isEditing ? (
                   /* Inline Renaming Input */
@@ -678,18 +675,10 @@ export function KanbanView({
                           setDraggedOverColId(null);
                         }}
                         onClick={() => onSelectTask(task)}
-                        className={`group relative p-3 rounded-xl border border-l-[3px] transition-all cursor-grab active:cursor-grabbing shadow-2xs space-y-2 ${
-                          task.priority === "P1"
-                            ? "border-l-rose-500"
-                            : task.priority === "P2"
-                            ? "border-l-amber-500"
-                            : task.priority === "P3"
-                            ? "border-l-indigo-500/80"
-                            : "border-l-slate-300 dark:border-l-zinc-700"
-                        } ${
+                        className={`group relative p-3.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing space-y-2 ${
                           isDraggingThis
-                            ? "opacity-35 scale-95 border-dashed border-indigo-500 bg-slate-50 dark:bg-zinc-900"
-                            : "bg-white dark:bg-[#111217] hover:bg-slate-50/80 dark:hover:bg-[#161820] border-slate-200 dark:border-zinc-800/80 hover:border-slate-300 dark:hover:border-zinc-700 hover:shadow-md"
+                            ? "opacity-35 scale-[0.98] border-dashed border-indigo-500 bg-slate-50 dark:bg-[#15151B]"
+                            : "bg-white dark:bg-[#15151B] hover:border-slate-300 dark:hover:border-[#323240] border-slate-200/85 dark:border-[#23232D] shadow-xs-subtle"
                         }`}
                         title="Clique para abrir detalhes, ou arraste para mudar de etapa"
                       >

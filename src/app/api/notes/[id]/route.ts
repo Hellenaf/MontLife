@@ -65,6 +65,9 @@ export async function PATCH(
       ...(Array.isArray(body.checklist) ? { checklist: body.checklist } : {}),
       ...(body.ai_summary !== undefined ? { ai_summary: body.ai_summary } : {}),
       ...(Array.isArray(body.key_decisions) ? { key_decisions: body.key_decisions } : {}),
+      ...(body.demand_readiness !== undefined
+        ? { demand_readiness: body.demand_readiness }
+        : {}),
       ...(Array.isArray(body.converted_task_ids)
         ? { converted_task_ids: body.converted_task_ids }
         : {}),

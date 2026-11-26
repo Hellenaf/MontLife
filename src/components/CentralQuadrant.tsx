@@ -770,95 +770,103 @@ export function CentralQuadrant({
   const currentTimeTopPx = (currentHour - START_HOUR) * 56 + (currentMinute / 60) * 56;
 
   return (
-    <main className="flex-1 h-full flex flex-col bg-slate-100/50 dark:bg-[#0c0d13] overflow-hidden transition-colors duration-200">
-      {/* Top Tab Bar */}
-      <div className="h-12 border-b border-slate-200 dark:border-zinc-800/80 px-3 sm:px-6 flex items-center justify-between gap-2 shrink-0 bg-white dark:bg-[#101118] overflow-x-auto no-scrollbar">
-        <div className="flex items-center gap-1.5 shrink-0">
+    <main className="flex-1 h-full flex flex-col bg-white dark:bg-[#111115] overflow-hidden transition-colors duration-200">
+      {/* Top Underline Tab Bar */}
+      <div className="h-12 border-b border-slate-200/75 dark:border-[#1F1F28] px-4 sm:px-6 flex items-center justify-between gap-2 shrink-0 bg-white dark:bg-[#111115] overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-4 h-full shrink-0">
           {onBackToTasks && (
             <button
               type="button"
               onClick={onBackToTasks}
-              className="lg:hidden flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors mr-1 shrink-0 cursor-pointer"
+              className="lg:hidden flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-700 dark:text-zinc-200 transition-colors shrink-0 cursor-pointer"
               title="Voltar para a lista de demandas"
             >
-              <ChevronLeft className="w-4 h-4" />
+              <ChevronLeft className="w-3.5 h-3.5" />
               <span>Lista</span>
             </button>
           )}
 
           <button
+            type="button"
             onClick={() => setActiveTab("details")}
-            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+            className={`relative h-full flex items-center gap-1.5 text-xs font-semibold transition-colors shrink-0 cursor-pointer ${
               activeTab === "details"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800"
+                ? "text-slate-950 dark:text-white"
+                : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
             }`}
           >
-            <FileText className="w-3.5 h-3.5" />
-            <span className="sm:hidden">Detalhes</span>
-            <span className="hidden sm:inline">Detalhes da Demanda</span>
+            <FileText className={`w-3.5 h-3.5 ${activeTab === "details" ? "text-indigo-600 dark:text-indigo-400" : ""}`} />
+            <span>Detalhes</span>
+            {activeTab === "details" && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-indigo-600 dark:bg-indigo-400" />
+            )}
           </button>
 
           <button
+            type="button"
             onClick={() => setActiveTab("study")}
-            className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+            className={`relative h-full flex items-center gap-1.5 text-xs font-semibold transition-colors shrink-0 cursor-pointer ${
               activeTab === "study"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-zinc-800"
+                ? "text-slate-950 dark:text-white"
+                : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
             }`}
           >
-            <Youtube className="w-3.5 h-3.5 text-rose-500" />
+            <Youtube className={`w-3.5 h-3.5 ${activeTab === "study" ? "text-rose-500" : "text-slate-400 dark:text-zinc-500"}`} />
             <span className="sm:hidden">Estudos</span>
-            <span className="hidden sm:inline">Estudo & Tutoriais</span>
+            <span className="hidden sm:inline">Estudo & Referências</span>
             {selectedTask?.learning_resources?.youtube_videos?.length ? (
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
             ) : null}
+            {activeTab === "study" && (
+              <span className="absolute bottom-0 left-0 right-0 h-[2px] rounded-t-full bg-indigo-600 dark:bg-indigo-400" />
+            )}
           </button>
         </div>
 
         <div className="flex items-center gap-2 shrink-0">
           {selectedTask && (
-            <div className="hidden md:flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 shrink-0">
-              <span>Demanda:</span>
-              <span className="font-mono text-[11px] text-blue-600 dark:text-blue-400 font-semibold truncate max-w-[180px]">
-                {selectedTask.title}
-              </span>
-            </div>
+            <span className="hidden md:inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400 dark:text-zinc-500 truncate max-w-[200px]">
+              <span className="truncate">{selectedTask.category}</span>
+            </span>
           )}
 
           {onToggleKpiPanel && (
             <button
               type="button"
               onClick={onToggleKpiPanel}
-              className="hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-zinc-800 bg-slate-50 dark:bg-[#161724] hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 text-[11px] font-semibold transition-colors cursor-pointer"
-              title={isKpiPanelOpen ? "Recolher painel de métricas para ampliar detalhes" : "Mostrar painel de métricas e Briefing IA"}
+              className={`hidden lg:inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border text-[11px] font-semibold transition-colors cursor-pointer ${
+                isKpiPanelOpen
+                  ? "bg-indigo-50 dark:bg-indigo-500/15 border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300"
+                  : "border-slate-200/80 dark:border-[#24242F] bg-white dark:bg-[#16161C] hover:bg-slate-50 dark:hover:bg-[#1C1C24] text-slate-600 dark:text-zinc-300"
+              }`}
+              title={isKpiPanelOpen ? "Fechar painel de Métricas & IA" : "Abrir painel de Métricas & Briefing IA"}
             >
               {isKpiPanelOpen ? (
-                <PanelRightClose className="w-3.5 h-3.5 text-indigo-500" />
+                <PanelRightClose className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               ) : (
-                <PanelRightOpen className="w-3.5 h-3.5 text-indigo-500" />
+                <PanelRightOpen className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               )}
-              <span className="hidden xl:inline">Métricas</span>
+              <span>Métricas & IA</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* Sticky Primary Action & Status Bar (Desktop + Mobile unified — no scrolling to complete!) */}
+      {/* Sticky Primary Action & Status Bar */}
       {activeTab === "details" && selectedTask && (
-        <div className="shrink-0 bg-white/95 dark:bg-[#12131d]/95 backdrop-blur-sm border-b border-slate-200/90 dark:border-zinc-800/80 px-3 sm:px-5 py-2 flex items-center justify-between gap-2 flex-wrap z-20">
-          {/* Left: Interactive Status Switcher (A Fazer -> Em Andamento -> Aguardando) */}
+        <div className="shrink-0 bg-[#FAFAFB]/95 dark:bg-[#0E0E13]/95 backdrop-blur-sm border-b border-slate-200/75 dark:border-[#1F1F28] px-4 sm:px-6 py-2 flex items-center justify-between gap-2 flex-wrap z-20">
+          {/* Left: Segmented Status Switcher */}
           <div className="flex items-center gap-1.5 flex-wrap">
             {selectedTask.status === "COMPLETED" ? (
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-500/30">
                   <CheckCircle2 className="w-3.5 h-3.5" />
                   Concluída
                 </span>
                 <button
                   type="button"
                   onClick={() => onUpdateStatus(selectedTask.id, "TODO")}
-                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium bg-white dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] hover:bg-slate-50 dark:hover:bg-[#1C1C24] text-slate-700 dark:text-zinc-200 transition-colors cursor-pointer"
                 >
                   <RotateCcw className="w-3 h-3 text-indigo-500" />
                   <span>Reabrir</span>
@@ -866,7 +874,7 @@ export function CentralQuadrant({
               </div>
             ) : selectedTask.status === "CANCELED" ? (
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-700 border border-rose-200 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold bg-rose-50 text-rose-700 border border-rose-200/80 dark:bg-rose-500/15 dark:text-rose-400 dark:border-rose-500/30">
                   <Ban className="w-3.5 h-3.5" />
                   Cancelada
                 </span>
@@ -877,12 +885,12 @@ export function CentralQuadrant({
                     className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors cursor-pointer"
                   >
                     <RotateCcw className="w-3 h-3" />
-                    <span>Reabrir Demanda</span>
+                    <span>Reabrir</span>
                   </button>
                 )}
               </div>
             ) : (
-              <div className="inline-flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-[#0c0d14] border border-slate-200/80 dark:border-zinc-800 text-[11px]">
+              <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-200/60 dark:bg-[#16161C] border border-slate-200/70 dark:border-[#23232D] text-[11px]">
                 {[
                   { status: "TODO" as TaskStatus, label: "A Fazer", dot: "bg-slate-400" },
                   { status: "IN_PROGRESS" as TaskStatus, label: "Em Andamento", dot: "bg-indigo-500" },
@@ -896,10 +904,10 @@ export function CentralQuadrant({
                       key={stage.status}
                       type="button"
                       onClick={() => onUpdateStatus(selectedTask.id, stage.status)}
-                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md font-medium transition-all cursor-pointer ${
                         isCurrent
-                          ? "bg-white dark:bg-[#1e2030] text-slate-900 dark:text-white shadow-2xs"
-                          : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                          ? "bg-white dark:bg-[#22222C] text-slate-950 dark:text-white font-semibold shadow-xs-subtle"
+                          : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
                       }`}
                     >
                       <span className={`w-1.5 h-1.5 rounded-full ${stage.dot}`} />
@@ -911,14 +919,14 @@ export function CentralQuadrant({
             )}
           </div>
 
-          {/* Right: Meet CTA + Concluir + Adiar + Secondary More Menu */}
+          {/* Right: Meet CTA + Adiar + Concluir + Overflow */}
           <div className="flex items-center gap-1.5 shrink-0 ml-auto">
             {selectedTask.meet_link && (
               <a
                 href={selectedTask.meet_link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 transition-colors"
+                className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-xs font-semibold bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-500/15 dark:hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-500/30 transition-colors"
                 title="Entrar na sala do Google Meet"
               >
                 <Video className="w-3.5 h-3.5" />
@@ -931,7 +939,7 @@ export function CentralQuadrant({
                 <button
                   type="button"
                   onClick={() => onRequestExtendDeadline(selectedTask)}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-700 dark:text-slate-200 transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg text-xs font-medium bg-white dark:bg-[#16161C] hover:bg-slate-50 dark:hover:bg-[#1C1C24] border border-slate-200/80 dark:border-[#24242F] text-slate-700 dark:text-zinc-200 transition-colors cursor-pointer"
                   title="Adiar ou estender prazo"
                 >
                   <Calendar className="w-3.5 h-3.5 text-amber-500" />
@@ -941,7 +949,7 @@ export function CentralQuadrant({
                 <button
                   type="button"
                   onClick={() => onRequestResolution(selectedTask)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-xs transition-all active:scale-95 cursor-pointer"
+                  className="inline-flex items-center gap-1.5 px-3 h-8 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white transition-all active:scale-[0.98] cursor-pointer"
                   title="Concluir demanda"
                 >
                   <Check className="w-3.5 h-3.5" />
@@ -950,7 +958,7 @@ export function CentralQuadrant({
               </>
             )}
 
-            {/* More Actions Dropdown (Transfer, Recurrence, Cancel) */}
+            {/* More Actions Dropdown */}
             <div className="relative">
               <button
                 type="button"
@@ -958,7 +966,7 @@ export function CentralQuadrant({
                   e.stopPropagation();
                   setIsMoreActionsOpen((prev) => !prev);
                 }}
-                className="p-1.5 rounded-xl border border-slate-200 dark:border-zinc-800 bg-white dark:bg-[#161724] text-slate-500 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-lg border border-slate-200/80 dark:border-[#24242F] bg-white dark:bg-[#16161C] text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-[#1C1C24] flex items-center justify-center transition-colors cursor-pointer"
                 title="Mais opções da demanda"
                 aria-label="Mais opções da demanda"
               >
@@ -968,7 +976,7 @@ export function CentralQuadrant({
               {isMoreActionsOpen && (
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 mt-1.5 w-52 rounded-xl bg-white dark:bg-[#171828] border border-slate-200 dark:border-zinc-700 shadow-xl py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
+                  className="absolute right-0 mt-1.5 w-52 rounded-xl bg-white dark:bg-[#16161D] border border-slate-200 dark:border-[#282834] shadow-popover py-1 z-30 animate-in fade-in zoom-in-95 duration-100"
                 >
                   {onTransferTask && (
                     <button
@@ -977,7 +985,7 @@ export function CentralQuadrant({
                         onTransferTask(selectedTask, isWorkItem(selectedTask) ? "personal" : "work");
                         setIsMoreActionsOpen(false);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                      className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
                     >
                       <ArrowRightLeft className="w-3.5 h-3.5 text-indigo-500" />
                       <span>
@@ -995,7 +1003,7 @@ export function CentralQuadrant({
                       setIsAddingRecurrence(true);
                       setIsMoreActionsOpen(false);
                     }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                    className="w-full flex items-center gap-2 px-3 py-2 text-xs text-slate-700 dark:text-zinc-200 hover:bg-slate-50 dark:hover:bg-white/[0.05] transition-colors cursor-pointer"
                   >
                     <Repeat className="w-3.5 h-3.5 text-indigo-500" />
                     <span>Registrar Nova Ocorrência</span>
@@ -1005,14 +1013,14 @@ export function CentralQuadrant({
                     selectedTask.status !== "CANCELED" &&
                     selectedTask.status !== "COMPLETED" && (
                       <>
-                        <div className="my-1 border-t border-slate-100 dark:border-zinc-800" />
+                        <div className="my-1 border-t border-slate-100 dark:border-[#22222B]" />
                         <button
                           type="button"
                           onClick={() => {
                             onRequestCancelTask(selectedTask);
                             setIsMoreActionsOpen(false);
                           }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                          className="w-full flex items-center gap-2 px-3 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-500/10 transition-colors cursor-pointer"
                         >
                           <Ban className="w-3.5 h-3.5" />
                           <span>Cancelar Demanda</span>
@@ -1026,39 +1034,39 @@ export function CentralQuadrant({
         </div>
       )}
 
-      {/* Main Tab Content */}
-      <div className="flex-1 overflow-y-auto p-3 sm:p-5 pb-6 lg:pb-5">
-        {/* TAB 2: DETAILS OF SELECTED ITEM */}
+      {/* Main Content Area */}
+      <div className="flex-1 overflow-y-auto">
+        {/* TAB 1: LINEAR-STYLE 2-ZONE DETAILS WORKSPACE */}
         {activeTab === "details" && (
-          <div className="max-w-4xl mx-auto space-y-3.5">
-            {!selectedTask ? (
-              <div className="p-6 sm:p-8 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 text-center space-y-2 shadow-sm">
-                <FileText className="w-8 h-8 mx-auto opacity-30 text-indigo-500" />
-                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300">
-                  Nenhuma demanda selecionada
-                </h3>
-                <p className="text-xs text-slate-400 max-w-sm mx-auto leading-relaxed">
-                  Selecione uma tarefa na lista para visualizar e editar todos os detalhes.
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* 1. TITLE-FIRST HERO CARD + LINEAR-STYLE PROPERTIES STRIP + DESCRIPTION */}
-                <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-4 shadow-sm">
-                  {/* Banner if Task is Canceled */}
-                  {selectedTask.status === "CANCELED" && (
-                    <div className="p-3.5 rounded-xl bg-rose-50/90 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 space-y-2 animate-in fade-in">
-                      <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-bold text-xs">
-                        <Ban className="w-4 h-4 shrink-0" />
-                        <span>Motivo do Cancelamento</span>
-                      </div>
-                      <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
-                        {selectedTask.cancel_reason || "Cancelada pelo usuário."}
-                      </p>
+          !selectedTask ? (
+            <div className="h-full flex flex-col items-center justify-center p-8 text-center space-y-2">
+              <FileText className="w-8 h-8 opacity-25 text-indigo-500" />
+              <h3 className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                Nenhuma demanda selecionada
+              </h3>
+              <p className="text-xs text-slate-400 dark:text-zinc-500 max-w-xs leading-relaxed">
+                Selecione uma demanda na lista à esquerda para visualizar e editar os detalhes.
+              </p>
+            </div>
+          ) : (
+            <div className="min-h-full grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_280px]">
+              {/* LEFT ZONE: SPACIOUS EDITORIAL CANVAS */}
+              <div className="px-5 sm:px-8 py-6 space-y-6 min-w-0">
+                {/* Canceled Banner */}
+                {selectedTask.status === "CANCELED" && (
+                  <div className="p-3.5 rounded-xl bg-rose-50/80 dark:bg-rose-950/30 border border-rose-200/80 dark:border-rose-900/50 space-y-1.5">
+                    <div className="flex items-center gap-2 text-rose-700 dark:text-rose-400 font-semibold text-xs">
+                      <Ban className="w-4 h-4 shrink-0" />
+                      <span>Motivo do Cancelamento</span>
                     </div>
-                  )}
+                    <p className="text-xs text-slate-700 dark:text-zinc-300 whitespace-pre-wrap leading-relaxed">
+                      {selectedTask.cancel_reason || "Cancelada pelo usuário."}
+                    </p>
+                  </div>
+                )}
 
-                  {/* TITLE FIRST — Prominent & Immediately Editable */}
+                {/* TITLE + DESCRIPTION */}
+                <div className="space-y-4">
                   {isEditingTitle ? (
                     <div className="flex items-center gap-1.5 animate-in fade-in">
                       <input
@@ -1066,14 +1074,14 @@ export function CentralQuadrant({
                         value={tempTitle}
                         onChange={(e) => setTempTitle(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleSaveTitle()}
-                        className="flex-1 px-3 py-2 rounded-xl text-base sm:text-lg font-bold border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20"
+                        className="flex-1 px-3 py-2 rounded-lg text-lg sm:text-xl font-bold border border-indigo-500 bg-white dark:bg-[#16161C] text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500/20"
                         placeholder="Título da demanda..."
                         autoFocus
                       />
                       <button
                         type="button"
                         onClick={handleSaveTitle}
-                        className="p-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 shadow-sm cursor-pointer"
+                        className="p-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 cursor-pointer"
                         title="Salvar título"
                       >
                         <Check className="w-4 h-4" />
@@ -1081,17 +1089,17 @@ export function CentralQuadrant({
                       <button
                         type="button"
                         onClick={() => setIsEditingTitle(false)}
-                        className="p-2 rounded-xl bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                        className="p-2 rounded-lg bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300 hover:text-slate-900 dark:hover:text-white cursor-pointer"
                         title="Cancelar"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
-                    <div className="flex items-start justify-between gap-2 group">
+                    <div className="flex items-start justify-between gap-3 group">
                       <h2
                         onClick={handleStartEditTitle}
-                        className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-snug flex-1 cursor-text hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                        className="text-xl sm:text-[22px] font-bold tracking-tight text-slate-950 dark:text-zinc-50 leading-snug flex-1 cursor-text hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
                         title="Clique para editar o título"
                       >
                         {selectedTask.title}
@@ -1099,7 +1107,7 @@ export function CentralQuadrant({
                       <button
                         type="button"
                         onClick={handleStartEditTitle}
-                        className="opacity-70 lg:opacity-0 lg:group-hover:opacity-100 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all shrink-0 cursor-pointer"
+                        className="opacity-70 lg:opacity-0 lg:group-hover:opacity-100 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-white/[0.06] text-slate-400 hover:text-slate-700 dark:hover:text-white transition-all shrink-0 cursor-pointer"
                         title="Editar título"
                       >
                         <Edit3 className="w-4 h-4" />
@@ -1107,160 +1115,12 @@ export function CentralQuadrant({
                     </div>
                   )}
 
-                  {/* CLEAN COMPACT PROPERTIES GRID (Notion / Linear style) */}
-                  <div className="p-3 rounded-xl bg-slate-50/90 dark:bg-[#0e0f17] border border-slate-200/80 dark:border-zinc-800/80 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2.5 text-xs">
-                    {/* Prioridade (inline 1-click pills) */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
-                        Prioridade
-                      </span>
-                      <div className="flex items-center gap-1">
-                        {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
-                          const isSel = selectedTask.priority === p;
-                          const activeClass =
-                            p === "P1"
-                              ? "bg-rose-600 text-white border-rose-600"
-                              : p === "P2"
-                              ? "bg-amber-500 text-white border-amber-500"
-                              : p === "P3"
-                              ? "bg-indigo-600 text-white border-indigo-600"
-                              : "bg-slate-600 text-white border-slate-600";
-                          return (
-                            <button
-                              key={p}
-                              type="button"
-                              onClick={() => handleChangeDetailPriority(p)}
-                              className={`px-2 py-0.5 rounded-md border font-mono text-[11px] font-bold transition-all cursor-pointer ${
-                                isSel
-                                  ? activeClass
-                                  : "bg-white dark:bg-[#161724] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-zinc-800 hover:border-indigo-400"
-                              }`}
-                            >
-                              {p}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Prazo & Horário (clickable to open Schedule editor) */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
-                        Prazo / Agenda
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => setIsScheduleExpanded((prev) => !prev)}
-                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white dark:bg-[#161724] border border-slate-200 dark:border-zinc-800 hover:border-indigo-400 text-[11px] font-mono font-semibold text-slate-800 dark:text-slate-200 transition-colors cursor-pointer truncate"
-                        title="Clique para editar horário, lembrete e link do Meet"
-                      >
-                        <Clock className="w-3 h-3 text-indigo-500 shrink-0" />
-                        <span className="truncate">
-                          {format(parseISO(getTaskScheduleDate(selectedTask)), "dd/MM/yy", { locale: ptBR })}
-                          {(hasScheduledTimeRange(selectedTask) || !isTaskAllDay(selectedTask))
-                            ? ` • ${formatTaskTimeRange(selectedTask)}`
-                            : ""}
-                        </span>
-                        {selectedTask.reminder_enabled && (
-                          <Bell className="w-3 h-3 text-purple-500 shrink-0" />
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Categoria (inline editable) */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
-                        Categoria
-                      </span>
-                      {isEditingCategory ? (
-                        <div className="flex items-center gap-1">
-                          <CategoryCombobox
-                            value={tempCategory}
-                            onChange={(val) => setTempCategory(val)}
-                            categories={categoriesList}
-                            className="w-40"
-                            autoFocus
-                          />
-                          <button
-                            type="button"
-                            onClick={handleSaveCategory}
-                            className="p-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 cursor-pointer"
-                            title="Salvar categoria"
-                          >
-                            <Check className="w-3 h-3" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setIsEditingCategory(false)}
-                            className="p-1.5 rounded-lg bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 cursor-pointer"
-                            title="Cancelar"
-                          >
-                            <X className="w-3 h-3" />
-                          </button>
-                        </div>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setTempCategory(selectedTask.category);
-                            setIsEditingCategory(true);
-                          }}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-[#161724] border border-slate-200 dark:border-zinc-800 hover:border-indigo-400 text-[11px] font-semibold text-slate-700 dark:text-slate-200 transition-colors group cursor-pointer truncate max-w-[200px]"
-                          title="Clique para editar a categoria"
-                        >
-                          <span className="truncate">{selectedTask.category}</span>
-                          <Edit2 className="w-2.5 h-2.5 opacity-60 group-hover:opacity-100 shrink-0" />
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Tipo + Espaço */}
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 shrink-0">
-                        Tipo / Espaço
-                      </span>
-                      <div className="flex items-center gap-1.5">
-                        {onUpdateItemType && (
-                          <select
-                            value={selectedTask.item_type || "task"}
-                            onChange={(e) =>
-                              onUpdateItemType(selectedTask.id, e.target.value as ItemType)
-                            }
-                            aria-label="Tipo do item"
-                            className="px-2 py-0.5 rounded-md bg-white dark:bg-[#161724] border border-slate-200 dark:border-zinc-800 text-[11px] font-semibold text-slate-700 dark:text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
-                          >
-                            <option value="task">Tarefa</option>
-                            <option value="activity">Atividade</option>
-                            <option value="reminder">Lembrete</option>
-                          </select>
-                        )}
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold border ${
-                            isWorkItem(selectedTask)
-                              ? "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20"
-                              : "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-500/10 dark:text-purple-300 dark:border-purple-500/20"
-                          }`}
-                        >
-                          {isWorkItem(selectedTask) ? (
-                            <>
-                              <Briefcase className="w-3 h-3" /> Trabalho
-                            </>
-                          ) : (
-                            <>
-                              <User className="w-3 h-3" /> Pessoal
-                            </>
-                          )}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Description with Formatted Text & Inline Edit */}
+                  {/* Description */}
                   {isEditingDescription ? (
-                    <div className="space-y-2 animate-in fade-in">
+                    <div className="space-y-2.5 animate-in fade-in">
                       <div className="flex items-center justify-between">
-                        <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
-                          Editar Descrição:
+                        <label className="text-xs font-medium text-slate-500 dark:text-zinc-400">
+                          Editar descrição
                         </label>
                         <button
                           type="button"
@@ -1274,7 +1134,7 @@ export function CentralQuadrant({
                         rows={6}
                         value={tempDescription}
                         onChange={(e) => setTempDescription(e.target.value)}
-                        className="w-full p-3 rounded-xl text-xs sm:text-sm border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-900 dark:text-slate-100 outline-none focus:ring-2 focus:ring-indigo-500/20 leading-relaxed resize-y"
+                        className="w-full p-3.5 rounded-xl text-sm border border-indigo-500 bg-white dark:bg-[#16161C] text-slate-900 dark:text-zinc-100 outline-none focus:ring-2 focus:ring-indigo-500/20 leading-relaxed resize-y"
                         placeholder="Descrição da demanda..."
                         autoFocus
                       />
@@ -1282,137 +1142,69 @@ export function CentralQuadrant({
                         <button
                           type="button"
                           onClick={() => setIsEditingDescription(false)}
-                          className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-zinc-800 cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-400 hover:bg-slate-100 dark:hover:bg-white/[0.06] cursor-pointer"
                         >
                           Cancelar
                         </button>
                         <button
                           type="button"
                           onClick={handleSaveDescription}
-                          className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white shadow-sm cursor-pointer"
+                          className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white cursor-pointer"
                         >
                           Salvar Descrição
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="group relative">
-                      <div className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">
+                    <div className="group relative space-y-2">
+                      <div className="text-[14px] text-slate-700 dark:text-zinc-300 leading-7">
                         <FormattedText text={selectedTask.description || "Nenhuma descrição fornecida."} />
                       </div>
-                      <div className="mt-1.5">
-                        <button
-                          type="button"
-                          onClick={handleStartEditDescription}
-                          className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
-                          title="Editar texto da descrição"
-                        >
-                          <Edit3 className="w-3 h-3" />
-                          <span>Editar descrição</span>
-                        </button>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Compact Inline Tags Strip */}
-                  <div className="pt-2.5 border-t border-slate-100 dark:border-zinc-800/80 flex flex-wrap items-center gap-1.5">
-                    <Tag className="w-3.5 h-3.5 text-slate-400 mr-0.5 shrink-0" />
-                    {selectedTask.tags?.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-zinc-700"
-                      >
-                        <span>#{tag}</span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveTag(tag)}
-                          className="text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 transition-colors cursor-pointer"
-                          title={`Remover tag #${tag}`}
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </span>
-                    ))}
-
-                    {isAddingTag ? (
-                      <div className="flex items-center gap-1">
-                        <input
-                          type="text"
-                          placeholder="Nova tag..."
-                          value={newTagInput}
-                          onChange={(e) => setNewTagInput(e.target.value)}
-                          onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
-                          className="px-2 py-0.5 rounded-md text-xs border border-indigo-400 dark:border-indigo-600 bg-white dark:bg-[#1a1b26] text-slate-800 dark:text-slate-100 outline-none w-28"
-                          autoFocus
-                        />
-                        <button
-                          type="button"
-                          onClick={handleAddTag}
-                          className="p-1 rounded bg-indigo-600 text-white cursor-pointer"
-                        >
-                          <Check className="w-3 h-3" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setIsAddingTag(false)}
-                          className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
-                        >
-                          <X className="w-3 h-3" />
-                        </button>
-                      </div>
-                    ) : (
                       <button
                         type="button"
-                        onClick={() => setIsAddingTag(true)}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 font-semibold transition-colors cursor-pointer"
+                        onClick={handleStartEditDescription}
+                        className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-400 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors cursor-pointer"
+                        title="Editar texto da descrição"
                       >
-                        <Plus className="w-3 h-3" /> Tag
+                        <Edit3 className="w-3 h-3" />
+                        <span>Editar descrição</span>
                       </button>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Validation Steps Checklist Card */}
-                <div className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-3 shadow-sm">
+                {/* CHECKLIST / PONTOS DE VALIDAÇÃO */}
+                <div className="pt-6 border-t border-slate-200/75 dark:border-[#1F1F28] space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2 min-w-0">
-                      <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
-                        <CheckSquare className="w-4 h-4" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className="text-xs font-bold text-slate-900 dark:text-white">
-                            Pontos de Validação & Etapas de Conclusão
-                          </h3>
-                          {selectedTask.validation_steps && selectedTask.validation_steps.length > 0 && (
-                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-                              {selectedTask.validation_steps.filter((s) => s.completed).length} de {selectedTask.validation_steps.length} concluídas
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          Checklist sugerido pela IA ou personalizado para orientar a finalização da demanda.
-                        </p>
-                      </div>
+                      <CheckSquare className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                      <h3 className="text-xs font-semibold text-slate-900 dark:text-zinc-100 uppercase tracking-wider">
+                        Checklist & Validação
+                      </h3>
+                      {selectedTask.validation_steps && selectedTask.validation_steps.length > 0 && (
+                        <span className="text-[11px] font-mono text-slate-500 dark:text-zinc-400 tabular-nums">
+                          {selectedTask.validation_steps.filter((s) => s.completed).length}/
+                          {selectedTask.validation_steps.length}
+                        </span>
+                      )}
                     </div>
 
                     {!isAddingDetailStep && (
                       <button
                         type="button"
                         onClick={() => setIsAddingDetailStep(true)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 text-slate-800 dark:text-slate-200 text-xs font-semibold transition-colors"
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-600 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-slate-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Adicionar Etapa</span>
+                        <span>Etapa</span>
                       </button>
                     )}
                   </div>
 
-                  {/* Progress bar if steps exist */}
                   {selectedTask.validation_steps && selectedTask.validation_steps.length > 0 && (
-                    <div className="w-full bg-slate-100 dark:bg-zinc-800 rounded-full h-1.5 overflow-hidden">
+                    <div className="w-full bg-slate-100 dark:bg-white/[0.06] rounded-full h-1 overflow-hidden">
                       <div
-                        className="bg-indigo-600 h-1.5 rounded-full transition-all duration-300"
+                        className="bg-indigo-600 dark:bg-indigo-400 h-1 rounded-full transition-all duration-300"
                         style={{
                           width: `${Math.round(
                             (selectedTask.validation_steps.filter((s) => s.completed).length /
@@ -1424,49 +1216,42 @@ export function CentralQuadrant({
                     </div>
                   )}
 
-                  {/* Step List */}
                   {(!selectedTask.validation_steps || selectedTask.validation_steps.length === 0) && !isAddingDetailStep ? (
-                    <div
+                    <button
+                      type="button"
                       onClick={() => setIsAddingDetailStep(true)}
-                      className="p-4 rounded-xl border border-dashed border-slate-200 dark:border-zinc-800 bg-slate-50/50 dark:bg-[#0c0d13]/50 text-center cursor-pointer hover:bg-slate-100/60 dark:hover:bg-zinc-800/40 transition-colors"
+                      className="w-full p-3.5 rounded-xl border border-dashed border-slate-200 dark:border-[#24242F] hover:border-indigo-400 dark:hover:border-indigo-500/40 bg-[#FAFAFB]/60 dark:bg-[#14141A]/50 text-left flex items-center gap-2.5 text-xs text-slate-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer"
                     >
-                      <CheckSquare className="w-6 h-6 mx-auto mb-1 text-slate-300 dark:text-zinc-600" />
-                      <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-                        Nenhuma etapa de validação cadastrada.
-                      </p>
-                      <p className="text-[11px] text-indigo-600 dark:text-indigo-400 font-semibold mt-0.5">
-                        Clique aqui para inserir o primeiro ponto de validação
-                      </p>
-                    </div>
+                      <Plus className="w-4 h-4 shrink-0" />
+                      <span>Adicionar primeiro ponto de validação ou etapa...</span>
+                    </button>
                   ) : (
-                    <div className="space-y-1.5">
+                    <div className="space-y-1">
                       {selectedTask.validation_steps?.map((step, idx) => (
                         <div
                           key={step.id || `step-${idx}`}
-                          className={`flex items-start justify-between gap-2.5 p-2.5 rounded-xl border transition-all ${
+                          className={`group flex items-start justify-between gap-2.5 px-3 py-2 rounded-lg transition-colors ${
                             step.completed
-                              ? "bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-200/60 dark:border-emerald-900/40 text-emerald-900 dark:text-emerald-200"
-                              : "bg-slate-50/70 dark:bg-[#0f1017] border-slate-200/80 dark:border-zinc-800 text-slate-800 dark:text-slate-200"
+                              ? "bg-emerald-50/40 dark:bg-emerald-500/[0.06] text-slate-500 dark:text-zinc-500"
+                              : "hover:bg-slate-50 dark:hover:bg-white/[0.03] text-slate-800 dark:text-zinc-200"
                           }`}
                         >
                           <button
                             type="button"
                             onClick={() => handleToggleTaskValidationStep(step.id)}
-                            className="mt-0.5 shrink-0 text-slate-400 hover:text-indigo-600 transition-colors"
+                            className="mt-0.5 shrink-0 text-slate-400 hover:text-indigo-600 transition-colors cursor-pointer"
                           >
                             {step.completed ? (
                               <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                             ) : (
-                              <Square className="w-4 h-4 text-slate-400 dark:text-zinc-500" />
+                              <Square className="w-4 h-4 text-slate-300 dark:text-zinc-600" />
                             )}
                           </button>
 
                           <span
                             onClick={() => handleToggleTaskValidationStep(step.id)}
-                            className={`flex-1 text-xs cursor-pointer select-none leading-relaxed ${
-                              step.completed
-                                ? "line-through text-slate-400 dark:text-slate-500 font-normal"
-                                : "font-medium"
+                            className={`flex-1 text-[13px] cursor-pointer select-none leading-relaxed ${
+                              step.completed ? "line-through text-slate-400 dark:text-zinc-500" : ""
                             }`}
                           >
                             {step.text}
@@ -1475,7 +1260,7 @@ export function CentralQuadrant({
                           <button
                             type="button"
                             onClick={() => handleRemoveDetailValidationStep(step.id)}
-                            className="p-1 text-slate-400 hover:text-rose-500 transition-colors rounded-md"
+                            className="opacity-70 lg:opacity-0 lg:group-hover:opacity-100 p-1 text-slate-400 hover:text-rose-500 transition-all rounded cursor-pointer"
                             title="Remover etapa"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1485,26 +1270,24 @@ export function CentralQuadrant({
                     </div>
                   )}
 
-                  {/* Add Step input */}
                   {isAddingDetailStep && (
-                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 p-2.5 rounded-xl border border-indigo-300 dark:border-indigo-700 bg-indigo-50/30 dark:bg-indigo-950/20 animate-in fade-in">
+                    <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 p-2.5 rounded-xl border border-indigo-300 dark:border-indigo-500/40 bg-indigo-50/30 dark:bg-indigo-500/[0.06] animate-in fade-in">
                       <input
                         type="text"
-                        placeholder="Ex: Verificar conciliação bancária do extrato..."
+                        placeholder="Ex: Validar conciliação bancária do extrato..."
                         value={newDetailStepText}
                         onChange={(e) => setNewDetailStepText(e.target.value)}
                         onKeyDown={(e) => e.key === "Enter" && handleAddDetailValidationStep()}
-                        className="w-full sm:flex-1 px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-700 text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-indigo-500"
+                        className="w-full sm:flex-1 px-3 py-1.5 rounded-lg text-xs bg-white dark:bg-[#16161C] border border-slate-200 dark:border-[#262632] text-slate-900 dark:text-white outline-none focus:border-indigo-500"
                         autoFocus
                       />
                       <div className="flex items-center gap-1.5 ml-auto shrink-0">
                         <button
                           type="button"
                           onClick={handleAddDetailValidationStep}
-                          className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-500 transition-colors flex items-center gap-1 cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-500 transition-colors cursor-pointer"
                         >
-                          <Check className="w-3.5 h-3.5" />
-                          <span>Salvar</span>
+                          Salvar
                         </button>
                         <button
                           type="button"
@@ -1512,7 +1295,7 @@ export function CentralQuadrant({
                             setIsAddingDetailStep(false);
                             setNewDetailStepText("");
                           }}
-                          className="px-2.5 py-1.5 rounded-lg bg-slate-200 dark:bg-zinc-800 text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-300 transition-colors cursor-pointer"
+                          className="px-2.5 py-1.5 rounded-lg text-slate-500 dark:text-zinc-400 hover:bg-slate-200/70 dark:hover:bg-white/[0.06] text-xs font-medium cursor-pointer"
                         >
                           Cancelar
                         </button>
@@ -1521,12 +1304,12 @@ export function CentralQuadrant({
                   )}
                 </div>
 
-                {/* Assistente IA na Demanda (Compact 1-row bar; expands cleanly with results) */}
-                <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 space-y-2.5 shadow-sm">
+                {/* ASSISTENTE IA NA DEMANDA */}
+                <div className="p-4 rounded-xl bg-[#FAFAFB] dark:bg-[#14141B] border border-slate-200/80 dark:border-[#23232D] space-y-3">
                   <div className="flex items-center justify-between flex-wrap gap-2">
-                    <span className="text-xs font-bold text-indigo-700 dark:text-purple-300 flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-indigo-500 dark:text-purple-400" />
-                      <span>Assistente IA na Demanda</span>
+                    <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                      <span>Assistente IA</span>
                     </span>
 
                     <div className="flex items-center gap-1.5 flex-wrap">
@@ -1534,10 +1317,10 @@ export function CentralQuadrant({
                         type="button"
                         onClick={() => handleRunTaskAiAssist("refine")}
                         disabled={isLoadingAiAssist}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-all cursor-pointer disabled:opacity-50 ${
                           aiAssistMode === "refine" && aiAssistResult
                             ? "bg-indigo-600 text-white border-indigo-600"
-                            : "bg-slate-50 dark:bg-[#181927] text-slate-700 dark:text-slate-200 border-slate-200 dark:border-zinc-700 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300"
+                            : "bg-white dark:bg-[#181820] text-slate-700 dark:text-zinc-200 border-slate-200/90 dark:border-[#262632] hover:border-indigo-400"
                         }`}
                       >
                         {isLoadingAiAssist && aiAssistMode === "refine" ? (
@@ -1552,10 +1335,10 @@ export function CentralQuadrant({
                         type="button"
                         onClick={() => handleRunTaskAiAssist("action_plan")}
                         disabled={isLoadingAiAssist}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-all cursor-pointer disabled:opacity-50 ${
                           aiAssistMode === "action_plan" && aiAssistResult
                             ? "bg-indigo-600 text-white border-indigo-600"
-                            : "bg-slate-50 dark:bg-[#181927] text-slate-700 dark:text-slate-200 border-slate-200 dark:border-zinc-700 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300"
+                            : "bg-white dark:bg-[#181820] text-slate-700 dark:text-zinc-200 border-slate-200/90 dark:border-[#262632] hover:border-indigo-400"
                         }`}
                       >
                         {isLoadingAiAssist && aiAssistMode === "action_plan" ? (
@@ -1570,10 +1353,10 @@ export function CentralQuadrant({
                         type="button"
                         onClick={() => handleRunTaskAiAssist("diagnose")}
                         disabled={isLoadingAiAssist}
-                        className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border text-[11px] font-semibold transition-all cursor-pointer disabled:opacity-50 ${
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-medium transition-all cursor-pointer disabled:opacity-50 ${
                           aiAssistMode === "diagnose" && aiAssistResult
                             ? "bg-indigo-600 text-white border-indigo-600"
-                            : "bg-slate-50 dark:bg-[#181927] text-slate-700 dark:text-slate-200 border-slate-200 dark:border-zinc-700 hover:border-indigo-400 hover:text-indigo-600 dark:hover:text-indigo-300"
+                            : "bg-white dark:bg-[#181820] text-slate-700 dark:text-zinc-200 border-slate-200/90 dark:border-[#262632] hover:border-indigo-400"
                         }`}
                       >
                         {isLoadingAiAssist && aiAssistMode === "diagnose" ? (
@@ -1591,12 +1374,12 @@ export function CentralQuadrant({
                   )}
 
                   {aiAssistResult && (
-                    <div className="p-3.5 rounded-xl bg-gradient-to-br from-indigo-50/80 via-white to-purple-50/70 dark:from-[#17152c] dark:via-[#141522] dark:to-[#111524] border border-indigo-200/80 dark:border-indigo-800/60 space-y-2.5 animate-in fade-in">
+                    <div className="p-3.5 rounded-lg bg-white dark:bg-[#101016] border border-indigo-200/80 dark:border-indigo-500/30 space-y-2.5 animate-in fade-in">
                       <div className="flex items-center justify-between gap-2 flex-wrap">
-                        <span className="text-[11px] font-bold text-indigo-700 dark:text-purple-300 flex items-center gap-1.5">
+                        <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 flex items-center gap-1.5">
                           <Sparkles className="w-3.5 h-3.5" />
                           Sugestão da IA
-                          {aiAssistResult.estimated_effort ? ` • Esforço est.: ${aiAssistResult.estimated_effort}` : ""}
+                          {aiAssistResult.estimated_effort ? ` • ${aiAssistResult.estimated_effort}` : ""}
                         </span>
                         <button
                           type="button"
@@ -1610,17 +1393,17 @@ export function CentralQuadrant({
                         </button>
                       </div>
 
-                      <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed">
+                      <p className="text-xs text-slate-700 dark:text-zinc-300 leading-relaxed">
                         {aiAssistResult.technical_guidance}
                       </p>
 
                       {aiAssistMode === "refine" && aiAssistResult.refined_title && (
-                        <div className="p-2.5 rounded-lg bg-white/80 dark:bg-[#0d0e15] border border-slate-200/80 dark:border-zinc-800 space-y-1 text-xs">
-                          <div className="font-bold text-slate-900 dark:text-white">
-                            Novo título: {aiAssistResult.refined_title}
+                        <div className="p-2.5 rounded-lg bg-[#FAFAFB] dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] space-y-1 text-xs">
+                          <div className="font-semibold text-slate-900 dark:text-white">
+                            {aiAssistResult.refined_title}
                           </div>
                           {aiAssistResult.structured_description && (
-                            <div className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                            <div className="text-[11px] text-slate-600 dark:text-zinc-300 leading-relaxed">
                               {aiAssistResult.structured_description}
                             </div>
                           )}
@@ -1629,14 +1412,14 @@ export function CentralQuadrant({
 
                       {aiAssistResult.validation_steps && aiAssistResult.validation_steps.length > 0 && (
                         <div className="space-y-1">
-                          <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 block">
+                          <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500 block">
                             Etapas sugeridas ({aiAssistResult.validation_steps.length})
                           </span>
                           <ul className="space-y-1">
                             {aiAssistResult.validation_steps.map((step, i) => (
                               <li
                                 key={i}
-                                className="text-xs text-slate-600 dark:text-slate-300 flex items-start gap-1.5"
+                                className="text-xs text-slate-600 dark:text-zinc-300 flex items-start gap-1.5"
                               >
                                 <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
                                 <span>{step}</span>
@@ -1651,7 +1434,7 @@ export function CentralQuadrant({
                           type="button"
                           onClick={handleApplyTaskAiAssist}
                           disabled={isApplyingAiAssist}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all cursor-pointer disabled:opacity-50"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors cursor-pointer disabled:opacity-50"
                         >
                           {isApplyingAiAssist ? (
                             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1665,140 +1448,24 @@ export function CentralQuadrant({
                   )}
                 </div>
 
-                {/* Collapsible Section: Agenda, Prazo, Lembrete & Google Meet */}
-                <div className="rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setIsScheduleExpanded((prev) => !prev)}
-                    className="w-full px-4 sm:px-5 py-3.5 flex items-center justify-between gap-2 hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors cursor-pointer text-left"
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
-                      <Clock className="w-4 h-4 text-indigo-500 shrink-0" />
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                        Agenda, Lembrete & Google Meet
-                      </span>
-                      <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
-                        {format(parseISO(getTaskScheduleDate(selectedTask)), "dd/MM/yyyy", { locale: ptBR })}
-                        {(hasScheduledTimeRange(selectedTask) || !isTaskAllDay(selectedTask))
-                          ? ` • ${formatTaskTimeRange(selectedTask)}`
-                          : ""}
-                      </span>
-                      {selectedTask.reminder_enabled && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200/70 dark:border-purple-800/60 text-[10px] font-semibold">
-                          <Bell className="w-2.5 h-2.5" />
-                          {formatReminderLeadTime(selectedTask.reminder_minutes_before ?? 30)}
-                        </span>
-                      )}
-                      {selectedTask.meet_link && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 text-[10px] font-semibold">
-                          <Video className="w-2.5 h-2.5" />
-                          Sala ativa
-                        </span>
-                      )}
-                    </div>
-                    <ChevronDown
-                      className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
-                        isScheduleExpanded ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {isScheduleExpanded && (
-                    <div className="px-4 sm:px-5 pb-4 pt-2 border-t border-slate-100 dark:border-zinc-800/80 space-y-3 animate-in fade-in duration-150">
-                      {/* Quick date presets */}
-                      <div className="flex items-center justify-between flex-wrap gap-2">
-                        <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400">
-                          Atalhos rápidos de prazo:
-                        </span>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const d = new Date();
-                              d.setHours(18, 0, 0, 0);
-                              handleChangeDetailDueDate(d.toISOString());
-                            }}
-                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-300 cursor-pointer"
-                          >
-                            Hoje 18h
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const d = new Date();
-                              d.setDate(d.getDate() + 1);
-                              d.setHours(18, 0, 0, 0);
-                              handleChangeDetailDueDate(d.toISOString());
-                            }}
-                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-300 cursor-pointer"
-                          >
-                            Amanhã
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const d = new Date();
-                              d.setDate(d.getDate() + 4);
-                              d.setHours(18, 0, 0, 0);
-                              handleChangeDetailDueDate(d.toISOString());
-                            }}
-                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 cursor-pointer"
-                          >
-                            +4 dias
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              const d = new Date();
-                              d.setDate(d.getDate() + 7);
-                              d.setHours(18, 0, 0, 0);
-                              handleChangeDetailDueDate(d.toISOString());
-                            }}
-                            className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 dark:bg-zinc-800 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-300 cursor-pointer"
-                          >
-                            +1 semana
-                          </button>
-                        </div>
-                      </div>
-
-                      <ScheduleReminderFields
-                        valueFormat="iso"
-                        itemType={selectedTask.item_type}
-                        startValue={selectedTask.scheduled_start || selectedTask.current_due_date || ""}
-                        endValue={selectedTask.scheduled_end || ""}
-                        onChangeStart={handleChangeDetailDueDate}
-                        onChangeEnd={handleChangeDetailEndDate}
-                        reminderEnabled={Boolean(selectedTask.reminder_enabled)}
-                        reminderMinutesBefore={selectedTask.reminder_minutes_before ?? 30}
-                        onChangeReminderEnabled={handleChangeDetailReminderEnabled}
-                        onChangeReminderMinutes={handleChangeDetailReminderMinutes}
-                        meetLink={selectedTask.meet_link || null}
-                        onChangeMeetLink={handleChangeDetailMeetLink}
-                        tasks={allTasks}
-                        excludeTaskId={selectedTask.id}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {/* Collapsible Section: Attachments Card (Criação & Solução) */}
+                {/* COLLAPSIBLE SECTION: ANEXOS & LINKS */}
                 {(() => {
                   const totalAttachments =
                     (selectedTask.attachments?.length || 0) +
                     (selectedTask.resolution_attachments?.length || 0);
                   return (
-                    <div className="rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                    <div className="pt-5 border-t border-slate-200/75 dark:border-[#1F1F28] space-y-3">
                       <button
                         type="button"
                         onClick={() => setIsAttachmentsExpanded((prev) => !prev)}
-                        className="w-full px-4 sm:px-5 py-3.5 flex items-center justify-between gap-2 hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors cursor-pointer text-left"
+                        className="w-full flex items-center justify-between gap-2 text-left cursor-pointer group"
                       >
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <Paperclip className="w-4 h-4 text-indigo-500 shrink-0" />
-                          <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                            Arquivos & Links Anexados
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Paperclip className="w-4 h-4 text-slate-400 dark:text-zinc-500 group-hover:text-indigo-500 transition-colors shrink-0" />
+                          <span className="text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-zinc-200">
+                            Anexos & Links
                           </span>
-                          <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-[11px] font-mono font-semibold text-slate-600 dark:text-slate-300">
+                          <span className="text-[11px] font-mono text-slate-400 dark:text-zinc-500 tabular-nums">
                             {totalAttachments}
                           </span>
                         </div>
@@ -1810,7 +1477,7 @@ export function CentralQuadrant({
                       </button>
 
                       {isAttachmentsExpanded && (
-                        <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-slate-100 dark:border-zinc-800/80 space-y-4 animate-in fade-in duration-150">
+                        <div className="space-y-4 animate-in fade-in duration-150">
                           <AttachmentManager
                             attachments={selectedTask.attachments || []}
                             onChange={async (updated) => {
@@ -1819,12 +1486,12 @@ export function CentralQuadrant({
                               }
                             }}
                             stage="creation"
-                            label="Arquivos & Links da Demanda (Criação)"
+                            label="Arquivos & Links da Demanda"
                             onPreviewMedia={(media) => setActiveMediaItem(media)}
                           />
 
                           {selectedTask.resolution_attachments && selectedTask.resolution_attachments.length > 0 && (
-                            <div className="pt-3 border-t border-slate-100 dark:border-zinc-800">
+                            <div className="pt-3 border-t border-slate-100 dark:border-[#1E1E26]">
                               <AttachmentManager
                                 attachments={selectedTask.resolution_attachments || []}
                                 onChange={async (updated) => {
@@ -1844,23 +1511,23 @@ export function CentralQuadrant({
                   );
                 })()}
 
-                {/* Collapsible Section: Base de Soluções & Controle de Recorrência */}
-                <div className="rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+                {/* COLLAPSIBLE SECTION: BASE DE SOLUÇÕES & RECORRÊNCIA */}
+                <div className="pt-5 border-t border-slate-200/75 dark:border-[#1F1F28] space-y-3 pb-4">
                   <div
                     onClick={() => setIsSolutionExpanded((prev) => !prev)}
-                    className="w-full px-4 sm:px-5 py-3.5 flex items-center justify-between gap-2.5 flex-wrap hover:bg-slate-50/70 dark:hover:bg-white/[0.02] transition-colors cursor-pointer"
+                    className="w-full flex items-center justify-between gap-2 flex-wrap cursor-pointer group"
                   >
-                    <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
                       <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                      <span className="text-xs font-bold text-slate-800 dark:text-slate-100">
-                        Base de Soluções & Recorrência
+                      <span className="text-xs font-semibold uppercase tracking-wider text-slate-800 dark:text-zinc-200">
+                        Solução & Recorrência
                       </span>
-                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 font-mono text-[11px] font-semibold">
-                        <Repeat className="w-3 h-3 text-indigo-500" />
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300 font-mono text-[10px] font-semibold">
+                        <Repeat className="w-2.5 h-2.5 text-indigo-500" />
                         {selectedTask.recurrence_count || 1}x
                       </span>
                       {selectedTask.resolution_notes && (
-                        <span className="px-2 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60 text-[10px] font-bold">
+                        <span className="px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold">
                           Documentada
                         </span>
                       )}
@@ -1874,10 +1541,10 @@ export function CentralQuadrant({
                           setIsSolutionExpanded(true);
                           setIsAddingRecurrence((prev) => !prev);
                         }}
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 text-[11px] font-semibold transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition-colors cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
-                        <span>Nova Ocorrência</span>
+                        <span>Ocorrência</span>
                       </button>
                       <ChevronDown
                         className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
@@ -1888,39 +1555,38 @@ export function CentralQuadrant({
                   </div>
 
                   {isSolutionExpanded && (
-                    <div className="px-4 sm:px-5 pb-4 pt-3 border-t border-slate-100 dark:border-zinc-800/80 space-y-4 animate-in fade-in duration-150">
-                      {/* Form to Register Recurrence / Reincidence */}
+                    <div className="space-y-4 animate-in fade-in duration-150">
                       {isAddingRecurrence && (
-                        <div className="p-4 rounded-xl bg-slate-50 dark:bg-zinc-900/90 border border-slate-200 dark:border-zinc-700/80 space-y-3 animate-fadeIn text-xs text-slate-800 dark:text-zinc-200">
-                          <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-zinc-200">
-                            <Repeat className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
-                            <span>Registrar Nova Execução no Mesmo Item (Sem Duplicar Base)</span>
+                        <div className="p-4 rounded-xl bg-[#FAFAFB] dark:bg-[#14141B] border border-slate-200 dark:border-[#24242F] space-y-3 text-xs">
+                          <div className="flex items-center gap-1.5 font-semibold text-slate-900 dark:text-zinc-100">
+                            <Repeat className="w-3.5 h-3.5 text-indigo-500" />
+                            <span>Registrar Nova Execução (Sem Duplicar Base)</span>
                           </div>
 
                           <div className="space-y-2">
                             <div>
-                              <label className="text-[11px] text-slate-600 dark:text-zinc-400 block mb-1">
+                              <label className="text-[11px] text-slate-500 dark:text-zinc-400 block mb-1">
                                 Notas / Contexto desta reincidência:
                               </label>
                               <textarea
                                 rows={2}
                                 value={recurrenceNotes}
                                 onChange={(e) => setRecurrenceNotes(e.target.value)}
-                                placeholder="Descreva onde ou por que a ocorrência se repetiu (ex: usuário reportou o mesmo erro no TOTVS)..."
-                                className="w-full text-xs p-2 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 resize-none"
+                                placeholder="Descreva o contexto desta nova ocorrência..."
+                                className="w-full text-xs p-2.5 rounded-lg bg-white dark:bg-[#101016] border border-slate-200 dark:border-[#262632] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none"
                               />
                             </div>
 
                             <div>
-                              <label className="text-[11px] text-slate-600 dark:text-zinc-400 block mb-1">
-                                Método de conclusão alternativo (opcional se utilizou solução diferente):
+                              <label className="text-[11px] text-slate-500 dark:text-zinc-400 block mb-1">
+                                Método alternativo (opcional):
                               </label>
                               <input
                                 type="text"
                                 value={recurrenceMethod}
                                 onChange={(e) => setRecurrenceMethod(e.target.value)}
-                                placeholder="Ex: Executado script PowerShell alternativo ao invés de reiniciar servidor..."
-                                className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+                                placeholder="Ex: Script alternativo aplicado..."
+                                className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#101016] border border-slate-200 dark:border-[#262632] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
                               />
                             </div>
 
@@ -1931,11 +1597,11 @@ export function CentralQuadrant({
                                 onChange={(e) => setRecurrenceReopen(e.target.checked)}
                                 className="rounded border-slate-300 dark:border-zinc-700 text-indigo-600 focus:ring-0"
                               />
-                              <span>Reabrir demanda para Em Andamento (trabalho ativo)</span>
+                              <span>Reabrir demanda para Em Andamento</span>
                             </label>
                           </div>
 
-                          <div className="flex items-center justify-end gap-2 pt-1 border-t border-slate-200 dark:border-zinc-800">
+                          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-200/80 dark:border-[#22222B]">
                             <button
                               type="button"
                               onClick={() => {
@@ -1943,7 +1609,7 @@ export function CentralQuadrant({
                                 setRecurrenceNotes("");
                                 setRecurrenceMethod("");
                               }}
-                              className="px-3 py-1 rounded text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 cursor-pointer"
+                              className="px-3 py-1 rounded-lg text-xs text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-200 cursor-pointer"
                             >
                               Cancelar
                             </button>
@@ -1951,63 +1617,61 @@ export function CentralQuadrant({
                               type="button"
                               disabled={isSubmittingRecurrence}
                               onClick={handleSaveRecurrence}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-medium shadow-xs disabled:opacity-50 transition-all cursor-pointer"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-semibold disabled:opacity-50 transition-colors cursor-pointer"
                             >
                               {isSubmittingRecurrence ? (
                                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
                               ) : (
                                 <Check className="w-3.5 h-3.5" />
                               )}
-                              <span>Gravar Ocorrência no Histórico</span>
+                              <span>Gravar Ocorrência</span>
                             </button>
                           </div>
                         </div>
                       )}
 
-                      {/* Primary Solution */}
                       {selectedTask.resolution_notes ? (
-                        <div className="space-y-2">
-                          <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wide flex items-center gap-1">
+                        <div className="space-y-1.5">
+                          <span className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
                             <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Solução Registrada na Base de Conhecimento:</span>
-                          </div>
-                          <div className="p-3.5 rounded-xl bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-900/50 text-xs text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap">
+                            <span>Solução Documentada</span>
+                          </span>
+                          <div className="p-3.5 rounded-xl bg-emerald-50/40 dark:bg-emerald-500/[0.06] border border-emerald-200/70 dark:border-emerald-500/20 text-xs text-slate-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
                             {selectedTask.resolution_notes}
                           </div>
                         </div>
                       ) : (
-                        <p className="text-xs text-slate-400 dark:text-slate-500 italic">
-                          Nenhuma anotação de resolução registrada até o momento.
+                        <p className="text-xs text-slate-400 dark:text-zinc-500 italic">
+                          Nenhuma resolução documentada até o momento.
                         </p>
                       )}
 
-                      {/* Execution History Timeline */}
                       {selectedTask.execution_history && selectedTask.execution_history.length > 0 && (
-                        <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
-                          <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <div className="pt-2 border-t border-slate-100 dark:border-[#1E1E26] space-y-2">
+                          <span className="text-[11px] font-semibold text-slate-600 dark:text-zinc-300 flex items-center gap-1.5">
                             <Repeat className="w-3 h-3 text-indigo-500" />
-                            Histórico de Execuções e Reincidências ({selectedTask.execution_history.length}):
+                            Histórico de Execuções ({selectedTask.execution_history.length})
                           </span>
                           <div className="space-y-1.5">
                             {selectedTask.execution_history.map((exec) => (
                               <div
                                 key={exec.id}
-                                className="p-2.5 rounded-xl bg-slate-50 dark:bg-zinc-900/80 border border-slate-200 dark:border-zinc-800 text-xs space-y-1"
+                                className="p-2.5 rounded-lg bg-[#FAFAFB] dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] text-xs space-y-1"
                               >
                                 <div className="flex items-center justify-between flex-wrap gap-1 text-[11px] text-slate-500 dark:text-zinc-400 font-mono">
                                   <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
-                                    Ocorrência em {format(parseISO(exec.date), "dd/MM/yyyy 'às' HH:mm")}
+                                    {format(parseISO(exec.date), "dd/MM/yyyy 'às' HH:mm")}
                                   </span>
-                                  <span>Registrado por: {exec.registered_by || "Usuário"}</span>
+                                  <span>{exec.registered_by || "Usuário"}</span>
                                 </div>
                                 {exec.notes && (
-                                  <p className="text-slate-700 dark:text-slate-200 text-xs">
+                                  <p className="text-slate-700 dark:text-zinc-200 text-xs">
                                     {exec.notes}
                                   </p>
                                 )}
                                 {exec.method && (
-                                  <div className="text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-900/40">
-                                    <strong>Método aplicado:</strong> {exec.method}
+                                  <div className="text-[11px] text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2 py-1 rounded">
+                                    <strong>Método:</strong> {exec.method}
                                   </div>
                                 )}
                               </div>
@@ -2016,18 +1680,17 @@ export function CentralQuadrant({
                         </div>
                       )}
 
-                      {/* Alternative Resolution Methods */}
                       {selectedTask.alternative_resolutions && selectedTask.alternative_resolutions.length > 0 && (
-                        <div className="pt-2 border-t border-slate-100 dark:border-zinc-800 space-y-2">
-                          <span className="text-[11px] font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                        <div className="pt-2 border-t border-slate-100 dark:border-[#1E1E26] space-y-2">
+                          <span className="text-[11px] font-semibold text-slate-600 dark:text-zinc-300 flex items-center gap-1.5">
                             <Sparkles className="w-3 h-3 text-amber-500" />
-                            Métodos Alternativos de Resolução Catalogados:
+                            Métodos Alternativos Catalogados
                           </span>
                           <div className="space-y-1.5">
                             {selectedTask.alternative_resolutions.map((alt) => (
                               <div
                                 key={alt.id}
-                                className="p-2.5 rounded-xl bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40 text-xs space-y-0.5"
+                                className="p-2.5 rounded-lg bg-amber-50/50 dark:bg-amber-500/[0.06] border border-amber-200/70 dark:border-amber-500/20 text-xs space-y-0.5"
                               >
                                 <div className="flex items-center justify-between flex-wrap gap-1 text-[11px] font-mono text-amber-700 dark:text-amber-400">
                                   <span className="font-semibold">{alt.method}</span>
@@ -2044,16 +1707,344 @@ export function CentralQuadrant({
                     </div>
                   )}
                 </div>
-              </>
-            )}
-          </div>
+              </div>
+
+              {/* RIGHT ZONE: LINEAR-STYLE PROPERTIES INSPECTOR RAIL */}
+              <div className="border-t xl:border-t-0 xl:border-l border-slate-200/75 dark:border-[#1F1F28] bg-[#FAFAFB] dark:bg-[#0D0D11] px-5 py-6 space-y-5 text-xs">
+                <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
+                  Propriedades
+                </div>
+
+                {/* Prioridade */}
+                <div className="space-y-1.5">
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 block">
+                    Prioridade
+                  </span>
+                  <div className="grid grid-cols-4 gap-1">
+                    {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
+                      const isSel = selectedTask.priority === p;
+                      const activeClass =
+                        p === "P1"
+                          ? "bg-rose-600 text-white border-rose-600"
+                          : p === "P2"
+                          ? "bg-amber-500 text-white border-amber-500"
+                          : p === "P3"
+                          ? "bg-indigo-600 text-white border-indigo-600"
+                          : "bg-slate-700 text-white border-slate-700";
+                      return (
+                        <button
+                          key={p}
+                          type="button"
+                          onClick={() => handleChangeDetailPriority(p)}
+                          className={`py-1 rounded-lg border font-mono text-[11px] font-semibold transition-colors cursor-pointer ${
+                            isSel
+                              ? activeClass
+                              : "bg-white dark:bg-[#15151B] text-slate-600 dark:text-zinc-400 border-slate-200/80 dark:border-[#24242F] hover:border-indigo-400"
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Prazo, Horário, Lembrete & Google Meet */}
+                <div className="space-y-2 pt-3 border-t border-slate-200/70 dark:border-[#1E1E26]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400">
+                      Prazo & Agenda
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsScheduleExpanded((prev) => !prev)}
+                      className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                    >
+                      {isScheduleExpanded ? "Fechar" : "Editar"}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsScheduleExpanded((prev) => !prev)}
+                    className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-white dark:bg-[#15151B] border border-slate-200/80 dark:border-[#24242F] hover:border-indigo-400 text-[11px] font-mono font-medium text-slate-800 dark:text-zinc-200 transition-colors cursor-pointer"
+                  >
+                    <span className="flex items-center gap-1.5 truncate">
+                      <Clock className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                      <span className="truncate tabular-nums">
+                        {format(parseISO(getTaskScheduleDate(selectedTask)), "dd/MM/yy", { locale: ptBR })}
+                        {(hasScheduledTimeRange(selectedTask) || !isTaskAllDay(selectedTask))
+                          ? ` • ${formatTaskTimeRange(selectedTask)}`
+                          : ""}
+                      </span>
+                    </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {selectedTask.reminder_enabled && (
+                        <Bell className="w-3 h-3 text-indigo-500" />
+                      )}
+                      {selectedTask.meet_link && (
+                        <Video className="w-3 h-3 text-emerald-500" />
+                      )}
+                    </div>
+                  </button>
+
+                  {isScheduleExpanded && (
+                    <div className="pt-2 space-y-3 animate-in fade-in duration-150">
+                      <div className="grid grid-cols-2 gap-1">
+                        {[
+                          { label: "Hoje 18h", days: 0 },
+                          { label: "Amanhã", days: 1 },
+                          { label: "+4 dias", days: 4 },
+                          { label: "+1 sem", days: 7 },
+                        ].map((preset) => (
+                          <button
+                            key={preset.label}
+                            type="button"
+                            onClick={() => {
+                              const d = new Date();
+                              d.setDate(d.getDate() + preset.days);
+                              d.setHours(18, 0, 0, 0);
+                              handleChangeDetailDueDate(d.toISOString());
+                            }}
+                            className="px-2 py-1 rounded-md text-[11px] font-medium bg-white dark:bg-[#15151B] border border-slate-200/80 dark:border-[#24242F] hover:border-indigo-400 text-slate-600 dark:text-zinc-300 cursor-pointer"
+                          >
+                            {preset.label}
+                          </button>
+                        ))}
+                      </div>
+
+                      <ScheduleReminderFields
+                        valueFormat="iso"
+                        itemType={selectedTask.item_type}
+                        startValue={selectedTask.scheduled_start || selectedTask.current_due_date || ""}
+                        endValue={selectedTask.scheduled_end || ""}
+                        onChangeStart={handleChangeDetailDueDate}
+                        onChangeEnd={handleChangeDetailEndDate}
+                        reminderEnabled={Boolean(selectedTask.reminder_enabled)}
+                        reminderMinutesBefore={selectedTask.reminder_minutes_before ?? 30}
+                        onChangeReminderEnabled={handleChangeDetailReminderEnabled}
+                        onChangeReminderMinutes={handleChangeDetailReminderMinutes}
+                        meetLink={selectedTask.meet_link || null}
+                        onChangeMeetLink={handleChangeDetailMeetLink}
+                        tasks={allTasks}
+                        excludeTaskId={selectedTask.id}
+                        compact
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Categoria */}
+                <div className="space-y-1.5 pt-3 border-t border-slate-200/70 dark:border-[#1E1E26]">
+                  <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 block">
+                    Categoria
+                  </span>
+                  {isEditingCategory ? (
+                    <div className="flex items-center gap-1">
+                      <CategoryCombobox
+                        value={tempCategory}
+                        onChange={(val) => setTempCategory(val)}
+                        categories={categoriesList}
+                        className="flex-1 min-w-0"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSaveCategory}
+                        className="p-1.5 rounded-lg bg-indigo-600 text-white hover:bg-indigo-500 cursor-pointer shrink-0"
+                        title="Salvar categoria"
+                      >
+                        <Check className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsEditingCategory(false)}
+                        className="p-1.5 rounded-lg bg-slate-200 dark:bg-white/[0.08] text-slate-600 dark:text-zinc-300 cursor-pointer shrink-0"
+                        title="Cancelar"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTempCategory(selectedTask.category);
+                        setIsEditingCategory(true);
+                      }}
+                      className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#15151B] border border-slate-200/80 dark:border-[#24242F] hover:border-indigo-400 text-xs font-medium text-slate-800 dark:text-zinc-200 transition-colors group cursor-pointer"
+                      title="Clique para editar a categoria"
+                    >
+                      <span className="truncate">{selectedTask.category}</span>
+                      <Edit2 className="w-3 h-3 text-slate-400 opacity-60 group-hover:opacity-100 shrink-0" />
+                    </button>
+                  )}
+                </div>
+
+                {/* Tipo & Espaço */}
+                <div className="grid grid-cols-2 gap-2.5 pt-3 border-t border-slate-200/70 dark:border-[#1E1E26]">
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 block">
+                      Tipo
+                    </span>
+                    {onUpdateItemType && (
+                      <select
+                        value={selectedTask.item_type || "task"}
+                        onChange={(e) =>
+                          onUpdateItemType(selectedTask.id, e.target.value as ItemType)
+                        }
+                        aria-label="Tipo do item"
+                        className="w-full px-2 py-1.5 rounded-lg bg-white dark:bg-[#15151B] border border-slate-200/80 dark:border-[#24242F] text-xs font-medium text-slate-700 dark:text-zinc-200 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                      >
+                        <option value="task">Tarefa</option>
+                        <option value="activity">Atividade</option>
+                        <option value="reminder">Lembrete</option>
+                      </select>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 block">
+                      Espaço
+                    </span>
+                    <div
+                      className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-medium border ${
+                        isWorkItem(selectedTask)
+                          ? "bg-blue-50/70 text-blue-700 border-blue-200/80 dark:bg-blue-500/10 dark:text-blue-300 dark:border-blue-500/20"
+                          : "bg-violet-50/70 text-violet-700 border-violet-200/80 dark:bg-violet-500/10 dark:text-violet-300 dark:border-violet-500/20"
+                      }`}
+                    >
+                      {isWorkItem(selectedTask) ? (
+                        <>
+                          <Briefcase className="w-3 h-3 shrink-0" />
+                          <span>Trabalho</span>
+                        </>
+                      ) : (
+                        <>
+                          <User className="w-3 h-3 shrink-0" />
+                          <span>Pessoal</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tags */}
+                <div className="space-y-2 pt-3 border-t border-slate-200/70 dark:border-[#1E1E26]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-medium text-slate-500 dark:text-zinc-400 flex items-center gap-1">
+                      <Tag className="w-3 h-3" />
+                      Tags
+                    </span>
+                    {!isAddingTag && (
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingTag(true)}
+                        className="inline-flex items-center gap-0.5 text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Adicionar</span>
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {selectedTask.tags?.map((tag) => (
+                      <span
+                        key={tag}
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-white dark:bg-[#15151B] text-slate-700 dark:text-zinc-300 border border-slate-200/80 dark:border-[#24242F]"
+                      >
+                        <span>#{tag}</span>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveTag(tag)}
+                          className="text-slate-400 hover:text-rose-500 transition-colors cursor-pointer"
+                          title={`Remover tag #${tag}`}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+
+                    {(!selectedTask.tags || selectedTask.tags.length === 0) && !isAddingTag && (
+                      <span className="text-[11px] text-slate-400 dark:text-zinc-600">
+                        Nenhuma tag
+                      </span>
+                    )}
+
+                    {isAddingTag && (
+                      <div className="flex items-center gap-1 w-full">
+                        <input
+                          type="text"
+                          placeholder="Nova tag..."
+                          value={newTagInput}
+                          onChange={(e) => setNewTagInput(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
+                          className="flex-1 min-w-0 px-2 py-1 rounded-md text-xs border border-indigo-500 bg-white dark:bg-[#15151B] text-slate-800 dark:text-zinc-100 outline-none"
+                          autoFocus
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddTag}
+                          className="p-1 rounded bg-indigo-600 text-white cursor-pointer"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsAddingTag(false)}
+                          className="p-1 rounded text-slate-400 hover:text-slate-600 cursor-pointer"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quiet Audit Metadata */}
+                <div className="pt-3 border-t border-slate-200/70 dark:border-[#1E1E26] space-y-1.5 text-[11px] text-slate-400 dark:text-zinc-500">
+                  {selectedTask.created_at && (
+                    <div className="flex items-center justify-between">
+                      <span>Criada em</span>
+                      <span className="font-mono tabular-nums text-slate-500 dark:text-zinc-400">
+                        {(() => {
+                          try {
+                            return format(parseISO(selectedTask.created_at), "dd/MM/yy");
+                          } catch {
+                            return "—";
+                          }
+                        })()}
+                      </span>
+                    </div>
+                  )}
+                  {(selectedTask.extension_count || 0) > 0 && (
+                    <div className="flex items-center justify-between">
+                      <span>Prorrogações</span>
+                      <span className="font-mono tabular-nums text-amber-600 dark:text-amber-400 font-semibold">
+                        {selectedTask.extension_count}x
+                      </span>
+                    </div>
+                  )}
+                  {(selectedTask.recurrence_count || 1) > 1 && (
+                    <div className="flex items-center justify-between">
+                      <span>Recorrências</span>
+                      <span className="font-mono tabular-nums text-indigo-600 dark:text-indigo-400 font-semibold">
+                        {selectedTask.recurrence_count}x
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )
         )}
 
-        {/* TAB 3: ESTUDO & TUTORIAIS (SITES, ARTIGOS E VÍDEOS) */}
+        {/* TAB 2: ESTUDO & TUTORIAIS */}
         {activeTab === "study" && (
-          <div className="max-w-4xl mx-auto space-y-4 sm:space-y-5">
+          <div className="max-w-5xl mx-auto p-5 sm:p-8 space-y-5">
             {/* 1. SEÇÃO DE SITES, ARTIGOS TÉCNICOS & DOCUMENTAÇÕES */}
-            <div className="p-4 sm:p-6 rounded-2xl bg-white dark:bg-[#141520] border border-slate-200 dark:border-zinc-800 shadow-sm space-y-4">
+            <div className="p-5 rounded-xl bg-[#FAFAFB] dark:bg-[#14141B] border border-slate-200/80 dark:border-[#23232D] space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-zinc-800/80 pb-3 flex-wrap gap-2">
                 <div className="flex items-center gap-2.5">
                   <div className="p-2 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800">

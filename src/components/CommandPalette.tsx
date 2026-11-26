@@ -444,7 +444,7 @@ export function CommandPalette({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl rounded-2xl bg-white dark:bg-[#131420] border border-slate-200 dark:border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[74vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-xl rounded-2xl bg-white dark:bg-[#13131A] border border-slate-200 dark:border-[#262632] shadow-popover overflow-hidden flex flex-col max-h-[74vh] animate-in zoom-in-95 duration-150"
       >
         {/* Search Input */}
         <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-slate-100 dark:border-zinc-800/90">

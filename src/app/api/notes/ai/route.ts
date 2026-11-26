@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/session";
 import {
+  batchOrganizeNotesWithAI,
   extractTasksFromNoteWithAI,
   organizeNoteWithAI,
 } from "@/services/geminiService";
+import { NoteOrganizeMode } from "@/types";
 
 const noteAiRateLimits = new Map<string, number[]>();
+
+const VALID_MODES: NoteOrganizeMode[] = [
+  "auto",
+  "topics",
+  "summary",
+  "demand_scope",
+  "checklist",
+  "polish",
+];
 
 function checkNoteAiRateLimit(userId: string): boolean {
   const now = Date.now();
@@ -38,11 +49,25 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const action = body.action;
+
+    if (action === "batch_organize") {
+      const notesList = Array.isArray(body.notes) ? body.notes : [];
+      if (notesList.length === 0) {
+        return NextResponse.json(
+          { success: false, error: "Nenhuma anotação disponível para organizar em lote." },
+          { status: 400 }
+        );
+      }
+      const result = await batchOrganizeNotesWithAI(notesList);
+      return NextResponse.json({ success: true, ...result });
+    }
+
     const title = typeof body.title === "string" ? body.title : "";
     const content = typeof body.content === "string" ? body.content : "";
     const checklist = Array.isArray(body.checklist) ? body.checklist : [];
     const category = body.category;
     const accountType = body.account_type;
+    const mode: NoteOrganizeMode = VALID_MODES.includes(body.mode) ? body.mode : "auto";
 
     if (!title.trim() && !content.trim() && checklist.length === 0) {
       return NextResponse.json(
@@ -68,6 +93,7 @@ export async function POST(req: NextRequest) {
         content,
         checklist,
         category,
+        mode,
       });
       return NextResponse.json({ success: true, ...result });
     }

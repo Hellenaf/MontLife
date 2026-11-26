@@ -57,13 +57,6 @@ export async function POST(req: NextRequest) {
           }))
       : [];
 
-    if (!title && !content.trim() && checklist.length === 0) {
-      return NextResponse.json(
-        { success: false, error: "Informe título, conteúdo ou pelo menos um item na anotação." },
-        { status: 400 }
-      );
-    }
-
     const nowIso = new Date().toISOString();
     const category: NoteCategory = VALID_CATEGORIES.includes(body.category)
       ? body.category
@@ -77,7 +70,7 @@ export async function POST(req: NextRequest) {
         typeof body.id === "string" && body.id.trim()
           ? body.id.trim()
           : `note-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      title: title || "Sem título",
+      title,
       content,
       category,
       account_type: typeof body.account_type === "string" && body.account_type ? body.account_type : "work",
@@ -90,6 +83,12 @@ export async function POST(req: NextRequest) {
       checklist,
       ai_summary: typeof body.ai_summary === "string" ? body.ai_summary : null,
       key_decisions: Array.isArray(body.key_decisions) ? body.key_decisions : [],
+      demand_readiness:
+        body.demand_readiness === "pronta" ||
+        body.demand_readiness === "parcial" ||
+        body.demand_readiness === "referencia"
+          ? body.demand_readiness
+          : null,
       converted_task_ids: Array.isArray(body.converted_task_ids) ? body.converted_task_ids : [],
       created_at:
         typeof body.created_at === "string" && body.created_at ? body.created_at : nowIso,

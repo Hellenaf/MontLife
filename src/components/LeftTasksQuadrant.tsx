@@ -518,6 +518,15 @@ export function LeftTasksQuadrant({
       dueFormatted = "Data indefinida";
     }
 
+    const priorityTextColor =
+      task.priority === "P1"
+        ? "text-rose-600 dark:text-rose-400"
+        : task.priority === "P2"
+        ? "text-amber-600 dark:text-amber-400"
+        : task.priority === "P3"
+        ? "text-indigo-600 dark:text-indigo-400"
+        : "text-slate-400 dark:text-zinc-500";
+
     return (
       <div
         key={task.id}
@@ -527,18 +536,23 @@ export function LeftTasksQuadrant({
           e.stopPropagation();
           setActiveMenuTaskId((prev) => (prev === task.id ? null : task.id));
         }}
-        className={`group relative rounded-2xl border transition-all cursor-pointer ${
-          isCompactMode ? "px-3 py-2" : "p-3"
-        } ${!isCompleted && !isCanceled ? getPriorityStripeClass(task.priority) : ""} ${
+        className={`group relative transition-colors cursor-pointer ${
+          isCompactMode ? "px-3.5 py-2.5" : "px-4 py-3"
+        } ${
           isSelected
-            ? "bg-indigo-50/80 dark:bg-indigo-950/35 border-indigo-400 dark:border-indigo-500/70 shadow-sm ring-1 ring-indigo-500/20"
+            ? "bg-indigo-50/60 dark:bg-indigo-500/[0.09]"
             : isCanceled
-              ? "bg-rose-50/30 dark:bg-[#151014] border-rose-200/60 dark:border-rose-950/40 opacity-75 hover:opacity-100"
-              : isCompleted
-                ? "bg-slate-50/70 dark:bg-[#111218] border-slate-200/80 dark:border-zinc-800/80 opacity-70 hover:opacity-100"
-                : "bg-white dark:bg-[#141520] border-slate-200/90 dark:border-zinc-800/90 hover:border-slate-300 dark:hover:border-zinc-700 shadow-2xs hover:shadow-sm"
+            ? "bg-rose-50/20 dark:bg-rose-950/10 opacity-70 hover:opacity-100 hover:bg-slate-50 dark:hover:bg-white/[0.025]"
+            : isCompleted
+            ? "opacity-65 hover:opacity-100 hover:bg-slate-50/80 dark:hover:bg-white/[0.025]"
+            : "hover:bg-slate-50/90 dark:hover:bg-white/[0.025]"
         }`}
       >
+        {/* Crisp Left Active Indicator */}
+        {isSelected && (
+          <span className="absolute left-0 top-0 bottom-0 w-[3px] bg-indigo-600 dark:bg-indigo-400" />
+        )}
+
         <div className="flex items-start gap-2.5">
           {/* Circular status button with comfortable mobile touch hitbox */}
           <button
@@ -561,21 +575,21 @@ export function LeftTasksQuadrant({
             className="p-1.5 -m-1.5 mt-0 shrink-0 flex items-center justify-center rounded-full cursor-pointer"
           >
             <span
-              className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+              className={`w-[18px] h-[18px] rounded-full flex items-center justify-center transition-all ${
                 isCanceled
-                  ? "bg-rose-500 text-white shadow-xs"
+                  ? "bg-rose-500 text-white"
                   : isCompleted
-                    ? "bg-emerald-500 text-white shadow-xs"
-                    : "border-2 border-slate-300 dark:border-zinc-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-transparent hover:text-emerald-500"
+                    ? "bg-emerald-500 text-white"
+                    : "border-[1.5px] border-slate-300 dark:border-zinc-600 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-500/15 text-transparent hover:text-emerald-500"
               }`}
             >
-              {isCanceled ? <Ban className="w-3 h-3" /> : <Check className="w-3 h-3" />}
+              {isCanceled ? <Ban className="w-2.5 h-2.5" /> : <Check className="w-2.5 h-2.5" />}
             </span>
           </button>
 
-          {/* Main Task Content (Clean, Scannable Hierarchy — No Badge Soup) */}
+          {/* Main Task Content */}
           <div className="flex-1 min-w-0">
-            {/* Row 1: Title + Overdue/Priority + Menu */}
+            {/* Row 1: Title + Overdue + Menu */}
             <div className="flex items-start justify-between gap-1.5">
               <h4
                 className={`${isCompactMode ? "text-xs line-clamp-1" : "text-[13px] line-clamp-2"} font-semibold leading-snug flex-1 min-w-0 ${
@@ -583,7 +597,9 @@ export function LeftTasksQuadrant({
                     ? "line-through text-slate-400 dark:text-zinc-500 font-normal"
                     : isCanceled
                       ? "line-through text-rose-500/80 dark:text-rose-400/80 font-normal"
-                      : "text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400"
+                      : isSelected
+                        ? "text-indigo-950 dark:text-white"
+                        : "text-slate-900 dark:text-zinc-100 group-hover:text-indigo-700 dark:group-hover:text-white"
                 } transition-colors`}
               >
                 {task.title}
@@ -592,7 +608,7 @@ export function LeftTasksQuadrant({
               <div className="flex items-center gap-1 shrink-0 -mt-0.5">
                 {overdue && (
                   <span
-                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-rose-50 dark:bg-rose-950/50 text-[10px] font-bold text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-800/50"
+                    className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-rose-50 dark:bg-rose-500/15 text-[10px] font-semibold text-rose-600 dark:text-rose-400"
                     title="Demanda atrasada"
                   >
                     <AlertCircle className="w-2.5 h-2.5" />
@@ -600,7 +616,6 @@ export function LeftTasksQuadrant({
                   </span>
                 )}
 
-                {/* 3-dots Menu Button */}
                 <button
                   type="button"
                   onClick={(e) => {
@@ -608,46 +623,44 @@ export function LeftTasksQuadrant({
                     setActiveMenuTaskId((prev) => (prev === task.id ? null : task.id));
                   }}
                   title="Opções da demanda"
-                  className="p-1.5 -mr-1.5 rounded-lg text-slate-400 lg:opacity-0 lg:group-hover:opacity-100 focus:opacity-100 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-zinc-800 transition-all cursor-pointer"
+                  className="p-1 -mr-1 rounded-md text-slate-400 lg:opacity-0 lg:group-hover:opacity-100 focus:opacity-100 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-slate-200/60 dark:hover:bg-white/[0.08] transition-all cursor-pointer"
                 >
-                  <MoreVertical className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
+                  <MoreVertical className="w-3.5 h-3.5" />
                 </button>
               </div>
             </div>
 
-            {/* Display cancel reason if canceled (Detailed mode) */}
             {!isCompactMode && isCanceled && task.cancel_reason && (
-              <p className="text-[11px] text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 px-2 py-1 rounded-md border border-rose-100 dark:border-rose-900/40 line-clamp-1 mt-1">
+              <p className="text-[11px] text-rose-600 dark:text-rose-400 bg-rose-50/70 dark:bg-rose-950/30 px-2 py-1 rounded line-clamp-1 mt-1">
                 <span className="font-semibold">Motivo:</span> {task.cancel_reason}
               </p>
             )}
 
-            {/* Optional 1-line description snippet (Detailed mode only) */}
             {!isCompactMode && !isCanceled && task.description && (
-              <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-1 mt-0.5 font-normal">
+              <p className="text-xs text-slate-500 dark:text-zinc-400 line-clamp-1 mt-0.5 font-normal">
                 {task.description.replace(/\*\*/g, "")}
               </p>
             )}
 
-            {/* Row 2/3: Clean Consolidated Metadata Strip (Max 3 clear visual signals) */}
+            {/* Row 2: Clean Consolidated Metadata */}
             <div
-              className={`flex items-center justify-between gap-2 text-[11px] text-slate-500 dark:text-slate-400 ${
-                isCompactMode ? "mt-1" : "mt-2 pt-1.5 border-t border-slate-100 dark:border-zinc-800/60"
+              className={`flex items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-zinc-500 ${
+                isCompactMode ? "mt-1" : "mt-2"
               }`}
             >
               <div className="flex items-center gap-2 min-w-0">
                 <span
                   className={`flex items-center gap-1 font-mono truncate tabular-nums ${
-                    overdue ? "text-rose-600 dark:text-rose-400 font-semibold" : ""
+                    overdue ? "text-rose-600 dark:text-rose-400 font-semibold" : "text-slate-500 dark:text-zinc-400"
                   }`}
                 >
-                  <Clock className="w-3 h-3 shrink-0 opacity-75" />
+                  <Clock className="w-3 h-3 shrink-0 opacity-70" />
                   {dueFormatted}
                 </span>
 
                 {task.reminder_enabled && (
                   <span
-                    className="inline-flex items-center text-indigo-600 dark:text-purple-300 shrink-0"
+                    className="inline-flex items-center text-indigo-500 dark:text-indigo-400 shrink-0"
                     title={`Lembrete: ${formatReminderLeadTime(task.reminder_minutes_before ?? 30)}`}
                   >
                     <Bell className="w-3 h-3" />
@@ -660,7 +673,7 @@ export function LeftTasksQuadrant({
                     target="_blank"
                     rel="noopener noreferrer"
                     onClick={(e) => e.stopPropagation()}
-                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60 text-[10px] font-bold shrink-0 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-colors"
+                    className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold shrink-0 hover:bg-emerald-100 dark:hover:bg-emerald-500/25 transition-colors"
                     title="Entrar na reunião do Google Meet"
                   >
                     <Video className="w-2.5 h-2.5" />
@@ -670,25 +683,22 @@ export function LeftTasksQuadrant({
               </div>
 
               <div className="flex items-center gap-1.5 shrink-0">
-                {/* Only show Kanban stage badge when actively IN_PROGRESS or WAITING */}
                 {!isCompactMode && (task.status === "IN_PROGRESS" || task.status === "WAITING") && (
                   getKanbanStageBadge(task.status)
                 )}
 
-                {/* Category text in Detailed mode */}
                 {!isCompactMode && (
                   <span
-                    className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[96px]"
+                    className="text-[11px] text-slate-400 dark:text-zinc-500 truncate max-w-[92px]"
                     title={task.category}
                   >
                     {task.category}
                   </span>
                 )}
 
-                {/* Subtle Priority + Context dot */}
                 <span
-                  className={`w-2 h-2 rounded-full shrink-0 ${
-                    isWorkTask(task) ? "bg-blue-500" : "bg-purple-500"
+                  className={`w-1.5 h-1.5 rounded-full shrink-0 ${
+                    isWorkTask(task) ? "bg-blue-500" : "bg-violet-500"
                   }`}
                   title={
                     isWorkTask(task)
@@ -696,7 +706,7 @@ export function LeftTasksQuadrant({
                       : `Pessoal (${task.priority})`
                   }
                 />
-                <span className="font-mono text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                <span className={`font-mono text-[10px] font-semibold ${priorityTextColor}`}>
                   {task.priority}
                 </span>
               </div>
@@ -704,11 +714,11 @@ export function LeftTasksQuadrant({
           </div>
         </div>
 
-        {/* Context Dropdown Menu (via 3 dots or right click) */}
+        {/* Context Dropdown Menu */}
         {activeMenuTaskId === task.id && (
           <div
             onClick={(e) => e.stopPropagation()}
-            className="absolute right-2 top-8 z-30 w-48 rounded-xl bg-white dark:bg-[#181926] border border-slate-200 dark:border-zinc-700 shadow-2xl py-1 animate-in fade-in zoom-in-95"
+            className="absolute right-3 top-8 z-30 w-48 rounded-xl bg-white dark:bg-[#16161D] border border-slate-200 dark:border-[#282834] shadow-popover py-1 animate-in fade-in zoom-in-95"
           >
             {!isCompleted && (
               <button
@@ -792,19 +802,19 @@ export function LeftTasksQuadrant({
   };
 
   return (
-    <aside className="w-full lg:w-[318px] xl:w-[356px] h-full flex flex-col border-r border-slate-200 dark:border-zinc-800/80 bg-slate-50/60 dark:bg-[#0c0d13] shrink-0 overflow-hidden transition-colors duration-200">
-      {/* Top Clean Filter & Search Bar (Compact single-row default + collapsible panel/sheet) */}
-      <div className="p-3 border-b border-slate-200 dark:border-zinc-800/80 bg-white dark:bg-[#101118] space-y-2 shrink-0">
-        {/* Primary Row: Search + Filters Trigger + Mobile Metrics + Quick Tools */}
+    <aside className="w-full lg:w-[332px] xl:w-[368px] h-full flex flex-col border-r border-slate-200/80 dark:border-[#22222B] bg-white dark:bg-[#0E0E12] shrink-0 overflow-hidden transition-colors duration-200">
+      {/* Top Filter & Search Bar */}
+      <div className="px-3.5 py-3 border-b border-slate-200/75 dark:border-[#1E1E26] bg-white dark:bg-[#0E0E12] space-y-2.5 shrink-0">
+        {/* Primary Row: Search + Filters Trigger + Density + Sync */}
         <div className="flex items-center gap-1.5">
           <div className="relative flex-1 min-w-0">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-500" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Buscar demandas..."
-              className="w-full h-9 sm:h-8 pl-8 pr-7 rounded-lg bg-slate-100 dark:bg-[#161722] border border-slate-200 dark:border-zinc-800 text-xs text-slate-800 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+              placeholder="Filtrar demandas..."
+              className="w-full h-8.5 h-8 pl-8 pr-7 rounded-lg bg-slate-100/80 dark:bg-[#16161C] border border-slate-200/80 dark:border-[#24242F] focus:bg-white dark:focus:bg-[#181820] text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500/80"
             />
             {searchTerm && (
               <button
@@ -818,47 +828,44 @@ export function LeftTasksQuadrant({
             )}
           </div>
 
-          {/* Unified Filters Toggle (Desktop dropdown + Mobile Bottom Sheet) */}
           <button
             type="button"
             onClick={() => setIsFiltersOpen((prev) => !prev)}
             title="Filtros e ordenação"
-            className={`h-9 sm:h-8 px-2.5 rounded-lg border flex items-center gap-1 text-xs font-semibold shrink-0 transition-all cursor-pointer ${
+            className={`h-8 px-2.5 rounded-lg border flex items-center gap-1 text-xs font-medium shrink-0 transition-colors cursor-pointer ${
               isFiltersOpen || activeFiltersCount > 0 || accountFilter !== "all"
-                ? "bg-indigo-600 text-white border-indigo-500 shadow-2xs"
-                : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-200/70 dark:hover:bg-zinc-800"
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white dark:bg-[#16161C] text-slate-600 dark:text-zinc-300 border-slate-200/80 dark:border-[#24242F] hover:bg-slate-50 dark:hover:bg-[#1C1C24]"
             }`}
           >
             <Filter className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Filtros</span>
             {(activeFiltersCount > 0 || accountFilter !== "all") && (
-              <span className="px-1.5 py-0 rounded-full bg-white/25 text-[10px] font-bold font-mono">
+              <span className="px-1 rounded bg-white/25 text-[10px] font-mono font-bold">
                 {activeFiltersCount + (accountFilter !== "all" ? 1 : 0)}
               </span>
             )}
           </button>
 
-          {/* Compact / Detailed Toggle (Desktop) */}
           <button
             type="button"
             onClick={toggleCompactMode}
-            title={isCompactMode ? "Mudar para cards detalhados" : "Mudar para lista compacta"}
+            title={isCompactMode ? "Mudar para lista detalhada" : "Mudar para lista compacta"}
             className={`hidden sm:flex w-8 h-8 rounded-lg border items-center justify-center shrink-0 transition-colors cursor-pointer ${
               isCompactMode
-                ? "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800"
-                : "bg-slate-100 dark:bg-[#161722] text-slate-600 dark:text-slate-300 border-slate-200 dark:border-zinc-800 hover:bg-slate-200/70 dark:hover:bg-zinc-800"
+                ? "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-500/30"
+                : "bg-white dark:bg-[#16161C] text-slate-500 dark:text-zinc-400 border-slate-200/80 dark:border-[#24242F] hover:bg-slate-50 dark:hover:bg-[#1C1C24]"
             }`}
           >
             {isCompactMode ? <AlignJustify className="w-3.5 h-3.5" /> : <LayoutList className="w-3.5 h-3.5" />}
           </button>
 
-          {/* Mobile 1-tap Metrics & IA Briefing Button */}
           {onOpenMobileMetrics && (
             <button
               type="button"
               onClick={onOpenMobileMetrics}
               title="Abrir Métricas & Briefing IA"
-              className="lg:hidden h-9 px-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 flex items-center gap-1 text-xs font-semibold shrink-0 cursor-pointer"
+              className="lg:hidden h-8 px-2.5 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/30 flex items-center gap-1 text-xs font-semibold shrink-0 cursor-pointer"
             >
               <TrendingUp className="w-3.5 h-3.5" />
               <span>IA</span>
@@ -870,30 +877,32 @@ export function LeftTasksQuadrant({
             onClick={handleSyncGoogleTasks}
             disabled={isSyncing}
             title="Atualizar e consolidar demandas"
-            className="w-9 h-9 sm:w-8 sm:h-8 rounded-lg bg-slate-100 dark:bg-[#161722] hover:bg-slate-200 dark:hover:bg-zinc-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-zinc-800 flex items-center justify-center shrink-0 transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+            className="w-8 h-8 rounded-lg bg-white dark:bg-[#16161C] hover:bg-slate-50 dark:hover:bg-[#1C1C24] text-slate-500 dark:text-zinc-400 border border-slate-200/80 dark:border-[#24242F] flex items-center justify-center shrink-0 transition-colors disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? "animate-spin text-indigo-500" : ""}`} />
           </button>
         </div>
 
-        {/* Sub-row: Count + Sort + Active Removable Filter Chips (Minimal footprint!) */}
+        {/* Sub-row: Open Count + Sort */}
         <div className="flex items-center justify-between gap-2 text-[11px]">
-          <span className="text-slate-500 dark:text-slate-400 font-medium">
-            <strong className="text-slate-800 dark:text-slate-200 font-mono">{activeTasks.length}</strong>{" "}
-            {activeTasks.length === 1 ? "demanda aberta" : "demandas abertas"}
+          <span className="text-slate-500 dark:text-zinc-400 font-medium">
+            <strong className="text-slate-900 dark:text-zinc-100 font-mono tabular-nums">
+              {activeTasks.length}
+            </strong>{" "}
+            {activeTasks.length === 1 ? "aberta" : "abertas"}
           </span>
 
-          <div className="flex items-center gap-1.5">
-            <ArrowUpDown className="w-3 h-3 text-slate-400 shrink-0" />
+          <div className="flex items-center gap-1">
+            <ArrowUpDown className="w-3 h-3 text-slate-400 dark:text-zinc-500 shrink-0" />
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value as any)}
               aria-label="Ordenar demandas"
-              className="bg-transparent text-[11px] font-semibold text-slate-600 dark:text-slate-300 focus:outline-none cursor-pointer"
+              className="bg-transparent text-[11px] font-medium text-slate-600 dark:text-zinc-300 focus:outline-none cursor-pointer"
             >
-              <option value="due_asc" className="dark:bg-[#141520]">Prazo mais próximo</option>
-              <option value="priority" className="dark:bg-[#141520]">Prioridade (P1→P4)</option>
-              <option value="recent" className="dark:bg-[#141520]">Mais recentes</option>
+              <option value="due_asc" className="dark:bg-[#14141B]">Prazo mais próximo</option>
+              <option value="priority" className="dark:bg-[#14141B]">Prioridade (P1→P4)</option>
+              <option value="recent" className="dark:bg-[#14141B]">Mais recentes</option>
             </select>
           </div>
         </div>
@@ -1271,65 +1280,70 @@ export function LeftTasksQuadrant({
         </div>
       )}
 
-      {/* Task List (Google Tasks Style) */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2 pb-6 lg:pb-3">
+      {/* Flush Seamless Task List */}
+      <div className="flex-1 overflow-y-auto pb-6 lg:pb-3">
         {filteredTasks.length === 0 ? (
-          <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-slate-500">
-            <Filter className="w-8 h-8 mb-2 opacity-30 text-indigo-500" />
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+          <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-400 dark:text-zinc-500">
+            <Filter className="w-7 h-7 mb-2 opacity-30 text-indigo-500" />
+            <p className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
               Nenhuma demanda encontrada
             </p>
-            <p className="text-[11px] mt-1 max-w-[240px] leading-relaxed">
-              Tente mudar o filtro de categoria ou sincronizar tarefas do Google.
+            <p className="text-[11px] mt-1 max-w-[230px] leading-relaxed">
+              Ajuste os filtros aplicados ou adicione uma nova demanda.
             </p>
             {onRequestNewTask && (
               <button
                 type="button"
                 onClick={onRequestNewTask}
-                className="mt-3 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-medium shadow-sm transition-all"
+                className="mt-3 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors cursor-pointer"
               >
-                + Criar Nova Demanda
+                + Nova Demanda
               </button>
             )}
           </div>
         ) : statusFilter === "COMPLETED" ? (
-          completedTasks.map((task) => renderTaskCard(task, true))
+          <div className="divide-y divide-slate-100 dark:divide-[#1A1A22]">
+            {completedTasks.map((task) => renderTaskCard(task, true))}
+          </div>
         ) : (
           <>
             {/* Active Tasks */}
             {activeTasks.length === 0 && completedTasks.length > 0 ? (
-              <div className="p-4 rounded-2xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 text-center text-xs text-slate-600 dark:text-slate-400 shadow-sm">
-                🎉 Todas as tarefas ativas estão concluídas!
+              <div className="m-4 p-4 rounded-xl bg-[#FAFAFB] dark:bg-[#14141B] border border-slate-200/80 dark:border-[#22222C] text-center text-xs text-slate-600 dark:text-zinc-400">
+                Todas as demandas ativas estão concluídas.
               </div>
             ) : (
-              activeTasks.map((task) => renderTaskCard(task, false))
+              <div className="divide-y divide-slate-100 dark:divide-[#1A1A22]">
+                {activeTasks.map((task) => renderTaskCard(task, false))}
+              </div>
             )}
 
             {/* Collapsible Completed Tasks Section */}
             {completedTasks.length > 0 && (
-              <div className="pt-3 border-t border-slate-200 dark:border-zinc-800/80 mt-3">
+              <div className="border-t border-slate-200/80 dark:border-[#1E1E26]">
                 <button
                   type="button"
                   onClick={() => setIsCompletedExpanded(!isCompletedExpanded)}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-all shadow-sm"
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-[#FAFAFB] dark:bg-[#111116] hover:bg-slate-100/80 dark:hover:bg-[#15151C] text-xs font-medium text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-indigo-500 transition-transform duration-200 ${isCompletedExpanded ? "" : "-rotate-90"
-                        }`}
+                      className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
+                        isCompletedExpanded ? "" : "-rotate-90"
+                      }`}
                     />
                     <span>Concluídas</span>
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-zinc-800 text-indigo-600 dark:text-indigo-400">
+                    <span className="text-[11px] font-mono text-slate-400 dark:text-zinc-500 tabular-nums">
                       {completedTasks.length}
                     </span>
                   </div>
-                  <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">
-                    {isCompletedExpanded ? "Ocultar" : "Mostrar"}
+                  <span className="text-[10px] text-slate-400 dark:text-zinc-500">
+                    {isCompletedExpanded ? "Ocultar" : "Ver"}
                   </span>
                 </button>
 
                 {isCompletedExpanded && (
-                  <div className="mt-2 space-y-2 animate-in fade-in duration-150">
+                  <div className="divide-y divide-slate-100 dark:divide-[#1A1A22] border-t border-slate-100 dark:border-[#1A1A22] animate-in fade-in duration-150">
                     {completedTasks.map((task) => renderTaskCard(task, true))}
                   </div>
                 )}
@@ -1338,30 +1352,31 @@ export function LeftTasksQuadrant({
 
             {/* Collapsible Canceled Tasks Section */}
             {canceledTasks.length > 0 && (
-              <div className="pt-2 border-t border-slate-200 dark:border-zinc-800/80 mt-2">
+              <div className="border-t border-slate-200/80 dark:border-[#1E1E26]">
                 <button
                   type="button"
                   onClick={() => setIsCanceledExpanded(!isCanceledExpanded)}
-                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white dark:bg-[#12131A] border border-slate-200 dark:border-zinc-800 hover:border-slate-300 dark:hover:border-zinc-700 text-xs font-semibold text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-all shadow-sm"
+                  className="w-full flex items-center justify-between px-4 py-2.5 bg-[#FAFAFB] dark:bg-[#111116] hover:bg-slate-100/80 dark:hover:bg-[#15151C] text-xs font-medium text-rose-600/90 dark:text-rose-400/90 transition-colors cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <ChevronDown
-                      className={`w-3.5 h-3.5 text-rose-500 transition-transform duration-200 ${isCanceledExpanded ? "" : "-rotate-90"
-                        }`}
+                      className={`w-3.5 h-3.5 text-rose-400 transition-transform duration-200 ${
+                        isCanceledExpanded ? "" : "-rotate-90"
+                      }`}
                     />
                     <Ban className="w-3.5 h-3.5 text-rose-500" />
                     <span>Canceladas</span>
-                    <span className="px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800">
+                    <span className="text-[11px] font-mono text-rose-500/80 tabular-nums">
                       {canceledTasks.length}
                     </span>
                   </div>
-                  <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500">
-                    {isCanceledExpanded ? "Ocultar" : "Mostrar"}
+                  <span className="text-[10px] text-slate-400 dark:text-zinc-500">
+                    {isCanceledExpanded ? "Ocultar" : "Ver"}
                   </span>
                 </button>
 
                 {isCanceledExpanded && (
-                  <div className="mt-2 space-y-2 animate-in fade-in duration-150">
+                  <div className="divide-y divide-slate-100 dark:divide-[#1A1A22] border-t border-slate-100 dark:border-[#1A1A22] animate-in fade-in duration-150">
                     {canceledTasks.map((task) => renderTaskCard(task, true))}
                   </div>
                 )}
