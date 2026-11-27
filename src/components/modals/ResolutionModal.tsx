@@ -62,18 +62,18 @@ export function ResolutionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-5 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg max-h-[92dvh] flex flex-col rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-popover overflow-hidden transition-all">
+      <div className="relative w-full max-w-lg max-h-[92dvh] flex flex-col rounded-2xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] shadow-popover overflow-hidden transition-all">
         {/* Header - Fixed */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6] dark:bg-[#1C2230] shrink-0">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#E5E0D6] dark:border-[#44394F] bg-[#FAF6EF] dark:bg-[#241F2D] shrink-0">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 shrink-0">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+              <h2 className="text-sm sm:text-base font-bold text-[#392D4B] dark:text-white">
                 Finalizar Demanda & Salvar na Wiki
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[#756B80] dark:text-[#B6A9C3]">
                 Documente a resolução para alimentar o acervo técnico e consultas futuras.
               </p>
             </div>
@@ -81,7 +81,7 @@ export function ResolutionModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-[#E7DFF5] dark:hover:bg-[#3D344C] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -94,15 +94,15 @@ export function ResolutionModal({
           className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-left custom-scrollbar"
         >
           {/* Context box */}
-          <div className="p-3.5 rounded-2xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] space-y-1">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">
+          <div className="p-3.5 rounded-2xl bg-[#FAF6EF] dark:bg-[#1D1925] border border-[#E4DCE4] dark:border-[#44394F] space-y-1">
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#7455AD] dark:text-[#B6A2DB]">
               Demanda a ser finalizada
             </span>
             <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
               {task.title}
             </p>
             {task.description && (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2">
+              <p className="text-[11px] text-[#756B80] dark:text-[#B6A9C3] line-clamp-2">
                 {task.description}
               </p>
             )}
@@ -110,9 +110,9 @@ export function ResolutionModal({
 
           {/* Validation Steps checklist review */}
           {task.validation_steps && task.validation_steps.length > 0 && (
-            <div className="p-3.5 rounded-2xl bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 space-y-2">
+            <div className="p-3.5 rounded-2xl bg-[#E7DFF5]/50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-900/40 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-indigo-900 dark:text-indigo-300">
+                <span className="text-xs font-bold text-indigo-900 dark:text-[#D8C9EE]">
                   Etapas de Validação ({task.validation_steps.filter((s) => s.completed).length}/
                   {task.validation_steps.length} concluídas):
                 </span>
@@ -123,8 +123,8 @@ export function ResolutionModal({
                     <span
                       className={`w-3.5 h-3.5 rounded flex items-center justify-center shrink-0 text-[10px] ${
                         step.completed
-                          ? "bg-indigo-600 text-white"
-                          : "border border-indigo-300 dark:border-indigo-700 text-transparent"
+                          ? "bg-[#7455AD] text-white"
+                          : "border border-[#B6A2DB] dark:border-indigo-700 text-transparent"
                       }`}
                     >
                       ✓
@@ -132,7 +132,7 @@ export function ResolutionModal({
                     <span
                       className={
                         step.completed
-                          ? "line-through text-indigo-950/60 dark:text-indigo-300/60"
+                          ? "line-through text-indigo-950/60 dark:text-[#D8C9EE]/60"
                           : "text-indigo-900 dark:text-indigo-200"
                       }
                     >
@@ -151,7 +151,7 @@ export function ResolutionModal({
                 <BookOpen className="w-3.5 h-3.5 text-emerald-500" />
                 <span>Procedimento Técnico & Solução:</span>
               </label>
-              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-500">
+              <span className="text-[10px] font-medium text-slate-400 dark:text-[#756B80]">
                 Opcional
               </span>
             </div>
@@ -160,7 +160,7 @@ export function ResolutionModal({
               value={resolutionNotes}
               onChange={(e) => setResolutionNotes(e.target.value)}
               placeholder="Descreva a solução aplicada se desejar salvar na base de conhecimento (opcional). Se preferir, pode deixar em branco e concluir diretamente..."
-              className="w-full text-xs p-3 rounded-2xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all resize-none"
+              className="w-full text-xs p-3 rounded-2xl bg-[#FAF6EF] dark:bg-[#1D1925] border border-[#E4DCE4] dark:border-[#44394F] text-slate-800 dark:text-[#F5F1E8] placeholder-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/30 focus:border-emerald-500 transition-all resize-none"
             />
           </div>
 
@@ -177,11 +177,11 @@ export function ResolutionModal({
         </form>
 
         {/* Footer Actions - Fixed */}
-        <div className="flex items-center justify-between gap-2 p-4 sm:p-5 border-t border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6]/70 dark:bg-[#1C2230] shrink-0">
+        <div className="flex items-center justify-between gap-2 p-4 sm:p-5 border-t border-[#E5E0D6] dark:border-[#44394F] bg-[#FAF6EF]/70 dark:bg-[#241F2D] shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors"
+            className="px-4 py-2 text-xs font-medium text-[#756B80] hover:text-slate-800 dark:text-[#B6A9C3] dark:hover:text-white transition-colors"
           >
             Cancelar
           </button>

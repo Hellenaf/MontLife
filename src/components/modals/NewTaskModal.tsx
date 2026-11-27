@@ -647,14 +647,14 @@ export function NewTaskModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-5 bg-slate-950/55 dark:bg-black/75 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-2xl max-h-[94dvh] flex flex-col rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-popover overflow-hidden transition-all">
+      <div className="relative w-full max-w-2xl max-h-[94dvh] flex flex-col rounded-2xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] shadow-popover overflow-hidden transition-all">
         {/* Header - Fixed */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6] dark:bg-[#1C2230] shrink-0">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#E5E0D6] dark:border-[#44394F] bg-[#FAF6EF] dark:bg-[#241F2D] shrink-0">
           <div className="flex items-center gap-3">
             <div className={`p-2 rounded-xl border shrink-0 ${
               isInterstitialVisible
                 ? "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800"
-                : "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800"
+                : "bg-[#E7DFF5] dark:bg-[#332A45] text-[#7455AD] dark:text-[#B6A2DB] border border-[#D8C9EE] dark:border-indigo-800"
             }`}>
               {isInterstitialVisible ? (
                 <Lightbulb className="w-5 h-5 text-amber-500" />
@@ -663,12 +663,12 @@ export function NewTaskModal({
               )}
             </div>
             <div>
-              <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">
+              <h2 className="text-sm sm:text-base font-bold text-[#392D4B] dark:text-white">
                 {isInterstitialVisible
                   ? "Demanda Semelhante / Existente Detectada"
                   : "Nova Demanda & Atividade"}
               </h2>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[#756B80] dark:text-[#B6A9C3]">
                 {isInterstitialVisible && topSimilar
                   ? `Identificamos uma demanda existente com ${Math.round(topSimilar.similarityScore * 100)}% de similaridade.`
                   : "Cole ou digite sua solicitação; a IA melhora o texto, cria o título e gera etapas."}
@@ -678,7 +678,7 @@ export function NewTaskModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] transition-colors"
+            className="p-1.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-[#E7DFF5] dark:hover:bg-[#3D344C] transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -707,8 +707,8 @@ export function NewTaskModal({
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-amber-200/70 dark:border-[#343F56] space-y-2">
-                <h4 className="text-sm font-bold text-slate-900 dark:text-white leading-snug">
+              <div className="p-3.5 rounded-xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-amber-200/70 dark:border-[#44394F] space-y-2">
+                <h4 className="text-sm font-bold text-[#392D4B] dark:text-white leading-snug">
                   {topSimilar.task.title}
                 </h4>
 
@@ -718,7 +718,7 @@ export function NewTaskModal({
                   </p>
                 )}
 
-                <div className="flex items-center gap-2 pt-1 border-t border-[#E5E0D6] dark:border-[#343F56] text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+                <div className="flex items-center gap-2 pt-1 border-t border-[#E5E0D6] dark:border-[#44394F] text-[10px] text-[#756B80] dark:text-[#B6A9C3] font-medium">
                   <span>Categoria: <strong className="text-slate-700 dark:text-slate-200">{topSimilar.task.category}</strong></span>
                   <span>•</span>
                   <span>Prioridade: <strong className="text-purple-600 dark:text-purple-400">{topSimilar.task.priority}</strong></span>
@@ -736,15 +736,15 @@ export function NewTaskModal({
             </div>
 
             {/* Demanda sendo digitada */}
-            <div className="p-3.5 rounded-xl bg-[#F0EDE6] dark:bg-[#1C2230] border border-[#DCD7CC] dark:border-[#343F56] space-y-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            <div className="p-3.5 rounded-xl bg-[#FAF6EF] dark:bg-[#241F2D] border border-[#E4DCE4] dark:border-[#44394F] space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#756B80] dark:text-[#B6A9C3]">
                 Sua nova solicitação {hasAiEnhancedDraft && aiSource !== "fallback" ? "(estruturada pela IA)" : ""}:
               </span>
               <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">
                 {title.trim() || description.trim().slice(0, 100)}
               </p>
               {description.trim() && description.trim() !== title.trim() && (
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 line-clamp-2 leading-relaxed">
+                <p className="text-[11px] text-slate-600 dark:text-[#B6A9C3] line-clamp-2 leading-relaxed">
                   {description.trim()}
                 </p>
               )}
@@ -835,17 +835,17 @@ export function NewTaskModal({
                     setShowSimilarityScreen(false);
                     setServerSimilarMatch(null);
                   }}
-                  className="p-3 rounded-xl border border-indigo-300 dark:border-indigo-800 bg-indigo-50/70 hover:bg-indigo-100 dark:bg-indigo-950/40 dark:hover:bg-indigo-900/50 text-left transition-all cursor-pointer shadow-xs group disabled:opacity-70"
+                  className="p-3 rounded-xl border border-[#B6A2DB] dark:border-indigo-800 bg-[#E7DFF5]/70 hover:bg-[#D8C9EE] dark:bg-[#332A45] dark:hover:bg-indigo-900/50 text-left transition-all cursor-pointer shadow-xs group disabled:opacity-70"
                 >
-                  <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-800 dark:text-indigo-300 mb-1">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-800 dark:text-[#D8C9EE] mb-1">
                     {isAnalyzingAI ? (
-                      <Loader2 className="w-3.5 h-3.5 animate-spin text-indigo-600 dark:text-indigo-400" />
+                      <Loader2 className="w-3.5 h-3.5 animate-spin text-[#7455AD] dark:text-[#B6A2DB]" />
                     ) : (
-                      <Plus className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 group-hover:scale-125 transition-transform" />
+                      <Plus className="w-3.5 h-3.5 text-[#7455AD] dark:text-[#B6A2DB] group-hover:scale-125 transition-transform" />
                     )}
                     <span>{isAnalyzingAI ? "Estruturando com IA..." : "Criação Independente"}</span>
                   </div>
-                  <p className="text-[10px] text-indigo-700/80 dark:text-indigo-400 leading-tight">
+                  <p className="text-[10px] text-[#654696]/80 dark:text-[#B6A2DB] leading-tight">
                     Ignorar similaridade e avançar para cadastrar como nova demanda avulsa com a IA.
                   </p>
                 </button>
@@ -884,10 +884,10 @@ export function NewTaskModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Tipo de Item */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-[#B6A9C3] uppercase tracking-wider block">
                 1. Tipo de Registro:
               </label>
-              <div className="grid grid-cols-3 gap-1 sm:gap-1.5 p-1 bg-[#E7E3DA] dark:bg-[#171C26] rounded-xl border border-[#DCD7CC] dark:border-[#343F56]">
+              <div className="grid grid-cols-3 gap-1 sm:gap-1.5 p-1 bg-[#F2ECE2] dark:bg-[#1D1925] rounded-xl border border-[#E4DCE4] dark:border-[#44394F]">
                 <button
                   type="button"
                   onClick={() => {
@@ -896,8 +896,8 @@ export function NewTaskModal({
                   }}
                   className={`flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
                     itemType === "task"
-                      ? "bg-[#F7F6F1] dark:bg-[#293244] text-indigo-600 dark:text-indigo-400 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      ? "bg-[#FFFCF6] dark:bg-[#352D42] text-[#7455AD] dark:text-[#B6A2DB] shadow-sm"
+                      : "text-slate-600 dark:text-[#B6A9C3] hover:text-[#392D4B]"
                   }`}
                 >
                   <ListTodo className="w-3.5 h-3.5 shrink-0" />
@@ -925,8 +925,8 @@ export function NewTaskModal({
                   }}
                   className={`flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
                     itemType === "activity"
-                      ? "bg-[#F7F6F1] dark:bg-[#293244] text-blue-600 dark:text-blue-400 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      ? "bg-[#FFFCF6] dark:bg-[#352D42] text-blue-600 dark:text-blue-400 shadow-sm"
+                      : "text-slate-600 dark:text-[#B6A9C3] hover:text-[#392D4B]"
                   }`}
                 >
                   <Activity className="w-3.5 h-3.5 shrink-0" />
@@ -940,8 +940,8 @@ export function NewTaskModal({
                   }}
                   className={`flex items-center justify-center gap-1 sm:gap-1.5 py-1.5 px-1 sm:px-2 rounded-lg text-[11px] sm:text-xs font-semibold transition-all ${
                     itemType === "reminder"
-                      ? "bg-[#F7F6F1] dark:bg-[#293244] text-amber-600 dark:text-amber-400 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      ? "bg-[#FFFCF6] dark:bg-[#352D42] text-amber-600 dark:text-amber-400 shadow-sm"
+                      : "text-slate-600 dark:text-[#B6A9C3] hover:text-[#392D4B]"
                   }`}
                 >
                   <Bell className="w-3.5 h-3.5 shrink-0" />
@@ -952,10 +952,10 @@ export function NewTaskModal({
 
             {/* Contexto: Trabalho vs Pessoal */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-[#B6A9C3] uppercase tracking-wider block">
                 Conta & Contexto:
               </label>
-              <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#E7E3DA] dark:bg-[#171C26] rounded-xl border border-[#DCD7CC] dark:border-[#343F56]">
+              <div className="grid grid-cols-2 gap-1.5 p-1 bg-[#F2ECE2] dark:bg-[#1D1925] rounded-xl border border-[#E4DCE4] dark:border-[#44394F]">
                 <button
                   type="button"
                   onClick={() => {
@@ -964,8 +964,8 @@ export function NewTaskModal({
                   }}
                   className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
                     accountType === "work"
-                      ? "bg-[#F7F6F1] dark:bg-[#293244] text-indigo-600 dark:text-indigo-400 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      ? "bg-[#FFFCF6] dark:bg-[#352D42] text-[#7455AD] dark:text-[#B6A2DB] shadow-sm"
+                      : "text-slate-600 dark:text-[#B6A9C3] hover:text-[#392D4B]"
                   }`}
                 >
                   <Briefcase className="w-3.5 h-3.5" />
@@ -979,8 +979,8 @@ export function NewTaskModal({
                   }}
                   className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all ${
                     accountType === "personal"
-                      ? "bg-[#F7F6F1] dark:bg-[#293244] text-emerald-600 dark:text-emerald-400 shadow-sm"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900"
+                      ? "bg-[#FFFCF6] dark:bg-[#352D42] text-emerald-600 dark:text-emerald-400 shadow-sm"
+                      : "text-slate-600 dark:text-[#B6A9C3] hover:text-[#392D4B]"
                   }`}
                 >
                   <User className="w-3.5 h-3.5" />
@@ -993,7 +993,7 @@ export function NewTaskModal({
           {/* Título da Demanda */}
           <div className="space-y-1">
             <div className="flex items-center justify-between gap-2">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-[#B6A9C3] uppercase tracking-wider block">
                 2. Título da Demanda:
               </label>
               {hasAiEnhancedDraft && (
@@ -1012,21 +1012,21 @@ export function NewTaskModal({
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Digite um título ou cole a mensagem abaixo para a IA criar automaticamente..."
-              className="w-full px-3 py-2 text-xs rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+              className="w-full px-3 py-2 text-xs rounded-xl bg-[#FAF6EF] dark:bg-[#1D1925] border border-[#E4DCE4] dark:border-[#44394F] text-[#392D4B] dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-[#7455AD]"
             />
           </div>
 
           {/* Descrição Detalhada */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between gap-2 flex-wrap">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-[#B6A9C3] uppercase tracking-wider block">
                 3. Detalhes / Conteúdo da Mensagem:
               </label>
               <button
                 type="button"
                 onClick={handleAnalyzeWithAI}
                 disabled={isAnalyzingAI || (!title.trim() && !description.trim())}
-                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-indigo-50 dark:bg-indigo-950/60 hover:bg-indigo-100 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 transition-all disabled:opacity-40 cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#E7DFF5] dark:bg-indigo-950/60 hover:bg-[#D8C9EE] dark:hover:bg-indigo-900/50 text-[#654696] dark:text-[#D8C9EE] border border-[#D8C9EE] dark:border-indigo-800 transition-all disabled:opacity-40 cursor-pointer"
                 title="Reescreve a mensagem de forma objetiva, cria um título apropriado e gera tarefas de conclusão com IA"
               >
                 {isAnalyzingAI ? (
@@ -1047,15 +1047,15 @@ export function NewTaskModal({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Cole aqui o e-mail completo, mensagem encaminhada, orientações recebidas ou rascunho informal..."
-              className="w-full p-3 rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 leading-relaxed resize-y font-sans"
+              className="w-full p-3 rounded-xl bg-[#FAF6EF] dark:bg-[#1D1925] border border-[#E4DCE4] dark:border-[#44394F] text-xs text-[#392D4B] dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-[#7455AD] leading-relaxed resize-y font-sans"
             />
 
-            <label className="flex items-center gap-2 pt-0.5 text-[11px] text-slate-600 dark:text-slate-400 cursor-pointer select-none">
+            <label className="flex items-center gap-2 pt-0.5 text-[11px] text-slate-600 dark:text-[#B6A9C3] cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={autoEnhanceWithAI}
                 onChange={(e) => setAutoEnhanceWithAI(e.target.checked)}
-                className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
+                className="rounded border-slate-300 text-[#7455AD] focus:ring-[#7455AD]"
               />
               <span>
                 Aprimorar automaticamente título, texto objetivo e tarefas de conclusão com IA ao criar
@@ -1070,10 +1070,10 @@ export function NewTaskModal({
           </div>
 
           {/* Pontos de Validação & Etapas Sugeridas pela IA */}
-          <div className="space-y-1.5 p-3 rounded-2xl bg-indigo-50/40 dark:bg-indigo-950/20 border border-indigo-200/60 dark:border-indigo-900/40">
+          <div className="space-y-1.5 p-3 rounded-2xl bg-[#E7DFF5]/40 dark:bg-indigo-950/20 border border-[#D8C9EE]/60 dark:border-indigo-900/40">
             <div className="flex flex-wrap items-center justify-between gap-1.5">
               <div className="flex items-center gap-1.5">
-                <CheckSquare className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <CheckSquare className="w-3.5 h-3.5 text-[#7455AD] dark:text-[#B6A2DB] shrink-0" />
                 <label className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider block">
                   Pontos de Validação & Etapas de Conclusão:
                 </label>
@@ -1092,7 +1092,7 @@ export function NewTaskModal({
                 <button
                   type="button"
                   onClick={() => setIsAddingStep(true)}
-                  className="flex items-center gap-1 text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                  className="flex items-center gap-1 text-[11px] font-semibold text-[#7455AD] dark:text-[#B6A2DB] hover:underline cursor-pointer"
                 >
                   <Plus className="w-3 h-3" /> Inserir Etapa
                 </button>
@@ -1100,24 +1100,24 @@ export function NewTaskModal({
             </div>
 
             {validationSteps.length === 0 ? (
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
-                Clique em <strong className="text-indigo-600 dark:text-indigo-400">&quot;Melhorar com IA agora&quot;</strong> acima (ou finalize criando a demanda) para gerar automaticamente as tarefas práticas de conclusão, ou adicione etapas manualmente.
+              <p className="text-[11px] text-[#756B80] dark:text-[#B6A9C3] leading-relaxed">
+                Clique em <strong className="text-[#7455AD] dark:text-[#B6A2DB]">&quot;Melhorar com IA agora&quot;</strong> acima (ou finalize criando a demanda) para gerar automaticamente as tarefas práticas de conclusão, ou adicione etapas manualmente.
               </p>
             ) : (
               <div className="space-y-1.5 pt-1">
                 {validationSteps.map((step, idx) => (
                   <div
                     key={step.id}
-                    className="flex items-center gap-2 p-1.5 px-2.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] group"
+                    className="flex items-center gap-2 p-1.5 px-2.5 rounded-xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] group"
                   >
-                    <span className="text-[11px] font-mono font-bold text-indigo-600 dark:text-indigo-400 shrink-0">
+                    <span className="text-[11px] font-mono font-bold text-[#7455AD] dark:text-[#B6A2DB] shrink-0">
                       {idx + 1}.
                     </span>
                     <input
                       type="text"
                       value={step.text}
                       onChange={(e) => handleUpdateValidationStepText(step.id, e.target.value)}
-                      className="flex-1 text-xs bg-transparent text-slate-800 dark:text-slate-200 outline-hidden focus:text-indigo-600 dark:focus:text-indigo-400"
+                      className="flex-1 text-xs bg-transparent text-slate-800 dark:text-slate-200 outline-hidden focus:text-[#7455AD] dark:focus:text-indigo-400"
                     />
                     <button
                       type="button"
@@ -1140,13 +1140,13 @@ export function NewTaskModal({
                   value={newStepText}
                   onChange={(e) => setNewStepText(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddValidationStep())}
-                  className="w-full sm:flex-1 text-xs p-2 rounded-xl bg-[#F7F6F1] dark:bg-[#171C26] border border-indigo-300 dark:border-indigo-800 text-slate-800 dark:text-slate-100 focus:outline-hidden"
+                  className="w-full sm:flex-1 text-xs p-2 rounded-xl bg-[#FFFCF6] dark:bg-[#1D1925] border border-[#B6A2DB] dark:border-indigo-800 text-slate-800 dark:text-[#F5F1E8] focus:outline-hidden"
                   autoFocus
                 />
                 <button
                   type="button"
                   onClick={handleAddValidationStep}
-                  className="px-3 py-1.5 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-500 transition-colors"
+                  className="px-3 py-1.5 rounded-xl bg-[#7455AD] text-white text-xs font-semibold hover:bg-[#654696] transition-colors"
                 >
                   Adicionar
                 </button>
@@ -1156,7 +1156,7 @@ export function NewTaskModal({
                     setIsAddingStep(false);
                     setNewStepText("");
                   }}
-                  className="px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-[#293244] text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-300 transition-colors"
+                  className="px-2.5 py-1.5 rounded-xl bg-slate-200 dark:bg-[#352D42] text-slate-600 dark:text-slate-300 text-xs font-semibold hover:bg-slate-300 transition-colors"
                 >
                   Cancelar
                 </button>
@@ -1168,7 +1168,7 @@ export function NewTaskModal({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {/* Categoria Combobox */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-[#B6A9C3] uppercase tracking-wider block">
                 Categoria Dinâmica:
               </label>
               <CategoryCombobox
@@ -1183,17 +1183,17 @@ export function NewTaskModal({
 
             {/* Prioridade & SLA */}
             <div className="space-y-1">
-              <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+              <label className="text-[11px] font-semibold text-slate-600 dark:text-[#B6A9C3] uppercase tracking-wider block">
                 Prioridade & Nível SLA:
               </label>
-              <div className="grid grid-cols-4 gap-1 p-1 bg-[#E7E3DA] dark:bg-[#171C26] rounded-xl border border-[#DCD7CC] dark:border-[#343F56]">
+              <div className="grid grid-cols-4 gap-1 p-1 bg-[#F2ECE2] dark:bg-[#1D1925] rounded-xl border border-[#E4DCE4] dark:border-[#44394F]">
                 {(["P1", "P2", "P3", "P4"] as Priority[]).map((p) => {
                   const isSel = priority === p;
-                  let colorClass = "text-slate-600 dark:text-slate-400";
+                  let colorClass = "text-slate-600 dark:text-[#B6A9C3]";
                   if (isSel) {
                     if (p === "P1") colorClass = "bg-rose-500 text-white shadow-sm";
                     else if (p === "P2") colorClass = "bg-amber-500 text-white shadow-sm";
-                    else if (p === "P3") colorClass = "bg-indigo-600 text-white shadow-sm";
+                    else if (p === "P3") colorClass = "bg-[#7455AD] text-white shadow-sm";
                     else colorClass = "bg-slate-700 text-white shadow-sm";
                   }
                   return (
@@ -1242,7 +1242,7 @@ export function NewTaskModal({
 
           {/* Tags Técnicas */}
           <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
+            <label className="text-[11px] font-semibold text-slate-600 dark:text-[#B6A9C3] uppercase tracking-wider block">
               Tags Técnicas (Separadas por vírgula):
             </label>
             <input
@@ -1250,12 +1250,12 @@ export function NewTaskModal({
               value={tagsInput}
               onChange={(e) => setTagsInput(e.target.value)}
               placeholder="totvs, financeiro, biblioteca, reuniao..."
-              className="w-full px-3 py-2 text-xs rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+              className="w-full px-3 py-2 text-xs rounded-xl bg-[#FAF6EF] dark:bg-[#1D1925] border border-[#E4DCE4] dark:border-[#44394F] text-[#392D4B] dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-[#7455AD]"
             />
           </div>
 
           {/* Anexos e Links Externos Reutilizável */}
-          <div className="pt-2 border-t border-[#E5E0D6] dark:border-[#343F56]">
+          <div className="pt-2 border-t border-[#E5E0D6] dark:border-[#44394F]">
             <AttachmentManager
               attachments={attachments}
               onChange={setAttachments}
@@ -1275,11 +1275,11 @@ export function NewTaskModal({
 
       {/* Footer Actions - Visible when filling form */}
         {!isInterstitialVisible && (
-          <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6]/70 dark:bg-[#1C2230] shrink-0">
+          <div className="flex items-center justify-between gap-2 px-4 sm:px-5 py-3 border-t border-[#E5E0D6] dark:border-[#44394F] bg-[#FAF6EF]/70 dark:bg-[#241F2D] shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-medium text-[#756B80] hover:text-slate-800 dark:text-[#B6A9C3] dark:hover:text-white transition-colors cursor-pointer"
             >
               Cancelar
             </button>
@@ -1288,7 +1288,7 @@ export function NewTaskModal({
               type="submit"
               form="new-task-form"
               disabled={isSubmitting || isAnalyzingAI || (!title.trim() && !(autoEnhanceWithAI && description.trim()))}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs shadow-md shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] cursor-pointer"
+              className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-[#7455AD] hover:bg-[#654696] text-white font-semibold text-xs shadow-md shadow-indigo-600/20 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] cursor-pointer"
             >
               {isSubmitting || isAnalyzingAI ? (
                 <>

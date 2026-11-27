@@ -5,8 +5,10 @@ import { createPortal } from "react-dom";
 import {
   Search,
   Sparkles,
+  LayoutDashboard,
+  Sunrise,
   CheckSquare,
-  LayoutGrid,
+  Kanban,
   Calendar,
   StickyNote,
   BookOpen,
@@ -16,7 +18,6 @@ import {
   Sun,
   Moon,
   PanelLeft,
-  PanelRight,
   ArrowRight,
   Clock,
   X,
@@ -33,7 +34,7 @@ interface CommandPaletteProps {
   tasks: Task[];
   notes: Note[];
   onSelectTask: (task: Task) => void;
-  onSelectNote?: () => void;
+  onSelectNote?: (note?: Note) => void;
   onNavigate: (nav: string) => void;
   onOpenNewTaskModal: (initialText?: string) => void;
   onOpenAccountsModal: () => void;
@@ -51,18 +52,18 @@ interface PaletteItem {
   title: string;
   subtitle?: string;
   badge?: string;
-  badgeTone?: "rose" | "amber" | "indigo" | "emerald" | "slate" | "purple";
+  badgeTone?: "rose" | "amber" | "brand" | "emerald" | "muted";
   icon: React.ReactNode;
   onSelect: () => void;
 }
 
 const GROUP_LABELS: Record<PaletteItem["group"], string> = {
-  ai: "Criar com Inteligência Artificial",
+  ai: "Criação rápida",
   tasks: "Demandas",
-  notes: "Bloco de Notas",
-  wiki: "Wiki Técnica (Soluções)",
-  nav: "Navegar para",
-  actions: "Ações Rápidas",
+  notes: "Anotações",
+  wiki: "Wiki técnica",
+  nav: "Ir para módulo",
+  actions: "Ações rápidas",
 };
 
 export function CommandPalette({
@@ -77,248 +78,197 @@ export function CommandPalette({
   onOpenAccountsModal,
   onToggleTheme,
   onToggleSidebar,
-  onToggleKpiPanel,
   theme,
   isSidebarCollapsed,
-  isKpiPanelOpen,
 }: CommandPaletteProps) {
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setQuery("");
       setSelectedIndex(0);
-      requestAnimationFrame(() => inputRef.current?.focus());
+      setTimeout(() => inputRef.current?.focus(), 20);
     }
   }, [isOpen]);
 
   const items = useMemo<PaletteItem[]>(() => {
     const q = query.trim().toLowerCase();
-    const list: PaletteItem[] = [];
+    const result: PaletteItem[] = [];
 
-    // 1. Direct AI creation action when typing text
     if (q.length >= 2) {
-      list.push({
-        id: "ai-create",
+      result.push({
+        id: "create-with-query",
         group: "ai",
-        title: `Criar demanda com IA: "${query.trim()}"`,
-        subtitle: "Abrir triagem inteligente preenchida com este texto",
-        badge: "IA",
-        badgeTone: "purple",
-        icon: <Sparkles className="w-4 h-4 text-purple-500" />,
+        title: `Criar demanda: "${query.trim()}"`,
+        subtitle: "Abrir formulário com título pré-preenchido",
+        badge: "Nova",
+        badgeTone: "brand",
+        icon: <Plus className="w-4 h-4 text-brand" />,
         onSelect: () => {
-          onClose();
           onOpenNewTaskModal(query.trim());
+          onClose();
         },
       });
     }
 
-    // 2. Matching Tasks
+    // Matching tasks
     const matchedTasks = tasks
       .filter((t) => {
         if (!q) return t.status !== "COMPLETED" && t.status !== "CANCELED";
         return (
-          t.title.toLowerCase().includes(q) ||
+          (t.title || "").toLowerCase().includes(q) ||
           (t.description || "").toLowerCase().includes(q) ||
           (t.category || "").toLowerCase().includes(q) ||
           (t.tags || []).some((tag) => tag.toLowerCase().includes(q))
         );
       })
-      .slice(0, q ? 6 : 4);
+      .slice(0, q ? 8 : 5);
 
-    for (const task of matchedTasks) {
+    for (const t of matchedTasks) {
+      const sched = getTaskScheduleDate(t);
       let dueLabel = "";
-      try {
-        dueLabel = format(parseISO(getTaskScheduleDate(task)), "dd/MM", { locale: ptBR });
-      } catch {
-        dueLabel = "";
+      if (sched) {
+        try {
+          dueLabel = format(parseISO(sched), "dd MMM HH:mm", { locale: ptBR });
+        } catch {}
       }
-      list.push({
-        id: `task-${task.id}`,
+      result.push({
+        id: `task-${t.id}`,
         group: "tasks",
-        title: task.title,
-        subtitle: `${task.category}${dueLabel ? ` • ${dueLabel}` : ""}`,
-        badge: task.priority,
+        title: t.title,
+        subtitle: `${t.category || "Geral"}${dueLabel ? ` • ${dueLabel}` : ""}`,
+        badge: t.priority,
         badgeTone:
-          task.priority === "P1"
+          t.priority === "P1"
             ? "rose"
-            : task.priority === "P2"
+            : t.priority === "P2"
             ? "amber"
-            : task.priority === "P3"
-            ? "indigo"
-            : "slate",
-        icon: <CheckSquare className="w-4 h-4 text-indigo-500" />,
+            : t.priority === "P3"
+            ? "brand"
+            : "muted",
+        icon: <CheckSquare className="w-4 h-4 text-brand" />,
         onSelect: () => {
+          onSelectTask(t);
           onClose();
-          onSelectTask(task);
         },
       });
     }
 
-    // 3. Matching Notes
+    // Matching notes
+    const matchedNotes = notes
+      .filter((n) => !n.archived)
+      .filter((n) => {
+        if (!q) return Boolean(n.pinned);
+        return (
+          (n.title || "").toLowerCase().includes(q) ||
+          (n.content || "").toLowerCase().includes(q) ||
+          (n.tags || []).some((tag) => tag.toLowerCase().includes(q))
+        );
+      })
+      .slice(0, q ? 5 : 2);
+
+    for (const n of matchedNotes) {
+      result.push({
+        id: `note-${n.id}`,
+        group: "notes",
+        title: n.title || "Nota sem título",
+        subtitle: (n.content || "").slice(0, 72) || "Anotação rápida",
+        badge: n.pinned ? "Fixada" : "Nota",
+        badgeTone: "muted",
+        icon: <StickyNote className="w-4 h-4 text-brand" />,
+        onSelect: () => {
+          onSelectNote?.(n);
+          onClose();
+        },
+      });
+    }
+
+    // Matching wiki resolutions
     if (q) {
-      const matchedNotes = notes
-        .filter(
-          (n) =>
-            !n.archived &&
-            ((n.title || "").toLowerCase().includes(q) ||
-              (n.content || "").toLowerCase().includes(q) ||
-              (n.tags || []).some((tag) => tag.toLowerCase().includes(q)))
-        )
-        .slice(0, 4);
-
-      for (const note of matchedNotes) {
-        list.push({
-          id: `note-${note.id}`,
-          group: "notes",
-          title: note.title || "Nota sem título",
-          subtitle: (note.content || "").slice(0, 72),
-          badge: "Nota",
-          badgeTone: "amber",
-          icon: <StickyNote className="w-4 h-4 text-amber-500" />,
-          onSelect: () => {
-            onClose();
-            if (onSelectNote) onSelectNote();
-            else onNavigate("notas");
-          },
-        });
-      }
-
-      // 4. Matching Wiki Solutions
-      const matchedWiki = tasks
+      const wikiHits = tasks
         .filter(
           (t) =>
-            t.status === "COMPLETED" &&
-            Boolean(t.resolution_notes) &&
-            (t.title.toLowerCase().includes(q) ||
-              (t.resolution_notes || "").toLowerCase().includes(q))
+            t.resolution_notes &&
+            ((t.title || "").toLowerCase().includes(q) ||
+              t.resolution_notes.toLowerCase().includes(q))
         )
         .slice(0, 3);
-
-      for (const wt of matchedWiki) {
-        list.push({
-          id: `wiki-${wt.id}`,
+      for (const w of wikiHits) {
+        result.push({
+          id: `wiki-${w.id}`,
           group: "wiki",
-          title: wt.title,
-          subtitle: (wt.resolution_notes || "").slice(0, 80),
+          title: w.title,
+          subtitle: w.resolution_notes?.slice(0, 80),
           badge: "Solução",
           badgeTone: "emerald",
-          icon: <BookOpen className="w-4 h-4 text-emerald-500" />,
+          icon: <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />,
           onSelect: () => {
+            onNavigate("wiki");
             onClose();
-            onSelectTask(wt);
           },
         });
       }
     }
 
-    // 5. Navigation items
-    const navItems: PaletteItem[] = [
-      {
-        id: "nav-tarefas",
-        group: "nav",
-        title: "Quadro de Execução (Lista · Kanban · Agenda)",
-        subtitle: "Workspace direto de demandas com visualização alternável",
-        icon: <CheckSquare className="w-4 h-4 text-indigo-500" />,
-        onSelect: () => {
-          onClose();
-          onNavigate("tarefas");
-        },
-      },
-      {
-        id: "nav-hoje",
-        group: "nav",
-        title: "Meu Dia (Cockpit Bento)",
-        subtitle: "Prioridades críticas, reuniões com Meet, Briefing IA e notas",
-        icon: <Sparkles className="w-4 h-4 text-amber-500" />,
-        onSelect: () => {
-          onClose();
-          onNavigate("hoje");
-        },
-      },
-      {
-        id: "nav-kanban",
-        group: "nav",
-        title: "Fluxo Kanban",
-        subtitle: "Quadro visual por etapas com drag-and-drop",
-        icon: <LayoutGrid className="w-4 h-4 text-purple-500" />,
-        onSelect: () => {
-          onClose();
-          onNavigate("kanban");
-        },
-      },
-      {
-        id: "nav-agenda",
-        group: "nav",
-        title: "Agenda do Dia",
-        subtitle: "Demandas agendadas + Google Calendar",
-        icon: <Calendar className="w-4 h-4 text-emerald-500" />,
-        onSelect: () => {
-          onClose();
-          onNavigate("agenda");
-        },
-      },
-      {
-        id: "nav-notas",
-        group: "nav",
-        title: "Bloco de Notas",
-        subtitle: "Anotações de reunião, ideias e extração com IA",
-        icon: <StickyNote className="w-4 h-4 text-amber-500" />,
-        onSelect: () => {
-          onClose();
-          onNavigate("notas");
-        },
-      },
-      {
-        id: "nav-wiki",
-        group: "nav",
-        title: "Wiki Técnica",
-        subtitle: "Base de soluções já resolvidas",
-        icon: <BookOpen className="w-4 h-4 text-sky-500" />,
-        onSelect: () => {
-          onClose();
-          onNavigate("wiki");
-        },
-      },
-      {
-        id: "nav-relatorios",
-        group: "nav",
-        title: "Relatórios & Prestação de Contas",
-        subtitle: "SLA, Lead Time e exportação executiva",
-        icon: <BarChart3 className="w-4 h-4 text-rose-500" />,
-        onSelect: () => {
-          onClose();
-          onNavigate("relatorios");
-        },
-      },
+    // Navigation items (all 10 modules)
+    const navList: { id: string; title: string; subtitle: string; icon: React.ReactNode }[] = [
+      { id: "visao", title: "Visão geral", subtitle: "Central de acesso e resumo", icon: <LayoutDashboard className="w-4 h-4" /> },
+      { id: "meu-dia", title: "Meu dia", subtitle: "Planejamento e prioridades diárias", icon: <Sunrise className="w-4 h-4" /> },
+      { id: "demandas", title: "Demandas", subtitle: "Gestão operacional Master-Detail", icon: <CheckSquare className="w-4 h-4" /> },
+      { id: "kanban", title: "Kanban", subtitle: "Quadro visual por status", icon: <Kanban className="w-4 h-4" /> },
+      { id: "agenda", title: "Agenda", subtitle: "Calendário mensal, semanal e diário", icon: <Calendar className="w-4 h-4" /> },
+      { id: "anotacoes", title: "Anotações", subtitle: "Workspace editorial com IA", icon: <StickyNote className="w-4 h-4" /> },
+      { id: "wiki", title: "Wiki técnica", subtitle: "Base de soluções e procedimentos", icon: <BookOpen className="w-4 h-4" /> },
+      { id: "assistente-ia", title: "Assistente IA", subtitle: "Ambiente dedicado Gemini AI", icon: <Sparkles className="w-4 h-4" /> },
+      { id: "relatorios", title: "Relatórios", subtitle: "Indicadores analíticos, SLA e PDF A4", icon: <BarChart3 className="w-4 h-4" /> },
+      { id: "configuracoes", title: "Configurações", subtitle: "Perfil, tema, contas Google e layout", icon: <Settings className="w-4 h-4" /> },
     ];
 
-    // 6. Quick Actions
-    const actionItems: PaletteItem[] = [
+    for (const nav of navList) {
+      if (
+        !q ||
+        nav.title.toLowerCase().includes(q) ||
+        nav.subtitle.toLowerCase().includes(q)
+      ) {
+        result.push({
+          id: `nav-${nav.id}`,
+          group: "nav",
+          title: nav.title,
+          subtitle: nav.subtitle,
+          icon: <span className="text-brand">{nav.icon}</span>,
+          onSelect: () => {
+            onNavigate(nav.id);
+            onClose();
+          },
+        });
+      }
+    }
+
+    // Actions
+    const actionsList: PaletteItem[] = [
       {
         id: "act-new-task",
         group: "actions",
-        title: "Nova Demanda Detalhada",
-        subtitle: "Abrir formulário completo com IA, horário e Google Meet",
-        icon: <Plus className="w-4 h-4 text-indigo-500" />,
+        title: "Nova Demanda",
+        subtitle: "Abrir formulário completo",
+        icon: <Plus className="w-4 h-4 text-brand" />,
         onSelect: () => {
-          onClose();
           onOpenNewTaskModal("");
+          onClose();
         },
       },
       {
         id: "act-theme",
         group: "actions",
-        title: theme === "dark" ? "Mudar para Tema Claro" : "Mudar para Tema Escuro",
-        subtitle: "Alternar aparência da interface",
+        title: theme === "dark" ? "Mudar para Modo Claro (Creme & Roxo)" : "Mudar para Modo Escuro (Roxo & Lavanda)",
+        subtitle: "Alternar aparência global",
         icon:
           theme === "dark" ? (
             <Sun className="w-4 h-4 text-amber-400" />
           ) : (
-            <Moon className="w-4 h-4 text-indigo-500" />
+            <Moon className="w-4 h-4 text-brand" />
           ),
         onSelect: () => {
           onToggleTheme();
@@ -330,26 +280,11 @@ export function CommandPalette({
             {
               id: "act-sidebar",
               group: "actions" as const,
-              title: isSidebarCollapsed ? "Expandir Menu Lateral" : "Recolher Menu Lateral",
+              title: isSidebarCollapsed ? "Expandir sidebar lateral" : "Recolher sidebar lateral",
               subtitle: "Atalho de teclado: [",
-              icon: <PanelLeft className="w-4 h-4 text-slate-500" />,
+              icon: <PanelLeft className="w-4 h-4 text-brand" />,
               onSelect: () => {
                 onToggleSidebar();
-                onClose();
-              },
-            },
-          ]
-        : []),
-      ...(onToggleKpiPanel
-        ? [
-            {
-              id: "act-kpi",
-              group: "actions" as const,
-              title: isKpiPanelOpen ? "Ocultar Painel de Métricas" : "Mostrar Painel de Métricas",
-              subtitle: "Ampliar área de leitura dos detalhes",
-              icon: <PanelRight className="w-4 h-4 text-slate-500" />,
-              onSelect: () => {
-                onToggleKpiPanel();
                 onClose();
               },
             },
@@ -358,41 +293,41 @@ export function CommandPalette({
       {
         id: "act-accounts",
         group: "actions",
-        title: "Gerenciar Contas Google & Configurações",
-        subtitle: "Vincular workspaces Trabalho / Pessoal",
-        icon: <Settings className="w-4 h-4 text-slate-500" />,
+        title: "Gerenciar Contas Google",
+        subtitle: "Vincular ou sincronizar espaços",
+        icon: <Settings className="w-4 h-4 text-brand" />,
         onSelect: () => {
-          onClose();
           onOpenAccountsModal();
+          onClose();
         },
       },
     ];
 
-    const filterStatic = (item: PaletteItem) =>
-      !q ||
-      item.title.toLowerCase().includes(q) ||
-      (item.subtitle || "").toLowerCase().includes(q);
+    for (const act of actionsList) {
+      if (
+        !q ||
+        act.title.toLowerCase().includes(q) ||
+        (act.subtitle || "").toLowerCase().includes(q)
+      ) {
+        result.push(act);
+      }
+    }
 
-    list.push(...navItems.filter(filterStatic));
-    list.push(...actionItems.filter(filterStatic));
-
-    return list;
+    return result;
   }, [
     query,
     tasks,
     notes,
     theme,
     isSidebarCollapsed,
-    isKpiPanelOpen,
-    onClose,
+    onOpenNewTaskModal,
     onSelectTask,
     onSelectNote,
     onNavigate,
-    onOpenNewTaskModal,
-    onOpenAccountsModal,
     onToggleTheme,
     onToggleSidebar,
-    onToggleKpiPanel,
+    onOpenAccountsModal,
+    onClose,
   ]);
 
   useEffect(() => {
@@ -401,7 +336,7 @@ export function CommandPalette({
 
   useEffect(() => {
     if (!isOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         onClose();
@@ -418,120 +353,108 @@ export function CommandPalette({
         items[selectedIndex].onSelect();
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
   }, [isOpen, items, selectedIndex, onClose]);
-
-  useEffect(() => {
-    const activeEl = listRef.current?.querySelector(`[data-idx="${selectedIndex}"]`);
-    if (activeEl) {
-      activeEl.scrollIntoView({ block: "nearest" });
-    }
-  }, [selectedIndex]);
 
   if (!isOpen || typeof document === "undefined") return null;
 
-  const badgeToneClasses: Record<NonNullable<PaletteItem["badgeTone"]>, string> = {
-    rose: "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800/60",
-    amber: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800/60",
-    indigo: "bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-800/60",
-    emerald: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800/60",
-    purple: "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300 dark:border-purple-800/60",
-    slate: "bg-[#E7E3DA] text-slate-600 border-[#DCD7CC] dark:bg-[#293244] dark:text-zinc-300 dark:border-[#404D68]",
+  const badgeClasses = (tone?: PaletteItem["badgeTone"]) => {
+    switch (tone) {
+      case "rose":
+        return "bg-rose-500/12 text-rose-600 dark:text-rose-400 border-rose-500/25";
+      case "amber":
+        return "bg-amber-500/12 text-amber-700 dark:text-amber-300 border-amber-500/25";
+      case "emerald":
+        return "bg-emerald-500/12 text-emerald-700 dark:text-emerald-300 border-emerald-500/25";
+      case "brand":
+        return "bg-lavender-soft text-brand border-lavender-mid";
+      default:
+        return "bg-sidebar text-ink-muted border-line";
+    }
   };
 
-  // Group items preserving order
-  const grouped: { group: PaletteItem["group"]; entries: { item: PaletteItem; flatIdx: number }[] }[] = [];
-  items.forEach((item, flatIdx) => {
-    const existing = grouped.find((g) => g.group === item.group);
-    if (existing) existing.entries.push({ item, flatIdx });
-    else grouped.push({ group: item.group, entries: [{ item, flatIdx }] });
-  });
+  let runningIndex = -1;
+  const grouped = (["ai", "tasks", "notes", "wiki", "nav", "actions"] as const)
+    .map((groupKey) => ({
+      groupKey,
+      label: GROUP_LABELS[groupKey],
+      items: items.filter((i) => i.group === groupKey),
+    }))
+    .filter((g) => g.items.length > 0);
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[100] flex items-start justify-center pt-[10vh] sm:pt-[13vh] px-3 bg-slate-950/50 dark:bg-black/70 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-[80] bg-[#1D1925]/60 backdrop-blur-[2px] flex items-start justify-center pt-[11vh] px-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-xl rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-popover overflow-hidden flex flex-col max-h-[74vh] animate-in zoom-in-95 duration-150"
+        className="w-full max-w-2xl rounded-[14px] bg-surface border border-line shadow-popover overflow-hidden flex flex-col max-h-[74vh]"
       >
         {/* Search Input */}
-        <div className="flex items-center gap-2.5 px-4 py-3.5 border-b border-[#E5E0D6] dark:border-[#343F56]/90">
-          <Search className="w-4 h-4 text-indigo-500 shrink-0" />
+        <div className="flex items-center gap-2.5 px-4 h-13 py-3 border-b border-line bg-sidebar">
+          <Search className="w-4 h-4 text-brand shrink-0" />
           <input
             ref={inputRef}
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Buscar demandas, notas, Wiki ou digitar ação..."
-            className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none font-medium"
+            placeholder="Buscar demandas, notas, wiki ou ir para um módulo..."
+            className="flex-1 bg-transparent text-sm text-ink placeholder:text-ink-muted focus:outline-none"
           />
           {query && (
             <button
               type="button"
               onClick={() => setQuery("")}
-              className="p-1 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white cursor-pointer"
-              title="Limpar busca"
+              className="p-1 rounded-md text-ink-muted hover:text-ink cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
             </button>
           )}
-          <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#E7E3DA] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] text-[10px] font-mono text-slate-500 dark:text-zinc-400">
+          <kbd className="px-1.5 py-0.5 rounded-[6px] bg-surface border border-line font-mono text-[10px] text-ink-muted">
             ESC
           </kbd>
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="flex-1 overflow-y-auto p-2 space-y-3 custom-scrollbar">
-          {items.length === 0 ? (
-            <div className="py-10 text-center space-y-1.5 text-slate-400">
-              <Clock className="w-6 h-6 mx-auto opacity-40" />
-              <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                Nenhum resultado encontrado
-              </p>
-              <p className="text-[11px]">
-                Tente outro termo ou pressione Enter para criar uma nova demanda.
-              </p>
+        <div className="flex-1 overflow-y-auto p-2 space-y-3">
+          {grouped.length === 0 ? (
+            <div className="py-12 text-center text-xs text-ink-muted">
+              Nenhum resultado encontrado para &ldquo;{query}&rdquo;.
             </div>
           ) : (
-            grouped.map(({ group, entries }) => (
-              <div key={group} className="space-y-1">
-                <div className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
-                  {GROUP_LABELS[group]}
+            grouped.map((section) => (
+              <div key={section.groupKey} className="space-y-0.5">
+                <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.08em] text-ink-muted">
+                  {section.label}
                 </div>
-                {entries.map(({ item, flatIdx }) => {
-                  const isSelected = flatIdx === selectedIndex;
+                {section.items.map((item) => {
+                  runningIndex += 1;
+                  const idx = runningIndex;
+                  const active = idx === selectedIndex;
                   return (
                     <button
                       key={item.id}
                       type="button"
-                      data-idx={flatIdx}
-                      onMouseEnter={() => setSelectedIndex(flatIdx)}
+                      onMouseEnter={() => setSelectedIndex(idx)}
                       onClick={item.onSelect}
-                      className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left transition-colors cursor-pointer ${
-                        isSelected
-                          ? "bg-indigo-50 dark:bg-indigo-500/15 text-slate-900 dark:text-white"
-                          : "text-slate-700 dark:text-slate-300 hover:bg-[#EBE7DE] dark:hover:bg-white/[0.04]"
+                      className={`w-full flex items-center justify-between gap-3 px-2.5 py-2 rounded-[9px] text-left transition-colors cursor-pointer ${
+                        active
+                          ? "bg-lavender-soft text-ink"
+                          : "text-ink hover:bg-lavender-soft/50"
                       }`}
                     >
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
-                        <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 border ${
-                            isSelected
-                              ? "bg-[#F7F6F1] dark:bg-[#293244] border-indigo-200 dark:border-indigo-500/40 shadow-2xs"
-                              : "bg-[#F0EDE6] dark:bg-[#222938]/70 border-[#DCD7CC]/70 dark:border-[#343F56]"
-                          }`}
-                        >
+                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div className="w-7 h-7 rounded-[8px] bg-sidebar border border-line flex items-center justify-center shrink-0">
                           {item.icon}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-xs font-semibold truncate">{item.title}</div>
+                          <p className="text-xs font-semibold truncate">{item.title}</p>
                           {item.subtitle && (
-                            <div className="text-[11px] text-slate-500 dark:text-zinc-400 truncate mt-0.5">
+                            <p className="text-[11px] text-ink-muted truncate">
                               {item.subtitle}
-                            </div>
+                            </p>
                           )}
                         </div>
                       </div>
@@ -539,16 +462,14 @@ export function CommandPalette({
                       <div className="flex items-center gap-2 shrink-0">
                         {item.badge && (
                           <span
-                            className={`px-1.5 py-0.5 rounded-md border text-[10px] font-bold font-mono ${
-                              badgeToneClasses[item.badgeTone || "slate"]
-                            }`}
+                            className={`px-1.5 py-0.5 rounded-[6px] border text-[10px] font-mono font-semibold ${badgeClasses(
+                              item.badgeTone
+                            )}`}
                           >
                             {item.badge}
                           </span>
                         )}
-                        {isSelected && (
-                          <ArrowRight className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                        )}
+                        {active && <ArrowRight className="w-3.5 h-3.5 text-brand" />}
                       </div>
                     </button>
                   );
@@ -558,29 +479,20 @@ export function CommandPalette({
           )}
         </div>
 
-        {/* Footer hints */}
-        <div className="px-4 py-2 border-t border-[#E5E0D6] dark:border-[#343F56]/90 bg-[#F0EDE6]/70 dark:bg-[#1C2230] flex items-center justify-between text-[11px] text-slate-500 dark:text-zinc-400">
+        {/* Footer Hints */}
+        <div className="px-4 py-2 border-t border-line bg-sidebar flex items-center justify-between text-[11px] text-ink-muted">
           <div className="flex items-center gap-3">
             <span className="inline-flex items-center gap-1">
-              <kbd className="px-1 py-0.5 rounded bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] font-mono text-[10px]">
-                ↑↓
-              </kbd>
-              Navegar
+              <CornerDownLeft className="w-3 h-3" /> Abrir
             </span>
             <span className="inline-flex items-center gap-1">
-              <kbd className="px-1 py-0.5 rounded bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] font-mono text-[10px] inline-flex items-center">
-                <CornerDownLeft className="w-2.5 h-2.5" />
-              </kbd>
-              Abrir
+              <Clock className="w-3 h-3" /> ↑ ↓ Navegar
             </span>
           </div>
-          <span className="text-indigo-600 dark:text-indigo-400 font-semibold">
-            MontLife Command
-          </span>
+          <span className="font-mono text-[10px]">MontLife Command Palette</span>
         </div>
       </div>
     </div>,
     document.body
   );
 }
-

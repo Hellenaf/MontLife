@@ -30,7 +30,7 @@ const QUICK_SUGGESTIONS = [
     icon: Briefcase,
     desc: "Rotinas profissionais, TOTVS, TI e demandas corporativas",
     color: "indigo",
-    badgeClass: "bg-indigo-50 dark:bg-indigo-950/40 border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300",
+    badgeClass: "bg-[#E7DFF5] dark:bg-[#332A45] border-[#D8C9EE] dark:border-indigo-800 text-[#654696] dark:text-[#D8C9EE]",
   },
   {
     label: "Pessoal",
@@ -63,7 +63,7 @@ const QUICK_SUGGESTIONS = [
 ];
 
 const COLOR_OPTIONS = [
-  { id: "indigo", label: "Índigo", bg: "bg-indigo-500", ring: "ring-indigo-500" },
+  { id: "indigo", label: "Índigo", bg: "bg-indigo-500", ring: "ring-[#7455AD]" },
   { id: "purple", label: "Roxo", bg: "bg-purple-500", ring: "ring-purple-500" },
   { id: "emerald", label: "Esmeralda", bg: "bg-emerald-500", ring: "ring-emerald-500" },
   { id: "amber", label: "Âmbar", bg: "bg-amber-500", ring: "ring-amber-500" },
@@ -129,7 +129,7 @@ export function ClassifyAccountModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-3xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-2xl p-4 sm:p-7 space-y-4 sm:space-y-5 text-left transition-all custom-scrollbar">
+      <div className="relative w-full max-w-lg max-h-[92dvh] overflow-y-auto rounded-3xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] shadow-2xl p-4 sm:p-7 space-y-4 sm:space-y-5 text-left transition-all custom-scrollbar">
         {/* Top Header */}
         <div className="flex items-center gap-3.5 border-b border-[#E5E0D6] dark:border-white/5 pb-4">
           <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center font-black text-xl text-white shadow-md shadow-purple-600/30 shrink-0">
@@ -140,10 +140,10 @@ export function ClassifyAccountModal({
               <CheckCircle2 className="w-3 h-3 text-emerald-500" />
               <span>Autenticação Concluída</span>
             </div>
-            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white truncate">
+            <h2 className="text-lg sm:text-xl font-bold tracking-tight text-[#392D4B] dark:text-white truncate">
               Defina o Espaço de Trabalho
             </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+            <p className="text-xs text-[#756B80] dark:text-[#B6A9C3] truncate">
               Conta: <strong className="text-slate-800 dark:text-slate-200">{email || "sua conta Google"}</strong>
             </p>
           </div>
@@ -151,10 +151,10 @@ export function ClassifyAccountModal({
 
         {/* Prompt question */}
         <div>
-          <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+          <h3 className="text-sm font-bold text-[#392D4B] dark:text-white">
             Como você deseja categorizar esta conta?
           </h3>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
+          <p className="text-xs text-[#756B80] dark:text-[#B6A9C3] mt-0.5 leading-relaxed">
             Selecione uma sugestão rápida ou digite um nome personalizado para o seu espaço de trabalho.
           </p>
         </div>
@@ -183,7 +183,7 @@ export function ClassifyAccountModal({
                   className={`flex items-center gap-2 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                     isSelected
                       ? "bg-purple-50 dark:bg-purple-950/50 border-purple-500 text-purple-700 dark:text-purple-300 ring-2 ring-purple-500/20 font-bold"
-                      : "bg-[#F0EDE6] dark:bg-[#293244] border-[#DCD7CC] dark:border-white/5 text-slate-700 dark:text-slate-300 hover:border-purple-300 dark:hover:border-purple-500/30"
+                      : "bg-[#FAF6EF] dark:bg-[#352D42] border-[#E4DCE4] dark:border-white/5 text-slate-700 dark:text-slate-300 hover:border-purple-300 dark:hover:border-purple-500/30"
                   }`}
                 >
                   <Icon className="w-4 h-4 text-purple-500 shrink-0" />
@@ -210,7 +210,7 @@ export function ClassifyAccountModal({
               placeholder="Ex: Faculdade, TI Escolar, Freelance, Geral..."
               maxLength={35}
               required
-              className="w-full h-11 px-3.5 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-white/10 text-sm font-semibold text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
+              className="w-full h-11 px-3.5 rounded-xl bg-[#FAF6EF] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-white/10 text-sm font-semibold text-[#392D4B] dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 transition-all"
             />
             <p className="text-[11px] text-slate-400">
               Você pode vincular quantas contas Google desejar e renomear os rótulos a qualquer momento.

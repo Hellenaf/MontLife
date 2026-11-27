@@ -2,124 +2,234 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ==========================================================================
+   MontLife Design System — Identidade Creme, Roxo & Lavanda
+   Tokens centralizados para Light Mode e Dark Mode (Tailwind v3 compatible)
+   ========================================================================== */
+
 :root {
-  /* Bento Editorial Light: Warm Linen & Matte Cream Paper */
-  --background: #e9e6de;
-  --foreground: #1e2330;
-  --surface: #f6f4ee;
-  --surface-subtle: #efece4;
-  --surface-elevated: #fcfbf7;
-  --surface-input: #e7e3da;
-  --surface-hover: #e3dfd5;
-  --border: #dcd6ca;
-  --border-subtle: rgba(30, 35, 48, 0.08);
-  --muted: #5d6575;
-  --primary: #4b55d6;
-  --primary-hover: #3f48c4;
+  /* Light Mode — Creme, Roxo e Lavanda */
+  --ml-canvas: #f5f1e8;
+  --ml-sidebar: #faf6ef;
+  --ml-surface: #fffcf6;
+  --ml-elevated: #faf6ef;
+  --ml-hover: #efe9f7;
+  --ml-input: #f2ece2;
+
+  --ml-lavender-soft: #e7dff5;
+  --ml-lavender-mid: #d8c9ee;
+  --ml-lavender-strong: #b6a2db;
+
+  --ml-brand: #7455ad;
+  --ml-brand-hover: #654696;
+  --ml-brand-fg: #fffcf6;
+
+  --ml-text: #392d4b;
+  --ml-text-muted: #756b80;
+  --ml-border: #e4dce4;
+  --ml-border-strong: #d3c7dc;
+
+  /* Compatibility aliases */
+  --background: var(--ml-canvas);
+  --foreground: var(--ml-text);
+  --surface: var(--ml-surface);
+  --surface-subtle: var(--ml-sidebar);
+  --surface-elevated: var(--ml-elevated);
+  --surface-input: var(--ml-input);
+  --surface-hover: var(--ml-hover);
+  --border: var(--ml-border);
+  --muted: var(--ml-text-muted);
+  --primary: var(--ml-brand);
+  --primary-hover: var(--ml-brand-hover);
+
+  /* Semantic priorities & operational states */
+  --sla-p1: #dc2626;
+  --sla-p2: #d97706;
+  --sla-p3: #7455ad;
+  --sla-p4: #756b80;
 }
 
 .dark {
-  /* Bento Editorial Dark: Luminous Slate-Graphite (Zero Pitch-Black Abyss) */
-  --background: #161b26;
-  --foreground: #e7ecf6;
-  --surface: #212838;
-  --surface-subtle: #1b2130;
-  --surface-elevated: #273043;
-  --surface-input: #19202e;
-  --surface-hover: #2f3a50;
-  --border: #323d54;
-  --border-subtle: rgba(231, 236, 246, 0.07);
-  --muted: #98a4bc;
-  --primary: #7380ff;
-  --primary-hover: #8692ff;
+  /* Dark Mode — Roxo Profundo & Lavanda Luminoso (sem preto absoluto) */
+  --ml-canvas: #1d1925;
+  --ml-sidebar: #241f2d;
+  --ml-surface: #2c2637;
+  --ml-elevated: #352d42;
+  --ml-hover: #3d344c;
+  --ml-input: #231e2c;
+
+  --ml-lavender-soft: #332a45;
+  --ml-lavender-mid: #463a5e;
+  --ml-lavender-strong: #b6a2db;
+
+  --ml-brand: #b6a2db;
+  --ml-brand-hover: #d8c9ee;
+  --ml-brand-fg: #1d1925;
+
+  --ml-text: #f5f1e8;
+  --ml-text-muted: #b6a9c3;
+  --ml-border: #44394f;
+  --ml-border-strong: #574966;
+
+  /* Compatibility aliases */
+  --background: var(--ml-canvas);
+  --foreground: var(--ml-text);
+  --surface: var(--ml-surface);
+  --surface-subtle: var(--ml-sidebar);
+  --surface-elevated: var(--ml-elevated);
+  --surface-input: var(--ml-input);
+  --surface-hover: var(--ml-hover);
+  --border: var(--ml-border);
+  --muted: var(--ml-text-muted);
+  --primary: var(--ml-brand);
+  --primary-hover: var(--ml-brand-hover);
+
+  --sla-p1: #f87171;
+  --sla-p2: #fbbf24;
+  --sla-p3: #b6a2db;
+  --sla-p4: #b6a9c3;
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-rendering: optimizeLegibility;
-  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
-  min-height: 100vh;
-  min-height: 100dvh;
-  width: 100%;
-  overflow-x: hidden;
+@layer base {
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    color: var(--ml-text);
+    background-color: var(--ml-canvas);
+    font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    min-height: 100vh;
+    min-height: 100dvh;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Accessible focus ring across all interactive elements */
+  *:focus-visible {
+    outline: 2px solid var(--ml-brand);
+    outline-offset: 2px;
+  }
 }
 
-/* Soft Editorial Selection Highlight */
 ::selection {
-  background-color: rgba(75, 85, 214, 0.16);
+  background-color: rgba(116, 85, 173, 0.2);
   color: inherit;
 }
 
 .dark ::selection {
-  background-color: rgba(115, 128, 255, 0.32);
-  color: #f8fafc;
+  background-color: rgba(182, 162, 219, 0.3);
+  color: #f5f1e8;
 }
 
-/* Bento Editorial Surface Utilities */
+/* ==========================================================================
+   Reusable Surface & Interactive Components
+   ========================================================================== */
 @layer components {
+  .ml-card {
+    background-color: var(--ml-surface);
+    border: 1px solid var(--ml-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(57, 45, 75, 0.04), 0 4px 12px -6px rgba(57, 45, 75, 0.06);
+    transition: border-color 170ms ease, background-color 170ms ease, box-shadow 170ms ease;
+  }
+
+  .dark .ml-card {
+    box-shadow: inset 0 1px 0 rgba(245, 241, 232, 0.03), 0 6px 18px -10px rgba(10, 8, 16, 0.45);
+  }
+
+  .ml-panel {
+    background-color: var(--ml-surface);
+    border: 1px solid var(--ml-border);
+    border-radius: 12px;
+  }
+
+  .ml-btn-primary {
+    background-color: var(--ml-brand);
+    color: var(--ml-brand-fg);
+    border-radius: 10px;
+    font-weight: 600;
+    transition: background-color 160ms ease, transform 120ms ease, opacity 160ms ease;
+  }
+
+  .ml-btn-primary:hover:not(:disabled) {
+    background-color: var(--ml-brand-hover);
+  }
+
+  .ml-btn-secondary {
+    background-color: var(--ml-surface);
+    color: var(--ml-text);
+    border: 1px solid var(--ml-border);
+    border-radius: 10px;
+    font-weight: 500;
+    transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease;
+  }
+
+  .ml-btn-secondary:hover:not(:disabled) {
+    background-color: var(--ml-lavender-soft);
+    border-color: var(--ml-lavender-strong);
+  }
+
+  .ml-input {
+    background-color: var(--ml-input);
+    color: var(--ml-text);
+    border: 1px solid var(--ml-border);
+    border-radius: 10px;
+    transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
+  }
+
+  .ml-input::placeholder {
+    color: var(--ml-text-muted);
+  }
+
+  .ml-input:focus {
+    background-color: var(--ml-surface);
+    border-color: var(--ml-brand);
+    box-shadow: 0 0 0 3px rgba(116, 85, 173, 0.14);
+    outline: none;
+  }
+
+  .dark .ml-input:focus {
+    box-shadow: 0 0 0 3px rgba(182, 162, 219, 0.2);
+  }
+
+  /* Compatibility alias for any legacy .bento-card references */
   .bento-card {
-    background-color: var(--surface);
-    border: 1px solid var(--border);
-    border-radius: 1rem;
-    box-shadow: 0 1px 2px rgba(30, 35, 48, 0.04), 0 10px 26px -14px rgba(30, 35, 48, 0.1);
+    background-color: var(--ml-surface);
+    border: 1px solid var(--ml-border);
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(57, 45, 75, 0.04), 0 4px 12px -6px rgba(57, 45, 75, 0.06);
   }
 
   .dark .bento-card {
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 12px 28px -14px rgba(8, 12, 22, 0.45);
-  }
-
-  .bento-glass {
-    background-color: rgba(246, 244, 238, 0.84);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid var(--border);
-  }
-
-  .dark .bento-glass {
-    background-color: rgba(33, 40, 56, 0.82);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid var(--border);
+    box-shadow: inset 0 1px 0 rgba(245, 241, 232, 0.03), 0 6px 18px -10px rgba(10, 8, 16, 0.45);
   }
 }
 
 @layer utilities {
-  .surface-canvas {
-    background-color: var(--background);
-  }
-
-  .surface-panel {
-    background-color: var(--surface);
-  }
-
-  .surface-subtle {
-    background-color: var(--surface-subtle);
-  }
-
-  .surface-elevated {
-    background-color: var(--surface-elevated);
-  }
-
-  .hairline-border {
-    border-color: var(--border);
-  }
-
   .tabular {
     font-variant-numeric: tabular-nums;
   }
+
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
 }
 
-/* Smooth Slide-Over Drawer Animation */
+/* Smooth Drawer / Panel Reveal */
 @keyframes slideInDrawerRight {
   from {
     opacity: 0.4;
-    transform: translateX(28px);
+    transform: translateX(20px);
   }
-
   to {
     opacity: 1;
     transform: translateX(0);
@@ -127,15 +237,9 @@ body {
 }
 
 .animate-drawer-right {
-  animation: slideInDrawerRight 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideInDrawerRight 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* iOS Safe Area Inset */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-
-/* Mobile-friendly scrollbar hiding utility */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
@@ -145,14 +249,13 @@ body {
   scrollbar-width: none;
 }
 
-/* Clean touch tap highlight on mobile devices */
 button,
 a,
 [role="button"] {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Refined Architectural Scrollbar */
+/* Refined Subtle Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -163,19 +266,25 @@ a,
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(93, 101, 117, 0.22);
+  background: rgba(117, 107, 128, 0.28);
   border-radius: 9999px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background: rgba(152, 164, 188, 0.22);
+  background: rgba(182, 169, 195, 0.24);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(99, 102, 241, 0.45);
+  background: rgba(116, 85, 173, 0.52);
 }
 
-/* Print Styles for Presentation-Grade Executive Report */
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(182, 162, 219, 0.48);
+}
+
+/* ==========================================================================
+   Print Styles for Executive A4 Reports (Preserved)
+   ========================================================================== */
 @media print {
   @page {
     size: A4 portrait;
@@ -193,7 +302,7 @@ a,
   html,
   body {
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #1f1929 !important;
     overflow: visible !important;
     height: auto !important;
     width: 100% !important;
@@ -223,7 +332,7 @@ a,
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
-    color: #0f172a !important;
+    color: #1f1929 !important;
     border: none !important;
     box-shadow: none !important;
   }
@@ -255,13 +364,13 @@ a,
   }
 
   th {
-    background-color: #f1f5f9 !important;
-    color: #0f172a !important;
-    border-bottom: 2px solid #cbd5e1 !important;
+    background-color: #f5f1e8 !important;
+    color: #392d4b !important;
+    border-bottom: 2px solid #d8c9ee !important;
     font-weight: 700 !important;
   }
 
   td {
-    border-bottom: 1px solid #e2e8f0 !important;
+    border-bottom: 1px solid #e4dce4 !important;
   }
 }

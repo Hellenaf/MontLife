@@ -1,138 +1,108 @@
 # **MontLife**
-> *Central de Inteligência Operacional, Produtividade Diária, Base de Conhecimento (Wiki Técnica) & Motor de Metrificação.*
+> *Workspace Modular de Produtividade Pessoal & Operacional — Demandas em Master-Detail, Kanban, Agenda + Google Calendar/Meet, Anotações Editoriais com IA, Wiki Técnica, Assistente IA & Relatórios.*
 
-O **MontLife** é uma aplicação PWA completa de gestão operacional e produtividade projetada para unificar demandas de trabalho e rotina pessoal em uma única interface rápida, responsiva e inteligente. Integra **Google Gemini AI**, **Google Calendar**, **Google Meet**, **YouTube Data API v3**, **Google OAuth Multi-Contas (Perfil Mestre Unificado)**, **Notificações Web Push nativas** e **Modo Offline com fila automática de sincronização**, tudo com persistência 100% nativa no **Cloud Firestore**.
-
----
-
-## **1. Arquitetura e Stack Tecnológica**
-
-* **Frontend:** Next.js 15 (App Router), React 19, TypeScript, Tailwind CSS.
-* **Tipografia & Temas:** Fontes **Plus Jakarta Sans** e **JetBrains Mono** (`next/font/google`), com suporte completo a **Tema Claro e Tema Escuro** harmonizado em toda a interface (incluindo Sidebar recolhível e painéis).
-* **Inteligência Artificial:** Google Gemini API (`@google/genai`) com triagem objetiva de demandas, reescrita estruturada, geração automática de checklists, assistente contextual na demanda (*Refinar Texto*, *Plano de Ação*, *Diagnóstico + Wiki*), **Briefing IA do Dia**, categorização inteligente e extração de tarefas a partir do Bloco de Notas.
-* **Autenticação & Multi-Workspaces:** Google OAuth 2.0 (`googleapis`) com **Perfil Mestre Unificado** (*Cross-Account Login*) e separação inteligente por contextos (`Trabalho`, `Pessoal`, `Estudos`, etc.).
-* **Integrações Google:** Google Calendar (visualização unificada, deduplicação de itens vinculados e conversão em demandas) e **Google Meet** (geração de sala em 1 clique e acesso rápido direto nos cards).
-* **Curadoria de Estudos:** YouTube Data API v3 + referências técnicas contextualizadas por demanda.
-* **PWA, Web Push & Modo Offline:** Service Worker dedicado (`public/sw.js`) com cache de assets, alertas nativos com vibração tátil no celular/desktop e fila persistente de mutações (`src/lib/offlineQueue.ts`) com UI otimista e sincronização automática ao reconectar.
-* **Armazenamento Cloud Native:** Cloud Firestore (Firebase Admin SDK) com coleções `tasks`, `notes`, `users` e `accounts`, auditoria completa de SLA e histórico de recorrências.
+O **MontLife** é uma aplicação PWA modular projetada para unificar gestão operacional de trabalho e organização pessoal em um ambiente amplo, fluido e confortável para uso prolongado. Integra **Google Gemini AI**, **Google Calendar**, **Google Meet**, **YouTube Data API v3**, **Google OAuth Multi-Contas (Perfil Mestre Unificado)**, **Notificações Web Push nativas** e **Modo Offline com fila automática de sincronização**, mantendo persistência 100% nativa no **Cloud Firestore**.
 
 ---
 
-## **2. Módulos & Experiência de Uso (UX)**
+## **1. Identidade Visual & Design System (*Creme, Roxo & Lavanda*)**
 
-### **Navegação & Produtividade Rápida**
-* **Sidebar Recolhível (Mini-Rail):** Alterne entre menu expandido e barra compacta de ícones pelo botão superior ou pelo atalho `[`, liberando mais espaço em telas de notebook.
-* **Command Palette Global (`Ctrl+K`):** Busca instantânea em **Demandas**, **Notas** e **Wiki Técnica**, navegação entre módulos, ações rápidas (tema, recolher painéis, configurações) e criação de demandas com IA.
-* **Header Calmo & Triagem por Voz/Texto:** Barra de comando IA integrada com ditado por voz (*Web Speech API*), central de alertas via Portal (sempre acima de cards e modais) e relógio discreto.
-* **Toasts Flutuantes com "Desfazer" (5s):** Alterações de status, conclusões, cancelamentos, transferências de conta e exclusões exibem aviso com opção imediata de desfazer.
+Todos os tokens de cor, superfícies, bordas e tipografia são centralizados via variáveis CSS em [src/app/globals.css](file:///c:/Projetos/Mont%20Life/src/app/globals.css) e mapeados semanticamente em [tailwind.config.ts](file:///c:/Projetos/Mont%20Life/tailwind.config.ts):
 
-### **Minhas Demandas (Lista + Detalhes + Métricas & IA)**
-* **Lista Inteligente:** Busca limpa, **filtros recolhíveis** (dropdown no desktop e *Bottom Sheet* no mobile), chips removíveis de filtros ativos, seletor de **ordenação** (*Prazo mais próximo*, *Prioridade P1→P4*, *Mais recentes*), alternador **Compacto / Detalhado** e faixa lateral de prioridade nos cards.
-* **Detalhes da Demanda (Título Primeiro + Ações Fixas):**
-  * **Barra de Ações Fixa (*Sticky*):** Troca de status em 1 clique (`A Fazer → Em Andamento → Aguardando`), **Concluir**, **Adiar**, botão **Meet** e menu de ações secundárias sempre acessíveis sem rolar a página.
-  * **Grade Compacta de Propriedades:** Edição rápida de prioridade, prazo/horário, categoria, tipo (`Tarefa`, `Atividade`, `Lembrete`) e espaço.
-  * **Checklist & Assistente IA:** Pontos de validação interativos com barra de progresso e ações de IA (*Refinar Texto*, *Plano de Ação*, *Diagnóstico + Wiki*).
-  * **Seções Recolhíveis (*Accordions*):** *Agenda, Lembrete & Google Meet*, *Anexos & Links* (com **Visualizador Lightbox** com zoom interativo, arrastar/*pan*, rotação e tela cheia) e *Base de Soluções & Recorrência*.
-* **Painel Direito Recolhível (Métricas & Briefing IA):** Briefing inteligente das prioridades do dia, distribuição de status/tipos, cumprimento de SLA e proporção Trabalho vs Pessoal.
+| Token | Light Mode (*Creme & Roxo*) | Dark Mode (*Roxo & Lavanda*) |
+| :--- | :--- | :--- |
+| **Canvas principal** | `#F5F1E8` | `#1D1925` |
+| **Sidebar** | `#FAF6EF` | `#241F2D` |
+| **Superfícies** | `#FFFCF6` | `#2C2637` |
+| **Superfícies elevadas** | `#FAF6EF` | `#352D42` |
+| **Lavanda suave / intermediária / intensa** | `#E7DFF5` / `#D8C9EE` / `#B6A2DB` | `#332A45` / `#463A5E` / `#B6A2DB` |
+| **Ação principal / Hover** | `#7455AD` / `#654696` | `#B6A2DB` / `#D8C9EE` |
+| **Texto principal / Secundário** | `#392D4B` / `#756B80` | `#F5F1E8` / `#B6A9C3` |
+| **Bordas** | `#E4DCE4` | `#44394F` |
 
-### **Fluxo Kanban**
-* Quadro visual com arrastar e soltar (*drag-and-drop*), criação e renomeação de seções customizadas, faixa lateral de prioridade, controles revelados no *hover* e **adição rápida inline ("+ Adicionar aqui")** no rodapé de cada coluna.
-
-### **Agenda do Dia & Gestão de Horários**
-* Visão unificada das demandas agendadas + compromissos do **Google Calendar** (ignorando duplicatas já vinculadas como demanda).
-* Marcação de **horário de início e término**, **lembretes personalizáveis** (padrão de 30 minutos antes) e **Detecção de Conflitos de Horário** em tempo real.
-* Conversão de eventos do Google Agenda em demandas completas do MontLife (incluindo extração automática de links do Google Meet).
-
-### **Bloco de Notas Inteligente**
-* Captura rápida e ditado por voz para atas de reunião, ideias e checklists, com cores, fixação (*pin*), salvamento automático (*autosave*), organização por IA e **extração automática de múltiplas demandas** diretamente a partir de uma nota.
-
-### **Wiki Técnica & Relatórios Executivos**
-* **Wiki Técnica:** Base pesquisável de soluções documentadas em demandas concluídas, com alerta automático de demandas similares durante a triagem para evitar retrabalho.
-* **Relatórios & Prestação de Contas:** Indicadores de *Lead Time*, matriz de prioridades, eficiência de SLA e layout otimizado para impressão/exportação em PDF executivo.
+* **Tipografia:** **Plus Jakarta Sans** para a interface e **JetBrains Mono** para horários, métricas e metadados técnicos (`next/font/google`).
+* **Cores semânticas preservadas:** matriz de prioridades **P1–P4**, alertas de conflito, atraso e conclusão mantidos com contraste acessível.
 
 ---
 
-## **3. Matriz de Prioridade & SLA Automático**
+## **2. Arquitetura Modular & App Shell**
 
-| Prioridade | Descrição | SLA Automático (Prazo Padrão) | Cor / Destaque |
+* **Stack:** Next.js 15 (App Router com Route Group `(workspace)`), React 19, TypeScript, Tailwind CSS 3, Lucide React e `date-fns`.
+* **Estado Global Compartilhado (`WorkspaceContext`):** dados (`tasks`, `notes`, `accounts`, `currentUser`), cache isolado por usuário, Service Worker, fila offline, sincronização Google, modais e `UndoToast` (5s) persistem entre todas as 10 rotas sem recarregar a aplicação.
+* **App Shell Global:**
+  * **Sidebar recolhível (`232px` / `64px`):** alternável por botão ou tecla `[` com preferência persistida em `localStorage`, organizada em 5 grupos:
+    * **WORKSPACE:** `Visão geral` (`/`) · `Meu dia` (`/meu-dia`)
+    * **ORGANIZAÇÃO:** `Demandas` (`/demandas`) · `Kanban` (`/kanban`) · `Agenda` (`/agenda`)
+    * **CONHECIMENTO:** `Anotações` (`/anotacoes`) · `Wiki técnica` (`/wiki`)
+    * **INTELIGÊNCIA:** `Assistente IA` (`/assistente-ia`) · `Relatórios` (`/relatorios`)
+    * **SISTEMA:** `Configurações` (`/configuracoes`)
+  * **Header global enxuto:** breadcrumb contextual, busca global + **Command Palette (`Ctrl+K`)**, seletor de workspace (`Todos`, `Trabalho`, `Pessoal`), menu de criação rápida (incluindo Triagem IA por texto/voz), status de sincronização/offline, central de notificações via Portal, alternância de tema e perfil do usuário.
+  * **Área principal 100% fluida:** aproveita toda a largura da viewport (Full HD, QHD e ultrawide) sem `max-width` restritivo global.
+* **Padrão Master-Detail (`SplitView`):** componente reutilizável (`src/components/ui/SplitView.tsx`) com divisor redimensionável por arrastar ou teclado (`←`/`→`), duplo clique para restaurar proporção, recolher/expandir painéis para modo foco, rolagem independente, persistência de proporções por módulo e adaptação nativa de navegação lista ↔ detalhes no mobile.
+
+---
+
+## **3. Módulos da Plataforma**
+
+1. **Visão geral (`/`):** homepage limpa e organizada com saudação contextual, data, progresso diário, 4 indicadores essenciais (*abertas*, *prioridades de hoje*, *atrasadas* e *próximo compromisso com Google Meet*), foco prioritário resumido, **Briefing IA** sob demanda, **atalhos personalizáveis** e diretório de acesso aos módulos.
+2. **Meu dia (`/meu-dia`):** ambiente dedicado ao planejamento diário com anel de progresso, **reordenação de prioridades** (drag-and-drop e setas, salva por data), tarefas planejadas com criação rápida, resgate de atrasadas em 1 clique (*Trazer para hoje*), compromissos do dia (Google Calendar deduplicado + conflitos + Meet), Briefing IA e captura rápida de anotações.
+3. **Demandas (`/demandas` — Master-Detail 55% / 45%):**
+   * **Painel esquerdo:** pesquisa, filtros rápidos, filtros avançados recolhíveis, ordenação, **agrupamento** (*Status*, *Prioridade*, *Categoria*, *Prazo*), criação rápida inline (`P1`–`P4`), **seleção múltipla com ações em lote** (concluir, mudar status, transferir espaço, excluir), modo compacto/confortável e navegação por teclado (`↑`/`↓`).
+   * **Painel direito persistente:** edição inline de título, descrição, status, prioridade, prazo/horário, SLA, categoria, tipo, workspace, checklist interativo, anexos (com **Lightbox** limpo com barra HUD inferior), links, lembretes, Google Calendar/Meet, histórico, extensões de prazo, recorrência, solução técnica vinculada e Assistente IA.
+4. **Kanban (`/kanban`):** quadro independente usando a mesma fonte de dados de Demandas, com colunas por status, drag-and-drop, criação rápida por coluna, filtros por prioridade e **painel de detalhes acoplável à direita** (reutilizando `TaskDetailPanel`) com opção de recolher para largura total.
+5. **Agenda (`/agenda` — Split View 65% / 35%):** calendário **Mensal, Semanal e Diário** à esquerda com navegação, botão *Hoje*, Google Calendar **deduplicado** contra demandas vinculadas e alertas de conflito; à direita, lista sincronizada de agendamentos com expansão inline para reagendamento, acesso direto ao Google Meet, conversão em demanda e próximos compromissos.
+6. **Anotações (`/anotacoes`):** workspace editorial com biblioteca à esquerda recolhível (**Modo Foco**), criação de **Nota em Branco primeiro**, escopos opcionais, salvamento automático, ditado por voz, **checklist estritamente sob demanda**, **6 modos de organização com IA + organização em lote** e conversão direta em demandas vinculadas.
+7. **Wiki técnica (`/wiki`):** leitor em 3 zonas (categorias/tags e índice à esquerda, leitura limpa de soluções documentadas, procedimentos, vídeos YouTube e referências no centro, e demanda de origem, artigos relacionados + Assistente IA contextual à direita).
+8. **Assistente IA (`/assistente-ia`):** ambiente dedicado integrado aos endpoints reais do **Google Gemini** (Triagem estruturada, Briefing estratégico, Diagnóstico/Plano de ação em demanda, Análise de anotação, Categorização em lote e Síntese executiva), com histórico local, referências clicáveis e **confirmação explícita** antes de criar ou aplicar ações.
+9. **Relatórios (`/relatorios`):** painel analítico amplo com gráfico de evolução de entregas (6 meses), histórico de extensões de prazo, SLA, Lead Time, distribuição por prioridade/categoria/workspace, resumo executivo IA e impressão/exportação **A4 executiva**.
+10. **Configurações (`/configuracoes`):** navegação interna por 9 categorias (*Perfil*, *Aparência*, *Workspaces*, *Contas Google*, *Integrações*, *Notificações*, *Preferências de layout*, *Inteligência artificial* e *Sincronização e armazenamento*).
+
+---
+
+## **4. Matriz de Prioridade & SLA Automático**
+
+| Prioridade | Descrição | SLA Automático (Prazo Padrão) | Cor Semântica |
 | :--- | :--- | :--- | :--- |
-| **P1** | Crítica / Urgente | +4 horas a partir da criação | `#EF4444` (Vermelho) |
-| **P2** | Alta | +24 horas (Dia seguinte) | `#F97316` (Laranja) |
-| **P3** | Média / Rotina | +3 dias úteis (pula fins de semana) | `#6366F1` (Índigo) |
-| **P4** | Baixa / Planejamento | +7 dias corridos | `#94A3B8` (Neutro) |
+| **P1** | Crítica / Urgente | +4 horas a partir da criação | `#DC2626` (Vermelho) |
+| **P2** | Alta | +24 horas (Dia seguinte) | `#D97706` (Âmbar) |
+| **P3** | Média / Rotina | +3 dias úteis (pula fins de semana) | `#7455AD` (Roxo) |
+| **P4** | Baixa / Planejamento | +7 dias corridos | `#756B80` (Neutro) |
 
-### **Extensão de Prazo (*Deadline Extension*):**
-* Ao estender um prazo, o sistema preserva `original_due_date` (mantendo a auditoria fiel nos relatórios), atualiza `current_due_date`, incrementa `extension_count` e registra o histórico completo em `deadline_extensions`.
+* **Auditoria de Extensão de Prazo:** preserva `original_due_date`, atualiza `current_due_date`, incrementa `extension_count` e registra cada motivo em `deadline_extensions`.
 
 ---
 
-## **4. Ciclo de Vida das Demandas**
+## **5. Ciclo de Vida das Demandas**
 
 | Status | Descrição | Comportamento |
 | :--- | :--- | :--- |
-| `TRIAGE` | Triagem pendente | Aguardando confirmação no card de IA |
+| `TRIAGE` | Triagem pendente | Aguardando confirmação |
 | `TODO` | A Fazer | Demanda ativa no backlog com SLA calculado |
 | `IN_PROGRESS` | Em Andamento | Registra `started_at` |
-| `WAITING` | Aguardando | Pausa contagem de atraso enquanto aguarda terceiros/validação |
-| `COMPLETED` | Concluída | Registra `completed_at`, solução para a Wiki e comprovantes |
-| `CANCELED` | Cancelada | Mantida em histórico de auditoria com justificativa e opção de reabertura |
+| `WAITING` | Aguardando | Pausa atraso enquanto aguarda terceiros/validação |
+| `COMPLETED` | Concluída | Registra `completed_at`, solução para a Wiki e evidências |
+| `CANCELED` | Cancelada | Mantida em histórico de auditoria com justificativa e reabertura |
 
 ---
 
-## **5. Experiência Mobile & PWA**
+## **6. Responsividade, Mobile & PWA**
 
-* **Instalável no Celular:** Manifesto PWA e ícones otimizados para adicionar à tela inicial (Android/iOS).
-* **Navegação *Drill-Down*:** Barra inferior fixa (*Demandas*, *Notas*, *Agenda*, *Kanban*, *Menu*), filtros em *Bottom Sheet* e abertura direta de Detalhes/Métricas com retorno rápido, maximizando a área útil de leitura.
-* **Notificações Web Push & Offline:** Lembretes disparam notificações nativas do dispositivo via Service Worker, e ações feitas sem internet ficam enfileiradas localmente para sincronização automática ao restabelecer a rede.
-
----
-
-## **6. Configuração das Variáveis de Ambiente**
-
-Copie o arquivo `.env.example` para `.env.local`:
-
-```bash
-cp .env.example .env.local
-```
-
-Preencha os valores:
-
-```ini
-# Gemini API (Paid Tier via @google/genai)
-GEMINI_API_KEY="sua_chave_da_gemini_api"
-
-# Google OAuth 2.0 (Login seguro, workspaces e Google Calendar)
-GOOGLE_CLIENT_ID="seu_client_id.apps.googleusercontent.com"
-GOOGLE_CLIENT_SECRET="seu_client_secret"
-GOOGLE_REDIRECT_URI="http://localhost:3000/api/google/callback"
-
-# YouTube Data API v3 (Curadoria automática de vídeos de estudo)
-YOUTUBE_API_KEY="sua_api_key_do_google_cloud"
-
-# Firebase / Cloud Firestore
-NEXT_PUBLIC_FIREBASE_PROJECT_ID="seu_projeto_id"
-FIREBASE_CLIENT_EMAIL="firebase-adminsdk-xxx@seu_projeto.iam.gserviceaccount.com"
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n..."
-
-# Opcional: Microsoft To Do / Entra ID
-MICROSOFT_CLIENT_ID="seu_client_id_do_azure"
-MICROSOFT_CLIENT_SECRET="seu_client_secret_do_azure"
-```
+* **Desktop & Ultrawide:** layout 100% fluido, painéis `SplitView` redimensionáveis e sidebar recolhível.
+* **Mobile & Tablet:** barra inferior fixa (*Início*, *Demandas*, *Agenda*, *Notas*, *Menu*), drawer lateral completo e navegação dedicada lista ↔ detalhes em tela cheia.
+* **Web Push & Offline:** Service Worker (`public/sw.js`), manifesto PWA instalável e fila offline persistente (`src/lib/offlineQueue.ts`) com sincronização automática ao reconectar.
 
 ---
 
-## **7. Executando o Projeto**
+## **7. Configuração & Execução**
 
-Instale as dependências e inicie o servidor de desenvolvimento:
+Copie `.env.example` para `.env.local` e configure suas chaves (`GEMINI_API_KEY`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI`, `YOUTUBE_API_KEY` e credenciais do Firebase Admin):
 
 ```bash
 npm install
 npm run dev
 ```
 
-Acesse em seu navegador: [http://localhost:3000](http://localhost:3000)
-
-Para compilar e iniciar em modo de produção:
+Acesse em [http://localhost:3000](http://localhost:3000). Para compilar e executar em produção:
 
 ```bash
 npm run build

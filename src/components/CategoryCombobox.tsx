@@ -56,7 +56,7 @@ export function CategoryCombobox({
           onFocus={() => setIsOpen(true)}
           placeholder={placeholder}
           autoFocus={autoFocus}
-          className="w-full h-9 pl-3 pr-8 text-xs rounded-xl bg-[#F0EDE6] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-medium transition-all"
+          className="w-full h-9 pl-3 pr-8 text-xs rounded-xl bg-[#FAF6EF] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] text-[#392D4B] dark:text-[#F5F1E8] placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-medium transition-all"
         />
         <button
           type="button"
@@ -74,8 +74,8 @@ export function CategoryCombobox({
 
       {/* Floating Menu with all categories */}
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] shadow-xl py-1 custom-scrollbar animate-in fade-in zoom-in-95 duration-100">
-          <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-purple-300/60 border-b border-[#E5E0D6] dark:border-[#343F56]/50 mb-1">
+        <div className="absolute z-50 left-0 right-0 mt-1 max-h-56 overflow-y-auto rounded-xl bg-[#FFFCF6] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-[#44394F] shadow-xl py-1 custom-scrollbar animate-in fade-in zoom-in-95 duration-100">
+          <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-purple-300/60 border-b border-[#E5E0D6] dark:border-[#44394F]/50 mb-1">
             Categorias ({categories.length})
           </div>
           {displayList.map((cat) => {
@@ -91,7 +91,7 @@ export function CategoryCombobox({
                 className={`w-full px-3 py-1.5 text-xs text-left flex items-center justify-between transition-colors ${
                   isSelected
                     ? "bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 font-semibold"
-                    : "text-slate-700 dark:text-slate-200 hover:bg-[#E4E0D6] dark:hover:bg-white/5"
+                    : "text-slate-700 dark:text-slate-200 hover:bg-[#E7DFF5] dark:hover:bg-white/5"
                 }`}
               >
                 <span>{cat}</span>

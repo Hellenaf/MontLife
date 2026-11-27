@@ -42,6 +42,8 @@ import {
   FileCheck2,
   Clock,
   Sparkle,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 import { formatDistanceToNow, parseISO, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -61,6 +63,7 @@ interface NotesViewProps {
   notes: Note[];
   tasks: Task[];
   accountFilter?: "all" | string;
+  initialSelectedNoteId?: string | null;
   onCreateNote: (draft: Partial<Note>) => Promise<Note | null>;
   onUpdateNote: (noteId: string, patch: Partial<Note>) => Promise<Note | null>;
   onDeleteNote: (noteId: string) => Promise<void>;
@@ -86,7 +89,7 @@ const CATEGORY_META: Record<
   geral: {
     label: "Livre",
     badgeClass:
-      "bg-[#E7E3DA] text-slate-700 border-[#DCD7CC] dark:bg-[#293244] dark:text-slate-300 dark:border-[#404D68]",
+      "bg-[#F2ECE2] text-slate-700 border-[#E4DCE4] dark:bg-[#352D42] dark:text-slate-300 dark:border-[#44394F]",
     icon: <FileText className="w-3 h-3" />,
   },
   reuniao: {
@@ -191,7 +194,7 @@ const AI_ORGANIZE_MODES: {
     id: "demand_scope",
     label: "Preparar Escopo de Demanda",
     desc: "Reescreve em Objetivo, Contexto, Requisitos e Critérios",
-    icon: <Target className="w-3.5 h-3.5 text-indigo-500" />,
+    icon: <Target className="w-3.5 h-3.5 text-[#7455AD]" />,
   },
   {
     id: "topics",
@@ -225,8 +228,8 @@ const COLOR_STYLES: Record<
 > = {
   default: {
     dot: "bg-slate-400",
-    accentBorder: "border-l-[#C9C3B6] dark:border-l-[#465470]",
-    subtleBg: "bg-[#FAF8F4] dark:bg-[#273042]",
+    accentBorder: "border-l-[#D8C9EE] dark:border-l-[#574966]",
+    subtleBg: "bg-[#FFFCF6] dark:bg-[#273042]",
     label: "Padrão",
   },
   purple: {
@@ -282,6 +285,7 @@ export function NotesView({
   notes,
   tasks,
   accountFilter = "all",
+  initialSelectedNoteId = null,
   onCreateNote,
   onUpdateNote,
   onDeleteNote,
@@ -305,8 +309,16 @@ export function NotesView({
     "all" | NoteCategory | "pinned" | "converted"
   >("all");
   const [showArchived, setShowArchived] = useState(false);
-  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null);
+  const [selectedNoteId, setSelectedNoteId] = useState<string | null>(initialSelectedNoteId);
   const [mobileScreen, setMobileScreen] = useState<"list" | "editor">("list");
+  const [isLibraryCollapsed, setIsLibraryCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (initialSelectedNoteId) {
+      setSelectedNoteId(initialSelectedNoteId);
+      setMobileScreen("editor");
+    }
+  }, [initialSelectedNoteId]);
 
   // Local editor draft state (synced with selected note + debounced autosave)
   const [draftTitle, setDraftTitle] = useState("");
@@ -1193,12 +1205,12 @@ export function NotesView({
     (activeNote?.checklist || []).length === 0;
 
   return (
-    <div className="w-full max-w-[1600px] mx-auto h-full flex flex-col gap-3">
+    <div className="w-full h-full flex flex-col gap-3">
       {/* ========================================================================= */}
       {/* 1. MENU SUPERIOR LIMPO: CAPTURA RÁPIDA + NOVA NOTA EM BRANCO (SEM BARRA DE CATEGORIAS!) */}
       {/* ========================================================================= */}
       <div
-        className={`rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] p-3.5 space-y-2.5 shrink-0 ${
+        className={`rounded-xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4]/80 dark:border-[#44394F] p-3.5 space-y-2.5 shrink-0 ${
           mobileScreen === "editor" ? "hidden lg:block" : "block"
         }`}
       >
@@ -1208,10 +1220,10 @@ export function NotesView({
               <StickyNote className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm font-semibold text-slate-950 dark:text-zinc-50 leading-tight tracking-tight">
+              <h1 className="text-sm font-semibold text-[#392D4B] dark:text-[#F5F1E8] leading-tight tracking-tight">
                 Anotações Rápidas
               </h1>
-              <p className="text-[11px] text-slate-500 dark:text-zinc-400 truncate">
+              <p className="text-[11px] text-[#756B80] dark:text-[#B6A9C3] truncate">
                 Anote livremente, organize com IA e transforme em demanda quando precisar.
               </p>
             </div>
@@ -1222,7 +1234,7 @@ export function NotesView({
               type="button"
               onClick={handleCreateBlankNote}
               disabled={isCreatingQuick}
-              className="inline-flex items-center gap-1.5 px-3 h-8 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-colors active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 h-8 rounded-lg bg-[#7455AD] hover:bg-[#654696] text-white text-xs font-semibold transition-colors active:scale-[0.98] disabled:opacity-50 cursor-pointer"
               title="Criar uma nova anotação em branco"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -1237,7 +1249,7 @@ export function NotesView({
                   setShowTopScopeMenu((prev) => !prev);
                 }}
                 disabled={isCreatingQuick}
-                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-lg bg-[#F7F6F1] hover:bg-[#EBE7DE] dark:bg-[#293244] dark:hover:bg-[#2F394D] text-slate-700 dark:text-zinc-200 border border-[#DCD7CC]/80 dark:border-[#343F56] text-xs font-medium transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 px-2.5 h-8 rounded-lg bg-[#FFFCF6] hover:bg-[#E7DFF5] dark:bg-[#352D42] dark:hover:bg-[#3D344C] text-slate-700 dark:text-zinc-200 border border-[#E4DCE4]/80 dark:border-[#44394F] text-xs font-medium transition-colors cursor-pointer"
                 title="Criar nota usando um modo/escopo opcional"
               >
                 <span>Escopos</span>
@@ -1247,7 +1259,7 @@ export function NotesView({
               {showTopScopeMenu && (
                 <div
                   onClick={(e) => e.stopPropagation()}
-                  className="absolute right-0 mt-1.5 w-64 rounded-xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] shadow-popover p-1.5 z-40 animate-in fade-in zoom-in-95 duration-100"
+                  className="absolute right-0 mt-1.5 w-64 rounded-xl bg-[#FFFCF6] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-[#44394F] shadow-popover p-1.5 z-40 animate-in fade-in zoom-in-95 duration-100"
                 >
                   <div className="px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
                     Modos de Escopo (Opcional)
@@ -1259,14 +1271,14 @@ export function NotesView({
                         key={presetId}
                         type="button"
                         onClick={() => handleCreateScopedNote(presetId)}
-                        className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-lg hover:bg-[#EBE7DE] dark:hover:bg-white/[0.05] text-left transition-colors cursor-pointer"
+                        className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-lg hover:bg-[#E7DFF5] dark:hover:bg-white/[0.05] text-left transition-colors cursor-pointer"
                       >
                         <div className="mt-0.5 shrink-0">{preset.icon}</div>
                         <div className="min-w-0">
-                          <div className="text-xs font-semibold text-slate-800 dark:text-zinc-100">
+                          <div className="text-xs font-semibold text-slate-800 dark:text-[#F5F1E8]">
                             {preset.label}
                           </div>
-                          <div className="text-[11px] text-slate-500 dark:text-zinc-400 leading-snug">
+                          <div className="text-[11px] text-[#756B80] dark:text-[#B6A9C3] leading-snug">
                             {preset.shortDesc}
                           </div>
                         </div>
@@ -1281,13 +1293,13 @@ export function NotesView({
 
         {/* Barra de Captura Rápida Limpa */}
         <form onSubmit={handleQuickCreate} className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 flex-1 min-w-0 bg-[#E7E3DA]/80 dark:bg-[#293244] border border-[#DCD7CC]/80 dark:border-[#343F56] focus-within:bg-[#FBF9F5] dark:focus-within:bg-[#262F40] rounded-lg px-3 py-1 focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-500/15 transition-all">
+          <div className="flex items-center gap-1.5 flex-1 min-w-0 bg-[#F2ECE2]/80 dark:bg-[#352D42] border border-[#E4DCE4]/80 dark:border-[#44394F] focus-within:bg-[#FFFCF6] dark:focus-within:bg-[#352D42] rounded-lg px-3 py-1 focus-within:border-[#7455AD] focus-within:ring-2 focus-within:ring-[#7455AD]/15 transition-all">
             <input
               type="text"
               value={quickText}
               onChange={(e) => setQuickText(e.target.value)}
               placeholder="Anotar algo rápido para lembrar ou transformar em demanda depois..."
-              className="flex-1 min-w-0 bg-transparent text-xs sm:text-[13px] text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 outline-none py-1"
+              className="flex-1 min-w-0 bg-transparent text-xs sm:text-[13px] text-[#392D4B] dark:text-[#F5F1E8] placeholder-slate-400 dark:placeholder-zinc-500 outline-none py-1"
             />
             {speechSupported && (
               <button
@@ -1312,7 +1324,7 @@ export function NotesView({
           <button
             type="submit"
             disabled={!quickText.trim() || isCreatingQuick}
-            className="inline-flex items-center justify-center gap-1.5 px-4 h-9 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-indigo-600 dark:hover:bg-indigo-500 text-white text-xs font-semibold transition-colors disabled:opacity-35 cursor-pointer shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-4 h-9 rounded-lg bg-slate-900 hover:bg-slate-800 dark:bg-[#7455AD] dark:hover:bg-[#654696] text-white text-xs font-semibold transition-colors disabled:opacity-35 cursor-pointer shrink-0"
           >
             {isCreatingQuick ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1329,9 +1341,11 @@ export function NotesView({
         <section
           className={`${
             mobileScreen === "list" ? "flex" : "hidden"
-          } lg:flex flex-col w-full lg:w-[330px] xl:w-[364px] shrink-0 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] overflow-hidden min-h-0 flex-1 lg:flex-none`}
+          } ${
+            isLibraryCollapsed ? "lg:hidden" : "lg:flex"
+          } flex-col w-full lg:w-[330px] xl:w-[364px] shrink-0 rounded-xl bg-surface border border-line overflow-hidden min-h-0 flex-1 lg:flex-none`}
         >
-          <div className="p-3 border-b border-[#DCD7CC]/75 dark:border-[#2E384D] space-y-2 shrink-0">
+          <div className="p-3 border-b border-[#E4DCE4]/75 dark:border-[#44394F] space-y-2 shrink-0">
             <div className="flex items-center gap-1.5">
               <div className="relative flex-1 min-w-0">
                 <Search className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -1340,7 +1354,7 @@ export function NotesView({
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Buscar anotações, tags, resumos..."
-                  className="w-full h-8 pl-8 pr-7 rounded-lg bg-[#E7E3DA]/80 dark:bg-[#293244] border border-[#DCD7CC]/80 dark:border-[#343F56] focus:bg-[#FBF9F5] dark:focus:bg-[#262F40] text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500"
+                  className="w-full h-8 pl-8 pr-7 rounded-lg bg-[#F2ECE2]/80 dark:bg-[#352D42] border border-[#E4DCE4]/80 dark:border-[#44394F] focus:bg-[#FFFCF6] dark:focus:bg-[#352D42] text-xs text-[#392D4B] dark:text-[#F5F1E8] placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[#7455AD]"
                 />
                 {searchTerm && (
                   <button
@@ -1358,7 +1372,7 @@ export function NotesView({
                 onClick={handleBatchOrganizeNotes}
                 disabled={isBatchOrganizing || activeNotesCount === 0}
                 title="Usar IA para gerar títulos, resumos, tags e sinalizar quais notas estão prontas para virar demanda"
-                className="h-8 px-2.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-500/15 dark:hover:bg-indigo-500/25 text-indigo-700 dark:text-indigo-300 border border-indigo-200/80 dark:border-indigo-500/30 inline-flex items-center gap-1 text-[11px] font-semibold shrink-0 transition-colors disabled:opacity-40 cursor-pointer"
+                className="h-8 px-2.5 rounded-lg bg-[#E7DFF5] hover:bg-[#D8C9EE] dark:bg-[#332A45] dark:hover:bg-[#654696]/25 text-[#654696] dark:text-[#D8C9EE] border border-[#D8C9EE]/80 dark:border-[#7455AD]/30 inline-flex items-center gap-1 text-[11px] font-semibold shrink-0 transition-colors disabled:opacity-40 cursor-pointer"
               >
                 {isBatchOrganizing ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1386,8 +1400,8 @@ export function NotesView({
                   onClick={() => setFilterChip(chip.id as any)}
                   className={`px-2.5 py-1 rounded-md font-medium whitespace-nowrap transition-colors shrink-0 cursor-pointer ${
                     filterChip === chip.id
-                      ? "bg-indigo-600 text-white font-semibold"
-                      : "bg-[#E7E3DA]/80 dark:bg-[#293244] text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100"
+                      ? "bg-[#7455AD] text-white font-semibold"
+                      : "bg-[#F2ECE2]/80 dark:bg-[#352D42] text-slate-600 dark:text-[#B6A9C3] hover:text-[#392D4B] dark:hover:text-zinc-100"
                   }`}
                 >
                   {chip.label}
@@ -1399,7 +1413,7 @@ export function NotesView({
           {/* Lista rolável de notas */}
           <div className="flex-1 overflow-y-auto p-2.5 space-y-2 custom-scrollbar">
             {filteredNotes.length === 0 ? (
-              <div className="py-12 px-4 text-center space-y-2.5 text-slate-400 dark:text-slate-500">
+              <div className="py-12 px-4 text-center space-y-2.5 text-slate-400 dark:text-[#756B80]">
                 <StickyNote className="w-8 h-8 mx-auto opacity-35 text-amber-500" />
                 <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
                   {showArchived
@@ -1415,7 +1429,7 @@ export function NotesView({
                   <button
                     type="button"
                     onClick={handleCreateBlankNote}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-xs cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#7455AD] hover:bg-[#654696] text-white text-xs font-semibold shadow-xs cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Nova Nota em Branco</span>
@@ -1454,12 +1468,12 @@ export function NotesView({
                     onClick={() => handleSelectNote(note)}
                     className={`w-full text-left p-3 rounded-xl border border-l-[3px] ${colMeta.accentBorder} transition-all cursor-pointer space-y-1.5 ${
                       isSelected
-                        ? "border-indigo-500/70 bg-indigo-50/70 dark:bg-indigo-950/30 shadow-sm ring-1 ring-indigo-500/25"
-                        : `${colMeta.subtleBg} border-[#DCD7CC]/80 dark:border-[#343F56]/80 hover:border-indigo-300 dark:hover:border-indigo-700/60`
+                        ? "border-[#7455AD]/70 bg-[#E7DFF5]/70 dark:bg-[#332A45] shadow-sm ring-1 ring-[#7455AD]/25"
+                        : `${colMeta.subtleBg} border-[#E4DCE4]/80 dark:border-[#44394F]/80 hover:border-[#B6A2DB] dark:hover:border-indigo-700/60`
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="text-[13px] font-bold text-slate-900 dark:text-white line-clamp-1 flex-1 min-w-0">
+                      <h3 className="text-[13px] font-bold text-[#392D4B] dark:text-white line-clamp-1 flex-1 min-w-0">
                         {displayTitle}
                       </h3>
 
@@ -1481,12 +1495,12 @@ export function NotesView({
                     </div>
 
                     {(note.ai_summary || note.content) && (
-                      <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-2 leading-snug">
+                      <p className="text-[11px] text-[#756B80] dark:text-[#B6A9C3] line-clamp-2 leading-snug">
                         {note.ai_summary || note.content}
                       </p>
                     )}
 
-                    <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400 dark:text-slate-500 pt-0.5">
+                    <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400 dark:text-[#756B80] pt-0.5">
                       <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                         {note.category !== "geral" && (
                           <span
@@ -1498,12 +1512,12 @@ export function NotesView({
                         )}
                         {totalChecklist > 0 && (
                           <span className="inline-flex items-center gap-0.5 text-slate-600 dark:text-slate-300 font-mono font-semibold">
-                            <ListChecks className="w-3 h-3 text-indigo-500" />
+                            <ListChecks className="w-3 h-3 text-[#7455AD]" />
                             {checkedCount}/{totalChecklist}
                           </span>
                         )}
                         {note.tags && note.tags.length > 0 && (
-                          <span className="text-indigo-600/80 dark:text-indigo-400/80 truncate max-w-[90px]">
+                          <span className="text-[#7455AD]/80 dark:text-[#B6A2DB]/80 truncate max-w-[90px]">
                             #{note.tags[0]}
                           </span>
                         )}
@@ -1518,11 +1532,11 @@ export function NotesView({
 
           {/* Rodapé da lista: Alternar Ativas / Arquivadas */}
           {archivedNotesCount > 0 && (
-            <div className="px-3 py-2 border-t border-[#E5E0D6] dark:border-[#343F56]/80 bg-[#F0EDE6]/70 dark:bg-[#1C2230] flex items-center justify-between text-[11px] shrink-0">
+            <div className="px-3 py-2 border-t border-[#E5E0D6] dark:border-[#44394F]/80 bg-[#FAF6EF]/70 dark:bg-[#241F2D] flex items-center justify-between text-[11px] shrink-0">
               <button
                 type="button"
                 onClick={() => setShowArchived((prev) => !prev)}
-                className="inline-flex items-center gap-1.5 font-semibold text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-300 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1.5 font-semibold text-slate-600 dark:text-[#B6A9C3] hover:text-[#7455AD] dark:hover:text-indigo-300 transition-colors cursor-pointer"
               >
                 <Archive className="w-3.5 h-3.5" />
                 <span>
@@ -1539,11 +1553,11 @@ export function NotesView({
         <section
           className={`${
             mobileScreen === "editor" ? "flex" : "hidden"
-          } lg:flex flex-1 min-w-0 min-h-0 flex-col rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] overflow-hidden`}
+          } lg:flex flex-1 min-w-0 min-h-0 flex-col rounded-xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4]/80 dark:border-[#44394F] overflow-hidden`}
         >
           {!activeNote ? (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3 text-slate-400 dark:text-slate-500">
-              <StickyNote className="w-10 h-10 opacity-30 text-indigo-500" />
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-center space-y-3 text-slate-400 dark:text-[#756B80]">
+              <StickyNote className="w-10 h-10 opacity-30 text-[#7455AD]" />
               <div className="space-y-1 max-w-sm">
                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
                   Comece uma anotação em branco
@@ -1555,7 +1569,7 @@ export function NotesView({
               <button
                 type="button"
                 onClick={handleCreateBlankNote}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#7455AD] hover:bg-[#654696] text-white text-xs font-bold shadow-sm transition-all cursor-pointer"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Nova Nota em Branco</span>
@@ -1564,7 +1578,7 @@ export function NotesView({
           ) : (
             <>
               {/* Header do Editor */}
-              <div className="px-4 sm:px-5 py-2.5 border-b border-[#DCD7CC]/75 dark:border-[#2E384D] bg-[#F0EDE6] dark:bg-[#1C2230] flex items-center justify-between gap-2 flex-wrap shrink-0">
+              <div className="px-4 sm:px-5 py-2.5 border-b border-[#E4DCE4]/75 dark:border-[#44394F] bg-[#FAF6EF] dark:bg-[#241F2D] flex items-center justify-between gap-2 flex-wrap shrink-0">
                 <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-wrap">
                   <button
                     type="button"
@@ -1572,10 +1586,33 @@ export function NotesView({
                       await flushPendingSave();
                       setMobileScreen("list");
                     }}
-                    className="lg:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] text-slate-700 dark:text-slate-200 text-xs font-semibold cursor-pointer"
+                    className="lg:hidden inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-surface border border-line text-ink text-xs font-semibold cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4" />
                     <span>Notas</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsLibraryCollapsed((prev) => !prev)}
+                    title={
+                      isLibraryCollapsed
+                        ? "Mostrar biblioteca de notas"
+                        : "Recolher biblioteca (Modo foco de escrita)"
+                    }
+                    className="hidden lg:inline-flex items-center gap-1.5 h-8 px-2.5 rounded-xl bg-surface border border-line hover:border-brand text-ink-muted hover:text-brand text-xs font-semibold transition-colors cursor-pointer"
+                  >
+                    {isLibraryCollapsed ? (
+                      <>
+                        <PanelLeftOpen className="w-3.5 h-3.5" />
+                        <span>Biblioteca</span>
+                      </>
+                    ) : (
+                      <>
+                        <PanelLeftClose className="w-3.5 h-3.5" />
+                        <span>Modo foco</span>
+                      </>
+                    )}
                   </button>
 
                   {/* Seletor sutil de Modo/Escopo (Livre por padrão) */}
@@ -1585,7 +1622,7 @@ export function NotesView({
                       onUpdateNote(activeNote.id, { category: e.target.value as NoteCategory })
                     }
                     title="Modo de organização da nota (opcional)"
-                    className="h-8 px-2.5 rounded-xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                    className="h-8 px-2.5 rounded-xl bg-[#FFFCF6] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-[#44394F] text-xs font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
                   >
                     <option value="geral">Modo: Livre</option>
                     <option value="reuniao">Modo: Reunião</option>
@@ -1601,10 +1638,10 @@ export function NotesView({
                         e.stopPropagation();
                         setShowEditorScopeMenu((prev) => !prev);
                       }}
-                      className="h-8 inline-flex items-center gap-1 px-2.5 rounded-xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] hover:border-indigo-400 text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                      className="h-8 inline-flex items-center gap-1 px-2.5 rounded-xl bg-[#FFFCF6] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-[#44394F] hover:border-[#B6A2DB] text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
                       title="Inserir escopo estruturado nesta nota (opcional)"
                     >
-                      <Sparkle className="w-3 h-3 text-indigo-500" />
+                      <Sparkle className="w-3 h-3 text-[#7455AD]" />
                       <span className="hidden sm:inline">Inserir Escopo</span>
                       <ChevronDown className="w-3 h-3 opacity-70" />
                     </button>
@@ -1612,7 +1649,7 @@ export function NotesView({
                     {showEditorScopeMenu && (
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute left-0 mt-1.5 w-64 rounded-2xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] shadow-xl p-1.5 z-30 animate-in fade-in zoom-in-95 duration-100"
+                        className="absolute left-0 mt-1.5 w-64 rounded-2xl bg-[#FFFCF6] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-[#44394F] shadow-xl p-1.5 z-30 animate-in fade-in zoom-in-95 duration-100"
                       >
                         <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
                           Aplicar Escopo na Nota
@@ -1624,14 +1661,14 @@ export function NotesView({
                               key={presetId}
                               type="button"
                               onClick={() => handleApplyScopeToActiveNote(presetId)}
-                              className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl hover:bg-[#EBE7DE] dark:hover:bg-white/[0.05] text-left transition-colors cursor-pointer"
+                              className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl hover:bg-[#E7DFF5] dark:hover:bg-white/[0.05] text-left transition-colors cursor-pointer"
                             >
                               <div className="mt-0.5 shrink-0">{preset.icon}</div>
                               <div className="min-w-0">
                                 <div className="text-xs font-semibold text-slate-800 dark:text-white">
                                   {preset.label}
                                 </div>
-                                <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                                <div className="text-[11px] text-[#756B80] dark:text-[#B6A9C3] leading-snug">
                                   {preset.shortDesc}
                                 </div>
                               </div>
@@ -1675,7 +1712,7 @@ export function NotesView({
 
                 {/* Ações Utilitárias Direitas */}
                 <div className="flex items-center gap-1 shrink-0">
-                  <span className="text-[11px] font-medium text-slate-400 dark:text-slate-500 mr-1 hidden sm:inline">
+                  <span className="text-[11px] font-medium text-slate-400 dark:text-[#756B80] mr-1 hidden sm:inline">
                     {saveState === "saving"
                       ? "Salvando..."
                       : saveState === "dirty"
@@ -1687,7 +1724,7 @@ export function NotesView({
                   <button
                     type="button"
                     onClick={handleCopyNoteText}
-                    className="p-1.5 rounded-xl hover:bg-[#DDD8CD]/70 dark:hover:bg-[#2F394D] text-slate-500 dark:text-slate-400 cursor-pointer"
+                    className="p-1.5 rounded-xl hover:bg-[#E7DFF5]/70 dark:hover:bg-[#3D344C] text-[#756B80] dark:text-[#B6A9C3] cursor-pointer"
                     title="Copiar conteúdo da nota"
                   >
                     {copiedFeedback ? (
@@ -1705,7 +1742,7 @@ export function NotesView({
                         e.stopPropagation();
                         setShowColorPicker((prev) => !prev);
                       }}
-                      className="p-1.5 rounded-xl hover:bg-[#DDD8CD]/70 dark:hover:bg-[#2F394D] text-slate-500 dark:text-slate-400 cursor-pointer"
+                      className="p-1.5 rounded-xl hover:bg-[#E7DFF5]/70 dark:hover:bg-[#3D344C] text-[#756B80] dark:text-[#B6A9C3] cursor-pointer"
                       title="Cor da anotação"
                     >
                       <Palette className="w-4 h-4" />
@@ -1713,7 +1750,7 @@ export function NotesView({
                     {showColorPicker && (
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute right-0 mt-1 p-2 rounded-xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] shadow-xl flex items-center gap-1.5 z-30"
+                        className="absolute right-0 mt-1 p-2 rounded-xl bg-[#FFFCF6] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-[#44394F] shadow-xl flex items-center gap-1.5 z-30"
                       >
                         {(Object.keys(COLOR_STYLES) as NoteColor[]).map((col) => (
                           <button
@@ -1724,7 +1761,7 @@ export function NotesView({
                               setShowColorPicker(false);
                             }}
                             className={`w-5 h-5 rounded-full ${COLOR_STYLES[col].dot} ${
-                              activeNote.color === col ? "ring-2 ring-offset-2 ring-indigo-500" : ""
+                              activeNote.color === col ? "ring-2 ring-offset-2 ring-[#7455AD]" : ""
                             } cursor-pointer`}
                             title={COLOR_STYLES[col].label}
                           />
@@ -1740,7 +1777,7 @@ export function NotesView({
                     className={`p-1.5 rounded-xl transition-colors cursor-pointer ${
                       activeNote.pinned
                         ? "bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300"
-                        : "hover:bg-[#DDD8CD]/70 dark:hover:bg-[#2F394D] text-slate-500 dark:text-slate-400"
+                        : "hover:bg-[#E7DFF5]/70 dark:hover:bg-[#3D344C] text-[#756B80] dark:text-[#B6A9C3]"
                     }`}
                     title={activeNote.pinned ? "Desafixar nota" : "Fixar nota no topo"}
                   >
@@ -1757,11 +1794,11 @@ export function NotesView({
                     onClick={() =>
                       onUpdateNote(activeNote.id, { archived: !activeNote.archived })
                     }
-                    className="p-1.5 rounded-xl hover:bg-[#DDD8CD]/70 dark:hover:bg-[#2F394D] text-slate-500 dark:text-slate-400 cursor-pointer"
+                    className="p-1.5 rounded-xl hover:bg-[#E7DFF5]/70 dark:hover:bg-[#3D344C] text-[#756B80] dark:text-[#B6A9C3] cursor-pointer"
                     title={activeNote.archived ? "Restaurar para notas ativas" : "Arquivar anotação"}
                   >
                     {activeNote.archived ? (
-                      <ArchiveRestore className="w-4 h-4 text-indigo-500" />
+                      <ArchiveRestore className="w-4 h-4 text-[#7455AD]" />
                     ) : (
                       <Archive className="w-4 h-4" />
                     )}
@@ -1796,7 +1833,7 @@ export function NotesView({
               </div>
 
               {/* Barra Completa de IA & Conversão em Demanda */}
-              <div className="px-4 sm:px-5 py-2 border-b border-[#DCD7CC]/75 dark:border-[#2E384D] bg-[#F7F6F1] dark:bg-[#222938] flex items-center justify-between gap-2 flex-wrap shrink-0">
+              <div className="px-4 sm:px-5 py-2 border-b border-[#E4DCE4]/75 dark:border-[#44394F] bg-[#FFFCF6] dark:bg-[#2C2637] flex items-center justify-between gap-2 flex-wrap shrink-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {/* Split button: Organizar com IA + Menu de Modos Especializados */}
                   <div className="relative inline-flex items-center">
@@ -1804,7 +1841,7 @@ export function NotesView({
                       type="button"
                       onClick={() => handleOrganizeWithAI("auto")}
                       disabled={isOrganizingAi}
-                      className="inline-flex items-center gap-1.5 pl-3 pr-2.5 py-1.5 rounded-l-xl bg-[#F7F6F1] dark:bg-[#293244] border border-purple-200 dark:border-purple-800/70 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/50 text-xs font-bold shadow-2xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 pl-3 pr-2.5 py-1.5 rounded-l-xl bg-[#FFFCF6] dark:bg-[#352D42] border border-purple-200 dark:border-purple-800/70 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/50 text-xs font-bold shadow-2xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                     >
                       {isOrganizingAi ? (
                         <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -1821,7 +1858,7 @@ export function NotesView({
                         setShowAiModesMenu((prev) => !prev);
                       }}
                       title="Escolher estilo de organização da IA"
-                      className="px-2 py-1.5 rounded-r-xl bg-[#F7F6F1] dark:bg-[#293244] border border-l-0 border-purple-200 dark:border-purple-800/70 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/50 text-xs font-bold shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
+                      className="px-2 py-1.5 rounded-r-xl bg-[#FFFCF6] dark:bg-[#352D42] border border-l-0 border-purple-200 dark:border-purple-800/70 text-purple-700 dark:text-purple-300 hover:bg-purple-50 dark:hover:bg-purple-950/50 text-xs font-bold shadow-2xs transition-all disabled:opacity-50 cursor-pointer"
                     >
                       <ChevronDown className="w-3.5 h-3.5" />
                     </button>
@@ -1829,7 +1866,7 @@ export function NotesView({
                     {showAiModesMenu && (
                       <div
                         onClick={(e) => e.stopPropagation()}
-                        className="absolute left-0 top-full mt-1.5 w-72 rounded-2xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] shadow-2xl p-1.5 z-40 animate-in fade-in zoom-in-95 duration-100"
+                        className="absolute left-0 top-full mt-1.5 w-72 rounded-2xl bg-[#FFFCF6] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-[#44394F] shadow-2xl p-1.5 z-40 animate-in fade-in zoom-in-95 duration-100"
                       >
                         <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500">
                           Como a IA deve organizar esta nota?
@@ -1839,14 +1876,14 @@ export function NotesView({
                             key={m.id}
                             type="button"
                             onClick={() => handleOrganizeWithAI(m.id)}
-                            className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl hover:bg-indigo-50/70 dark:hover:bg-white/[0.05] text-left transition-colors cursor-pointer"
+                            className="w-full flex items-start gap-2.5 px-2.5 py-2 rounded-xl hover:bg-[#E7DFF5]/70 dark:hover:bg-white/[0.05] text-left transition-colors cursor-pointer"
                           >
                             <div className="mt-0.5 shrink-0">{m.icon}</div>
                             <div className="min-w-0">
                               <div className="text-xs font-semibold text-slate-800 dark:text-white">
                                 {m.label}
                               </div>
-                              <div className="text-[11px] text-slate-500 dark:text-slate-400 leading-snug">
+                              <div className="text-[11px] text-[#756B80] dark:text-[#B6A9C3] leading-snug">
                                 {m.desc}
                               </div>
                             </div>
@@ -1861,7 +1898,7 @@ export function NotesView({
                     type="button"
                     onClick={handleExtractTasksWithAI}
                     disabled={isExtractingAi}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#7455AD] hover:bg-[#654696] text-white text-xs font-bold shadow-xs transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
                     title="Deixar a IA identificar e criar uma ou várias demandas a partir desta anotação"
                   >
                     {isExtractingAi ? (
@@ -1898,7 +1935,7 @@ export function NotesView({
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer ${
                         listeningTarget === "editor"
                           ? "bg-rose-500 text-white border-rose-500 animate-pulse"
-                          : "bg-[#F7F6F1] dark:bg-[#293244] border-[#DCD7CC] dark:border-[#404D68] text-slate-600 dark:text-slate-300"
+                          : "bg-[#FFFCF6] dark:bg-[#352D42] border-[#E4DCE4] dark:border-[#44394F] text-slate-600 dark:text-slate-300"
                       }`}
                       title="Ditar diretamente no corpo da nota"
                     >
@@ -1917,7 +1954,7 @@ export function NotesView({
                     <button
                       type="button"
                       onClick={handleUndoOrganize}
-                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-200/80 hover:bg-slate-300/80 dark:bg-[#293244] dark:hover:bg-[#38445C] text-slate-700 dark:text-slate-200 text-xs font-semibold cursor-pointer"
+                      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-200/80 hover:bg-slate-300/80 dark:bg-[#352D42] dark:hover:bg-[#38445C] text-slate-700 dark:text-slate-200 text-xs font-semibold cursor-pointer"
                     >
                       <Undo2 className="w-3.5 h-3.5" />
                       <span>Desfazer IA</span>
@@ -1928,12 +1965,12 @@ export function NotesView({
 
               {/* Feedback de IA */}
               {aiMessage && (
-                <div className="mx-3 sm:mx-5 mt-2.5 px-3 py-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/60 text-xs text-indigo-800 dark:text-indigo-200 flex items-center justify-between gap-2 shrink-0 animate-in fade-in">
+                <div className="mx-3 sm:mx-5 mt-2.5 px-3 py-2 rounded-xl bg-[#E7DFF5] dark:bg-[#332A45] border border-[#D8C9EE] dark:border-indigo-800/60 text-xs text-indigo-800 dark:text-indigo-200 flex items-center justify-between gap-2 shrink-0 animate-in fade-in">
                   <span>{aiMessage}</span>
                   <button
                     type="button"
                     onClick={() => setAiMessage(null)}
-                    className="text-indigo-500 hover:text-indigo-800 dark:hover:text-white cursor-pointer"
+                    className="text-[#7455AD] hover:text-indigo-800 dark:hover:text-white cursor-pointer"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -1954,7 +1991,7 @@ export function NotesView({
                       scheduleAutosave(activeNote.id, val, draftContent);
                     }}
                     placeholder="Título da anotação (opcional — a IA também pode criar depois)..."
-                    className="w-full text-base sm:text-xl font-bold text-slate-900 dark:text-white bg-transparent outline-none placeholder-slate-400/80"
+                    className="w-full text-base sm:text-xl font-bold text-[#392D4B] dark:text-white bg-transparent outline-none placeholder-slate-400/80"
                   />
 
                   {/* Barra rápida de escrita + status de palavras */}
@@ -1963,7 +2000,7 @@ export function NotesView({
                       <button
                         type="button"
                         onClick={() => insertSnippetAtCursor("• ")}
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#E7E3DA] hover:bg-[#DDD8CD]/80 dark:bg-[#293244]/80 dark:hover:bg-[#38445C] text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#F2ECE2] hover:bg-[#E7DFF5]/80 dark:bg-[#352D42]/80 dark:hover:bg-[#38445C] text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
                         title="Inserir tópico"
                       >
                         <List className="w-3 h-3" />
@@ -1974,7 +2011,7 @@ export function NotesView({
                         onClick={() =>
                           insertSnippetAtCursor(`[${format(new Date(), "dd/MM HH:mm", { locale: ptBR })}] `)
                         }
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#E7E3DA] hover:bg-[#DDD8CD]/80 dark:bg-[#293244]/80 dark:hover:bg-[#38445C] text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#F2ECE2] hover:bg-[#E7DFF5]/80 dark:bg-[#352D42]/80 dark:hover:bg-[#38445C] text-[11px] font-semibold text-slate-600 dark:text-slate-300 transition-colors cursor-pointer"
                         title="Inserir data e hora atual"
                       >
                         <Clock className="w-3 h-3" />
@@ -1987,7 +2024,7 @@ export function NotesView({
                             setShowChecklistSection(true);
                             requestAnimationFrame(() => checklistInputRef.current?.focus());
                           }}
-                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/50 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 border border-indigo-200/70 dark:border-indigo-800/60 transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#E7DFF5] hover:bg-[#D8C9EE] dark:bg-[#332A45] dark:hover:bg-indigo-900/50 text-[11px] font-semibold text-[#654696] dark:text-[#D8C9EE] border border-[#D8C9EE]/70 dark:border-indigo-800/60 transition-colors cursor-pointer"
                           title="Adicionar checklist a esta anotação"
                         >
                           <ListChecks className="w-3 h-3" />
@@ -2024,7 +2061,7 @@ export function NotesView({
                     onKeyUp={handleTrackSelection}
                     onMouseUp={handleTrackSelection}
                     placeholder="Escreva livremente o que precisar registrar... Dica: depois você pode clicar em 'Organizar com IA' ou selecionar qualquer trecho para transformar em demanda."
-                    className="w-full text-xs sm:text-sm text-slate-800 dark:text-slate-100 bg-[#F0EDE6]/70 dark:bg-[#1C2230] border border-[#DCD7CC]/80 dark:border-[#343F56] rounded-xl p-3.5 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/15 leading-relaxed resize-y min-h-[170px]"
+                    className="w-full text-xs sm:text-sm text-slate-800 dark:text-[#F5F1E8] bg-[#FAF6EF]/70 dark:bg-[#241F2D] border border-[#E4DCE4]/80 dark:border-[#44394F] rounded-xl p-3.5 outline-none focus:border-[#7455AD] focus:ring-2 focus:ring-[#7455AD]/15 leading-relaxed resize-y min-h-[170px]"
                   />
 
                   {/* Sugestões opcionais discretas quando a folha está totalmente em branco */}
@@ -2036,7 +2073,7 @@ export function NotesView({
                           key={presetId}
                           type="button"
                           onClick={() => handleApplyScopeToActiveNote(presetId)}
-                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#E7E3DA] hover:bg-indigo-50 dark:bg-[#293244]/80 dark:hover:bg-indigo-950/50 text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 font-semibold transition-colors cursor-pointer"
+                          className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-[#F2ECE2] hover:bg-[#E7DFF5] dark:bg-[#352D42]/80 dark:hover:bg-indigo-950/50 text-slate-600 dark:text-slate-300 hover:text-[#7455AD] dark:hover:text-indigo-300 font-semibold transition-colors cursor-pointer"
                         >
                           {SCOPE_PRESETS[presetId].icon}
                           <span>{SCOPE_PRESETS[presetId].label.replace("Modo ", "")}</span>
@@ -2051,7 +2088,7 @@ export function NotesView({
                     {(activeNote.tags || []).map((tg) => (
                       <span
                         key={tg}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E7E3DA] dark:bg-[#293244] text-slate-700 dark:text-slate-300 border border-[#DCD7CC]/80 dark:border-[#404D68] text-[11px] font-medium"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#F2ECE2] dark:bg-[#352D42] text-slate-700 dark:text-slate-300 border border-[#E4DCE4]/80 dark:border-[#44394F] text-[11px] font-medium"
                       >
                         <span>#{tg}</span>
                         <button
@@ -2082,12 +2119,12 @@ export function NotesView({
                             }
                           }}
                           placeholder="tag..."
-                          className="w-24 px-2 py-0.5 rounded-md border border-indigo-400 bg-[#F7F6F1] dark:bg-[#293244] text-[11px] text-slate-900 dark:text-white outline-none"
+                          className="w-24 px-2 py-0.5 rounded-md border border-[#B6A2DB] bg-[#FFFCF6] dark:bg-[#352D42] text-[11px] text-[#392D4B] dark:text-white outline-none"
                         />
                         <button
                           type="button"
                           onClick={handleAddTag}
-                          className="p-0.5 rounded bg-indigo-600 text-white cursor-pointer"
+                          className="p-0.5 rounded bg-[#7455AD] text-white cursor-pointer"
                         >
                           <Check className="w-3 h-3" />
                         </button>
@@ -2106,7 +2143,7 @@ export function NotesView({
                       <button
                         type="button"
                         onClick={() => setIsAddingTag(true)}
-                        className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 cursor-pointer"
+                        className="inline-flex items-center gap-0.5 px-2 py-0.5 rounded-md text-[11px] font-semibold text-[#7455AD] dark:text-[#B6A2DB] hover:bg-[#E7DFF5] dark:hover:bg-indigo-950/40 cursor-pointer"
                       >
                         <Plus className="w-3 h-3" />
                         <span>Tag</span>
@@ -2158,17 +2195,17 @@ export function NotesView({
 
                 {/* Pontos de Ação & Checklist (exibido apenas se a nota já tiver itens ou se o usuário solicitar) */}
                 {(showChecklistSection || (activeNote.checklist || []).length > 0) && (
-                <div className="p-3.5 sm:p-4 rounded-2xl bg-[#F0EDE6]/80 dark:bg-[#293244] border border-[#DCD7CC]/80 dark:border-[#343F56] space-y-3 animate-in fade-in duration-150">
+                <div className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF6EF]/80 dark:bg-[#352D42] border border-[#E4DCE4]/80 dark:border-[#44394F] space-y-3 animate-in fade-in duration-150">
                   <div className="flex items-center justify-between gap-2 flex-wrap">
                     <div className="flex items-center gap-2">
-                      <ListChecks className="w-4 h-4 text-indigo-500" />
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                      <ListChecks className="w-4 h-4 text-[#7455AD]" />
+                      <h4 className="text-xs font-bold text-[#392D4B] dark:text-white">
                         Checklist ({(activeNote.checklist || []).length})
                       </h4>
                     </div>
                     <div className="flex items-center gap-2">
                       {(activeNote.checklist || []).length > 0 && (
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 hidden sm:inline">
+                        <span className="text-[11px] text-[#756B80] dark:text-[#B6A9C3] hidden sm:inline">
                           Toque em <strong>→ Demanda</strong> para enviar direto ao fluxo
                         </span>
                       )}
@@ -2211,7 +2248,7 @@ export function NotesView({
                         }
                       }}
                       placeholder="Adicionar item ao checklist..."
-                      className="flex-1 h-9 px-3 rounded-xl bg-[#F7F6F1] dark:bg-[#1C2230] border border-[#DCD7CC] dark:border-[#343F56] text-xs text-slate-900 dark:text-white outline-none focus:border-indigo-500"
+                      className="flex-1 h-9 px-3 rounded-xl bg-[#FFFCF6] dark:bg-[#241F2D] border border-[#E4DCE4] dark:border-[#44394F] text-xs text-[#392D4B] dark:text-white outline-none focus:border-[#7455AD]"
                     />
                     {speechSupported && (
                       <button
@@ -2220,7 +2257,7 @@ export function NotesView({
                         className={`h-9 w-9 rounded-xl border flex items-center justify-center shrink-0 cursor-pointer ${
                           listeningTarget === "checklist"
                             ? "bg-rose-500 text-white border-rose-500 animate-pulse"
-                            : "bg-[#F7F6F1] dark:bg-[#1C2230] border-[#DCD7CC] dark:border-[#343F56] text-slate-500"
+                            : "bg-[#FFFCF6] dark:bg-[#241F2D] border-[#E4DCE4] dark:border-[#44394F] text-[#756B80]"
                         }`}
                         title="Ditar item de checklist"
                       >
@@ -2231,7 +2268,7 @@ export function NotesView({
                       type="button"
                       onClick={handleAddChecklistItem}
                       disabled={!newChecklistText.trim()}
-                      className="h-9 px-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold disabled:opacity-40 cursor-pointer shrink-0"
+                      className="h-9 px-3 rounded-xl bg-[#7455AD] hover:bg-[#654696] text-white text-xs font-bold disabled:opacity-40 cursor-pointer shrink-0"
                     >
                       <Plus className="w-4 h-4" />
                     </button>
@@ -2248,7 +2285,7 @@ export function NotesView({
                         return (
                           <div
                             key={item.id}
-                            className="flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-xl bg-[#F7F6F1] dark:bg-[#1C2230] border border-[#DCD7CC]/80 dark:border-[#343F56]/80"
+                            className="flex items-center justify-between gap-2 p-2 sm:p-2.5 rounded-xl bg-[#FFFCF6] dark:bg-[#241F2D] border border-[#E4DCE4]/80 dark:border-[#44394F]/80"
                           >
                             <button
                               type="button"
@@ -2263,7 +2300,7 @@ export function NotesView({
                               <span
                                 className={`text-xs leading-snug break-words ${
                                   item.checked
-                                    ? "line-through text-slate-400 dark:text-slate-500"
+                                    ? "line-through text-slate-400 dark:text-[#756B80]"
                                     : "text-slate-800 dark:text-slate-200 font-medium"
                                 }`}
                               >
@@ -2285,7 +2322,7 @@ export function NotesView({
                                 <button
                                   type="button"
                                   onClick={() => handleConvertSingleChecklistItem(item)}
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-950/50 dark:hover:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 text-[11px] font-bold cursor-pointer transition-colors"
+                                  className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-[#E7DFF5] hover:bg-[#D8C9EE] dark:bg-[#332A45] dark:hover:bg-indigo-900/60 text-[#654696] dark:text-[#D8C9EE] border border-[#D8C9EE] dark:border-indigo-800/60 text-[11px] font-bold cursor-pointer transition-colors"
                                   title="Transformar este ponto em demanda"
                                 >
                                   <ArrowRight className="w-3 h-3" />
@@ -2323,9 +2360,9 @@ export function NotesView({
                           key={task.id}
                           type="button"
                           onClick={() => onSelectTask(task)}
-                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-emerald-200 dark:border-emerald-800/70 text-xs font-semibold text-slate-800 dark:text-slate-100 hover:border-emerald-400 transition-colors cursor-pointer shadow-2xs"
+                          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-emerald-200 dark:border-emerald-800/70 text-xs font-semibold text-slate-800 dark:text-[#F5F1E8] hover:border-emerald-400 transition-colors cursor-pointer shadow-2xs"
                         >
-                          <span className="text-[10px] font-mono font-bold text-indigo-600 dark:text-purple-400">
+                          <span className="text-[10px] font-mono font-bold text-[#7455AD] dark:text-purple-400">
                             {task.priority}
                           </span>
                           <span className="truncate max-w-[200px] sm:max-w-[280px]">
@@ -2348,17 +2385,17 @@ export function NotesView({
       {/* ========================================================================= */}
       {extractedModalData && (
         <div className="fixed inset-0 z-[105] flex items-center justify-center p-2.5 sm:p-5 bg-black/75 backdrop-blur-xs animate-in fade-in">
-          <div className="w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-2xl sm:rounded-3xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-2xl overflow-hidden">
-            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6]/80 dark:bg-[#1C2230] flex items-center justify-between gap-2 shrink-0">
+          <div className="w-full max-w-2xl max-h-[90dvh] flex flex-col rounded-2xl sm:rounded-3xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] shadow-2xl overflow-hidden">
+            <div className="px-4 sm:px-5 py-3.5 border-b border-[#E5E0D6] dark:border-[#44394F] bg-[#FAF6EF]/80 dark:bg-[#241F2D] flex items-center justify-between gap-2 shrink-0">
               <div className="flex items-center gap-2 min-w-0">
                 <div className="p-1.5 rounded-xl bg-purple-100 dark:bg-purple-950/60 text-purple-600 dark:text-purple-300 shrink-0">
                   <Sparkles className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                  <h3 className="text-sm font-bold text-[#392D4B] dark:text-white truncate">
                     Demandas Identificadas pela IA ({extractedModalData.drafts.length})
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                  <p className="text-[11px] text-[#756B80] dark:text-[#B6A9C3] truncate">
                     Revise título, prioridade, descrição ou clique em &quot;Editar antes&quot; para abrir o formulário completo.
                   </p>
                 </div>
@@ -2378,8 +2415,8 @@ export function NotesView({
                   key={idx}
                   className={`p-3 rounded-2xl border transition-all space-y-2 ${
                     draft.selected
-                      ? "bg-indigo-50/40 dark:bg-indigo-950/20 border-indigo-300 dark:border-indigo-700/60"
-                      : "bg-[#F0EDE6]/60 dark:bg-[#1C2230] border-[#DCD7CC] dark:border-[#343F56] opacity-65"
+                      ? "bg-[#E7DFF5]/40 dark:bg-indigo-950/20 border-[#B6A2DB] dark:border-[#B6A2DB]/50"
+                      : "bg-[#FAF6EF]/60 dark:bg-[#241F2D] border-[#E4DCE4] dark:border-[#44394F] opacity-65"
                   }`}
                 >
                   <div className="flex items-start gap-2.5">
@@ -2400,7 +2437,7 @@ export function NotesView({
                       className="mt-1 cursor-pointer shrink-0"
                     >
                       {draft.selected ? (
-                        <CheckSquare className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                        <CheckSquare className="w-4 h-4 text-[#7455AD] dark:text-[#B6A2DB]" />
                       ) : (
                         <Square className="w-4 h-4 text-slate-400" />
                       )}
@@ -2422,7 +2459,7 @@ export function NotesView({
                               : null
                           )
                         }
-                        className="w-full text-xs sm:text-sm font-bold text-slate-900 dark:text-white bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#404D68] rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500"
+                        className="w-full text-xs sm:text-sm font-bold text-[#392D4B] dark:text-white bg-[#FFFCF6] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-[#44394F] rounded-lg px-2.5 py-1.5 outline-none focus:border-[#7455AD]"
                       />
 
                       <textarea
@@ -2440,7 +2477,7 @@ export function NotesView({
                               : null
                           )
                         }
-                        className="w-full text-[11px] text-slate-600 dark:text-slate-300 bg-[#F7F6F1]/80 dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] rounded-lg px-2.5 py-1.5 outline-none focus:border-indigo-500 leading-relaxed resize-none"
+                        className="w-full text-[11px] text-slate-600 dark:text-slate-300 bg-[#FFFCF6]/80 dark:bg-[#2C2637] border border-[#E4DCE4]/80 dark:border-[#44394F] rounded-lg px-2.5 py-1.5 outline-none focus:border-[#7455AD] leading-relaxed resize-none"
                       />
 
                       <div className="flex items-center justify-between flex-wrap gap-1.5 pt-0.5">
@@ -2461,7 +2498,7 @@ export function NotesView({
                                   : null
                               )
                             }
-                            className="px-2 py-0.5 rounded-md bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#404D68] font-mono font-bold text-indigo-600 dark:text-purple-300 outline-none cursor-pointer"
+                            className="px-2 py-0.5 rounded-md bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] font-mono font-bold text-[#7455AD] dark:text-purple-300 outline-none cursor-pointer"
                           >
                             <option value="P1">P1</option>
                             <option value="P2">P2</option>
@@ -2485,19 +2522,19 @@ export function NotesView({
                                   : null
                               )
                             }
-                            className="px-2 py-0.5 rounded-md bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#404D68] font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
+                            className="px-2 py-0.5 rounded-md bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] font-semibold text-slate-700 dark:text-slate-200 outline-none cursor-pointer"
                           >
                             <option value="task">Tarefa</option>
                             <option value="activity">Atividade</option>
                             <option value="reminder">Lembrete</option>
                           </select>
 
-                          <span className="px-2 py-0.5 rounded-md bg-[#E7E3DA] dark:bg-[#293244] text-slate-600 dark:text-slate-300 font-semibold">
+                          <span className="px-2 py-0.5 rounded-md bg-[#F2ECE2] dark:bg-[#352D42] text-slate-600 dark:text-slate-300 font-semibold">
                             {draft.category}
                           </span>
 
                           {draft.extracted_due_date_iso && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 font-semibold">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#E7DFF5] dark:bg-[#332A45] text-[#654696] dark:text-[#D8C9EE] font-semibold">
                               <Calendar className="w-3 h-3" />
                               {(() => {
                                 try {
@@ -2519,7 +2556,7 @@ export function NotesView({
                             setExtractedModalData(null);
                             onOpenNewTaskModalWithDraft(draft, noteRef.id);
                           }}
-                          className="text-[11px] font-semibold text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                          className="text-[11px] font-semibold text-[#7455AD] dark:text-[#B6A2DB] hover:underline cursor-pointer"
                         >
                           Editar antes
                         </button>
@@ -2530,11 +2567,11 @@ export function NotesView({
               ))}
             </div>
 
-            <div className="px-4 sm:px-5 py-3 border-t border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6]/80 dark:bg-[#1C2230] flex items-center justify-between gap-2 shrink-0">
+            <div className="px-4 sm:px-5 py-3 border-t border-[#E5E0D6] dark:border-[#44394F] bg-[#FAF6EF]/80 dark:bg-[#241F2D] flex items-center justify-between gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setExtractedModalData(null)}
-                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-[#DDD8CD]/70 dark:hover:bg-[#2F394D] cursor-pointer"
+                className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-[#B6A9C3] hover:bg-[#E7DFF5]/70 dark:hover:bg-[#3D344C] cursor-pointer"
               >
                 Cancelar
               </button>
@@ -2545,7 +2582,7 @@ export function NotesView({
                   extractedModalData.drafts.filter((d) => d.selected).length === 0
                 }
                 onClick={handleConfirmBatchCreateTasks}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-md disabled:opacity-40 cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#7455AD] hover:bg-[#654696] text-white text-xs font-bold shadow-md disabled:opacity-40 cursor-pointer"
               >
                 {isCreatingBatchTasks ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />

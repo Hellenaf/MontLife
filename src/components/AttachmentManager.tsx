@@ -114,12 +114,12 @@ export function AttachmentManager({
       {/* Header with Title and Add Actions */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <Paperclip className="w-3.5 h-3.5 text-slate-500 dark:text-zinc-400" />
+          <Paperclip className="w-3.5 h-3.5 text-[#756B80] dark:text-[#B6A9C3]" />
           <span className="text-xs font-semibold text-slate-700 dark:text-zinc-300">
             {label || "Anexos & Links Externos"}
           </span>
           {attachments.length > 0 && (
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-[#293244] text-slate-700 dark:text-zinc-400 border border-slate-300 dark:border-[#404D68]/60">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-[#352D42] text-slate-700 dark:text-[#B6A9C3] border border-slate-300 dark:border-[#44394F]/60">
               {attachments.length}
             </span>
           )}
@@ -132,12 +132,12 @@ export function AttachmentManager({
               type="button"
               disabled={isProcessingFile}
               onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#E7E3DA] hover:bg-[#DDD8CD] dark:bg-[#293244]/80 dark:hover:bg-[#38445C]/80 text-slate-700 dark:text-zinc-300 border border-slate-300/80 dark:border-[#404D68]/50 transition-all cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#F2ECE2] hover:bg-[#E7DFF5] dark:bg-[#352D42]/80 dark:hover:bg-[#38445C]/80 text-slate-700 dark:text-zinc-300 border border-slate-300/80 dark:border-[#44394F]/50 transition-all cursor-pointer shadow-xs"
             >
               {isProcessingFile ? (
-                <Loader2 className="w-3 h-3 animate-spin text-slate-500 dark:text-zinc-400" />
+                <Loader2 className="w-3 h-3 animate-spin text-[#756B80] dark:text-[#B6A9C3]" />
               ) : (
-                <Paperclip className="w-3 h-3 text-slate-600 dark:text-zinc-400" />
+                <Paperclip className="w-3 h-3 text-slate-600 dark:text-[#B6A9C3]" />
               )}
               <span>Arquivo</span>
             </button>
@@ -153,9 +153,9 @@ export function AttachmentManager({
             <button
               type="button"
               onClick={() => setIsAddingLink((prev) => !prev)}
-              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#E7E3DA] hover:bg-[#DDD8CD] dark:bg-[#293244]/80 dark:hover:bg-[#38445C]/80 text-slate-700 dark:text-zinc-300 border border-slate-300/80 dark:border-[#404D68]/50 transition-all cursor-pointer shadow-xs"
+              className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-[#F2ECE2] hover:bg-[#E7DFF5] dark:bg-[#352D42]/80 dark:hover:bg-[#38445C]/80 text-slate-700 dark:text-zinc-300 border border-slate-300/80 dark:border-[#44394F]/50 transition-all cursor-pointer shadow-xs"
             >
-              <LinkIcon className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+              <LinkIcon className="w-3 h-3 text-[#7455AD] dark:text-[#B6A2DB]" />
               <span>Link URL</span>
             </button>
           </div>
@@ -164,9 +164,9 @@ export function AttachmentManager({
 
       {/* Inline Form to Add External Link */}
       {isAddingLink && !readOnly && (
-        <div className="p-3 rounded-xl bg-[#F0EDE6] dark:bg-[#222938]/90 border border-slate-300 dark:border-[#404D68]/70 space-y-2.5 animate-fadeIn">
+        <div className="p-3 rounded-xl bg-[#FAF6EF] dark:bg-[#2C2637]/90 border border-slate-300 dark:border-[#44394F]/70 space-y-2.5 animate-fadeIn">
           <div className="text-[11px] font-medium text-slate-700 dark:text-zinc-300 flex items-center gap-1.5">
-            <Globe className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <Globe className="w-3.5 h-3.5 text-[#7455AD] dark:text-[#B6A2DB]" />
             <span>Adicionar Link Externo (Jira, GitHub, Docs, Figma, etc.)</span>
           </div>
 
@@ -177,7 +177,7 @@ export function AttachmentManager({
               value={linkUrl}
               onChange={(e) => setLinkUrl(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddLink()}
-              className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#F7F6F1] dark:bg-[#191F2C] border border-slate-300 dark:border-[#343F56] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+              className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#FFFCF6] dark:bg-[#241F2D] border border-slate-300 dark:border-[#44394F] text-[#392D4B] dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-[#7455AD]"
               autoFocus
             />
             <input
@@ -186,7 +186,7 @@ export function AttachmentManager({
               value={linkTitle}
               onChange={(e) => setLinkTitle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddLink()}
-              className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#F7F6F1] dark:bg-[#191F2C] border border-slate-300 dark:border-[#343F56] text-slate-900 dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500"
+              className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#FFFCF6] dark:bg-[#241F2D] border border-slate-300 dark:border-[#44394F] text-[#392D4B] dark:text-zinc-200 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-[#7455AD]"
             />
           </div>
 
@@ -198,7 +198,7 @@ export function AttachmentManager({
                 setLinkUrl("");
                 setLinkTitle("");
               }}
-              className="px-2.5 py-1 text-xs text-slate-500 hover:text-slate-800 dark:text-zinc-400 dark:hover:text-zinc-200"
+              className="px-2.5 py-1 text-xs text-[#756B80] hover:text-slate-800 dark:text-[#B6A9C3] dark:hover:text-zinc-200"
             >
               Cancelar
             </button>
@@ -206,7 +206,7 @@ export function AttachmentManager({
               type="button"
               onClick={handleAddLink}
               disabled={!linkUrl.trim()}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 transition-all shadow-xs cursor-pointer"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-semibold bg-[#7455AD] hover:bg-[#654696] text-white disabled:opacity-40 transition-all shadow-xs cursor-pointer"
             >
               <Plus className="w-3 h-3" />
               <span>Vincular Link</span>
@@ -248,7 +248,7 @@ export function AttachmentManager({
             return (
               <div
                 key={att.id}
-                className="group relative flex items-center justify-between p-2 rounded-xl bg-[#E7E3DA]/90 hover:bg-[#DDD8CD]/80 dark:bg-[#222938]/60 dark:hover:bg-[#2F394D]/60 border border-[#DCD7CC]/90 dark:border-[#343F56]/80 hover:border-slate-300 dark:hover:border-zinc-700/80 transition-all text-xs"
+                className="group relative flex items-center justify-between p-2 rounded-xl bg-[#F2ECE2]/90 hover:bg-[#E7DFF5]/80 dark:bg-[#2C2637]/60 dark:hover:bg-[#3D344C]/60 border border-[#E4DCE4]/90 dark:border-[#44394F]/80 hover:border-slate-300 dark:hover:border-zinc-700/80 transition-all text-xs"
               >
                 <div
                   className={`flex items-center gap-2.5 min-w-0 flex-1 ${canPreviewInModal ? "cursor-pointer" : ""}`}
@@ -256,11 +256,11 @@ export function AttachmentManager({
                 >
                   {/* Icon or Thumbnail */}
                   {isLink ? (
-                    <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/40 flex items-center justify-center shrink-0 text-indigo-600 dark:text-indigo-400 shadow-2xs">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-950/60 border border-[#D8C9EE] dark:border-indigo-800/40 flex items-center justify-center shrink-0 text-[#7455AD] dark:text-[#B6A2DB] shadow-2xs">
                       <Globe className="w-4 h-4" />
                     </div>
                   ) : isImage ? (
-                    <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-[#293244] border border-slate-300 dark:border-[#404D68] overflow-hidden shrink-0 flex items-center justify-center shadow-2xs">
+                    <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-[#352D42] border border-slate-300 dark:border-[#44394F] overflow-hidden shrink-0 flex items-center justify-center shadow-2xs">
                       {att.url ? (
                         <img
                           src={att.url}
@@ -268,11 +268,11 @@ export function AttachmentManager({
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform"
                         />
                       ) : (
-                        <ImageIcon className="w-4 h-4 text-slate-500 dark:text-zinc-400" />
+                        <ImageIcon className="w-4 h-4 text-[#756B80] dark:text-[#B6A9C3]" />
                       )}
                     </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-[#293244] border border-slate-300 dark:border-[#404D68] flex items-center justify-center shrink-0 text-slate-600 dark:text-zinc-300 shadow-2xs">
+                    <div className="w-8 h-8 rounded-lg bg-slate-200 dark:bg-[#352D42] border border-slate-300 dark:border-[#44394F] flex items-center justify-center shrink-0 text-slate-600 dark:text-zinc-300 shadow-2xs">
                       <FileText className="w-4 h-4" />
                     </div>
                   )}
@@ -281,7 +281,7 @@ export function AttachmentManager({
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-1.5">
                       {canPreviewInModal ? (
-                        <span className="font-semibold text-slate-800 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-white truncate flex items-center gap-1">
+                        <span className="font-semibold text-slate-800 dark:text-zinc-200 hover:text-[#7455AD] dark:hover:text-white truncate flex items-center gap-1">
                           <span className="truncate">{att.name}</span>
                         </span>
                       ) : (
@@ -289,19 +289,19 @@ export function AttachmentManager({
                           href={att.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="font-semibold text-slate-800 dark:text-zinc-200 hover:text-indigo-600 dark:hover:text-white truncate hover:underline flex items-center gap-1"
+                          className="font-semibold text-slate-800 dark:text-zinc-200 hover:text-[#7455AD] dark:hover:text-white truncate hover:underline flex items-center gap-1"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <span className="truncate">{att.name}</span>
                           {isLink && (
-                            <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-60 group-hover:opacity-100 text-indigo-500" />
+                            <ExternalLink className="w-2.5 h-2.5 shrink-0 opacity-60 group-hover:opacity-100 text-[#7455AD]" />
                           )}
                         </a>
                       )}
                     </div>
-                    <div className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono flex items-center gap-1.5 mt-0.5">
+                    <div className="text-[10px] text-[#756B80] dark:text-[#B6A9C3] font-mono flex items-center gap-1.5 mt-0.5">
                       {isLink ? (
-                        <span className="text-indigo-600 dark:text-indigo-400 truncate">
+                        <span className="text-[#7455AD] dark:text-[#B6A2DB] truncate">
                           {getDomainFromUrl(att.url)}
                         </span>
                       ) : (

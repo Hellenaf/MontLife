@@ -342,7 +342,7 @@ Relatório gerado via MontLife.`;
       case "task":
       default:
         return (
-          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-indigo-500/15 text-indigo-300 border border-[#7455AD]/30 flex items-center gap-1">
             <ListTodo className="w-2.5 h-2.5" /> Tarefa
           </span>
         );
@@ -353,7 +353,7 @@ Relatório gerado via MontLife.`;
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
       <div
         id="printable-report"
-        className="relative w-full max-w-5xl max-h-[94dvh] rounded-3xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-2xl flex flex-col overflow-hidden print:border-none print:shadow-none print:bg-white"
+        className="relative w-full max-w-5xl max-h-[94dvh] rounded-3xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] shadow-2xl flex flex-col overflow-hidden print:border-none print:shadow-none print:bg-white"
       >
         {/* Top Action Bar (Hidden when printing) */}
         <div className="no-print flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 p-3.5 sm:p-5 border-b border-[#2E2B44] bg-[#0F0E17] shrink-0">
@@ -460,7 +460,7 @@ Relatório gerado via MontLife.`;
               }}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-all shrink-0 ${
                 scopeFilter === "work"
-                  ? "bg-indigo-600 text-white shadow-md shadow-indigo-600/30"
+                  ? "bg-[#7455AD] text-white shadow-md shadow-indigo-600/30"
                   : "text-[#9490AC] hover:text-[#EAE9FC]"
               }`}
             >
@@ -739,7 +739,7 @@ Relatório gerado via MontLife.`;
                   <span className="text-xs text-[#9490AC] print:text-gray-600">
                     Base de Conhecimento / Wiki
                   </span>
-                  <div className="text-2xl font-bold text-[#9D8DF1] print:text-indigo-700">
+                  <div className="text-2xl font-bold text-[#9D8DF1] print:text-[#654696]">
                     {wikiResolved.length}
                   </div>
                   <span className="text-[11px] text-[#9490AC] print:text-gray-600">
@@ -793,7 +793,7 @@ Relatório gerado via MontLife.`;
                           <div className="w-full h-1.5 rounded-full bg-[#1A1829] print:bg-gray-200">
                             <div
                               style={{ width: `${pct}%` }}
-                              className="h-full bg-[#9D8DF1] print:bg-indigo-600 rounded-full"
+                              className="h-full bg-[#9D8DF1] print:bg-[#7455AD] rounded-full"
                             />
                           </div>
                         </div>

@@ -124,23 +124,23 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-5 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-5xl h-[92dvh] sm:h-[90vh] flex flex-col rounded-3xl bg-[#F0EDE6] dark:bg-[#1C2230] border border-[#DCD7CC] dark:border-[#343F56] shadow-2xl overflow-hidden text-slate-800 dark:text-slate-100">
+      <div className="relative w-full max-w-5xl h-[92dvh] sm:h-[90vh] flex flex-col rounded-3xl bg-[#FAF6EF] dark:bg-[#241F2D] border border-[#E4DCE4] dark:border-[#44394F] shadow-2xl overflow-hidden text-slate-800 dark:text-[#F5F1E8]">
         {/* 1. Modal Header */}
-        <div className="p-4 sm:p-6 border-b border-[#DCD7CC] dark:border-[#2E384D] flex items-center justify-between gap-2 shrink-0 bg-white/70 dark:bg-[#1C2230]/90 backdrop-blur-md">
+        <div className="p-4 sm:p-6 border-b border-[#E4DCE4] dark:border-[#44394F] flex items-center justify-between gap-2 shrink-0 bg-white/70 dark:bg-[#241F2D]/90 backdrop-blur-md">
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-600/30 shrink-0">
               <BookOpen className="w-5 h-5" />
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-base sm:text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                <h2 className="text-base sm:text-xl font-bold tracking-tight text-[#392D4B] dark:text-white">
                   Wiki Técnica & Base de Aprendizado
                 </h2>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-100 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/80">
                   Curadoria IA
                 </span>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
+              <p className="text-xs text-[#756B80] dark:text-[#B6A9C3]">
                 Todos os tutoriais do YouTube, tópicos de estudo da IA e soluções técnicas documentadas.
               </p>
             </div>
@@ -149,7 +149,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
           <button
             type="button"
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-[#E4E0D6] dark:hover:bg-white/5 transition-colors shrink-0"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-[#E7DFF5] dark:hover:bg-white/5 transition-colors shrink-0"
             title="Fechar Wiki"
           >
             <X className="w-5 h-5" />
@@ -157,28 +157,28 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
         </div>
 
         {/* 2. Top Metric KPI Badges */}
-        <div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-[#DCD7CC]/80 dark:border-[#2E384D]/80 bg-[#F7F6F1] dark:bg-[#1C2230] flex flex-wrap items-center gap-x-4 gap-y-1.5 shrink-0">
+        <div className="px-4 sm:px-5 py-2.5 sm:py-3 border-b border-[#E4DCE4]/80 dark:border-[#44394F]/80 bg-[#FFFCF6] dark:bg-[#241F2D] flex flex-wrap items-center gap-x-4 gap-y-1.5 shrink-0">
           <div className="flex items-center gap-2 text-xs">
             <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-            <span className="text-slate-500 dark:text-slate-400">Vídeos Curados:</span>
-            <strong className="text-slate-900 dark:text-white">{allVideos.length}</strong>
+            <span className="text-[#756B80] dark:text-[#B6A9C3]">Vídeos Curados:</span>
+            <strong className="text-[#392D4B] dark:text-white">{allVideos.length}</strong>
           </div>
-          <div className="w-px h-4 bg-slate-200 dark:bg-[#293244]" />
+          <div className="w-px h-4 bg-slate-200 dark:bg-[#352D42]" />
           <div className="flex items-center gap-2 text-xs">
             <span className="w-2.5 h-2.5 rounded-full bg-purple-500" />
-            <span className="text-slate-500 dark:text-slate-400">Tópicos de Estudo:</span>
-            <strong className="text-slate-900 dark:text-white">{allQueries.length}</strong>
+            <span className="text-[#756B80] dark:text-[#B6A9C3]">Tópicos de Estudo:</span>
+            <strong className="text-[#392D4B] dark:text-white">{allQueries.length}</strong>
           </div>
-          <div className="w-px h-4 bg-slate-200 dark:bg-[#293244]" />
+          <div className="w-px h-4 bg-slate-200 dark:bg-[#352D42]" />
           <div className="flex items-center gap-2 text-xs">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-            <span className="text-slate-500 dark:text-slate-400">Soluções Documentadas:</span>
-            <strong className="text-slate-900 dark:text-white">{allResolutions.length}</strong>
+            <span className="text-[#756B80] dark:text-[#B6A9C3]">Soluções Documentadas:</span>
+            <strong className="text-[#392D4B] dark:text-white">{allResolutions.length}</strong>
           </div>
         </div>
 
         {/* 3. Search & Category Filters */}
-        <div className="p-4 sm:p-5 border-b border-[#DCD7CC] dark:border-[#2E384D] bg-[#EAE7DF] dark:bg-[#1C2230] space-y-3 shrink-0">
+        <div className="p-4 sm:p-5 border-b border-[#E4DCE4] dark:border-[#44394F] bg-[#F5F1E8] dark:bg-[#241F2D] space-y-3 shrink-0">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             {/* Search Input */}
             <div className="relative flex-1">
@@ -188,7 +188,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Buscar tutoriais, tópicos de estudo, TOTVS, ERP, Power BI, soluções..."
-                className="w-full h-10 pl-10 pr-4 text-xs rounded-xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-medium transition-all"
+                className="w-full h-10 pl-10 pr-4 text-xs rounded-xl bg-[#FFFCF6] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-[#44394F] text-[#392D4B] dark:text-white placeholder-slate-400 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 font-medium transition-all"
               />
               {searchQuery && (
                 <button
@@ -206,7 +206,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="w-full h-10 px-3 text-xs rounded-xl bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC] dark:border-[#343F56] text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:border-purple-500"
+                className="w-full h-10 px-3 text-xs rounded-xl bg-[#FFFCF6] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-[#44394F] text-slate-800 dark:text-slate-200 font-medium focus:outline-none focus:border-purple-500"
               >
                 <option value="ALL">Todas as categorias ({categories.length})</option>
                 {categories.map((c) => (
@@ -226,7 +226,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
               className={`px-3 py-1.5 rounded-xl font-semibold transition-all shrink-0 whitespace-nowrap ${
                 activeTab === "all"
                   ? "bg-purple-600 text-white shadow-sm"
-                  : "bg-[#F7F6F1] dark:bg-[#293244] text-slate-600 dark:text-slate-400 hover:text-white border border-[#DCD7CC] dark:border-[#343F56]"
+                  : "bg-[#FFFCF6] dark:bg-[#352D42] text-slate-600 dark:text-[#B6A9C3] hover:text-white border border-[#E4DCE4] dark:border-[#44394F]"
               }`}
             >
               Todos ({filteredVideos.length + filteredQueries.length + filteredResolutions.length})
@@ -237,7 +237,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all shrink-0 whitespace-nowrap ${
                 activeTab === "videos"
                   ? "bg-rose-600 text-white shadow-sm"
-                  : "bg-[#F7F6F1] dark:bg-[#293244] text-slate-600 dark:text-slate-400 hover:text-white border border-[#DCD7CC] dark:border-[#343F56]"
+                  : "bg-[#FFFCF6] dark:bg-[#352D42] text-slate-600 dark:text-[#B6A9C3] hover:text-white border border-[#E4DCE4] dark:border-[#44394F]"
               }`}
             >
               <Youtube className="w-3.5 h-3.5" />
@@ -248,8 +248,8 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
               onClick={() => setActiveTab("queries")}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all shrink-0 whitespace-nowrap ${
                 activeTab === "queries"
-                  ? "bg-indigo-600 text-white shadow-sm"
-                  : "bg-[#F7F6F1] dark:bg-[#293244] text-slate-600 dark:text-slate-400 hover:text-white border border-[#DCD7CC] dark:border-[#343F56]"
+                  ? "bg-[#7455AD] text-white shadow-sm"
+                  : "bg-[#FFFCF6] dark:bg-[#352D42] text-slate-600 dark:text-[#B6A9C3] hover:text-white border border-[#E4DCE4] dark:border-[#44394F]"
               }`}
             >
               <Lightbulb className="w-3.5 h-3.5" />
@@ -261,7 +261,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-semibold transition-all shrink-0 whitespace-nowrap ${
                 activeTab === "resolutions"
                   ? "bg-emerald-600 text-white shadow-sm"
-                  : "bg-[#F7F6F1] dark:bg-[#293244] text-slate-600 dark:text-slate-400 hover:text-white border border-[#DCD7CC] dark:border-[#343F56]"
+                  : "bg-[#FFFCF6] dark:bg-[#352D42] text-slate-600 dark:text-[#B6A9C3] hover:text-white border border-[#E4DCE4] dark:border-[#44394F]"
               }`}
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
@@ -294,7 +294,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
                   {filteredVideos.map(({ video, task }, idx) => (
                     <div
                       key={idx}
-                      className="group flex flex-col rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] overflow-hidden hover:border-rose-500/50 hover:shadow-lg transition-all"
+                      className="group flex flex-col rounded-2xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] overflow-hidden hover:border-rose-500/50 hover:shadow-lg transition-all"
                     >
                       <a
                         href={video.url}
@@ -321,11 +321,11 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
                             href={video.url}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-xs font-bold text-slate-900 dark:text-white line-clamp-2 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
+                            className="text-xs font-bold text-[#392D4B] dark:text-white line-clamp-2 hover:text-rose-500 dark:hover:text-rose-400 transition-colors"
                           >
                             {video.title}
                           </a>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                          <p className="text-[11px] text-[#756B80] dark:text-[#B6A9C3] truncate">
                             Canal: {video.channel}
                           </p>
                         </div>
@@ -341,7 +341,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
                           >
                             📌 {task.title}
                           </span>
-                          <span className="px-1.5 py-0.5 rounded bg-[#E7E3DA] dark:bg-white/5 text-slate-500 dark:text-slate-400 shrink-0">
+                          <span className="px-1.5 py-0.5 rounded bg-[#F2ECE2] dark:bg-white/5 text-[#756B80] dark:text-[#B6A9C3] shrink-0">
                             {task.category}
                           </span>
                         </div>
@@ -357,7 +357,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
           {(activeTab === "all" || activeTab === "queries") && (
             <div className="space-y-3 pt-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-indigo-500 dark:text-indigo-400 flex items-center gap-1.5">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-[#7455AD] dark:text-[#B6A2DB] flex items-center gap-1.5">
                   <Lightbulb className="w-4 h-4" />
                   Tópicos de Estudo & Sugestões de Pesquisa ({filteredQueries.length})
                 </h3>
@@ -375,16 +375,16 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
                   {filteredQueries.map(({ query, task }, idx) => (
                     <div
                       key={idx}
-                      className="p-3.5 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] flex items-start justify-between gap-3 hover:border-indigo-500/40 transition-all shadow-xs"
+                      className="p-3.5 rounded-2xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] flex items-start justify-between gap-3 hover:border-[#7455AD]/40 transition-all shadow-xs"
                     >
                       <div className="space-y-1.5 min-w-0">
                         <div className="flex items-center gap-1.5">
-                          <Sparkles className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
-                          <span className="text-xs font-bold text-slate-900 dark:text-white leading-tight">
+                          <Sparkles className="w-3.5 h-3.5 text-[#7455AD] shrink-0" />
+                          <span className="text-xs font-bold text-[#392D4B] dark:text-white leading-tight">
                             {query}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400">
+                        <div className="flex items-center gap-2 text-[10px] text-[#756B80] dark:text-[#B6A9C3]">
                           <span
                             onClick={() => {
                               onSelectTask?.(task);
@@ -413,7 +413,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
                           href={`https://www.google.com/search?q=${encodeURIComponent(query)}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-1.5 rounded-lg bg-[#E7E3DA] dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:text-white transition-colors"
+                          className="p-1.5 rounded-lg bg-[#F2ECE2] dark:bg-white/5 text-slate-600 dark:text-slate-300 hover:text-white transition-colors"
                           title="Pesquisar no Google"
                         >
                           <ExternalLink className="w-3.5 h-3.5" />
@@ -448,7 +448,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
                   {filteredResolutions.map((task) => (
                     <div
                       key={task.id}
-                      className="p-4 rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] hover:border-emerald-500/40 transition-all space-y-3 shadow-xs"
+                      className="p-4 rounded-2xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] hover:border-emerald-500/40 transition-all space-y-3 shadow-xs"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="space-y-1">
@@ -456,7 +456,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
                               Resolvida
                             </span>
-                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#E7E3DA] dark:bg-white/5 text-slate-600 dark:text-slate-300">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-[#F2ECE2] dark:bg-white/5 text-slate-600 dark:text-slate-300">
                               {task.category}
                             </span>
                             {task.tags?.map((t) => (
@@ -468,7 +468,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
                               </span>
                             ))}
                           </div>
-                          <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                          <h4 className="text-sm font-bold text-[#392D4B] dark:text-white">
                             {task.title}
                           </h4>
                         </div>
@@ -487,7 +487,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
                       </div>
 
                       {/* Resolution Body */}
-                      <div className="p-3 rounded-xl bg-[#F0EDE6] dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56]/80 text-xs text-slate-700 dark:text-slate-300">
+                      <div className="p-3 rounded-xl bg-[#FAF6EF] dark:bg-[#1D1925] border border-[#E4DCE4] dark:border-[#44394F]/80 text-xs text-slate-700 dark:text-slate-300">
                         <FormattedText text={task.resolution_notes || ""} />
                       </div>
 
@@ -504,7 +504,7 @@ export function WikiModal({ isOpen, onClose, tasks, onSelectTask }: WikiModalPro
                                 key={att.id}
                                 href={att.url}
                                 download={att.name}
-                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-[#E7E3DA] dark:bg-[#293244] hover:bg-[#DDD8CD] dark:hover:bg-[#38445C] text-slate-700 dark:text-slate-200 transition-colors"
+                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-[#F2ECE2] dark:bg-[#352D42] hover:bg-[#E7DFF5] dark:hover:bg-[#38445C] text-slate-700 dark:text-slate-200 transition-colors"
                               >
                                 <Download className="w-3 h-3 text-purple-500" />
                                 <span className="truncate max-w-[200px]">{att.name}</span>

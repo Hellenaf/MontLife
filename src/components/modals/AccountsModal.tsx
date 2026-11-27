@@ -64,15 +64,15 @@ class AccountsModalErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoun
     if (this.state.hasError) {
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
-          <div className="relative w-full max-w-md rounded-3xl bg-[#F7F6F1] dark:bg-[#222938] border border-rose-500/30 dark:border-rose-500/40 shadow-2xl p-6 text-center space-y-4">
+          <div className="relative w-full max-w-md rounded-3xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-rose-500/30 dark:border-rose-500/40 shadow-2xl p-6 text-center space-y-4">
             <div className="w-12 h-12 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 flex items-center justify-center mx-auto">
               <AlertCircle className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+              <h3 className="text-sm font-bold text-[#392D4B] dark:text-white">
                 Contas Google Vinculadas
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+              <p className="text-xs text-[#756B80] dark:text-[#B6A9C3] mt-1 leading-relaxed">
                 Houve uma instabilidade momentânea ao renderizar as contas vinculadas. Seus dados continuam 100% seguros.
               </p>
             </div>
@@ -87,7 +87,7 @@ class AccountsModalErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoun
               <button
                 type="button"
                 onClick={this.props.onClose}
-                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] transition-colors cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-[#B6A9C3] hover:bg-[#E7DFF5] dark:hover:bg-[#3D344C] transition-colors cursor-pointer"
               >
                 Fechar
               </button>
@@ -285,32 +285,32 @@ function AccountsModalContent({
     if (l.includes("pess") || l.includes("vida")) {
       return <User className="w-4 h-4 text-purple-500" />;
     }
-    return <Bookmark className="w-4 h-4 text-indigo-500" />;
+    return <Bookmark className="w-4 h-4 text-[#7455AD]" />;
   };
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-2.5 sm:p-4 bg-slate-950/55 dark:bg-black/70 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="relative w-full max-w-xl rounded-2xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] shadow-popover overflow-hidden transition-all max-h-[92dvh] flex flex-col">
+      <div className="relative w-full max-w-xl rounded-2xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] shadow-popover overflow-hidden transition-all max-h-[92dvh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#E5E0D6] dark:border-[#343F56] bg-[#F0EDE6] dark:bg-[#1C2230] shrink-0">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-[#E5E0D6] dark:border-[#44394F] bg-[#FAF6EF] dark:bg-[#241F2D] shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="w-9 h-9 rounded-lg bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 border border-indigo-200/70 dark:border-indigo-500/25 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-lg bg-[#E7DFF5] dark:bg-[#332A45] text-[#7455AD] dark:text-[#B6A2DB] border border-[#D8C9EE]/70 dark:border-[#7455AD]/25 flex items-center justify-center shrink-0">
               <ShieldCheck className="w-4 h-4" />
             </div>
             <div className="min-w-0">
-              <h3 className="text-sm font-semibold text-slate-950 dark:text-zinc-50 truncate">
+              <h3 className="text-sm font-semibold text-[#392D4B] dark:text-[#F5F1E8] truncate">
                 Contas Google Vinculadas
               </h3>
-              <p className="text-xs text-slate-500 dark:text-zinc-400 line-clamp-1">
+              <p className="text-xs text-[#756B80] dark:text-[#B6A9C3] line-clamp-1">
                 Perfil Mestre com suporte a múltiplas contas
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-white hover:bg-[#E4E0D6] dark:hover:bg-white/[0.06] transition-colors cursor-pointer shrink-0"
+            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-white hover:bg-[#E7DFF5] dark:hover:bg-white/[0.06] transition-colors cursor-pointer shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
@@ -318,13 +318,13 @@ function AccountsModalContent({
 
         {/* Master Profile Info Banner */}
         <div className="px-4 sm:px-6 pt-3 sm:pt-4 shrink-0">
-          <div className="p-3.5 rounded-xl bg-indigo-50/60 dark:bg-indigo-500/[0.08] border border-indigo-200/70 dark:border-indigo-500/20 text-xs flex items-start gap-2.5">
-            <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0 mt-0.5" />
+          <div className="p-3.5 rounded-xl bg-[#E7DFF5]/60 dark:bg-indigo-500/[0.08] border border-[#D8C9EE]/70 dark:border-[#7455AD]/20 text-xs flex items-start gap-2.5">
+            <Sparkles className="w-4 h-4 text-[#7455AD] dark:text-[#B6A2DB] shrink-0 mt-0.5" />
             <div className="space-y-0.5">
-              <span className="font-semibold text-slate-900 dark:text-zinc-100 block">
+              <span className="font-semibold text-[#392D4B] dark:text-[#F5F1E8] block">
                 Vínculo Unificado (Perfil Mestre)
               </span>
-              <p className="text-[11px] text-slate-600 dark:text-zinc-400 leading-relaxed">
+              <p className="text-[11px] text-slate-600 dark:text-[#B6A9C3] leading-relaxed">
                 Todas as contas listadas abaixo respondem a um único perfil. Faça login com qualquer e-mail vinculado e acesse todos os seus espaços.
               </p>
             </div>
@@ -362,7 +362,7 @@ function AccountsModalContent({
           </div>
 
           {connectedAccounts.length === 0 ? (
-            <div className="p-8 text-center rounded-2xl border border-dashed border-[#DCD7CC] dark:border-white/10 space-y-3">
+            <div className="p-8 text-center rounded-2xl border border-dashed border-[#E4DCE4] dark:border-white/10 space-y-3">
               <AlertCircle className="w-8 h-8 mx-auto text-amber-500 opacity-60" />
               <div>
                 <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
@@ -393,7 +393,7 @@ function AccountsModalContent({
               return (
                 <div
                   key={accountKey}
-                  className="p-3.5 sm:p-4 rounded-2xl bg-[#F0EDE6]/70 dark:bg-[#293244] border border-[#DCD7CC] dark:border-white/5 space-y-3 transition-all hover:border-purple-300 dark:hover:border-purple-500/30"
+                  className="p-3.5 sm:p-4 rounded-2xl bg-[#FAF6EF]/70 dark:bg-[#352D42] border border-[#E4DCE4] dark:border-white/5 space-y-3 transition-all hover:border-purple-300 dark:hover:border-purple-500/30"
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2.5 sm:gap-3">
                     <div className="flex items-start gap-3 min-w-0 flex-1">
@@ -409,7 +409,7 @@ function AccountsModalContent({
                               value={editingLabel}
                               onChange={(e) => setEditingLabel(e.target.value)}
                               placeholder="Nome do rótulo..."
-                              className="h-7 px-2 text-xs font-bold rounded-lg bg-[#F7F6F1] dark:bg-[#1C2230] border border-purple-500 text-slate-900 dark:text-white focus:outline-none min-w-0 flex-1"
+                              className="h-7 px-2 text-xs font-bold rounded-lg bg-[#FFFCF6] dark:bg-[#241F2D] border border-purple-500 text-[#392D4B] dark:text-white focus:outline-none min-w-0 flex-1"
                               autoFocus
                             />
                             <button
@@ -432,7 +432,7 @@ function AccountsModalContent({
                           </div>
                         ) : (
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-xs font-bold text-slate-900 dark:text-white uppercase tracking-wide">
+                            <span className="text-xs font-bold text-[#392D4B] dark:text-white uppercase tracking-wide">
                               {displayLabel}
                             </span>
                             <button
@@ -446,7 +446,7 @@ function AccountsModalContent({
                           </div>
                         )}
 
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        <p className="text-xs text-[#756B80] dark:text-[#B6A9C3] truncate">
                           {displayEmail}
                         </p>
                       </div>
@@ -469,7 +469,7 @@ function AccountsModalContent({
                     </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-400 dark:text-slate-500 pt-2 border-t border-[#DCD7CC]/60 dark:border-white/5">
+                  <div className="flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-400 dark:text-[#756B80] pt-2 border-t border-[#E4DCE4]/60 dark:border-white/5">
                     <span>
                       {formatSafeSyncDate(acc.last_sync_at)}
                     </span>
@@ -482,7 +482,7 @@ function AccountsModalContent({
         </div>
 
         {/* Footer Actions */}
-        <div className="p-4 border-t border-[#E5E0D6] dark:border-white/5 bg-[#F0EDE6]/50 dark:bg-[#1C2230] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 shrink-0">
+        <div className="p-4 border-t border-[#E5E0D6] dark:border-white/5 bg-[#FAF6EF]/50 dark:bg-[#241F2D] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={handleSyncNow}
@@ -496,7 +496,7 @@ function AccountsModalContent({
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-[#DDD8CD]/60 dark:hover:bg-[#2F394D] transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-[#B6A9C3] hover:bg-[#E7DFF5]/60 dark:hover:bg-[#3D344C] transition-colors cursor-pointer"
           >
             Fechar
           </button>
@@ -505,16 +505,16 @@ function AccountsModalContent({
         {/* Safe Unlink Confirmation Modal (Zero Data Loss Safeguard) */}
         {accountToUnlink && (
           <div className="absolute inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-4 animate-in fade-in duration-150">
-            <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto bg-[#F7F6F1] dark:bg-[#222938] border border-amber-500/30 dark:border-amber-500/40 rounded-2xl shadow-2xl p-4 sm:p-5 space-y-4 text-left custom-scrollbar">
+            <div className="w-full max-w-md max-h-[90dvh] overflow-y-auto bg-[#FFFCF6] dark:bg-[#2C2637] border border-amber-500/30 dark:border-amber-500/40 rounded-2xl shadow-2xl p-4 sm:p-5 space-y-4 text-left custom-scrollbar">
               <div className="flex items-center gap-3">
                 <div className="p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
                   <ShieldAlert className="w-5 h-5" />
                 </div>
                 <div>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <h4 className="text-sm font-bold text-[#392D4B] dark:text-white">
                     Desvincular Conta com Segurança
                   </h4>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                  <p className="text-xs text-[#756B80] dark:text-[#B6A9C3]">
                     Salvaguarda ativa: Zero perda de dados
                   </p>
                 </div>
@@ -526,7 +526,7 @@ function AccountsModalContent({
                   <p className="leading-relaxed">
                     Você está prestes a desvincular o e-mail:
                     <br />
-                    <strong className="text-slate-900 dark:text-white font-mono">{String(accountToUnlink.email)}</strong>{" "}
+                    <strong className="text-[#392D4B] dark:text-white font-mono">{String(accountToUnlink.email)}</strong>{" "}
                     ({typeof accountToUnlink.label === "string" ? accountToUnlink.label : "Geral"}).
                   </p>
                 </div>
@@ -542,7 +542,7 @@ function AccountsModalContent({
                 <select
                   value={targetTransferEmail}
                   onChange={(e) => setTargetTransferEmail(e.target.value)}
-                  className="w-full h-10 px-3 rounded-xl bg-[#F0EDE6] dark:bg-[#293244] border border-[#DCD7CC] dark:border-white/10 text-xs font-semibold text-slate-900 dark:text-white focus:outline-none focus:border-purple-500"
+                  className="w-full h-10 px-3 rounded-xl bg-[#FAF6EF] dark:bg-[#352D42] border border-[#E4DCE4] dark:border-white/10 text-xs font-semibold text-[#392D4B] dark:text-white focus:outline-none focus:border-purple-500"
                 >
                   <option value={masterEmail}>
                     {masterEmail} (Conta Mestre / Pessoal)
@@ -568,7 +568,7 @@ function AccountsModalContent({
                   type="button"
                   onClick={() => setAccountToUnlink(null)}
                   disabled={isTransferring}
-                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] transition-colors cursor-pointer"
+                  className="px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-[#B6A9C3] hover:bg-[#E7DFF5] dark:hover:bg-[#3D344C] transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>

@@ -216,21 +216,21 @@ export function ScheduleReminderFields({
     <div
       className={`${
         compact ? "p-3" : "p-3.5 sm:p-4"
-      } rounded-2xl bg-[#F0EDE6]/90 dark:bg-[#171C26] border border-[#DCD7CC] dark:border-[#343F56] space-y-3`}
+      } rounded-2xl bg-[#FAF6EF]/90 dark:bg-[#1D1925] border border-[#E4DCE4] dark:border-[#44394F] space-y-3`}
     >
       {/* Header Row */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
-          <div className="p-1.5 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 shrink-0">
+          <div className="p-1.5 rounded-lg bg-[#E7DFF5] dark:bg-indigo-950/60 text-[#7455AD] dark:text-[#B6A2DB] shrink-0">
             <Calendar className="w-3.5 h-3.5" />
           </div>
           <div className="min-w-0">
-            <span className="text-[11px] font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider block">
+            <span className="text-[11px] font-bold text-slate-800 dark:text-[#F5F1E8] uppercase tracking-wider block">
               {itemType === "activity" || hasEndTime
                 ? "Agendamento de Horário (Reunião / Treinamento)"
                 : "Prazo, Horário & Aviso de Lembrete"}
             </span>
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 block leading-tight">
+            <span className="text-[10px] text-[#756B80] dark:text-[#B6A9C3] block leading-tight">
               Defina início, término opcional e antecedência do aviso.
             </span>
           </div>
@@ -242,7 +242,7 @@ export function ScheduleReminderFields({
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-all cursor-pointer shrink-0 ${
             hasEndTime
               ? "bg-purple-600 text-white border-purple-500 shadow-xs"
-              : "bg-[#F7F6F1] dark:bg-[#222938] text-slate-700 dark:text-slate-300 border-[#DCD7CC] dark:border-[#404D68] hover:border-purple-400"
+              : "bg-[#FFFCF6] dark:bg-[#2C2637] text-slate-700 dark:text-slate-300 border-[#E4DCE4] dark:border-[#44394F] hover:border-purple-400"
           }`}
         >
           <Timer className="w-3 h-3" />
@@ -253,20 +253,20 @@ export function ScheduleReminderFields({
       {/* Start & End Inputs */}
       <div className={`grid grid-cols-1 ${hasEndTime ? "sm:grid-cols-2" : ""} gap-2.5`}>
         <div className="space-y-1">
-          <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center justify-between">
+          <label className="text-[11px] font-semibold text-slate-600 dark:text-[#B6A9C3] flex items-center justify-between">
             <span>{hasEndTime ? "Data & Horário de Início:" : "Data & Horário / Prazo:"}</span>
           </label>
           <input
             type="datetime-local"
             value={startInputVal}
             onChange={(e) => handleStartInputChange(e.target.value)}
-            className="w-full h-9 px-3 text-xs rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#404D68] text-slate-900 dark:text-white focus:outline-none focus:border-indigo-500 font-mono"
+            className="w-full h-9 px-3 text-xs rounded-xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] text-[#392D4B] dark:text-white focus:outline-none focus:border-[#7455AD] font-mono"
           />
         </div>
 
         {hasEndTime && (
           <div className="space-y-1">
-            <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400 flex items-center justify-between gap-2">
+            <label className="text-[11px] font-semibold text-slate-600 dark:text-[#B6A9C3] flex items-center justify-between gap-2">
               <span>Data & Horário de Término:</span>
               {durationMinutes !== null && (
                 <span className="text-[10px] font-mono font-bold text-purple-600 dark:text-purple-400">
@@ -283,11 +283,11 @@ export function ScheduleReminderFields({
               value={endInputVal}
               min={startInputVal || undefined}
               onChange={(e) => handleEndInputChange(e.target.value)}
-              className={`w-full h-9 px-3 text-xs rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border ${
+              className={`w-full h-9 px-3 text-xs rounded-xl bg-[#FFFCF6] dark:bg-[#2C2637] border ${
                 isInvalidRange
                   ? "border-rose-500 focus:border-rose-500"
-                  : "border-[#DCD7CC] dark:border-[#404D68] focus:border-indigo-500"
-              } text-slate-900 dark:text-white focus:outline-none font-mono`}
+                  : "border-[#E4DCE4] dark:border-[#44394F] focus:border-[#7455AD]"
+              } text-[#392D4B] dark:text-white focus:outline-none font-mono`}
             />
           </div>
         )}
@@ -304,7 +304,7 @@ export function ScheduleReminderFields({
         <div className="flex flex-wrap items-center gap-1.5">
           {hasEndTime && (
             <>
-              <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 mr-0.5">
+              <span className="text-[10px] font-semibold text-[#756B80] dark:text-[#B6A9C3] mr-0.5">
                 Duração rápida:
               </span>
               {DURATION_PRESETS.map((preset) => {
@@ -317,7 +317,7 @@ export function ScheduleReminderFields({
                     className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-semibold border transition-colors cursor-pointer ${
                       isSelected
                         ? "bg-purple-600 text-white border-purple-500"
-                        : "bg-[#F7F6F1] dark:bg-[#222938] text-slate-600 dark:text-slate-300 border-[#DCD7CC] dark:border-[#404D68] hover:border-purple-400"
+                        : "bg-[#FFFCF6] dark:bg-[#2C2637] text-slate-600 dark:text-slate-300 border-[#E4DCE4] dark:border-[#44394F] hover:border-purple-400"
                     }`}
                   >
                     {preset.label}
@@ -336,7 +336,7 @@ export function ScheduleReminderFields({
                   d.setHours(18, 0, 0, 0);
                   onChangeStart(formatOut(d, valueFormat));
                 }}
-                className="px-2 py-0.5 rounded text-[10px] bg-[#DCD7CC] dark:bg-[#293244] hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400 cursor-pointer"
+                className="px-2 py-0.5 rounded text-[10px] bg-[#E4DCE4] dark:bg-[#352D42] hover:bg-[#E7DFF5] hover:text-[#7455AD] text-slate-600 dark:text-[#B6A9C3] cursor-pointer"
               >
                 Hoje 18h
               </button>
@@ -348,7 +348,7 @@ export function ScheduleReminderFields({
                   d.setHours(18, 0, 0, 0);
                   onChangeStart(formatOut(d, valueFormat));
                 }}
-                className="px-2 py-0.5 rounded text-[10px] bg-[#DCD7CC] dark:bg-[#293244] hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400 cursor-pointer"
+                className="px-2 py-0.5 rounded text-[10px] bg-[#E4DCE4] dark:bg-[#352D42] hover:bg-[#E7DFF5] hover:text-[#7455AD] text-slate-600 dark:text-[#B6A9C3] cursor-pointer"
               >
                 Amanhã
               </button>
@@ -360,7 +360,7 @@ export function ScheduleReminderFields({
                   d.setHours(18, 0, 0, 0);
                   onChangeStart(formatOut(d, valueFormat));
                 }}
-                className="px-2 py-0.5 rounded text-[10px] bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold border border-indigo-200 dark:border-indigo-800 cursor-pointer"
+                className="px-2 py-0.5 rounded text-[10px] bg-[#E7DFF5] dark:bg-[#332A45] text-[#654696] dark:text-[#D8C9EE] font-bold border border-[#D8C9EE] dark:border-indigo-800 cursor-pointer"
               >
                 +4 dias
               </button>
@@ -372,7 +372,7 @@ export function ScheduleReminderFields({
                   d.setHours(18, 0, 0, 0);
                   onChangeStart(formatOut(d, valueFormat));
                 }}
-                className="px-2 py-0.5 rounded text-[10px] bg-[#DCD7CC] dark:bg-[#293244] hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 dark:text-slate-400 cursor-pointer"
+                className="px-2 py-0.5 rounded text-[10px] bg-[#E4DCE4] dark:bg-[#352D42] hover:bg-[#E7DFF5] hover:text-[#7455AD] text-slate-600 dark:text-[#B6A9C3] cursor-pointer"
               >
                 +1 semana
               </button>
@@ -395,8 +395,8 @@ export function ScheduleReminderFields({
             {conflicts.map((c) => (
               <div key={c.id} className="text-[11px] flex items-center justify-between gap-2">
                 <span className="truncate">
-                  <strong className="font-semibold text-slate-900 dark:text-slate-100">{c.title}</strong>
-                  <span className="text-slate-500 dark:text-slate-400">
+                  <strong className="font-semibold text-[#392D4B] dark:text-[#F5F1E8]">{c.title}</strong>
+                  <span className="text-[#756B80] dark:text-[#B6A9C3]">
                     {" "}
                     ({c.type === "google_event" ? "Google Agenda" : "MontLife"})
                   </span>
@@ -412,7 +412,7 @@ export function ScheduleReminderFields({
 
       {/* Google Meet Link Generator & Integration */}
       {onChangeMeetLink && (
-        <div className="pt-2.5 border-t border-[#DCD7CC]/80 dark:border-[#343F56]/80 space-y-2">
+        <div className="pt-2.5 border-t border-[#E4DCE4]/80 dark:border-[#44394F]/80 space-y-2">
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <div className="flex items-center gap-1.5">
               <Video className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -433,7 +433,7 @@ export function ScheduleReminderFields({
               <button
                 type="button"
                 onClick={handleGenerateMeet}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold text-slate-500 hover:text-emerald-600 dark:text-slate-400 hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] transition-colors"
+                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[10px] font-semibold text-[#756B80] hover:text-emerald-600 dark:text-[#B6A9C3] hover:bg-[#E7DFF5] dark:hover:bg-[#3D344C] transition-colors"
                 title="Substituir por um novo link exclusivo"
               >
                 <RefreshCw className="w-3 h-3" />
@@ -444,7 +444,7 @@ export function ScheduleReminderFields({
 
           {meetLink ? (
             <div className="flex items-center gap-1.5 flex-wrap">
-              <div className="flex-1 min-w-[200px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-emerald-300 dark:border-emerald-700/60 text-xs">
+              <div className="flex-1 min-w-[200px] flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-emerald-300 dark:border-emerald-700/60 text-xs">
                 <Video className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
                 <input
                   type="text"
@@ -458,7 +458,7 @@ export function ScheduleReminderFields({
                 <button
                   type="button"
                   onClick={handleCopyMeet}
-                  className="px-2.5 py-1.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#404D68] text-slate-700 dark:text-slate-200 hover:text-emerald-600 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                  className="px-2.5 py-1.5 rounded-xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] text-slate-700 dark:text-slate-200 hover:text-emerald-600 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                   title="Copiar link do Google Meet"
                 >
                   {copiedMeet ? (
@@ -486,7 +486,7 @@ export function ScheduleReminderFields({
                 <button
                   type="button"
                   onClick={() => onChangeMeetLink(null)}
-                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-500 bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#404D68] transition-colors cursor-pointer"
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-rose-500 bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] transition-colors cursor-pointer"
                   title="Remover Google Meet"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -494,7 +494,7 @@ export function ScheduleReminderFields({
               </div>
             </div>
           ) : (
-            <p className="text-[10px] text-slate-400 dark:text-slate-500">
+            <p className="text-[10px] text-slate-400 dark:text-[#756B80]">
               Gere um link exclusivo do Google Meet com 1 clique para reuniões, alinhamentos ou treinamentos.
             </p>
           )}
@@ -502,7 +502,7 @@ export function ScheduleReminderFields({
       )}
 
       {/* Reminder Configuration */}
-      <div className="pt-2.5 border-t border-[#DCD7CC]/80 dark:border-[#343F56]/80 space-y-2.5">
+      <div className="pt-2.5 border-t border-[#E4DCE4]/80 dark:border-[#44394F]/80 space-y-2.5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-1.5">
             {reminderEnabled ? (
@@ -515,7 +515,7 @@ export function ScheduleReminderFields({
             </span>
           </div>
 
-          <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[#DCD7CC] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56]">
+          <div className="flex items-center gap-1 p-0.5 rounded-lg bg-[#E4DCE4] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F]">
             <button
               type="button"
               onClick={() => {
@@ -527,7 +527,7 @@ export function ScheduleReminderFields({
               className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                 reminderEnabled
                   ? "bg-amber-500 text-white shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  : "text-slate-600 dark:text-[#B6A9C3] hover:text-[#392D4B] dark:hover:text-white"
               }`}
             >
               <Bell className="w-3 h-3" />
@@ -538,8 +538,8 @@ export function ScheduleReminderFields({
               onClick={() => onChangeReminderEnabled(false)}
               className={`flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
                 !reminderEnabled
-                  ? "bg-[#F7F6F1] dark:bg-[#293244] text-slate-800 dark:text-slate-200 shadow-xs"
-                  : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  ? "bg-[#FFFCF6] dark:bg-[#352D42] text-slate-800 dark:text-slate-200 shadow-xs"
+                  : "text-slate-600 dark:text-[#B6A9C3] hover:text-[#392D4B] dark:hover:text-white"
               }`}
             >
               <BellOff className="w-3 h-3" />
@@ -562,7 +562,7 @@ export function ScheduleReminderFields({
                     className={`px-2 py-1 rounded-lg text-[10px] font-semibold border transition-all cursor-pointer ${
                       isSelected
                         ? "bg-amber-500 text-white border-amber-500 shadow-xs"
-                        : "bg-[#F7F6F1] dark:bg-[#222938] text-slate-600 dark:text-slate-300 border-[#DCD7CC] dark:border-[#404D68] hover:border-amber-400"
+                        : "bg-[#FFFCF6] dark:bg-[#2C2637] text-slate-600 dark:text-slate-300 border-[#E4DCE4] dark:border-[#44394F] hover:border-amber-400"
                     }`}
                   >
                     {preset.label}
@@ -570,7 +570,7 @@ export function ScheduleReminderFields({
                 );
               })}
 
-              <div className="inline-flex items-center gap-1 bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#404D68] rounded-lg px-2 py-0.5 ml-auto sm:ml-0">
+              <div className="inline-flex items-center gap-1 bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] rounded-lg px-2 py-0.5 ml-auto sm:ml-0">
                 <Clock className="w-3 h-3 text-amber-500 shrink-0" />
                 <input
                   type="number"
@@ -582,9 +582,9 @@ export function ScheduleReminderFields({
                     onChangeReminderMinutes(isNaN(parsed) || parsed < 0 ? 0 : Math.min(43200, parsed));
                   }}
                   aria-label="Minutos de antecedência do lembrete"
-                  className="w-12 text-[11px] font-mono font-bold text-slate-900 dark:text-white bg-transparent focus:outline-none text-center"
+                  className="w-12 text-[11px] font-mono font-bold text-[#392D4B] dark:text-white bg-transparent focus:outline-none text-center"
                 />
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                <span className="text-[10px] text-[#756B80] dark:text-[#B6A9C3] whitespace-nowrap">
                   min antes
                 </span>
               </div>
@@ -604,7 +604,7 @@ export function ScheduleReminderFields({
             )}
           </div>
         ) : (
-          <p className="text-[10px] text-slate-400 dark:text-slate-500">
+          <p className="text-[10px] text-slate-400 dark:text-[#756B80]">
             Nenhum aviso de lembrete será disparado para este item (você pode ativar quando quiser).
           </p>
         )}

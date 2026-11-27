@@ -73,57 +73,57 @@ const COLOR_PRESETS: ColorPreset[] = [
   {
     name: "Azul (Trabalho)",
     accentColor: "border-blue-500",
-    badgeBg: "bg-[#F7F6F1] dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 shadow-xs",
+    badgeBg: "bg-[#FFFCF6] dark:bg-blue-950 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 shadow-xs",
     headerBg: "bg-blue-100/60 dark:bg-blue-950/20",
     previewBg: "bg-blue-500",
   },
   {
     name: "Índigo (Foco)",
-    accentColor: "border-indigo-500",
-    badgeBg: "bg-[#F7F6F1] dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 shadow-xs",
+    accentColor: "border-[#7455AD]",
+    badgeBg: "bg-[#FFFCF6] dark:bg-indigo-950 text-[#654696] dark:text-[#D8C9EE] border border-[#D8C9EE] dark:border-indigo-800/60 shadow-xs",
     headerBg: "bg-indigo-100/60 dark:bg-indigo-950/20",
     previewBg: "bg-indigo-500",
   },
   {
     name: "Âmbar (Validação)",
     accentColor: "border-amber-500",
-    badgeBg: "bg-[#F7F6F1] dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 shadow-xs",
+    badgeBg: "bg-[#FFFCF6] dark:bg-amber-950 text-amber-800 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60 shadow-xs",
     headerBg: "bg-amber-100/60 dark:bg-amber-950/20",
     previewBg: "bg-amber-500",
   },
   {
     name: "Esmeralda (Conclusão)",
     accentColor: "border-emerald-500",
-    badgeBg: "bg-[#F7F6F1] dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 shadow-xs",
+    badgeBg: "bg-[#FFFCF6] dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 shadow-xs",
     headerBg: "bg-emerald-100/60 dark:bg-emerald-950/20",
     previewBg: "bg-emerald-500",
   },
   {
     name: "Roxo (Criativo)",
     accentColor: "border-purple-500",
-    badgeBg: "bg-[#F7F6F1] dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 shadow-xs",
+    badgeBg: "bg-[#FFFCF6] dark:bg-purple-950 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60 shadow-xs",
     headerBg: "bg-purple-100/60 dark:bg-purple-950/20",
     previewBg: "bg-purple-500",
   },
   {
     name: "Ciano (Operações)",
     accentColor: "border-cyan-500",
-    badgeBg: "bg-[#F7F6F1] dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800/60 shadow-xs",
+    badgeBg: "bg-[#FFFCF6] dark:bg-cyan-950 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-800/60 shadow-xs",
     headerBg: "bg-cyan-100/60 dark:bg-cyan-950/20",
     previewBg: "bg-cyan-500",
   },
   {
     name: "Rosa (Crítico)",
     accentColor: "border-rose-500",
-    badgeBg: "bg-[#F7F6F1] dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 shadow-xs",
+    badgeBg: "bg-[#FFFCF6] dark:bg-rose-950 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60 shadow-xs",
     headerBg: "bg-rose-100/60 dark:bg-rose-950/20",
     previewBg: "bg-rose-500",
   },
   {
     name: "Neutro (Backlog)",
     accentColor: "border-slate-400 dark:border-zinc-500",
-    badgeBg: "bg-[#F7F6F1] dark:bg-[#293244] text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-[#404D68]/60 shadow-xs",
-    headerBg: "bg-[#DCD7CC] dark:bg-[#191F2C]/40",
+    badgeBg: "bg-[#FFFCF6] dark:bg-[#352D42] text-slate-800 dark:text-zinc-200 border border-slate-300 dark:border-[#44394F]/60 shadow-xs",
+    headerBg: "bg-[#E4DCE4] dark:bg-[#241F2D]/40",
     previewBg: "bg-slate-500",
   },
 ];
@@ -134,7 +134,7 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     title: "A Fazer & Triagem",
     statuses: ["TODO", "TRIAGE"],
     accentColor: "border-slate-400 dark:border-zinc-500",
-    badgeBg: "bg-[#E7E3DA] dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300",
+    badgeBg: "bg-[#F2ECE2] dark:bg-white/[0.06] text-slate-600 dark:text-zinc-300",
     headerBg: "bg-transparent",
     targetStatus: "TODO",
   },
@@ -142,8 +142,8 @@ const DEFAULT_COLUMNS: ColumnDef[] = [
     id: "in_progress",
     title: "Em Andamento",
     statuses: ["IN_PROGRESS"],
-    accentColor: "border-indigo-500",
-    badgeBg: "bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300",
+    accentColor: "border-[#7455AD]",
+    badgeBg: "bg-[#E7DFF5] dark:bg-[#332A45] text-[#654696] dark:text-[#D8C9EE]",
     headerBg: "bg-transparent",
     targetStatus: "IN_PROGRESS",
   },
@@ -384,7 +384,7 @@ export function KanbanView({
         );
       case "P3":
         return (
-          <span className="flex items-center gap-1 text-[10px] font-mono text-slate-500 dark:text-zinc-400">
+          <span className="flex items-center gap-1 text-[10px] font-mono text-[#756B80] dark:text-[#B6A9C3]">
             <span className="w-1.5 h-1.5 rounded-full bg-slate-400 dark:bg-zinc-500 shrink-0" />
             P3
           </span>
@@ -416,7 +416,7 @@ export function KanbanView({
               ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border-rose-200 dark:border-rose-800/50"
               : today
               ? "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800/50"
-              : "bg-[#E7E3DA] dark:bg-[#222938] text-slate-600 dark:text-zinc-400 border-[#DCD7CC] dark:border-[#343F56]"
+              : "bg-[#F2ECE2] dark:bg-[#2C2637] text-slate-600 dark:text-[#B6A9C3] border-[#E4DCE4] dark:border-[#44394F]"
           }`}
         >
           <Clock className="w-2.5 h-2.5" />
@@ -433,7 +433,7 @@ export function KanbanView({
   return (
     <div className="h-full flex flex-col space-y-3.5 select-none overflow-hidden">
       {/* Top Filter and Command Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC]/80 dark:border-[#343F56] shrink-0">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4]/80 dark:border-[#44394F] shrink-0">
         <div className="flex items-center gap-2 flex-1 max-w-md">
           <div className="relative flex-1">
             <Search className="w-3.5 h-3.5 text-slate-400 dark:text-zinc-500 absolute left-2.5 top-1/2 -translate-y-1/2" />
@@ -442,7 +442,7 @@ export function KanbanView({
               placeholder="Filtrar tarefas no Kanban..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-8 text-xs pl-8 pr-3 rounded-lg bg-[#E7E3DA]/80 dark:bg-[#293244] border border-[#DCD7CC]/80 dark:border-[#343F56] focus:bg-[#FBF9F5] dark:focus:bg-[#262F40] text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-indigo-500 transition-colors"
+              className="w-full h-8 text-xs pl-8 pr-3 rounded-lg bg-[#F2ECE2]/80 dark:bg-[#352D42] border border-[#E4DCE4]/80 dark:border-[#44394F] focus:bg-[#FFFCF6] dark:focus:bg-[#352D42] text-[#392D4B] dark:text-[#F5F1E8] placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none focus:border-[#7455AD] transition-colors"
             />
           </div>
         </div>
@@ -452,7 +452,7 @@ export function KanbanView({
           <select
             value={priorityFilter}
             onChange={(e) => setPriorityFilter(e.target.value as any)}
-            className="h-8 text-xs px-2.5 rounded-lg bg-[#F7F6F1] dark:bg-[#293244] border border-[#DCD7CC]/80 dark:border-[#343F56] text-slate-700 dark:text-zinc-300 focus:outline-none focus:border-indigo-500 cursor-pointer shrink-0"
+            className="h-8 text-xs px-2.5 rounded-lg bg-[#FFFCF6] dark:bg-[#352D42] border border-[#E4DCE4]/80 dark:border-[#44394F] text-slate-700 dark:text-zinc-300 focus:outline-none focus:border-[#7455AD] cursor-pointer shrink-0"
           >
             <option value="all">Todas Prioridades</option>
             <option value="P1">P1 - Crítica</option>
@@ -464,10 +464,10 @@ export function KanbanView({
           <button
             type="button"
             onClick={() => setIsAddModalOpen(true)}
-            className="h-8 inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium bg-[#F7F6F1] hover:bg-[#EBE7DE] dark:bg-[#293244] dark:hover:bg-[#2F394D] text-slate-700 dark:text-zinc-200 border border-[#DCD7CC]/80 dark:border-[#343F56] transition-colors shrink-0 cursor-pointer"
+            className="h-8 inline-flex items-center gap-1.5 px-3 rounded-lg text-xs font-medium bg-[#FFFCF6] hover:bg-[#E7DFF5] dark:bg-[#352D42] dark:hover:bg-[#3D344C] text-slate-700 dark:text-zinc-200 border border-[#E4DCE4]/80 dark:border-[#44394F] transition-colors shrink-0 cursor-pointer"
             title="Adicionar uma nova seção customizada ao fluxo Kanban"
           >
-            <Plus className="w-3.5 h-3.5 text-indigo-500" />
+            <Plus className="w-3.5 h-3.5 text-[#7455AD]" />
             <span>Nova Seção</span>
           </button>
 
@@ -476,7 +476,7 @@ export function KanbanView({
             <button
               type="button"
               onClick={handleResetColumns}
-              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-[#E4E0D6] dark:hover:bg-white/[0.06] transition-colors shrink-0 cursor-pointer"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-[#E7DFF5] dark:hover:bg-white/[0.06] transition-colors shrink-0 cursor-pointer"
               title="Restaurar seções originais do Kanban"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -497,8 +497,8 @@ export function KanbanView({
               onClick={() => setActiveMobileColId(col.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors shrink-0 cursor-pointer ${
                 isActive
-                  ? "bg-indigo-600 text-white border-indigo-600 font-semibold"
-                  : "bg-[#F7F6F1] dark:bg-[#222938] text-slate-600 dark:text-zinc-300 border-[#DCD7CC]/80 dark:border-[#343F56]"
+                  ? "bg-[#7455AD] text-white border-indigo-600 font-semibold"
+                  : "bg-[#FFFCF6] dark:bg-[#2C2637] text-slate-600 dark:text-zinc-300 border-[#E4DCE4]/80 dark:border-[#44394F]"
               }`}
             >
               <span className="truncate max-w-[140px]">{col.title}</span>
@@ -506,7 +506,7 @@ export function KanbanView({
                 className={`text-[10px] font-mono px-1.5 py-0.5 rounded font-semibold tabular-nums ${
                   isActive
                     ? "bg-white/20 text-white"
-                    : "bg-[#E7E3DA] dark:bg-white/[0.06] text-slate-600 dark:text-zinc-400"
+                    : "bg-[#F2ECE2] dark:bg-white/[0.06] text-slate-600 dark:text-[#B6A9C3]"
                 }`}
               >
                 {count}
@@ -550,15 +550,15 @@ export function KanbanView({
               }}
               className={`${
                 isMobileActiveCol ? "flex" : "hidden"
-              } md:flex flex-col rounded-xl bg-[#E2DFD6]/80 dark:bg-[#1C2230] border transition-all duration-150 overflow-hidden flex-1 w-full min-w-0 md:min-w-[276px] ${
+              } md:flex flex-col rounded-xl bg-[#E2DFD6]/80 dark:bg-[#241F2D] border transition-all duration-150 overflow-hidden flex-1 w-full min-w-0 md:min-w-[276px] ${
                 isOverThisCol
-                  ? "border-indigo-500 ring-2 ring-indigo-500/30 bg-indigo-50/40 dark:bg-indigo-500/[0.06]"
-                  : "border-[#DCD7CC]/80 dark:border-[#2E384D]"
+                  ? "border-[#7455AD] ring-2 ring-[#7455AD]/30 bg-[#E7DFF5]/40 dark:bg-indigo-500/[0.06]"
+                  : "border-[#E4DCE4]/80 dark:border-[#44394F]"
               }`}
             >
               {/* Clean Architectural Column Header */}
               <div
-                className={`px-3.5 py-2.5 border-b border-[#DCD7CC]/75 dark:border-[#2E384D] flex items-center justify-between border-t-2 ${col.accentColor}`}
+                className={`px-3.5 py-2.5 border-b border-[#E4DCE4]/75 dark:border-[#44394F] flex items-center justify-between border-t-2 ${col.accentColor}`}
               >
                 {isEditing ? (
                   /* Inline Renaming Input */
@@ -572,7 +572,7 @@ export function KanbanView({
                         if (e.key === "Enter") handleSaveTitle(col.id);
                         if (e.key === "Escape") handleCancelEditTitle();
                       }}
-                      className="w-full text-xs font-bold px-2 py-1 rounded bg-[#F7F6F1] dark:bg-[#222938] border border-indigo-500 text-slate-900 dark:text-zinc-100 focus:outline-hidden"
+                      className="w-full text-xs font-bold px-2 py-1 rounded bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#7455AD] text-[#392D4B] dark:text-[#F5F1E8] focus:outline-hidden"
                     />
                     <button
                       type="button"
@@ -585,7 +585,7 @@ export function KanbanView({
                     <button
                       type="button"
                       onClick={handleCancelEditTitle}
-                      className="p-1 rounded text-slate-400 hover:bg-[#DDD8CD] dark:hover:bg-[#2F394D]"
+                      className="p-1 rounded text-slate-400 hover:bg-[#E7DFF5] dark:hover:bg-[#3D344C]"
                       title="Cancelar"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -596,7 +596,7 @@ export function KanbanView({
                   <div className="flex items-center gap-1.5 min-w-0 flex-1 mr-1">
                     <span
                       onClick={() => handleStartEditTitle(col)}
-                      className="text-xs font-bold text-slate-900 dark:text-zinc-100 truncate cursor-pointer hover:underline"
+                      className="text-xs font-bold text-[#392D4B] dark:text-[#F5F1E8] truncate cursor-pointer hover:underline"
                       title="Clique duas vezes ou no lápis para renomear esta seção"
                     >
                       {col.title}
@@ -611,7 +611,7 @@ export function KanbanView({
                     <button
                       type="button"
                       onClick={() => handleStartEditTitle(col)}
-                      className="p-1 rounded text-slate-400 dark:text-zinc-500 hover:text-slate-800 dark:hover:text-zinc-200 hover:bg-[#DDD8CD]/80 dark:hover:bg-[#2F394D] transition-colors opacity-60 hover:opacity-100"
+                      className="p-1 rounded text-slate-400 dark:text-zinc-500 hover:text-slate-800 dark:hover:text-zinc-200 hover:bg-[#E7DFF5]/80 dark:hover:bg-[#3D344C] transition-colors opacity-60 hover:opacity-100"
                       title="Renomear esta seção"
                     >
                       <Pencil className="w-3 h-3" />
@@ -635,7 +635,7 @@ export function KanbanView({
                 <button
                   type="button"
                   onClick={() => onOpenNewTaskModal(col.targetStatus || col.statuses[0])}
-                  className="p-1 rounded text-slate-400 dark:text-zinc-500 hover:text-slate-800 dark:hover:text-zinc-200 hover:bg-[#DDD8CD] dark:hover:bg-[#2F394D] transition-all cursor-pointer shrink-0"
+                  className="p-1 rounded text-slate-400 dark:text-zinc-500 hover:text-slate-800 dark:hover:text-zinc-200 hover:bg-[#E7DFF5] dark:hover:bg-[#3D344C] transition-all cursor-pointer shrink-0"
                   title={`Criar nova demanda na etapa ${col.title}`}
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -645,7 +645,7 @@ export function KanbanView({
               {/* Column Cards Container */}
               <div className="flex-1 overflow-y-auto p-2.5 pb-4 md:pb-2.5 space-y-2.5 custom-scrollbar transition-colors">
                 {colTasks.length === 0 && !isOverThisCol ? (
-                  <div className="h-32 flex flex-col items-center justify-center text-center p-4 border border-dashed border-[#DCD7CC] dark:border-[#343F56]/80 rounded-xl text-slate-400 dark:text-zinc-500 text-xs bg-white/40 dark:bg-transparent">
+                  <div className="h-32 flex flex-col items-center justify-center text-center p-4 border border-dashed border-[#E4DCE4] dark:border-[#44394F]/80 rounded-xl text-slate-400 dark:text-zinc-500 text-xs bg-white/40 dark:bg-transparent">
                     <span>Nenhuma demanda nesta etapa</span>
                     <span className="text-[10px] text-slate-400 dark:text-zinc-600 mt-1">
                       Mova ou adicione uma demanda para cá
@@ -677,8 +677,8 @@ export function KanbanView({
                         onClick={() => onSelectTask(task)}
                         className={`group relative p-3.5 rounded-xl border transition-all cursor-grab active:cursor-grabbing space-y-2 ${
                           isDraggingThis
-                            ? "opacity-35 scale-[0.98] border-dashed border-indigo-500 bg-[#F0EDE6] dark:bg-[#273042]"
-                            : "bg-[#FAF8F4] dark:bg-[#273042] hover:border-[#C9C3B6] dark:hover:border-[#44526E] border-[#DDD8CE] dark:border-[#354158] shadow-xs-subtle"
+                            ? "opacity-35 scale-[0.98] border-dashed border-[#7455AD] bg-[#FAF6EF] dark:bg-[#273042]"
+                            : "bg-[#FFFCF6] dark:bg-[#273042] hover:border-[#D8C9EE] dark:hover:border-[#44526E] border-[#DDD8CE] dark:border-[#354158] shadow-xs-subtle"
                         }`}
                         title="Clique para abrir detalhes, ou arraste para mudar de etapa"
                       >
@@ -687,7 +687,7 @@ export function KanbanView({
                           <div className="flex items-center gap-1.5 min-w-0">
                             <GripVertical className="w-3 h-3 text-slate-400 dark:text-zinc-600 group-hover:text-slate-600 dark:group-hover:text-zinc-400 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity" />
                             {renderPriorityDot(task.priority)}
-                            <span className="text-[10px] text-slate-600 dark:text-zinc-400 bg-[#E7E3DA] dark:bg-[#222938]/90 px-1.5 py-0.5 rounded border border-[#DCD7CC] dark:border-[#343F56]/80 truncate max-w-[130px] font-medium">
+                            <span className="text-[10px] text-slate-600 dark:text-[#B6A9C3] bg-[#F2ECE2] dark:bg-[#2C2637]/90 px-1.5 py-0.5 rounded border border-[#E4DCE4] dark:border-[#44394F]/80 truncate max-w-[130px] font-medium">
                               {task.category}
                             </span>
                           </div>
@@ -712,7 +712,7 @@ export function KanbanView({
                           {/* Recurrence Badge if > 1 */}
                           {(task.recurrence_count || 1) > 1 && (
                             <span
-                              className="inline-flex items-center gap-0.5 text-[9px] font-mono px-1 py-0.2 rounded bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800/60 font-semibold"
+                              className="inline-flex items-center gap-0.5 text-[9px] font-mono px-1 py-0.2 rounded bg-[#E7DFF5] dark:bg-indigo-950/80 text-[#654696] dark:text-[#D8C9EE] border border-[#D8C9EE] dark:border-indigo-800/60 font-semibold"
                               title={`${task.recurrence_count} ocorrências registradas nesta demanda`}
                             >
                               <Repeat className="w-2.5 h-2.5" />
@@ -722,13 +722,13 @@ export function KanbanView({
                         </div>
 
                         {/* Title */}
-                        <h4 className="text-xs font-bold text-slate-900 dark:text-zinc-100 group-hover:text-indigo-600 dark:group-hover:text-white leading-snug line-clamp-2">
+                        <h4 className="text-xs font-bold text-[#392D4B] dark:text-[#F5F1E8] group-hover:text-[#7455AD] dark:group-hover:text-white leading-snug line-clamp-2">
                           {task.title}
                         </h4>
 
                         {/* Description Snippet */}
                         {task.description && (
-                          <p className="text-[11px] text-slate-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+                          <p className="text-[11px] text-[#756B80] dark:text-[#B6A9C3] line-clamp-2 leading-relaxed">
                             {task.description}
                           </p>
                         )}
@@ -736,7 +736,7 @@ export function KanbanView({
                         {/* Checklist progress if present */}
                         {totalValidation > 0 && (
                           <div className="flex items-center gap-2 pt-0.5">
-                            <div className="flex-1 h-1.5 rounded-full bg-[#E7E3DA] dark:bg-[#293244] overflow-hidden">
+                            <div className="flex-1 h-1.5 rounded-full bg-[#F2ECE2] dark:bg-[#352D42] overflow-hidden">
                               <div
                                 className="h-full bg-indigo-500 rounded-full transition-all"
                                 style={{
@@ -746,14 +746,14 @@ export function KanbanView({
                                 }}
                               />
                             </div>
-                            <span className="text-[9px] font-mono text-slate-500 dark:text-zinc-500 font-medium">
+                            <span className="text-[9px] font-mono text-[#756B80] dark:text-zinc-500 font-medium">
                               {doneValidation}/{totalValidation}
                             </span>
                           </div>
                         )}
 
                         {/* Bottom Row: Due Date + Indicators + Quick Stage Controls */}
-                        <div className="flex items-center justify-between flex-wrap gap-1.5 pt-1.5 border-t border-[#E5E0D6] dark:border-[#343F56]/60 text-[10px] text-slate-500 dark:text-zinc-400">
+                        <div className="flex items-center justify-between flex-wrap gap-1.5 pt-1.5 border-t border-[#E5E0D6] dark:border-[#44394F]/60 text-[10px] text-[#756B80] dark:text-[#B6A9C3]">
                           <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
                             {renderDueDateBadge(task)}
                             {task.reminder_enabled && (
@@ -797,7 +797,7 @@ export function KanbanView({
                               <button
                                 type="button"
                                 onClick={() => onRequestCancelTask(task)}
-                                className="px-1.5 py-1 md:p-1 rounded bg-[#E7E3DA] dark:bg-[#293244]/80 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-600 dark:hover:text-rose-400 text-slate-500 dark:text-zinc-400 border border-[#DCD7CC] dark:border-transparent transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer"
+                                className="px-1.5 py-1 md:p-1 rounded bg-[#F2ECE2] dark:bg-[#352D42]/80 hover:bg-rose-50 dark:hover:bg-rose-950/60 hover:text-rose-600 dark:hover:text-rose-400 text-[#756B80] dark:text-[#B6A9C3] border border-[#E4DCE4] dark:border-transparent transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer"
                                 title="Cancelar esta demanda"
                               >
                                 <Ban className="w-3 h-3 md:w-2.5 md:h-2.5" />
@@ -816,7 +816,7 @@ export function KanbanView({
                                     onUpdateStatus(task.id, "WAITING");
                                   }
                                 }}
-                                className="px-2 py-1 md:p-1 rounded bg-[#E7E3DA] dark:bg-[#293244]/80 hover:bg-[#DDD8CD] dark:hover:bg-[#38445C] text-slate-600 dark:text-zinc-300 border border-[#DCD7CC] dark:border-transparent transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer"
+                                className="px-2 py-1 md:p-1 rounded bg-[#F2ECE2] dark:bg-[#352D42]/80 hover:bg-[#E7DFF5] dark:hover:bg-[#38445C] text-slate-600 dark:text-zinc-300 border border-[#E4DCE4] dark:border-transparent transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer"
                                 title="Voltar para a etapa anterior"
                               >
                                 <ChevronLeft className="w-3 h-3 md:w-2.5 md:h-2.5" />
@@ -836,7 +836,7 @@ export function KanbanView({
                                     onUpdateStatus(task.id, "COMPLETED");
                                   }
                                 }}
-                                className="px-2 py-1 md:p-1 rounded bg-[#E7E3DA] dark:bg-[#293244]/80 hover:bg-indigo-50 dark:hover:bg-[#38445C] text-slate-700 dark:text-zinc-300 hover:text-indigo-600 dark:hover:text-white border border-[#DCD7CC] dark:border-transparent transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer font-semibold"
+                                className="px-2 py-1 md:p-1 rounded bg-[#F2ECE2] dark:bg-[#352D42]/80 hover:bg-[#E7DFF5] dark:hover:bg-[#38445C] text-slate-700 dark:text-zinc-300 hover:text-[#7455AD] dark:hover:text-white border border-[#E4DCE4] dark:border-transparent transition-all text-[10px] font-mono flex items-center gap-0.5 cursor-pointer font-semibold"
                                 title="Avançar status para a próxima etapa"
                               >
                                 <span>Avançar</span>
@@ -852,15 +852,15 @@ export function KanbanView({
 
                 {/* Drop Zone Target Indicator when dragging over this column */}
                 {isOverThisCol && draggingTaskId && (
-                  <div className="p-3.5 rounded-xl border-2 border-dashed border-indigo-500/80 bg-indigo-50/80 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 text-xs font-semibold text-center animate-pulse flex items-center justify-center gap-2">
-                    <ArrowRight className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400" />
+                  <div className="p-3.5 rounded-xl border-2 border-dashed border-[#7455AD]/80 bg-[#E7DFF5]/80 dark:bg-indigo-500/10 text-[#654696] dark:text-[#D8C9EE] text-xs font-semibold text-center animate-pulse flex items-center justify-center gap-2">
+                    <ArrowRight className="w-3.5 h-3.5 text-[#7455AD] dark:text-[#B6A2DB]" />
                     <span>Solte para mover para {col.title}</span>
                   </div>
                 )}
 
                 {/* Inline Quick-Add at Column Footer */}
                 {quickAddColId === col.id ? (
-                  <div className="p-2.5 rounded-xl bg-[#F7F6F1] dark:bg-[#222938] border border-indigo-400 dark:border-indigo-600 shadow-sm space-y-2 animate-in fade-in duration-100">
+                  <div className="p-2.5 rounded-xl bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#B6A2DB] dark:border-indigo-600 shadow-sm space-y-2 animate-in fade-in duration-100">
                     <input
                       type="text"
                       autoFocus
@@ -875,7 +875,7 @@ export function KanbanView({
                       }}
                       placeholder={`Título em ${col.title}...`}
                       disabled={isSubmittingQuickAdd}
-                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#F0EDE6] dark:bg-[#1C2230] border border-[#DCD7CC] dark:border-[#343F56] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:border-indigo-500"
+                      className="w-full text-xs px-2.5 py-1.5 rounded-lg bg-[#FAF6EF] dark:bg-[#241F2D] border border-[#E4DCE4] dark:border-[#44394F] text-[#392D4B] dark:text-white placeholder-slate-400 focus:outline-none focus:border-[#7455AD]"
                     />
                     <div className="flex items-center justify-end gap-1.5">
                       <button
@@ -884,7 +884,7 @@ export function KanbanView({
                           setQuickAddColId(null);
                           setQuickAddTitle("");
                         }}
-                        className="px-2 py-1 rounded-lg text-[11px] font-medium text-slate-500 hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] cursor-pointer"
+                        className="px-2 py-1 rounded-lg text-[11px] font-medium text-[#756B80] hover:bg-[#E7DFF5] dark:hover:bg-[#3D344C] cursor-pointer"
                       >
                         Cancelar
                       </button>
@@ -892,7 +892,7 @@ export function KanbanView({
                         type="button"
                         disabled={!quickAddTitle.trim() || isSubmittingQuickAdd}
                         onClick={() => handleSubmitQuickAdd(col)}
-                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-600 hover:bg-indigo-500 text-white disabled:opacity-40 cursor-pointer"
+                        className="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-[#7455AD] hover:bg-[#654696] text-white disabled:opacity-40 cursor-pointer"
                       >
                         {isSubmittingQuickAdd ? "Criando..." : "Adicionar"}
                       </button>
@@ -909,7 +909,7 @@ export function KanbanView({
                         onOpenNewTaskModal(col.targetStatus || col.statuses[0]);
                       }
                     }}
-                    className="w-full py-2 px-2.5 rounded-xl border border-dashed border-transparent hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-white/70 dark:hover:bg-white/[0.03] text-slate-500 dark:text-zinc-500 hover:text-indigo-600 dark:hover:text-indigo-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                    className="w-full py-2 px-2.5 rounded-xl border border-dashed border-transparent hover:border-slate-300 dark:hover:border-zinc-700 hover:bg-white/70 dark:hover:bg-white/[0.03] text-[#756B80] dark:text-zinc-500 hover:text-[#7455AD] dark:hover:text-indigo-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Adicionar aqui</span>
@@ -924,18 +924,18 @@ export function KanbanView({
       {/* Modal: Adicionar Nova Seção */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 dark:bg-black/80 backdrop-blur-xs p-2.5 sm:p-4 animate-in fade-in">
-          <div className="bg-[#F7F6F1] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#343F56] w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4">
+          <div className="bg-[#FFFCF6] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] w-full max-w-md max-h-[92dvh] overflow-y-auto rounded-2xl p-4 sm:p-5 shadow-2xl space-y-4">
             {/* Modal Header */}
-            <div className="flex items-center justify-between pb-3 border-b border-[#E5E0D6] dark:border-[#343F56]">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E5E0D6] dark:border-[#44394F]">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <div className="w-8 h-8 rounded-lg bg-[#E7DFF5] dark:bg-indigo-950/60 flex items-center justify-center text-[#7455AD] dark:text-[#B6A2DB]">
                   <Layers className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  <h3 className="text-sm font-bold text-[#392D4B] dark:text-white">
                     Nova Seção no Kanban
                   </h3>
-                  <p className="text-[11px] text-slate-500 dark:text-zinc-400">
+                  <p className="text-[11px] text-[#756B80] dark:text-[#B6A9C3]">
                     Amplie seu quadro com etapas customizadas
                   </p>
                 </div>
@@ -943,7 +943,7 @@ export function KanbanView({
               <button
                 type="button"
                 onClick={() => setIsAddModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] transition-colors"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-zinc-200 hover:bg-[#E7DFF5] dark:hover:bg-[#3D344C] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -962,7 +962,7 @@ export function KanbanView({
                   placeholder="Ex: Homologação, Revisão TI, Backlog..."
                   value={newColTitle}
                   onChange={(e) => setNewColTitle(e.target.value)}
-                  className="w-full text-xs px-3 py-2 rounded-xl bg-[#F0EDE6] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#404D68] text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-indigo-500 transition-all"
+                  className="w-full text-xs px-3 py-2 rounded-xl bg-[#FAF6EF] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] text-[#392D4B] dark:text-[#F5F1E8] placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-hidden focus:border-[#7455AD] transition-all"
                 />
               </div>
 
@@ -973,7 +973,7 @@ export function KanbanView({
                 <select
                   value={newColStatus}
                   onChange={(e) => setNewColStatus(e.target.value as TaskStatus)}
-                  className="w-full text-xs px-3 py-2 rounded-xl bg-[#F0EDE6] dark:bg-[#222938] border border-[#DCD7CC] dark:border-[#404D68] text-slate-900 dark:text-zinc-100 focus:outline-hidden focus:border-indigo-500 cursor-pointer"
+                  className="w-full text-xs px-3 py-2 rounded-xl bg-[#FAF6EF] dark:bg-[#2C2637] border border-[#E4DCE4] dark:border-[#44394F] text-[#392D4B] dark:text-[#F5F1E8] focus:outline-hidden focus:border-[#7455AD] cursor-pointer"
                 >
                   <option value="IN_PROGRESS">Em Andamento (Trabalho ativo)</option>
                   <option value="WAITING">Aguardando / Validação (Dependência externa)</option>
@@ -998,8 +998,8 @@ export function KanbanView({
                       onClick={() => setSelectedColorIdx(idx)}
                       className={`flex items-center gap-1.5 p-2 rounded-xl border text-[11px] font-medium transition-all ${
                         selectedColorIdx === idx
-                          ? "border-indigo-500 ring-2 ring-indigo-500/30 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-bold"
-                          : "border-[#DCD7CC] dark:border-[#343F56] text-slate-600 dark:text-zinc-400 hover:bg-[#EBE7DE] dark:hover:bg-[#2F394D]/60"
+                          ? "border-[#7455AD] ring-2 ring-[#7455AD]/30 bg-[#E7DFF5]/50 dark:bg-[#332A45] text-[#654696] dark:text-[#D8C9EE] font-bold"
+                          : "border-[#E4DCE4] dark:border-[#44394F] text-slate-600 dark:text-[#B6A9C3] hover:bg-[#E7DFF5] dark:hover:bg-[#3D344C]/60"
                       }`}
                     >
                       <span className={`w-3 h-3 rounded-full shrink-0 ${preset.previewBg}`} />
@@ -1010,18 +1010,18 @@ export function KanbanView({
               </div>
 
               {/* Action Buttons */}
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E0D6] dark:border-[#343F56]">
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[#E5E0D6] dark:border-[#44394F]">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-zinc-400 hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] transition-colors"
+                  className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-[#B6A9C3] hover:bg-[#E7DFF5] dark:hover:bg-[#3D344C] transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={!newColTitle.trim()}
-                  className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white shadow-sm transition-all"
+                  className="px-4 py-1.5 rounded-xl text-xs font-semibold bg-[#7455AD] hover:bg-[#654696] disabled:opacity-50 text-white shadow-sm transition-all"
                 >
                   Adicionar Seção
                 </button>

@@ -5,19 +5,21 @@ import React from "react";
 interface MontLifeLogoProps {
   size?: "sm" | "md" | "lg" | "xl";
   showText?: boolean;
+  subtitle?: string;
   className?: string;
 }
 
 export function MontLifeLogo({
   size = "md",
   showText = false,
+  subtitle,
   className = "",
 }: MontLifeLogoProps) {
   const sizeMap = {
-    sm: "w-7 h-7 rounded-lg",
-    md: "w-8 h-8 rounded-lg",
-    lg: "w-10 h-10 rounded-xl",
-    xl: "w-12 h-12 rounded-xl",
+    sm: "w-7 h-7 rounded-[8px]",
+    md: "w-8 h-8 rounded-[10px]",
+    lg: "w-10 h-10 rounded-[12px]",
+    xl: "w-12 h-12 rounded-[14px]",
   };
 
   const textMap = {
@@ -30,12 +32,12 @@ export function MontLifeLogo({
   return (
     <div className={`flex items-center gap-2.5 ${className}`}>
       <div
-        className={`${sizeMap[size]} shrink-0 overflow-hidden shadow-xs border border-[#DCD7CC]/80 dark:border-white/10 bg-[#101014] flex items-center justify-center relative group select-none`}
+        className={`${sizeMap[size]} shrink-0 overflow-hidden shadow-xs-subtle border border-line bg-elevated flex items-center justify-center relative group select-none`}
       >
         <img
           src="/brand-logo-square.png"
           alt="MontLife Logo"
-          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-200"
+          className="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-150"
           loading="eager"
         />
       </div>
@@ -43,10 +45,15 @@ export function MontLifeLogo({
       {showText && (
         <div className="min-w-0">
           <span
-            className={`font-semibold ${textMap[size]} tracking-tight text-slate-900 dark:text-zinc-100 block truncate`}
+            className={`font-bold ${textMap[size]} tracking-tight text-ink block truncate leading-tight`}
           >
             MontLife
           </span>
+          {subtitle && (
+            <span className="text-[11px] font-medium text-ink-muted block truncate leading-tight mt-0.5">
+              {subtitle}
+            </span>
+          )}
         </div>
       )}
     </div>
