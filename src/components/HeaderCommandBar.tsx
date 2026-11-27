@@ -69,6 +69,7 @@ interface HeaderCommandBarProps {
   availableCategories?: string[];
   activeNav?: string;
   accountFilter?: string;
+  onSelectAccountFilter?: (filter: "all" | AccountType) => void;
   onTaskCreated: (task: Task) => void;
   onOpenAccountsModal: () => void;
   onOpenReportModal: () => void;
@@ -84,6 +85,7 @@ export function HeaderCommandBar({
   availableCategories,
   activeNav = "tarefas",
   accountFilter = "all",
+  onSelectAccountFilter,
   onTaskCreated,
   onOpenAccountsModal,
   onOpenReportModal,
@@ -679,51 +681,72 @@ export function HeaderCommandBar({
   ).length;
 
   const currentViewLabel: Record<string, string> = {
-    tarefas: "Demandas",
-    inicio: "Demandas",
-    kanban: "Fluxo Kanban",
-    agenda: "Agenda",
+    tarefas: "Execução",
+    inicio: "Execução",
+    hoje: "Meu Dia",
+    kanban: "Execução",
+    agenda: "Execução",
     notas: "Anotações",
     wiki: "Wiki Técnica",
     relatorios: "Relatórios",
   };
-  const viewTitle = currentViewLabel[activeNav] || "Demandas";
-  const workspaceLabel =
-    !accountFilter || accountFilter === "all"
-      ? null
-      : accountFilter.toLowerCase().includes("trab") || accountFilter === "work"
-      ? "Trabalho"
-      : accountFilter.toLowerCase().includes("pess") || accountFilter === "personal"
-      ? "Pessoal"
-      : accountFilter;
+  const viewTitle = currentViewLabel[activeNav] || "Execução";
+
+  const isWorkFilter =
+    accountFilter.toLowerCase().includes("trab") ||
+    accountFilter.toLowerCase().includes("work") ||
+    accountFilter.toLowerCase().includes("notre");
+  const isPersonalFilter =
+    accountFilter.toLowerCase().includes("pess") ||
+    accountFilter.toLowerCase().includes("person") ||
+    accountFilter.toLowerCase().includes("hellen");
+  const activeWsScope: "all" | "work" | "personal" =
+    accountFilter === "all" ? "all" : isWorkFilter ? "work" : isPersonalFilter ? "personal" : "all";
 
   return (
     <>
-      <header className="relative z-40 w-full shrink-0 bg-[#F7F6F1]/95 dark:bg-[#222938]/95 backdrop-blur-md border-b border-[#DCD7CC]/80 dark:border-[#343F56] px-3 sm:px-5 py-1.5 md:py-0 md:h-14 flex flex-wrap md:flex-nowrap items-center justify-between transition-colors duration-200 gap-x-2 gap-y-1.5 md:gap-4">
-      {/* Left: Mobile Brand OR Desktop Contextual Breadcrumb */}
-      <div className="order-1 flex items-center gap-2 shrink-0">
+      <header className="relative z-40 w-full shrink-0 bg-[#F6F4EE]/92 dark:bg-[#1E2434]/92 backdrop-blur-md border-b border-[#DCD6CA]/85 dark:border-[#323D54] px-3 sm:px-5 py-1.5 md:py-0 md:h-[58px] flex flex-wrap md:flex-nowrap items-center justify-between transition-colors duration-200 gap-x-2 gap-y-1.5 md:gap-4">
+      {/* Left: Mobile Brand OR Desktop Contextual Title + 1-Click Workspace Switcher */}
+      <div className="order-1 flex items-center gap-3 shrink-0">
         <div className="flex items-center gap-2 lg:hidden">
           <MontLifeLogo size="sm" showText={false} />
           <span className="font-bold text-sm tracking-tight text-slate-900 dark:text-zinc-100 md:hidden">
             MontLife
           </span>
         </div>
-        <div className="hidden lg:flex items-center gap-2 text-[13px] min-w-0">
-          <span className="font-semibold text-slate-900 dark:text-zinc-100 tracking-tight truncate">
+
+        <div className="hidden lg:flex items-center gap-3 min-w-0">
+          <h1 className="font-bold text-[15px] text-slate-900 dark:text-slate-100 tracking-tight truncate">
             {viewTitle}
-          </span>
-          {workspaceLabel && (
-            <>
-              <span className="text-slate-300 dark:text-zinc-700">/</span>
-              <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[#E7E3DA] dark:bg-white/[0.06] text-[11px] font-medium text-slate-600 dark:text-zinc-300">
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${
-                    workspaceLabel === "Trabalho" ? "bg-blue-500" : "bg-violet-500"
-                  }`}
-                />
-                {workspaceLabel}
-              </span>
-            </>
+          </h1>
+
+          {onSelectAccountFilter && (
+            <div className="inline-flex items-center p-0.5 rounded-xl bg-[#EAE6DC]/90 dark:bg-[#161B26]/80 border border-[#DCD6CA]/80 dark:border-[#323D54]">
+              {(
+                [
+                  { id: "all", label: "Todos", dot: "bg-indigo-500" },
+                  { id: "work", label: "Trabalho", dot: "bg-blue-500" },
+                  { id: "personal", label: "Pessoal", dot: "bg-violet-500" },
+                ] as const
+              ).map((ws) => {
+                const active = activeWsScope === ws.id;
+                return (
+                  <button
+                    key={ws.id}
+                    type="button"
+                    onClick={() => onSelectAccountFilter(ws.id)}
+                    className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-[9px] text-[11px] font-semibold transition-all cursor-pointer ${
+                      active
+                        ? "bg-[#FCFBF7] dark:bg-[#273043] text-slate-900 dark:text-white shadow-xs"
+                        : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+                    }`}
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${ws.dot}`} />
+                    <span>{ws.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
@@ -732,31 +755,31 @@ export function HeaderCommandBar({
       <div className="order-3 md:order-2 w-full md:w-auto md:flex-1 md:max-w-xl flex items-center gap-2 min-w-0">
         <form
           onSubmit={handleRunTriage}
-          className="relative flex items-center flex-1 min-w-0 rounded-lg transition-all"
+          className="relative flex items-center flex-1 min-w-0 rounded-xl transition-all"
         >
-          <Sparkles className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 absolute left-3 pointer-events-none shrink-0" />
+          <Sparkles className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 absolute left-3.5 pointer-events-none shrink-0" />
           <input
             ref={commandInputRef}
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Descreva uma demanda para a IA criar ou pressione Ctrl+K..."
-            className="w-full h-9 pl-8.5 pl-9 pr-28 sm:pr-36 rounded-lg bg-[#E7E3DA]/80 dark:bg-[#293244] hover:bg-[#E4E0D6] dark:hover:bg-[#2F394D] focus:bg-[#FBF9F5] dark:focus:bg-[#262F40] border border-[#DCD7CC]/80 dark:border-[#343F56] focus:border-indigo-500/80 focus:ring-2 focus:ring-indigo-500/15 text-xs text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-500 focus:outline-none transition-all font-medium truncate"
+            className="w-full h-9.5 pl-9 pr-28 sm:pr-36 rounded-xl bg-[#EAE6DC]/85 dark:bg-[#273043] hover:bg-[#E4DFD4] dark:hover:bg-[#2D374D] focus:bg-[#FCFBF7] dark:focus:bg-[#212838] border border-[#DCD6CA]/90 dark:border-[#344058] focus:border-indigo-500/80 focus:ring-2 focus:ring-indigo-500/15 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400 focus:outline-none transition-all font-medium truncate"
             disabled={isProcessing}
           />
 
-          <div className="absolute right-1 flex items-center gap-0.5">
+          <div className="absolute right-1.5 flex items-center gap-0.5">
             {onOpenCommandPalette ? (
               <button
                 type="button"
                 onClick={onOpenCommandPalette}
                 title="Abrir busca global e comandos (Ctrl+K)"
-                className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded bg-[#F7F6F1] dark:bg-[#313B50] border border-[#DCD7CC]/90 dark:border-[#343F56] hover:border-indigo-400 text-[10px] font-mono text-slate-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-300 mr-0.5 transition-colors cursor-pointer select-none"
+                className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#FCFBF7] dark:bg-[#313C52] border border-[#DCD6CA] dark:border-[#3B4863] hover:border-indigo-400 text-[10px] font-mono text-slate-500 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-300 mr-0.5 transition-colors cursor-pointer select-none"
               >
                 Ctrl K
               </button>
             ) : (
-              <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded bg-[#F7F6F1]/80 dark:bg-[#313B50] border border-[#DCD7CC] dark:border-[#343F56] text-[10px] font-mono text-slate-400 dark:text-zinc-500 mr-0.5 select-none">
+              <kbd className="hidden xl:inline-flex items-center px-1.5 py-0.5 rounded-md bg-[#FCFBF7]/80 dark:bg-[#313C52] border border-[#DCD6CA] dark:border-[#3B4863] text-[10px] font-mono text-slate-400 dark:text-slate-400 mr-0.5 select-none">
                 Ctrl K
               </kbd>
             )}
@@ -765,7 +788,7 @@ export function HeaderCommandBar({
                 type="button"
                 onClick={() => onOpenNewTaskModal(input)}
                 title="Expandir formulário detalhado"
-                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-[#DDD8CD]/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-[#DDD7CB]/60 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>
@@ -775,10 +798,10 @@ export function HeaderCommandBar({
               type="button"
               onClick={toggleVoiceInput}
               title={isListening ? "Parar gravação" : "Falar comando por voz"}
-              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+              className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
                 isListening
                   ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 animate-pulse"
-                  : "text-slate-400 hover:text-slate-700 dark:text-zinc-500 dark:hover:text-zinc-200 hover:bg-[#DDD8CD]/60 dark:hover:bg-white/[0.06]"
+                  : "text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-100 hover:bg-[#DDD7CB]/60 dark:hover:bg-white/[0.06]"
               }`}
             >
               {isListening ? (
@@ -791,7 +814,7 @@ export function HeaderCommandBar({
             <button
               type="submit"
               disabled={isProcessing || !input.trim()}
-              className="flex items-center justify-center w-7 h-7 rounded-md bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all disabled:opacity-35 cursor-pointer"
+              className="flex items-center justify-center w-7 h-7 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all disabled:opacity-35 cursor-pointer"
               title="Criar demanda com IA"
             >
               {isProcessing ? (
@@ -810,7 +833,7 @@ export function HeaderCommandBar({
           <button
             type="button"
             onClick={() => onOpenNewTaskModal("")}
-            className="inline-flex items-center gap-1.5 px-3 h-8 sm:h-9 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold transition-all shrink-0 active:scale-[0.98] cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 h-8 sm:h-9 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-sm shadow-indigo-600/20 transition-all shrink-0 active:scale-[0.98] cursor-pointer"
             title="Adicionar demanda detalhada"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -818,7 +841,7 @@ export function HeaderCommandBar({
           </button>
         )}
 
-        <div className="hidden md:block w-px h-5 bg-slate-200/80 dark:bg-[#313B50] mx-0.5" />
+        <div className="hidden md:block w-px h-5 bg-[#DCD6CA] dark:bg-[#323D54] mx-0.5" />
 
         {/* Notifications Bell */}
         <div ref={notificationRef} className="relative">
@@ -1056,37 +1079,12 @@ export function HeaderCommandBar({
             )}
         </div>
 
-        {/* Connected Accounts Indicator */}
-        <button
-          onClick={onOpenAccountsModal}
-          className={`flex items-center gap-1.5 px-2.5 h-8 sm:h-9 rounded-lg border text-xs transition-colors cursor-pointer ${
-            connectedAccountsCount > 0
-              ? "bg-transparent border-[#DCD7CC]/80 dark:border-[#343F56] text-slate-600 dark:text-zinc-300 hover:bg-[#E4E0D6] dark:hover:bg-white/[0.06]"
-              : "bg-indigo-50 dark:bg-indigo-500/15 border-indigo-200 dark:border-indigo-500/30 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/70"
-          }`}
-          title="Gerenciar Contas Google Vinculadas"
-        >
-          <span
-            className={`w-2 h-2 rounded-full shrink-0 ${
-              connectedAccountsCount > 0 ? "bg-emerald-500" : "bg-slate-300 dark:bg-zinc-600"
-            }`}
-          />
-          <span className="font-medium text-xs hidden xl:inline">
-            {connectedAccountsCount > 0
-              ? `${connectedAccountsCount} ${connectedAccountsCount === 1 ? "conta" : "contas"}`
-              : "Vincular Google"}
-          </span>
-          <span className="font-mono font-semibold text-[11px] xl:hidden">
-            {connectedAccountsCount > 0 ? connectedAccountsCount : "Google"}
-          </span>
-        </button>
-
-        {/* Theme Switcher Toggle */}
+        {/* Mobile-only Theme Switcher (Desktop has it on the Command Rail) */}
         <button
           type="button"
           onClick={toggleTheme}
           aria-label="Alternar modo claro e escuro"
-          className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center text-slate-500 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-zinc-100 hover:bg-[#E4E0D6] dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+          className="lg:hidden w-8 h-8 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-[#EAE6DC] dark:hover:bg-[#293244] transition-colors cursor-pointer"
           title={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
         >
           {theme === "dark" ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}

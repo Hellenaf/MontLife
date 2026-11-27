@@ -17,6 +17,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  Sunrise,
 } from "lucide-react";
 import { ConnectedAccount, Task, AccountType } from "@/types";
 import { MontLifeLogo } from "@/components/MontLifeLogo";
@@ -237,12 +238,19 @@ export function SidebarNav({
   }[] = [
     {
       id: "tarefas",
-      label: "Minhas Demandas",
+      label: "Execução (Demandas)",
       icon: CheckSquare,
       badge: pendingTasks > 0 ? pendingTasks : totalTasks > 0 ? totalTasks : undefined,
       badgeAccent: pendingTasks > 0,
       isActive: activeNav === "tarefas" || activeNav === "inicio",
-      tooltip: `Minhas Demandas (${pendingTasks} abertas)`,
+      tooltip: `Execução (${pendingTasks} abertas)`,
+    },
+    {
+      id: "hoje",
+      label: "Meu Dia (Cockpit)",
+      icon: Sunrise,
+      isActive: activeNav === "hoje",
+      tooltip: "Meu Dia (Cockpit Bento)",
     },
     {
       id: "kanban",
@@ -285,7 +293,7 @@ export function SidebarNav({
 
   return (
     <aside
-      className={`h-full flex flex-col bg-[#ECE9E1] dark:bg-[#191F2C] border-r border-[#DCD7CC] dark:border-[#2E384D] text-slate-700 dark:text-slate-300 shrink-0 select-none transition-all duration-200 ${
+      className={`h-full flex flex-col bg-[#EFECE4] dark:bg-[#1B2130] border-r border-[#DCD6CA] dark:border-[#323D54] text-slate-700 dark:text-slate-300 shrink-0 select-none transition-all duration-200 ${
         isCollapsed ? "w-[68px]" : "w-full lg:w-[232px] xl:w-[244px]"
       }`}
     >

@@ -121,6 +121,7 @@ interface CentralQuadrantProps {
   activeTab?: "details" | "study";
   onTabChange?: (tab: "details" | "study") => void;
   onBackToTasks?: () => void;
+  onCloseDrawer?: () => void;
   isKpiPanelOpen?: boolean;
   onToggleKpiPanel?: () => void;
 }
@@ -158,6 +159,7 @@ export function CentralQuadrant({
   activeTab: propActiveTab,
   onTabChange,
   onBackToTasks,
+  onCloseDrawer,
   isKpiPanelOpen = true,
   onToggleKpiPanel,
 }: CentralQuadrantProps) {
@@ -830,7 +832,7 @@ export function CentralQuadrant({
             </span>
           )}
 
-          {onToggleKpiPanel && (
+          {onToggleKpiPanel && !onCloseDrawer && (
             <button
               type="button"
               onClick={onToggleKpiPanel}
@@ -847,6 +849,19 @@ export function CentralQuadrant({
                 <PanelRightOpen className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
               )}
               <span>Métricas & IA</span>
+            </button>
+          )}
+
+          {onCloseDrawer && (
+            <button
+              type="button"
+              onClick={onCloseDrawer}
+              className="inline-flex items-center gap-1.5 px-2.5 h-8 rounded-lg border border-[#DCD6CA] dark:border-[#323D54] bg-[#EFECE4] dark:bg-[#273043] hover:bg-[#E3DFD5] dark:hover:bg-[#2F3A50] text-slate-600 dark:text-slate-200 text-xs font-medium transition-colors cursor-pointer"
+              title="Fechar painel de detalhes (Esc)"
+              aria-label="Fechar painel de detalhes"
+            >
+              <span className="hidden sm:inline text-[10px] font-mono text-slate-400 dark:text-slate-400">ESC</span>
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>

@@ -220,12 +220,23 @@ export function CommandPalette({
       {
         id: "nav-tarefas",
         group: "nav",
-        title: "Minhas Demandas",
-        subtitle: "Lista, detalhes e checklist operacional",
+        title: "Quadro de Execução (Lista · Kanban · Agenda)",
+        subtitle: "Workspace direto de demandas com visualização alternável",
         icon: <CheckSquare className="w-4 h-4 text-indigo-500" />,
         onSelect: () => {
           onClose();
           onNavigate("tarefas");
+        },
+      },
+      {
+        id: "nav-hoje",
+        group: "nav",
+        title: "Meu Dia (Cockpit Bento)",
+        subtitle: "Prioridades críticas, reuniões com Meet, Briefing IA e notas",
+        icon: <Sparkles className="w-4 h-4 text-amber-500" />,
+        onSelect: () => {
+          onClose();
+          onNavigate("hoje");
         },
       },
       {

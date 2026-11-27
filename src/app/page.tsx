@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SidebarNav } from "@/components/SidebarNav";
+import { CommandRail } from "@/components/CommandRail";
 import { HeaderCommandBar } from "@/components/HeaderCommandBar";
-import { LeftTasksQuadrant } from "@/components/LeftTasksQuadrant";
-import { CentralQuadrant } from "@/components/CentralQuadrant";
+import { ExecutionHubView, ExecutionMode } from "@/components/ExecutionHubView";
+import { TodayBentoView } from "@/components/TodayBentoView";
+import { TaskDetailDrawer } from "@/components/TaskDetailDrawer";
 import { RightKpiQuadrant } from "@/components/RightKpiQuadrant";
 import { CommandPalette } from "@/components/CommandPalette";
 import { UndoToast, UndoToastData } from "@/components/UndoToast";
@@ -15,16 +17,15 @@ import { AccountsModal } from "@/components/modals/AccountsModal";
 import { NewTaskModal } from "@/components/modals/NewTaskModal";
 import { ClassifyAccountModal } from "@/components/modals/ClassifyAccountModal";
 import { CancelTaskModal } from "@/components/modals/CancelTaskModal";
-import { AgendaDoDiaView } from "@/components/AgendaDoDiaView";
 import { NotesView } from "@/components/NotesView";
 import { WikiTechnicalView } from "@/components/WikiTechnicalView";
 import { ReportsView } from "@/components/ReportsView";
-import { KanbanView } from "@/components/KanbanView";
 import {
   Task,
   TaskAttachment,
   ConnectedAccount,
   TaskStatus,
+  Priority,
   ItemType,
   AccountType,
   Note,
@@ -33,17 +34,10 @@ import {
 import { getAllCategories } from "@/lib/categories";
 import { getOfflineQueue, enqueueOfflineAction, syncOfflineQueue } from "@/lib/offlineQueue";
 import {
-  ExternalLink,
   ListTodo,
-  FileText,
-  Calendar,
-  TrendingUp,
-  User,
-  Kanban,
-  BarChart3,
+  Sunrise,
+  BookOpen,
   Menu,
-  Layers,
-  X,
   Wifi,
   WifiOff,
   StickyNote,
@@ -55,12 +49,12 @@ export default function MontOpsDashboard() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [accounts, setAccounts] = useState<ConnectedAccount[]>([]);
   const [activeNav, setActiveNav] = useState("tarefas");
+  const [executionMode, setExecutionMode] = useState<ExecutionMode>("list");
   const [accountFilter, setAccountFilter] = useState<"all" | AccountType>("all");
   const [centralActiveTab, setCentralActiveTab] = useState<"details" | "study">("details");
-  const [mobileActiveView, setMobileActiveView] = useState<"tasks" | "details" | "kpi">("tasks");
+  const [isTaskDrawerOpen, setIsTaskDrawerOpen] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktopKpiOpen, setIsDesktopKpiOpen] = useState<boolean>(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState<boolean>(false);
   const [undoToast, setUndoToast] = useState<UndoToastData | null>(null);
   const pendingDeleteRef = useRef<{
@@ -112,59 +106,9 @@ export default function MontOpsDashboard() {
   const [offlinePendingCount, setOfflinePendingCount] = useState<number>(0);
   const [offlineSyncMessage, setOfflineSyncMessage] = useState<string | null>(null);
 
-  // Persist desktop KPI & Sidebar collapsed states + `[` shortcut for sidebar
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const savedKpi = localStorage.getItem("montlife_desktop_kpi_open");
-      if (savedKpi === "true") setIsDesktopKpiOpen(true);
-      const savedSidebar = localStorage.getItem("montlife_sidebar_collapsed");
-      if (savedSidebar === "true") setIsSidebarCollapsed(true);
-    } catch {}
-  }, []);
-
-  const handleToggleSidebar = useCallback(() => {
-    setIsSidebarCollapsed((prev) => {
-      const next = !prev;
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem("montlife_sidebar_collapsed", String(next));
-        } catch {}
-      }
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "[" && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        const tag = document.activeElement?.tagName?.toLowerCase();
-        const isEditable =
-          tag === "input" ||
-          tag === "textarea" ||
-          tag === "select" ||
-          (document.activeElement as HTMLElement | null)?.isContentEditable;
-        if (!isEditable) {
-          e.preventDefault();
-          handleToggleSidebar();
-        }
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handleToggleSidebar]);
-
+  // Toggle Executive Metrics & AI Briefing Slide-Over Drawer
   const handleToggleDesktopKpi = () => {
-    setIsDesktopKpiOpen((prev) => {
-      const next = !prev;
-      if (typeof window !== "undefined") {
-        try {
-          localStorage.setItem("montlife_desktop_kpi_open", String(next));
-        } catch {}
-      }
-      return next;
-    });
+    setIsDesktopKpiOpen((prev) => !prev);
   };
 
   // User-scoped cache hydration to guarantee multi-tenant UI isolation on shared devices
@@ -715,7 +659,11 @@ export default function MontOpsDashboard() {
     CANCELED: "Cancelada",
   };
 
-  const handleQuickCreateKanbanTask = async (title: string, status: TaskStatus) => {
+  const handleQuickCreateKanbanTask = async (
+    title: string,
+    status: TaskStatus = "TODO",
+    priority: Priority = "P3"
+  ) => {
     const clean = title.trim();
     if (!clean) return;
     const isPersonal =
@@ -730,7 +678,7 @@ export default function MontOpsDashboard() {
         body: JSON.stringify({
           title: clean,
           status,
-          priority: "P3",
+          priority,
           item_type: "task",
           account_type: isPersonal ? "personal" : "work",
         }),
@@ -740,13 +688,13 @@ export default function MontOpsDashboard() {
         handleTaskCreated(data.task);
         setUndoToast({
           id: `created-${data.task.id}`,
-          message: `Demanda criada em ${STATUS_LABELS[status] || status}`,
+          message: `Demanda criada (${priority}) em ${STATUS_LABELS[status] || status}`,
           detail: data.task.title,
           variant: "success",
         });
       }
     } catch (err) {
-      console.error("Failed to quick-create kanban task:", err);
+      console.error("Failed to quick-create task:", err);
     }
   };
 
@@ -1105,6 +1053,7 @@ export default function MontOpsDashboard() {
       syncTasksCache(remaining);
       if (selectedTaskId === taskId) {
         setSelectedTaskId(remaining.length > 0 ? remaining[0].id : null);
+        setIsTaskDrawerOpen(false);
       }
       return remaining;
     });
@@ -1159,9 +1108,31 @@ export default function MontOpsDashboard() {
 
   const navigateToTaskDetails = (task: Task) => {
     setSelectedTaskId(task.id);
-    setActiveNav("tarefas");
     setCentralActiveTab("details");
-    setMobileActiveView("details");
+    setIsTaskDrawerOpen(true);
+  };
+
+  const handleNavigate = (nav: string, execMode?: ExecutionMode) => {
+    if (nav === "config") {
+      setIsAccountsModalOpen(true);
+      return;
+    }
+    if (nav === "kanban") {
+      setActiveNav("tarefas");
+      setExecutionMode("kanban");
+      return;
+    }
+    if (nav === "agenda") {
+      setActiveNav("tarefas");
+      setExecutionMode("agenda");
+      return;
+    }
+    if (nav === "tarefas" || nav === "inicio") {
+      setActiveNav("tarefas");
+      if (execMode) setExecutionMode(execMode);
+      return;
+    }
+    setActiveNav(nav);
   };
 
   const openTasksCount = useMemo(
@@ -1173,30 +1144,23 @@ export default function MontOpsDashboard() {
   const allCategories = useMemo(() => getAllCategories(tasks), [tasks]);
 
   return (
-    <div className="w-full h-screen h-[100dvh] overflow-hidden flex bg-[#EAE7DF] dark:bg-[#171C26] text-slate-900 dark:text-zinc-100 transition-colors duration-200">
-      {/* 1. Sidebar Nav */}
+    <div className="w-full h-screen h-[100dvh] overflow-hidden flex bg-[#E9E6DE] dark:bg-[#161B26] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+      {/* 1. Ultra-Thin Desktop Command Rail (66px) */}
       <div className="hidden lg:flex h-full no-print">
-        <SidebarNav
+        <CommandRail
           accounts={safeAccounts}
           tasks={tasks}
           activeNav={activeNav}
-          onSelectNav={(nav) => {
-            setActiveNav(nav);
-            if (nav === "config") setIsAccountsModalOpen(true);
-            if (nav === "tarefas" || nav === "inicio") {
-              setCentralActiveTab("details");
-            }
-          }}
-          onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
-          onOpenReportModal={() => setActiveNav("relatorios")}
+          onSelectNav={(nav) => handleNavigate(nav)}
           selectedAccountFilter={accountFilter}
           onSelectAccountFilter={(filter) => setAccountFilter(filter)}
+          onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
+          onToggleMetricsDrawer={handleToggleDesktopKpi}
+          isMetricsOpen={isDesktopKpiOpen}
           onLogout={handleLogout}
-          completedTasksCount={tasks.filter((t) => t.status === "COMPLETED").length}
           notesCount={notes.filter((n) => !n.archived).length}
           currentUser={currentUser}
-          isCollapsed={isSidebarCollapsed}
-          onToggleCollapse={handleToggleSidebar}
         />
       </div>
 
@@ -1213,13 +1177,8 @@ export default function MontOpsDashboard() {
               tasks={tasks}
               activeNav={activeNav}
               onSelectNav={(nav) => {
-                setActiveNav(nav);
+                handleNavigate(nav);
                 setIsMobileMenuOpen(false);
-                if (nav === "config") setIsAccountsModalOpen(true);
-                if (nav === "tarefas" || nav === "inicio") {
-                  setCentralActiveTab("details");
-                  setMobileActiveView("tasks");
-                }
               }}
               onOpenAccountsModal={() => {
                 setIsAccountsModalOpen(true);
@@ -1244,7 +1203,7 @@ export default function MontOpsDashboard() {
         </div>
       )}
 
-      {/* 2. Main Area (Header on top, then 3 columns below) */}
+      {/* 2. Main Bento Command Area (Header + Full-Width Active View) */}
       <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0 pb-[calc(4rem+env(safe-area-inset-bottom,0px))] lg:pb-0">
         {/* Header Command Bar */}
         <div className="no-print relative z-40 shrink-0">
@@ -1254,6 +1213,7 @@ export default function MontOpsDashboard() {
             availableCategories={allCategories}
             activeNav={activeNav}
             accountFilter={accountFilter}
+            onSelectAccountFilter={setAccountFilter}
             onTaskCreated={handleTaskCreated}
             onSelectTask={navigateToTaskDetails}
             onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
@@ -1337,13 +1297,15 @@ export default function MontOpsDashboard() {
         )}
 
         {/* Main Content Canvas */}
-        {activeNav === "agenda" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-[#EAE7DF] dark:bg-[#171C26]">
-            <AgendaDoDiaView
+        {activeNav === "hoje" ? (
+          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 lg:p-6 bg-[#E9E6DE] dark:bg-[#161B26]">
+            <TodayBentoView
               tasks={tasks}
+              notes={notes}
               accountFilter={accountFilter}
-              selectedTaskId={selectedTaskId}
+              userName={currentUser?.name}
               onSelectTask={navigateToTaskDetails}
+              onUpdateStatus={handleUpdateStatus}
               onOpenNewTaskModal={(prefillDate) => {
                 setNewTaskInitialText("");
                 setNewTaskInitialDate(prefillDate ?? null);
@@ -1351,11 +1313,13 @@ export default function MontOpsDashboard() {
                 setPendingNoteLink(null);
                 setIsNewTaskModalOpen(true);
               }}
+              onCreateNote={handleCreateNote}
+              onNavigate={(nav, execMode) => handleNavigate(nav, execMode)}
               onTaskCreated={handleTaskCreated}
             />
           </main>
         ) : activeNav === "notas" ? (
-          <main className="flex-1 min-h-0 overflow-hidden p-3 sm:p-4 bg-[#EAE7DF] dark:bg-[#171C26]">
+          <main className="flex-1 min-h-0 overflow-hidden p-3 sm:p-4 lg:p-5 bg-[#E9E6DE] dark:bg-[#161B26]">
             <NotesView
               notes={notes}
               tasks={tasks}
@@ -1369,167 +1333,140 @@ export default function MontOpsDashboard() {
             />
           </main>
         ) : activeNav === "wiki" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-[#EAE7DF] dark:bg-[#171C26]">
+          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-[#E9E6DE] dark:bg-[#161B26]">
             <WikiTechnicalView
               tasks={tasks}
               onSelectTask={navigateToTaskDetails}
-              onBackToTasks={() => {
-                setActiveNav("tarefas");
-                setCentralActiveTab("details");
-                setMobileActiveView("tasks");
-              }}
+              onBackToTasks={() => handleNavigate("tarefas", "list")}
             />
           </main>
-        ) : activeNav === "kanban" ? (
-          <main className="flex-1 min-h-0 overflow-hidden p-3 sm:p-5 bg-[#EAE7DF] dark:bg-[#171C26]">
-            <KanbanView
+        ) : activeNav === "relatorios" ? (
+          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-[#E9E6DE] dark:bg-[#161B26]">
+            <ReportsView
               tasks={tasks}
               accountFilter={accountFilter}
+              onBackToTasks={() => handleNavigate("tarefas", "list")}
+            />
+          </main>
+        ) : (
+          <main className="flex-1 min-h-0 overflow-hidden flex flex-col p-3 sm:p-5 bg-[#E9E6DE] dark:bg-[#161B26]">
+            <ExecutionHubView
+              tasks={tasks}
+              accountFilter={accountFilter}
+              selectedTaskId={isTaskDrawerOpen ? selectedTaskId : null}
+              executionMode={executionMode}
+              onChangeExecutionMode={setExecutionMode}
               onSelectTask={navigateToTaskDetails}
               onUpdateStatus={handleUpdateStatus}
               onQuickCreateTask={handleQuickCreateKanbanTask}
-              onOpenNewTaskModal={() => {
-                setNewTaskInitialText("");
-                setNewTaskInitialDate(null);
-                setIsNewTaskModalOpen(true);
+              onRequestResolution={(task) => {
+                setTaskForResolution(task);
+                setIsResolutionModalOpen(true);
+              }}
+              onRequestExtendDeadline={(task) => {
+                setTaskForExtend(task);
+                setIsExtendModalOpen(true);
               }}
               onRequestCancelTask={(task) => {
                 setTaskForCancel(task);
                 setIsCancelModalOpen(true);
               }}
-            />
-          </main>
-        ) : activeNav === "relatorios" ? (
-          <main className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 bg-[#EAE7DF] dark:bg-[#171C26]">
-            <ReportsView
-              tasks={tasks}
-              accountFilter={accountFilter}
-              onBackToTasks={() => {
-                setActiveNav("tarefas");
-                setCentralActiveTab("details");
-                setMobileActiveView("tasks");
+              onDeleteTask={handleDeleteTask}
+              onTransferTask={handleTransferTask}
+              onOpenNewTaskModal={(prefillDate) => {
+                setNewTaskInitialText("");
+                setNewTaskInitialDate(prefillDate ?? null);
+                setNewTaskInitialDraft(null);
+                setPendingNoteLink(null);
+                setIsNewTaskModalOpen(true);
               }}
+              onTaskCreated={handleTaskCreated}
+              onRefreshTasks={loadTasks}
+              onOpenMetricsDrawer={handleToggleDesktopKpi}
             />
           </main>
-        ) : (
-          <div className="relative flex-1 min-h-0 flex flex-col lg:flex-row overflow-hidden bg-[#EAE7DF] dark:bg-[#171C26]">
-            {/* Master Column: Task Inbox List */}
-            <div className={`${mobileActiveView === "tasks" ? "flex" : "hidden"} lg:flex flex-1 min-h-0 lg:flex-none lg:h-full w-full lg:w-auto lg:shrink-0`}>
-              <LeftTasksQuadrant
-                tasks={tasks}
-                accounts={safeAccounts}
-                selectedTaskId={selectedTask?.id || null}
-                onSelectTask={(task) => {
-                  setSelectedTaskId(task.id);
-                  setCentralActiveTab("details");
-                  setMobileActiveView("details");
-                }}
-                onUpdateStatus={handleUpdateStatus}
-                onRequestResolution={(task) => {
-                  setTaskForResolution(task);
-                  setIsResolutionModalOpen(true);
-                }}
-                onRequestExtendDeadline={(task) => {
-                  setTaskForExtend(task);
-                  setIsExtendModalOpen(true);
-                }}
-                onRequestCancelTask={(task) => {
-                  setTaskForCancel(task);
-                  setIsCancelModalOpen(true);
-                }}
-                onDeleteTask={handleDeleteTask}
-                onTransferTask={handleTransferTask}
-                onRequestNewTask={() => {
-                  setNewTaskInitialText("");
-                  setNewTaskInitialDate(null);
-                  setIsNewTaskModalOpen(true);
-                }}
-                onRefreshTasks={loadTasks}
-                accountFilter={accountFilter}
-                onAccountFilterChange={setAccountFilter}
-                onOpenMobileMetrics={() => setMobileActiveView("kpi")}
-              />
-            </div>
-
-            {/* Detail Column: Editorial Canvas + Properties Rail */}
-            <div className={`${mobileActiveView === "details" ? "flex" : "hidden"} lg:flex flex-1 min-h-0 lg:h-full min-w-0`}>
-              <CentralQuadrant
-                selectedTask={selectedTask}
-                allTasks={tasks}
-                onRequestResolution={(task) => {
-                  setTaskForResolution(task);
-                  setIsResolutionModalOpen(true);
-                }}
-                onRequestExtendDeadline={(task) => {
-                  setTaskForExtend(task);
-                  setIsExtendModalOpen(true);
-                }}
-                onRequestCancelTask={(task) => {
-                  setTaskForCancel(task);
-                  setIsCancelModalOpen(true);
-                }}
-                onReopenTask={handleReopenTask}
-                onUpdateStatus={handleUpdateStatus}
-                onUpdateItemType={handleUpdateItemType}
-                onUpdateTaskFields={handleUpdateTaskFields}
-                onTransferTask={handleTransferTask}
-                onSelectTask={navigateToTaskDetails}
-                onOpenNewTaskModal={() => setIsNewTaskModalOpen(true)}
-                activeTab={centralActiveTab}
-                onTabChange={setCentralActiveTab}
-                onBackToTasks={() => setMobileActiveView("tasks")}
-                isKpiPanelOpen={isDesktopKpiOpen}
-                onToggleKpiPanel={handleToggleDesktopKpi}
-              />
-            </div>
-
-            {/* Executive Metrics & AI Briefing: Slide-over Drawer on lg–xl, Docked Panel on 2xl+ */}
-            {isDesktopKpiOpen && (
-              <div
-                onClick={handleToggleDesktopKpi}
-                className="hidden lg:block 2xl:hidden fixed inset-0 top-14 bg-slate-950/30 dark:bg-black/50 backdrop-blur-[1px] z-30 animate-in fade-in duration-150"
-              />
-            )}
-            <div
-              className={`${mobileActiveView === "kpi" ? "flex" : "hidden"} ${
-                isDesktopKpiOpen
-                  ? "lg:flex lg:fixed lg:right-0 lg:top-14 lg:bottom-0 lg:z-40 lg:shadow-2xl 2xl:static 2xl:z-auto 2xl:shadow-none"
-                  : "lg:hidden"
-              } flex-1 min-h-0 lg:flex-none lg:h-auto 2xl:h-full w-full lg:w-[320px] xl:w-[336px] 2xl:w-[304px] lg:shrink-0`}
-            >
-              <RightKpiQuadrant
-                tasks={tasks}
-                onOpenReportModal={() => setActiveNav("relatorios")}
-                pinnedNotesCount={notes.filter((n) => Boolean(n.pinned) && !n.archived).length}
-                onBackToTasks={() => setMobileActiveView("tasks")}
-                onCloseDesktop={handleToggleDesktopKpi}
-                onSelectTaskById={(taskId) => {
-                  const found = tasks.find((t) => t.id === taskId);
-                  if (found) navigateToTaskDetails(found);
-                }}
-              />
-            </div>
-          </div>
         )}
       </div>
 
+      {/* Global Slide-Over Task Detail Drawer (opens smoothly over any view) */}
+      <TaskDetailDrawer
+        isOpen={isTaskDrawerOpen}
+        onClose={() => setIsTaskDrawerOpen(false)}
+        selectedTask={selectedTask}
+        allTasks={tasks}
+        onRequestResolution={(task) => {
+          setTaskForResolution(task);
+          setIsResolutionModalOpen(true);
+        }}
+        onRequestExtendDeadline={(task) => {
+          setTaskForExtend(task);
+          setIsExtendModalOpen(true);
+        }}
+        onRequestCancelTask={(task) => {
+          setTaskForCancel(task);
+          setIsCancelModalOpen(true);
+        }}
+        onReopenTask={handleReopenTask}
+        onUpdateStatus={handleUpdateStatus}
+        onUpdateItemType={handleUpdateItemType}
+        onUpdateTaskFields={handleUpdateTaskFields}
+        onTransferTask={handleTransferTask}
+        onSelectTask={navigateToTaskDetails}
+        onOpenNewTaskModal={() => {
+          setNewTaskInitialText("");
+          setNewTaskInitialDate(null);
+          setNewTaskInitialDraft(null);
+          setPendingNoteLink(null);
+          setIsNewTaskModalOpen(true);
+        }}
+        activeTab={centralActiveTab}
+        onTabChange={setCentralActiveTab}
+      />
+
+      {/* Global Executive Metrics & AI Briefing Slide-Over Drawer */}
+      {isDesktopKpiOpen && (
+        <div className="no-print fixed inset-0 z-40 flex justify-end bg-slate-950/30 dark:bg-[#0B0F19]/55 backdrop-blur-[2px] animate-in fade-in duration-150" onClick={() => setIsDesktopKpiOpen(false)}>
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="w-full sm:w-[360px] lg:w-[370px] h-full shadow-2xl animate-drawer-right bg-[#F6F4EE] dark:bg-[#212838] border-l border-[#DCD6CA] dark:border-[#323D54] overflow-hidden"
+          >
+            <RightKpiQuadrant
+              tasks={tasks}
+              onOpenReportModal={() => {
+                setIsDesktopKpiOpen(false);
+                setActiveNav("relatorios");
+              }}
+              pinnedNotesCount={notes.filter((n) => Boolean(n.pinned) && !n.archived).length}
+              onBackToTasks={() => setIsDesktopKpiOpen(false)}
+              onCloseDesktop={() => setIsDesktopKpiOpen(false)}
+              onSelectTaskById={(taskId) => {
+                const found = tasks.find((t) => t.id === taskId);
+                if (found) {
+                  setIsDesktopKpiOpen(false);
+                  navigateToTaskDetails(found);
+                }
+              }}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Mobile Bottom Navigation Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 min-h-[62px] pt-1 pb-[max(0.45rem,env(safe-area-inset-bottom))] bg-[#F7F6F1]/95 dark:bg-[#1C2230]/95 backdrop-blur-lg border-t border-[#DCD7CC]/80 dark:border-[#343F56] px-1.5 flex items-center justify-around z-40">
+      <nav className="no-print lg:hidden fixed bottom-0 left-0 right-0 min-h-[62px] pt-1 pb-[max(0.45rem,env(safe-area-inset-bottom))] bg-[#F6F4EE]/95 dark:bg-[#1B2130]/95 backdrop-blur-lg border-t border-[#DCD6CA]/85 dark:border-[#323D54] px-1.5 flex items-center justify-around z-40">
         <button
           type="button"
-          onClick={() => {
-            setActiveNav("tarefas");
-            setMobileActiveView("tasks");
-          }}
+          onClick={() => handleNavigate("tarefas")}
           className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
-            activeNav === "tarefas"
+            activeNav === "tarefas" || activeNav === "inicio"
               ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-              : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
           <div
             className={`relative px-2.5 py-1 rounded-lg transition-colors ${
-              activeNav === "tarefas" ? "bg-indigo-50 dark:bg-indigo-500/15" : ""
+              activeNav === "tarefas" || activeNav === "inicio"
+                ? "bg-indigo-500/12 dark:bg-indigo-500/20"
+                : ""
             }`}
           >
             <ListTodo className="w-5 h-5" />
@@ -1539,26 +1476,45 @@ export default function MontOpsDashboard() {
               </span>
             )}
           </div>
-          <span className="text-[10px]">Demandas</span>
+          <span className="text-[10px]">Execução</span>
         </button>
 
         <button
           type="button"
-          onClick={() => setActiveNav("notas")}
+          onClick={() => handleNavigate("hoje")}
+          className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
+            activeNav === "hoje"
+              ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+          }`}
+        >
+          <div
+            className={`px-2.5 py-1 rounded-lg transition-colors ${
+              activeNav === "hoje" ? "bg-indigo-500/12 dark:bg-indigo-500/20" : ""
+            }`}
+          >
+            <Sunrise className="w-5 h-5" />
+          </div>
+          <span className="text-[10px]">Meu Dia</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleNavigate("notas")}
           className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
             activeNav === "notas"
               ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-              : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
           <div
             className={`relative px-2.5 py-1 rounded-lg transition-colors ${
-              activeNav === "notas" ? "bg-indigo-50 dark:bg-indigo-500/15" : ""
+              activeNav === "notas" ? "bg-indigo-500/12 dark:bg-indigo-500/20" : ""
             }`}
           >
             <StickyNote className="w-5 h-5" />
             {notes.filter((n) => !n.archived).length > 0 && (
-              <span className="absolute -top-0.5 right-0 px-1 text-[9px] font-mono font-bold rounded-full bg-slate-700 dark:bg-zinc-600 text-white leading-tight">
+              <span className="absolute -top-0.5 right-0 px-1 text-[9px] font-mono font-bold rounded-full bg-slate-700 dark:bg-slate-600 text-white leading-tight">
                 {notes.filter((n) => !n.archived).length}
               </span>
             )}
@@ -1568,61 +1524,36 @@ export default function MontOpsDashboard() {
 
         <button
           type="button"
-          onClick={() => setActiveNav("agenda")}
+          onClick={() => handleNavigate("wiki")}
           className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
-            activeNav === "agenda"
+            activeNav === "wiki"
               ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-              : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
           <div
             className={`px-2.5 py-1 rounded-lg transition-colors ${
-              activeNav === "agenda" ? "bg-indigo-50 dark:bg-indigo-500/15" : ""
+              activeNav === "wiki" ? "bg-indigo-500/12 dark:bg-indigo-500/20" : ""
             }`}
           >
-            <Calendar className="w-5 h-5" />
+            <BookOpen className="w-5 h-5" />
           </div>
-          <span className="text-[10px]">Agenda</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveNav("kanban")}
-          className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
-            activeNav === "kanban"
-              ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-              : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
-          }`}
-        >
-          <div
-            className={`px-2.5 py-1 rounded-lg transition-colors ${
-              activeNav === "kanban" ? "bg-indigo-50 dark:bg-indigo-500/15" : ""
-            }`}
-          >
-            <Kanban className="w-5 h-5" />
-          </div>
-          <span className="text-[10px]">Kanban</span>
+          <span className="text-[10px]">Wiki</span>
         </button>
 
         <button
           type="button"
           onClick={() => setIsMobileMenuOpen(true)}
           className={`min-w-[56px] flex flex-col items-center justify-center gap-0.5 py-1 px-2 rounded-xl transition-all cursor-pointer ${
-            isMobileMenuOpen ||
-            activeNav === "wiki" ||
-            activeNav === "relatorios" ||
-            activeNav === "config"
+            isMobileMenuOpen || activeNav === "relatorios" || activeNav === "config"
               ? "text-indigo-600 dark:text-indigo-400 font-semibold"
-              : "text-slate-500 dark:text-zinc-400 hover:text-slate-800 dark:hover:text-zinc-200"
+              : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
           }`}
         >
           <div
             className={`px-2.5 py-1 rounded-lg transition-colors ${
-              isMobileMenuOpen ||
-              activeNav === "wiki" ||
-              activeNav === "relatorios" ||
-              activeNav === "config"
-                ? "bg-indigo-50 dark:bg-indigo-500/15"
+              isMobileMenuOpen || activeNav === "relatorios" || activeNav === "config"
+                ? "bg-indigo-500/12 dark:bg-indigo-500/20"
                 : ""
             }`}
           >
@@ -1745,14 +1676,8 @@ export default function MontOpsDashboard() {
         tasks={tasks}
         notes={notes}
         onSelectTask={navigateToTaskDetails}
-        onSelectNote={() => setActiveNav("notas")}
-        onNavigate={(nav) => {
-          setActiveNav(nav);
-          if (nav === "tarefas") {
-            setCentralActiveTab("details");
-            setMobileActiveView("tasks");
-          }
-        }}
+        onSelectNote={() => handleNavigate("notas")}
+        onNavigate={(nav) => handleNavigate(nav)}
         onOpenNewTaskModal={(prefill) => {
           setNewTaskInitialText(prefill || "");
           setNewTaskInitialDate(null);
@@ -1762,10 +1687,8 @@ export default function MontOpsDashboard() {
         }}
         onOpenAccountsModal={() => setIsAccountsModalOpen(true)}
         onToggleTheme={toggleTheme}
-        onToggleSidebar={handleToggleSidebar}
         onToggleKpiPanel={handleToggleDesktopKpi}
         theme={theme}
-        isSidebarCollapsed={isSidebarCollapsed}
         isKpiPanelOpen={isDesktopKpiOpen}
       />
 
