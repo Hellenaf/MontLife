@@ -17,7 +17,7 @@ export function ReportsWorkspaceView() {
     [tasks, accountFilter]
   );
 
-  // 6-month delivery evolution series (real data)
+  // Compact 6-month delivery evolution series
   const monthlySeries = useMemo(() => {
     const now = new Date();
     return Array.from({ length: 6 }, (_, idx) => {
@@ -26,7 +26,6 @@ export function ReportsWorkspaceView() {
       const end = endOfMonth(ref).getTime();
       let created = 0;
       let completed = 0;
-      let extended = 0;
 
       for (const t of scopedTasks) {
         try {
@@ -38,10 +37,6 @@ export function ReportsWorkspaceView() {
             const dMs = parseISO(t.completed_at).getTime();
             if (dMs >= start && dMs <= end) completed += 1;
           }
-          if ((t.extension_count || 0) > 0 && t.created_at) {
-            const cMs = parseISO(t.created_at).getTime();
-            if (cMs >= start && cMs <= end) extended += t.extension_count;
-          }
         } catch {}
       }
 
@@ -49,7 +44,6 @@ export function ReportsWorkspaceView() {
         label: format(ref, "MMM", { locale: ptBR }),
         created,
         completed,
-        extended,
       };
     });
   }, [scopedTasks]);
@@ -69,29 +63,30 @@ export function ReportsWorkspaceView() {
         }))
       )
       .sort((a, b) => (b.extended_at || "").localeCompare(a.extended_at || ""))
-      .slice(0, 5);
+      .slice(0, 3);
   }, [scopedTasks]);
 
   return (
-    <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 lg:px-8 py-5 space-y-5 bg-canvas">
-      {/* Analytical Bento Top Strip: Delivery Evolution + Deadline Extensions Audit */}
-      <div className="no-print grid grid-cols-1 xl:grid-cols-12 gap-4">
-        <section className="xl:col-span-8 ml-card p-5 space-y-4">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-[8px] bg-lavender-soft text-brand flex items-center justify-center">
-                <TrendingUp className="w-4 h-4" />
+    <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-5 space-y-4 bg-canvas">
+      {/* Compact & Pixel-Aligned Top Strip (exact same max-w-7xl mx-auto as ReportsView) */}
+      <div className="no-print max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
+        <section className="lg:col-span-7 ml-card p-4 flex flex-col justify-between gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-[8px] bg-lavender-soft text-brand flex items-center justify-center shrink-0">
+                <TrendingUp className="w-3.5 h-3.5" />
               </div>
-              <div>
-                <h2 className="text-sm font-bold text-ink">
-                  Evolução de entregas (últimos 6 meses)
+              <div className="min-w-0">
+                <h2 className="text-xs sm:text-sm font-bold text-ink truncate">
+                  Evolução de entregas (6 meses)
                 </h2>
-                <p className="text-[11px] text-ink-muted">
-                  Comparativo entre demandas criadas e concluídas no espaço ativo
+                <p className="text-[11px] text-ink-muted truncate">
+                  Criadas vs. concluídas no espaço ativo
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 text-[11px] text-ink-muted">
+
+            <div className="flex items-center gap-3 text-[11px] text-ink-muted shrink-0">
               <span className="inline-flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-lavender-mid" /> Criadas
               </span>
@@ -101,61 +96,68 @@ export function ReportsWorkspaceView() {
             </div>
           </div>
 
-          <div className="grid grid-cols-6 gap-3 items-end h-[132px] pt-2">
-            {monthlySeries.map((m) => (
-              <div key={m.label} className="flex flex-col items-center gap-1.5 h-full justify-end">
-                <div className="flex items-end gap-1.5 h-[96px] w-full justify-center">
-                  <div
-                    title={`Criadas: ${m.created}`}
-                    className="w-4 sm:w-5 rounded-t-[5px] bg-lavender-mid transition-all duration-300"
-                    style={{ height: `${Math.max(6, (m.created / maxVal) * 100)}%` }}
-                  />
-                  <div
-                    title={`Concluídas: ${m.completed}`}
-                    className="w-4 sm:w-5 rounded-t-[5px] bg-brand transition-all duration-300"
-                    style={{ height: `${Math.max(6, (m.completed / maxVal) * 100)}%` }}
-                  />
+          {/* Crisp Compact Fixed-Height Bar Chart (aligned neatly!) */}
+          <div className="grid grid-cols-6 gap-2 pt-1">
+            {monthlySeries.map((m) => {
+              const createdPct = m.created > 0 ? Math.max(12, Math.round((m.created / maxVal) * 100)) : 4;
+              const completedPct =
+                m.completed > 0 ? Math.max(12, Math.round((m.completed / maxVal) * 100)) : 4;
+              return (
+                <div key={m.label} className="flex flex-col items-center gap-1">
+                  <div className="text-[10px] font-mono text-ink-muted tabular">
+                    {m.completed}/{m.created}
+                  </div>
+                  <div className="h-[68px] w-full flex items-end justify-center gap-1 px-1 border-b border-line pb-1">
+                    <div
+                      title={`Criadas em ${m.label}: ${m.created}`}
+                      className="w-3 rounded-t-[4px] bg-lavender-mid transition-all duration-300"
+                      style={{ height: `${createdPct}%` }}
+                    />
+                    <div
+                      title={`Concluídas em ${m.label}: ${m.completed}`}
+                      className="w-3 rounded-t-[4px] bg-brand transition-all duration-300"
+                      style={{ height: `${completedPct}%` }}
+                    />
+                  </div>
+                  <span className="text-[10px] font-mono uppercase text-ink-muted">
+                    {m.label}
+                  </span>
                 </div>
-                <span className="text-[11px] font-mono uppercase text-ink-muted">
-                  {m.label}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
-        <section className="xl:col-span-4 ml-card p-5 space-y-3">
+        <section className="lg:col-span-5 ml-card p-4 flex flex-col justify-between gap-3">
           <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-[8px] bg-lavender-soft text-brand flex items-center justify-center">
-              <Clock className="w-4 h-4" />
+            <div className="w-7 h-7 rounded-[8px] bg-lavender-soft text-brand flex items-center justify-center shrink-0">
+              <Clock className="w-3.5 h-3.5" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-ink">
-                Histórico de extensões de prazo
+            <div className="min-w-0">
+              <h2 className="text-xs sm:text-sm font-bold text-ink truncate">
+                Extensões de prazo recentes
               </h2>
-              <p className="text-[11px] text-ink-muted">
-                Últimas prorrogações registradas em auditoria
+              <p className="text-[11px] text-ink-muted truncate">
+                Auditoria de prorrogações registradas
               </p>
             </div>
           </div>
 
           {recentExtensions.length === 0 ? (
-            <div className="py-7 text-center text-xs text-ink-muted bg-sidebar rounded-[10px] border border-line">
+            <div className="flex-1 flex items-center justify-center py-4 px-3 text-center text-xs text-ink-muted bg-sidebar rounded-[9px] border border-line">
               Nenhuma prorrogação de prazo registrada neste espaço.
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-1.5 flex-1">
               {recentExtensions.map((ext, idx) => (
                 <div
                   key={`${ext.taskId}-${idx}`}
-                  className="p-2.5 rounded-[9px] bg-sidebar border border-line space-y-0.5"
+                  className="px-3 py-2 rounded-[8px] bg-sidebar border border-line flex items-center justify-between gap-2"
                 >
-                  <p className="text-xs font-semibold text-ink truncate">
-                    {ext.title}
-                  </p>
-                  <p className="text-[11px] text-ink-muted line-clamp-1">
-                    {ext.reason || "Prorrogação de prazo"}
-                  </p>
+                  <p className="text-xs font-semibold text-ink truncate">{ext.title}</p>
+                  <span className="text-[10px] text-ink-muted truncate max-w-[130px] shrink-0">
+                    {ext.reason || "Prorrogada"}
+                  </span>
                 </div>
               ))}
             </div>
@@ -172,4 +174,3 @@ export function ReportsWorkspaceView() {
     </div>
   );
 }
-

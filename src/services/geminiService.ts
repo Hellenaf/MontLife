@@ -2279,3 +2279,230 @@ Retorne:
     return buildFallbackBriefing();
   }
 }
+
+export interface WorkspaceChatMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
+export interface WorkspaceChatResult {
+  reply: string;
+  referenced_task_ids: string[];
+  ai_source: "gemini" | "fallback";
+}
+
+export async function chatWithWorkspaceAI(params: {
+  message: string;
+  history?: WorkspaceChatMessage[];
+  tasks: Task[];
+  notes?: { id: string; title: string; content: string; pinned?: boolean; tags?: string[] }[];
+  style?: "objetivo" | "detalhado" | "executivo";
+  mode?: "chat" | "wiki_guide";
+  apiKey?: string;
+}): Promise<WorkspaceChatResult> {
+  const {
+    message,
+    history = [],
+    tasks = [],
+    notes = [],
+    style = "objetivo",
+    mode = "chat",
+    apiKey,
+  } = params;
+
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0, 10);
+
+  const openTasks = tasks.filter(
+    (t) => t.status !== "COMPLETED" && t.status !== "CANCELED"
+  );
+  const overdueTasks = openTasks.filter((t) => {
+    const d = t.scheduled_start || t.current_due_date || t.original_due_date;
+    if (!d) return false;
+    try {
+      return new Date(d).getTime() < now.getTime();
+    } catch {
+      return false;
+    }
+  });
+  const dueTodayTasks = openTasks.filter((t) => {
+    const d = t.scheduled_start || t.current_due_date || "";
+    return d.startsWith(todayStr);
+  });
+
+  const buildLocalFallback = (): WorkspaceChatResult => {
+    const q = message.toLowerCase();
+    if (mode === "wiki_guide") {
+      return {
+        reply: `## Guia de Estudo: ${message}\n\nSem conexão ativa com o serviço Gemini neste momento. Você pode editar este artigo manualmente na Wiki para registrar suas anotações, comandos, links e procedimentos de referência para consulta offline.`,
+        referenced_task_ids: [],
+        ai_source: "fallback",
+      };
+    }
+    if (q.includes("atrasad") || q.includes("vencid")) {
+      if (overdueTasks.length === 0) {
+        return {
+          reply: "Você não possui nenhuma demanda atrasada no momento. Seu SLA está totalmente em dia!",
+          referenced_task_ids: [],
+          ai_source: "fallback",
+        };
+      }
+      const list = overdueTasks
+        .slice(0, 8)
+        .map((t) => `- **[${t.priority}]** ${t.title} (${t.category || "Geral"})`)
+        .join("\n");
+      return {
+        reply: `Você tem **${overdueTasks.length} demanda(s) atrasada(s)**:\n\n${list}`,
+        referenced_task_ids: overdueTasks.slice(0, 8).map((t) => t.id),
+        ai_source: "fallback",
+      };
+    }
+    if (q.includes("hoje") || q.includes("prioriz")) {
+      const target = dueTodayTasks.length > 0 ? dueTodayTasks : openTasks.slice(0, 5);
+      if (target.length === 0) {
+        return {
+          reply: "Nenhuma demanda aberta encontrada para hoje.",
+          referenced_task_ids: [],
+          ai_source: "fallback",
+        };
+      }
+      const list = target
+        .slice(0, 6)
+        .map((t) => `- **[${t.priority}]** ${t.title} — *${t.status}*`)
+        .join("\n");
+      return {
+        reply: `Principais itens para focar agora (${openTasks.length} abertas no total, ${overdueTasks.length} atrasadas):\n\n${list}`,
+        referenced_task_ids: target.slice(0, 6).map((t) => t.id),
+        ai_source: "fallback",
+      };
+    }
+    return {
+      reply: `Resumo atual do seu MontLife: **${openTasks.length}** demanda(s) abertas, **${overdueTasks.length}** atrasada(s), **${dueTodayTasks.length}** para hoje e **${notes.length}** anotação(ões) ativa(s). Configure a chave \`GEMINI_API_KEY\` ou tente novamente em instantes para respostas conversacionais completas.`,
+      referenced_task_ids: openTasks.slice(0, 4).map((t) => t.id),
+      ai_source: "fallback",
+    };
+  };
+
+  const key = (apiKey || process.env.GEMINI_API_KEY || "").trim();
+  if (!key || key === "sua_chave_da_gemini_api") {
+    return buildLocalFallback();
+  }
+
+  try {
+    const ai = new GoogleGenAI({ apiKey: key });
+
+    let prompt = "";
+    if (mode === "wiki_guide") {
+      prompt = `Você é um especialista técnico e instrutor sênior escrevendo um artigo de Wiki Técnica em português brasileiro.
+Tema solicitado pelo usuário: "${message}"
+
+Produza um guia estruturado, claro, prático e completo para consulta offline futura, contendo:
+1. Visão Geral / Conceito (curto e objetivo)
+2. Passo a passo prático / Boas práticas ou Comandos/Fórmulas (quando aplicável)
+3. Pontos de atenção / Erros comuns
+4. Resumo rápido de consulta
+
+Use Markdown limpo (títulos ##, tópicos com -, negrito para termos-chave e blocos de código quando técnico). Responda apenas com o conteúdo do artigo.`;
+    } else {
+      const styleInstruction =
+        style === "executivo"
+          ? "Responda em tom executivo, estruturado em tópicos curtos orientados a decisão."
+          : style === "detalhado"
+          ? "Responda de forma detalhada, explicando contexto técnico, passos e alternativas."
+          : "Responda de forma objetiva, amigável e direta ao ponto.";
+
+      const openContext = openTasks
+        .slice(0, 35)
+        .map((t) => {
+          const due = t.scheduled_start || t.current_due_date || "sem prazo";
+          const isOver =
+            due !== "sem prazo" && new Date(due).getTime() < now.getTime()
+              ? " [ATRASADA]"
+              : "";
+          return `- [${t.priority}] (${t.status}${isOver}) ${t.title} | Cat: ${
+            t.category || "Geral"
+          } | Espaço: ${t.account_type || "work"} | Prazo: ${due}`;
+        })
+        .join("\n");
+
+      const resolvedContext = tasks
+        .filter((t) => t.resolution_notes && t.resolution_notes.trim())
+        .slice(0, 12)
+        .map(
+          (t) =>
+            `- ${t.title}: ${(t.resolution_notes || "").replace(/\s+/g, " ").slice(0, 180)}`
+        )
+        .join("\n");
+
+      const notesContext = notes
+        .slice(0, 12)
+        .map(
+          (n) =>
+            `- ${n.pinned ? "[FIXADA] " : ""}${n.title || "Sem título"}: ${(
+              n.content || ""
+            )
+              .replace(/\s+/g, " ")
+              .slice(0, 160)}`
+        )
+        .join("\n");
+
+      const recentHistory = history
+        .slice(-8)
+        .map((m) => `${m.role === "user" ? "Usuário" : "Assistente"}: ${m.content}`)
+        .join("\n\n");
+
+      prompt = `Você é o Assistente de IA do MontLife — um copiloto inteligente em português brasileiro que conhece as demandas, anotações e base de conhecimento do usuário e também tira dúvidas técnicas, de produtividade ou gerais.
+Data atual: ${todayStr}.
+${styleInstruction}
+
+CONTEXTO REAL DO WORKSPACE DO USUÁRIO:
+- Totais: ${tasks.length} demandas (${openTasks.length} abertas, ${overdueTasks.length} atrasadas, ${dueTodayTasks.length} para hoje), ${notes.length} anotações.
+
+DEMANDAS ABERTAS:
+${openContext || "(Nenhuma demanda aberta)"}
+
+SOLUÇÕES JÁ DOCUMENTADAS (BASE DE CONHECIMENTO):
+${resolvedContext || "(Nenhuma solução documentada)"}
+
+ANOTAÇÕES RECENTES / FIXADAS:
+${notesContext || "(Nenhuma anotação)"}
+
+${recentHistory ? `HISTÓRICO DA CONVERSA:\n${recentHistory}\n\n` : ""}PERGUNTA ATUAL DO USUÁRIO:
+${message}
+
+Regras:
+- Se o usuário perguntar sobre suas demandas, prazos, prioridades ou notas, baseie-se estritamente nos dados reais acima (nunca invente tarefas).
+- Se for uma dúvida técnica, de estudo ou geral, responda com profundidade e clareza.
+- Use Markdown simples (negrito e listas) para facilitar a leitura.`;
+    }
+
+    const generation = await generateWithActiveGeminiModels(ai, prompt, {
+      temperature: mode === "wiki_guide" ? 0.35 : 0.45,
+      maxOutputTokens: 1800,
+    });
+
+    const reply = (generation?.text || "").trim();
+    if (!reply) return buildLocalFallback();
+
+    // Detect mentioned real tasks for clickable references
+    const replyLower = reply.toLowerCase();
+    const referencedIds = tasks
+      .filter(
+        (t) =>
+          t.title &&
+          t.title.length >= 6 &&
+          replyLower.includes(t.title.toLowerCase().slice(0, Math.min(28, t.title.length)))
+      )
+      .slice(0, 5)
+      .map((t) => t.id);
+
+    return {
+      reply,
+      referenced_task_ids: referencedIds,
+      ai_source: "gemini",
+    };
+  } catch (err) {
+    console.warn("chatWithWorkspaceAI failed, using fallback:", err);
+    return buildLocalFallback();
+  }
+}

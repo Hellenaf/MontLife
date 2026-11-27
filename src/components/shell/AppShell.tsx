@@ -52,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     tasks,
     notes,
     accounts,
+    currentUser,
     accountsLoaded,
     hasConnectedAccount,
     allCategories,
@@ -260,6 +261,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         onClose={() => setIsAccountsModalOpen(false)}
         accounts={accounts}
         onRefreshAccounts={loadAccounts}
+        masterEmail={currentUser?.email}
       />
 
       <NewTaskModal

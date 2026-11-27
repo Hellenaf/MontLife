@@ -21,6 +21,7 @@ import {
   ShieldAlert,
   ArrowRight,
   AlertTriangle,
+  Crown,
 } from "lucide-react";
 import { ConnectedAccount } from "@/types";
 import { format } from "date-fns";
@@ -31,6 +32,7 @@ interface AccountsModalProps {
   onClose: () => void;
   accounts: ConnectedAccount[];
   onRefreshAccounts: () => Promise<void>;
+  masterEmail?: string;
 }
 
 interface ErrorBoundaryProps {
@@ -137,6 +139,7 @@ function AccountsModalContent({
   onClose,
   accounts,
   onRefreshAccounts,
+  masterEmail: propMasterEmail,
 }: AccountsModalProps) {
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncFeedback, setSyncFeedback] = useState<string | null>(null);
@@ -166,14 +169,23 @@ function AccountsModalContent({
 
   const totalConnected = connectedAccounts.length;
 
-  // Master email is the first personal/primary account or the first connected account
+  // Master email comes from the active Master Profile (or fallback to personal/primary account)
   const masterAccount =
+    (propMasterEmail
+      ? connectedAccounts.find(
+          (a) =>
+            typeof a.email === "string" &&
+            a.email.toLowerCase().trim() === propMasterEmail.toLowerCase().trim()
+        )
+      : undefined) ||
     connectedAccounts.find((a) => typeof a.email === "string" && a.email.toLowerCase().includes("hellenalvesferreira")) ||
     connectedAccounts.find((a) => typeof a.label === "string" && a.label.toLowerCase().includes("pessoal")) ||
     connectedAccounts[0];
-  const masterEmail = (typeof masterAccount?.email === "string" && masterAccount.email.trim())
-    ? masterAccount.email.trim()
-    : (connectedAccounts[0]?.email || "usuario@montlife.com");
+  const masterEmail =
+    (typeof propMasterEmail === "string" && propMasterEmail.trim()) ||
+    (typeof masterAccount?.email === "string" && masterAccount.email.trim()) ||
+    connectedAccounts[0]?.email ||
+    "usuario@montlife.com";
 
   const handleSyncNow = async () => {
     setIsSyncing(true);
@@ -435,6 +447,19 @@ function AccountsModalContent({
                             <span className="text-xs font-bold text-[#392D4B] dark:text-white uppercase tracking-wide">
                               {displayLabel}
                             </span>
+                            {(masterEmail
+                              ? displayEmail.toLowerCase().trim() ===
+                                masterEmail.toLowerCase().trim()
+                              : idx === 0) ? (
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#7455AD] text-[#FFFCF6] text-[10px] font-bold">
+                                <Crown className="w-2.5 h-2.5" />
+                                Conta Mestra
+                              </span>
+                            ) : (
+                              <span className="px-1.5 py-0.5 rounded-md bg-[#E7DFF5] dark:bg-[#241F2D] text-[#756B80] dark:text-[#B6A9C3] text-[10px] font-semibold">
+                                Vinculada
+                              </span>
+                            )}
                             <button
                               type="button"
                               onClick={() => handleStartEdit(acc)}

@@ -3,7 +3,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { SplitView } from "@/components/ui/SplitView";
-import { TaskListPanel, TaskQuickFilter } from "@/components/modules/tasks/TaskListPanel";
+import { TaskListPanel, TaskScopeFilter } from "@/components/modules/tasks/TaskListPanel";
 import { TaskDetailPanel } from "@/components/modules/tasks/TaskDetailPanel";
 import { useWorkspace, isTaskMatchingWorkspace } from "@/context/WorkspaceContext";
 
@@ -23,22 +23,18 @@ export function TasksWorkspaceView() {
   const [mobileShowDetail, setMobileShowDetail] = useState(false);
 
   const initialFilterParam = searchParams?.get("filter");
-  const initialQuickFilter: TaskQuickFilter =
+  const initialScopeFilter: TaskScopeFilter =
     initialFilterParam === "overdue" ||
     initialFilterParam === "today" ||
-    initialFilterParam === "in_progress" ||
-    initialFilterParam === "critical" ||
-    initialFilterParam === "completed" ||
-    initialFilterParam === "canceled"
+    initialFilterParam === "critical"
       ? initialFilterParam
-      : "open";
+      : "all";
 
   const scopedTasks = useMemo(
     () => tasks.filter((t) => isTaskMatchingWorkspace(t, accountFilter)),
     [tasks, accountFilter]
   );
 
-  // Auto-select first open task if current selection is absent
   useEffect(() => {
     if (scopedTasks.length === 0) return;
     if (!selectedTaskId || !tasks.some((t) => t.id === selectedTaskId)) {
@@ -80,7 +76,7 @@ export function TasksWorkspaceView() {
         left={
           <TaskListPanel
             selectedTaskId={selectedTask?.id || null}
-            initialQuickFilter={initialQuickFilter}
+            initialScopeFilter={initialScopeFilter}
             isDetailCollapsed={isRightCollapsed}
             onRestoreDetail={() => setIsRightCollapsed(false)}
             onSelectTask={(task) => {
@@ -109,4 +105,3 @@ export function TasksWorkspaceView() {
     </div>
   );
 }
-

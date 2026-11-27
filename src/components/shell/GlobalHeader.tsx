@@ -2,14 +2,11 @@
 
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { createPortal } from "react-dom";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   Search,
   Plus,
   Bell,
-  Sun,
-  Moon,
   RefreshCw,
   WifiOff,
   Menu,
@@ -19,8 +16,6 @@ import {
   CheckSquare,
   StickyNote,
   Calendar,
-  LogOut,
-  Settings,
   Clock,
   AlertCircle,
   CheckCircle2,
@@ -30,7 +25,6 @@ import {
   Mic,
   MicOff,
 } from "lucide-react";
-import { useTheme } from "@/context/ThemeContext";
 import { useWorkspace } from "@/context/WorkspaceContext";
 import { getTaskScheduleDate, formatTaskTimeRange } from "@/lib/taskSchedule";
 import { isTaskOverdue } from "@/lib/sla";
@@ -57,11 +51,8 @@ interface GlobalHeaderProps {
 export function GlobalHeader({ onOpenMobileMenu }: GlobalHeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const { theme, toggleTheme } = useTheme();
   const {
     tasks,
-    accounts,
-    currentUser,
     accountFilter,
     setAccountFilter,
     isOnline,
@@ -72,7 +63,6 @@ export function GlobalHeader({ onOpenMobileMenu }: GlobalHeaderProps) {
     openNewTaskModal,
     openTaskInModule,
     handleCreateNote,
-    handleLogout,
     handleTaskCreated,
     setUndoToast,
   } = useWorkspace();
@@ -84,12 +74,10 @@ export function GlobalHeader({ onOpenMobileMenu }: GlobalHeaderProps) {
   const [isListening, setIsListening] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifPos, setNotifPos] = useState({ top: 62, right: 16 });
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const createRef = useRef<HTMLDivElement>(null);
   const notifBtnRef = useRef<HTMLButtonElement>(null);
   const notifPopoverRef = useRef<HTMLDivElement>(null);
-  const profileRef = useRef<HTMLDivElement>(null);
 
   const meta = ROUTE_META[pathname] || { section: "Workspace", label: "MontLife" };
 
@@ -99,9 +87,6 @@ export function GlobalHeader({ onOpenMobileMenu }: GlobalHeaderProps) {
       const target = e.target as Node;
       if (isCreateMenuOpen && !createRef.current?.contains(target)) {
         setIsCreateMenuOpen(false);
-      }
-      if (isProfileOpen && !profileRef.current?.contains(target)) {
-        setIsProfileOpen(false);
       }
       if (
         isNotifOpen &&
@@ -113,7 +98,7 @@ export function GlobalHeader({ onOpenMobileMenu }: GlobalHeaderProps) {
     };
     document.addEventListener("mousedown", onOutside);
     return () => document.removeEventListener("mousedown", onOutside);
-  }, [isCreateMenuOpen, isProfileOpen, isNotifOpen]);
+  }, [isCreateMenuOpen, isNotifOpen]);
 
   // Notifications: overdue + due today + reminders
   const alerts = useMemo(() => {
@@ -135,23 +120,6 @@ export function GlobalHeader({ onOpenMobileMenu }: GlobalHeaderProps) {
     });
     return { overdue, dueToday, total: overdue.length + dueToday.length };
   }, [tasks]);
-
-  const connectedAccountsCount = accounts.filter(
-    (a) => Boolean(a.is_connected || a.access_token || a.refresh_token) && Boolean(a.email)
-  ).length;
-
-  const displayName = currentUser?.name || "Usuário MontLife";
-  const displayEmail =
-    currentUser?.email ||
-    accounts.find((a) => a.email)?.email ||
-    "usuario@montlife.com";
-  const initials =
-    displayName
-      .split(" ")
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((w) => w[0].toUpperCase())
-      .join("") || "ML";
 
   const activeScope: "all" | "work" | "personal" = useMemo(() => {
     const f = (accountFilter || "all").toLowerCase();
@@ -499,85 +467,6 @@ export function GlobalHeader({ onOpenMobileMenu }: GlobalHeaderProps) {
             </span>
           )}
         </button>
-
-        {/* Theme Toggle */}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          aria-label="Alternar tema"
-          title={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
-          className="w-8 h-8 sm:w-9 sm:h-9 rounded-[9px] border border-line bg-surface text-ink-muted hover:text-ink hover:bg-lavender-soft flex items-center justify-center transition-colors cursor-pointer"
-        >
-          {theme === "dark" ? (
-            <Sun className="w-4 h-4 text-amber-300" />
-          ) : (
-            <Moon className="w-4 h-4 text-brand" />
-          )}
-        </button>
-
-        {/* Profile & Connected Accounts Popover */}
-        <div ref={profileRef} className="relative">
-          <button
-            type="button"
-            onClick={() => setIsProfileOpen((prev) => !prev)}
-            aria-label="Perfil do usuário"
-            className="flex items-center gap-2 pl-1 pr-2 h-8 sm:h-9 rounded-[10px] border border-line bg-surface hover:bg-lavender-soft transition-colors cursor-pointer"
-          >
-            {currentUser?.picture ? (
-              <img
-                src={currentUser.picture}
-                alt={displayName}
-                className="w-6 h-6 rounded-[7px] object-cover"
-              />
-            ) : (
-              <div className="w-6 h-6 rounded-[7px] bg-brand text-brand-fg text-[10px] font-bold flex items-center justify-center">
-                {initials}
-              </div>
-            )}
-            <span className="hidden xl:inline text-xs font-medium text-ink max-w-[100px] truncate">
-              {displayName.split(" ")[0]}
-            </span>
-          </button>
-
-          {isProfileOpen && (
-            <div className="absolute right-0 top-[calc(100%+6px)] w-64 rounded-[12px] bg-surface border border-line shadow-popover p-3 z-50 space-y-2.5 animate-in fade-in zoom-in-95 duration-150">
-              <div className="pb-2.5 border-b border-line">
-                <p className="text-xs font-bold text-ink truncate">{displayName}</p>
-                <p className="text-[11px] text-ink-muted truncate">{displayEmail}</p>
-                <span className="inline-flex items-center gap-1.5 mt-2 px-2 py-0.5 rounded-[7px] bg-lavender-soft text-[10px] font-semibold text-ink">
-                  <span
-                    className={`w-1.5 h-1.5 rounded-full ${
-                      connectedAccountsCount > 0 ? "bg-emerald-500" : "bg-amber-500"
-                    }`}
-                  />
-                  {connectedAccountsCount} conta(s) Google vinculada(s)
-                </span>
-              </div>
-
-              <div className="space-y-1">
-                <Link
-                  href="/configuracoes"
-                  onClick={() => setIsProfileOpen(false)}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-[8px] text-xs font-medium text-ink hover:bg-lavender-soft transition-colors"
-                >
-                  <Settings className="w-3.5 h-3.5 text-brand" />
-                  <span>Contas e Configurações</span>
-                </Link>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsProfileOpen(false);
-                    handleLogout();
-                  }}
-                  className="w-full flex items-center gap-2 px-2.5 py-2 rounded-[8px] text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Sair da conta</span>
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
 
       {/* Notifications Portal */}

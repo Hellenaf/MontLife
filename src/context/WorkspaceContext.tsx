@@ -41,6 +41,9 @@ export interface CurrentUserInfo {
   email: string;
   name: string;
   picture?: string;
+  role?: string;
+  linked_emails?: string[];
+  createdAt?: string;
 }
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
