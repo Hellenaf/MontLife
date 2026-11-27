@@ -551,7 +551,7 @@ export function TaskListPanel({
         ref={listRef}
         tabIndex={0}
         onKeyDown={handleListKeyDown}
-        className="flex-1 min-h-0 overflow-y-auto focus:outline-none p-2.5 space-y-2 bg-canvas/40"
+        className="flex-1 min-h-0 overflow-y-auto focus:outline-none p-2.5 space-y-2 bg-canvas"
       >
         {scopedTasks.length === 0 ? (
           <EmptyState
@@ -648,6 +648,7 @@ export function TaskListPanel({
                             key={task.id}
                             role="button"
                             tabIndex={0}
+                            aria-current={isSelected ? "true" : undefined}
                             onClick={() => onSelectTask(task)}
                             onKeyDown={(e) => {
                               if (e.key === "Enter" || e.key === " ") {
@@ -655,17 +656,21 @@ export function TaskListPanel({
                                 onSelectTask(task);
                               }
                             }}
-                            className={`group relative flex items-center gap-2.5 px-3.5 transition-colors cursor-pointer ${
+                            className={`group relative flex items-center gap-2.5 px-3.5 transition-colors duration-150 cursor-pointer ${
                               isCompact ? "py-2" : "py-2.5"
                             } ${
                               isSelected
-                                ? "bg-lavender-soft/80"
-                                : "hover:bg-lavender-soft/35"
+                                ? "bg-[#E7DFF5] dark:bg-[#463A5E] ring-1 ring-inset ring-[#B6A2DB] dark:ring-[#B6A2DB]/60"
+                                : "hover:bg-[#FAF6EF] dark:hover:bg-[#352D42]"
                             }`}
                           >
-                            {/* Priority Accent */}
+                            {/* Left Bar: Vivid Brand Indicator when selected, Priority Strip otherwise */}
                             <span
-                              className={`absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full ${priorityBar}`}
+                              className={`absolute left-0 rounded-r-full transition-all ${
+                                isSelected
+                                  ? "top-0 bottom-0 w-[4px] bg-[#7455AD] dark:bg-[#D8C9EE]"
+                                  : `top-1.5 bottom-1.5 w-[3px] ${priorityBar}`
+                              }`}
                             />
 
                             {/* ONLY the circular completion button (bolinha!) */}
@@ -700,10 +705,12 @@ export function TaskListPanel({
                             <div className="min-w-0 flex-1">
                               <div className="flex items-center gap-2">
                                 <span
-                                  className={`text-xs sm:text-[13px] font-semibold truncate ${
+                                  className={`text-xs sm:text-[13px] truncate ${
                                     isDone || isCanceled
-                                      ? "line-through text-ink-muted"
-                                      : "text-ink"
+                                      ? "line-through text-ink-muted font-medium"
+                                      : isSelected
+                                      ? "font-bold text-[#392D4B] dark:text-[#FFFCF6]"
+                                      : "font-semibold text-ink"
                                   }`}
                                 >
                                   {task.title}
